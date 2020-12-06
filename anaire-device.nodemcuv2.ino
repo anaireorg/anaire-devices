@@ -10,32 +10,40 @@
 //
 // Parts list for a complete prototype in amazon: https://www.amazon.es/hz/wishlist/ls/8NAKLGML187W?ref_=wl_share
 //
+// Arduino IDE Setup:
+// Start Arduino and open Preferences window.
+// Enter http://arduino.esp8266.com/stable/package_esp8266com_index.json into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
+// Open Boards Manager from Tools > Board menu and find esp8266 platform by esp8266 community and install the software for Arduino from a drop-down box.
+// Select "NodeMCU 1.0" board from Tools > Board menu after installation
+//
 // Install the following libraries in Arduino IDE:
-// ESP8266
-// DHTEsp - to manage DHT11 or DHT22 temperature and humidity sensors
-// Software Serial
-// ssd1306 for ESP8266
+// ESP8266WiFi for WiFi https://github.com/bportaluri/WiFiEsp
+// DHTesp - to manage DHT11 or DHT22 temperature and humidity sensors https://github.com/markruys/arduino-DHT
+// EspSoftwareSerial - to manage sw serial port to communicate with CO2 sensor https://github.com/plerup/espsoftwareserial/
+// ArduinoMqttClient - for MQTT communications https://github.com/arduino-libraries/ArduinoMqttClient
+// esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
 
 // edit the following file to configure the device: device id, wifi network and remote cloud endpoint
 #include "anaire_config.h"
 
 // Control Loop: time between measurements
-const int CONTROL_LOOP_DURATION = 10000; // 10 seconds
+const int CONTROL_LOOP_DURATION = 30000; // 30 seconds
 unsigned long control_loop_start; // holds a timestamp for each control loop start
 
-// CO2 Blinking period
+// CO2 Blinking period, used to reflect CO2 status on builtin led and buzzer
 const int WARNING_BLINK_PERIOD = 1000; // 1 second
 const int ALARM_BLINK_PERIOD = 100;    // 0.1 seconds
 
 // WiFi
 #include <ESP8266WiFi.h> // Wifi ESP8266
 WiFiClient wifi_client;
+const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
 int wifi_status = WL_IDLE_STATUS;
-String firmware_version;
-long wifi_rssi_dbm; // Received signal strength
-IPAddress ip_address; // Wifi shield IP address
+//String firmware_version;
+//long wifi_rssi_dbm; // Received signal strength
+//IPAddress ip_address; // Wifi shield IP address
 WiFiServer wifi_server(80); // to check if it is alive
-char wifi_hostname[sizeof(anaire_device_id)];
+//char wifi_hostname[sizeof(anaire_device_id)];
 
 // OLED ssd1306 screen
 #include <Wire.h>
@@ -55,57 +63,52 @@ const char mqtt_send_topic[]  = "measurement";
 const char mqtt_receive_topic[]  = "config";
 char mqtt_message[256];
 
-// HTTP
-//#include <ArduinoHttpClient.h> // Arduino http library
-//HttpClient http_client = HttpClient(wifi_client, cloud_server_address, cloud_app_port);
-//String http_path = "/metrics/job/" + (String)anaire_device_id;
-//String http_post_data; // for POST message
-//int http_status_code;
-//String http_response;
-
 // MH-Z14A CO2 sensor: software serial port
-const unsigned long CO2_WARMING_TIME = 1800; // MH-Z14A CO2 sensor warming time: 3 minutes
+const unsigned long CO2_WARMING_TIME = 180000; // MH-Z14A CO2 sensor warming time: 3 minutes
+const unsigned long CO2_SERIAL_TIMEOUT = 5000; // MH-Z14A CO2 serial start timeout: 5 seconds
 #include "SoftwareSerial.h"
 #define swSerialRX_gpio 13
 #define swSerialTX_gpio 15
 SoftwareSerial swSerial(swSerialRX_gpio, swSerialTX_gpio, false);
-byte measurement_command[9] = {0xFF, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79}; // Command to get measurements from MH-Z14A CO2 sensor
+byte measurement_command[9] = {0xFF, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};  // Command to get measurements from MH-Z14A CO2 sensor
 byte calibration_command[9] = {0xFF, 0x01, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x78};  // Command to calibrate MH-Z14A CO2 sensor
 char response_CO2[9]; // holds the received data from MH-Z14A CO2 sensor
 int response_CO2_high; // holds upper byte
-int response_CO2_low; // holds lower byte
-int CO2ppm_value = 0; // CO2 ppm measured value
+int response_CO2_low;  // holds lower byte
+int CO2ppm_value = 0;  // CO2 ppm measured value
 
 // AZ-Delivery DHT11
 #include "DHTesp.h"
-#define DHT_GPIO 5 // signal GPIO5 (D1)
-#define DHTTYPE DHT11 // DHT (AM2302) Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+#define DHT_GPIO 5        // signal GPIO5 (D1)
+#define DHTTYPE DHT11     // DHT (AM2302) Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
 //#define DHTTYPE DHT22   // DHT 22 (AM2302)
 
 // Initialize DHT sensor
-//DHT dht_client(DHT_GPIO, DHTTYPE); // With ESP8266 it is used GPIO instead of PIN number
 DHTesp dht;
-
-// Task handle for the light value read task
-//TaskHandle_t tempTaskHandle = NULL;
-
-float temperature; // Read temperature as Celsius
-float humidity; // Read humidity in %
+float temperature;  // Read temperature as Celsius
+float humidity;     // Read humidity in %
 
 // AZ-Delivery Active Buzzer: GPIO16 (D0)
 // This is used to leverage existing buitlin LED in nodemcu connected to GPIO16.
 // int buzzer_gpio = 16;
+// It is not required to configure it, as it is configured and managed later on the builtin led configuration
 
 // GPIO 0 is button FLASH on nodemcu PCB
-int push_button_gpio = 0;
+int push_button_gpio = 0; // Flash button
 
 // Status info
 int co2_builtin_led_gpio16 = 16;    // GPIO16 (D0) builtin LED closer to the usb port, on the NodeMCU PCB, used to provide CO2 visual status info, as the buzzer produces sound info on the same pin
 int status_builtin_led_gpio2 = 2;   // GPIO2 (D4) builtin LED on on the ESP-12 module’s PCB, used to provide device status info
 
-int alarm_ack = false; // to indicate if push button has been pushed to ack the alarm and switch off the buzzer
-enum Status {ok, warning, alarm}; // the device can have one of those status
-Status device_status = ok; // initialized to ok
+int alarm_ack = false;                // to indicate if push button has been pushed to ack the alarm and switch off the buzzer
+
+// CO2 device status
+enum CO2_status {ok, warning, alarm}; // the device can have one of those CO2 status
+CO2_status co2_device_status = ok;        // initialized to ok
+
+// Global device status
+enum Global_status {device_ok, err_wifi, err_mqtt, err_co2, err_th, err_oled, err_unknown}; // the device can have one of those Global status
+Global_status global_device_status = device_ok;  // initialized to ok
 
 #include <Ticker.h>  //Ticker Library
 Ticker blinker;
@@ -131,44 +134,32 @@ void setup() {
   pinMode(co2_builtin_led_gpio16, OUTPUT);
   pinMode(status_builtin_led_gpio2, OUTPUT);
 
-  // turn on both, to show init status
+  // Turn on both, to show init status
   digitalWrite(co2_builtin_led_gpio16, LOW);
   digitalWrite(status_builtin_led_gpio2, LOW);
 
   // OLED Display init
   display.init();
 
-  // Welcome screen
+  // Print welcome screen
   display.clear();
   display.setFont(ArialMT_Plain_24);
   display.drawString(0, 0, "anaire.org");
   display.drawString(0, 24, "INIT...");
   display.display();
-  
+
   // Attempt to connect to WiFi network:
   Connect_WiFi();
-  Print_WiFi_Status(); // you're connected now, so print out the status
 
   // Attempt to connect to MQTT broker
   Init_MQTT();
 
-  // Buzzer
+  // Buzzer: not required
   //pinMode(buzzer_gpio, OUTPUT);
 
-  // Push button
+  // Push button: attach interrupt to togle local report of CO2 status by blinking and buzzer
   pinMode(push_button_gpio, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(push_button_gpio), push_button_handler, FALLING);
-
-  // Initialize serial port to communicate with MH-Z14A CO2 sensor. This is a software serial port
-  swSerial.begin(9600, SWSERIAL_8N1, swSerialRX_gpio, swSerialTX_gpio, false, 128);
-
-  Serial.println("swSerial Txd is on pin: " + String(swSerialTX_gpio));
-  Serial.println("swSerial Rxd is on pin: " + String(swSerialRX_gpio));
-
-  while (!swSerial) {
-    Serial.println("Attempting to open serial port 1 to communicate to MH-Z14A CO2 sensor");
-    delay(1000); // wait 1 seconds for connection
-  }
 
   // Initialize MH-Z14A CO2 sensor: warming up and calibrate
   Setup_MHZ14A();
@@ -211,7 +202,7 @@ void loop() {
   Message_Cloud_App_MQTT();
 
   // Print status on serial port
-  Print_WiFi_Status();
+  // Print_WiFi_Status();
 
   // Turn off builtin status LED to indicate the end of measurement and evaluation process
   digitalWrite(status_builtin_led_gpio2, HIGH);
@@ -221,7 +212,19 @@ void loop() {
   {
     // Process wifi server requests
     Check_WiFi_Server();
-    delay(500);
+    delay(1000);
+
+    // Try to recover error conditions
+    if (global_device_status == err_wifi) {
+      // Attempt to connect to WiFi network:
+      Connect_WiFi();
+    }
+    
+    if (global_device_status == err_mqtt) {
+      // Attempt to connect to MQTT broker
+      Init_MQTT();
+    }
+    
   }
 
   Serial.println("--- END LOOP");
@@ -236,28 +239,59 @@ void loop() {
 // Connect to WiFi network
 void Connect_WiFi() {
 
-  // We start by connecting to a WiFi network
+  Serial.print("Attempting to connect to Network named: ");
+  Serial.println(ssid); // print the network name (SSID);
+  
+  // connecting to a WiFi network
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
 
-  Serial.println();
-  Serial.print("Attempting to connect to Network named: ");
-  Serial.println(ssid); // print the network name (SSID);
+  // Timestamp for connection timeout
+  int wifi_timeout_start = millis();
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500); // wait 1 seconds for connection
+  // Wait for warming time while blinking blue led
+  while ((WiFi.status() != WL_CONNECTED) && ((millis() - wifi_timeout_start) < WIFI_CONNECT_TIMEOUT)) {
+    delay(500); // wait 0.5 seconds for connection
     Serial.print(".");
   }
 
-  //wifi_server.begin(); // start the web server on port 80
+  // Status
+  if (WiFi.status() != WL_CONNECTED) {
+    global_device_status = err_wifi;
+  }
+  else {
 
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+    global_device_status = device_ok;
+    
+    wifi_server.begin(); // start the web server on port 80
+    Serial.println("WiFi connected");
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
 
-  delay(500);
+    // Print ID & IP info on OLED display for 5 seconds
+    update_OLED_Status();
+    delay(10000);
+  
+  }
 
+}
+
+void Init_MQTT() {
+  Serial.print("Attempting to connect to the MQTT broker: ");
+  Serial.print(cloud_server_address);
+  Serial.print(":");
+  Serial.println(cloud_app_port);
+  
+  if (!mqttClient.connect(cloud_server_address, cloud_app_port)) {
+    Serial.print("MQTT connection failed! Error code = ");
+    Serial.println(mqttClient.connectError());
+    global_device_status = err_mqtt;
+  }
+  else {
+    Serial.println("You're connected to the MQTT broker!");
+    global_device_status = device_ok;
+  }
+  
 }
 
 // Print wifi status on serial monitor
@@ -275,7 +309,6 @@ void Print_WiFi_Status() {
 
   //wifi_status = WiFi.status();
   Serial.print("wifi_status: ");
-  //Serial.println(wl_status_to_string(WiFi.status());
   Serial.println(WiFi.status());
 
   // Print the SSID of the network you're attached to:
@@ -283,14 +316,14 @@ void Print_WiFi_Status() {
   Serial.println(WiFi.SSID());
 
   // Print your WiFi shield's IP address:
-  ip_address = WiFi.localIP();
+  //ip_address = WiFi.localIP();
   Serial.print("IP Address: ");
-  Serial.println(ip_address);
+  Serial.println(WiFi.localIP());
 
   // Print the received signal strength:
-  wifi_rssi_dbm = WiFi.RSSI();
+  //wifi_rssi_dbm = WiFi.RSSI();
   Serial.print("signal strength (RSSI):");
-  Serial.print(wifi_rssi_dbm);
+  Serial.print(WiFi.RSSI());
   Serial.println(" dBm");
 
 }
@@ -337,7 +370,7 @@ void Check_WiFi_Server() {
             client.print(CO2ppm_warning_threshold);
             client.println("<br>");
             client.print("STATUS: ");
-            switch (device_status) {
+            switch (co2_device_status) {
               case ok:
                 client.print("OK");
                 break;
@@ -383,6 +416,20 @@ void Check_WiFi_Server() {
 void Setup_MHZ14A()
 {
 
+  // Initialize serial port to communicate with MH-Z14A CO2 sensor. This is a software serial port
+  swSerial.begin(9600, SWSERIAL_8N1, swSerialRX_gpio, swSerialTX_gpio, false, 128);
+
+  Serial.println("swSerial Txd is on pin: " + String(swSerialTX_gpio));
+  Serial.println("swSerial Rxd is on pin: " + String(swSerialRX_gpio));
+
+  // Timestamp for serial up start time
+  int serial_up_start = millis();
+
+  while (((!swSerial) && ((millis() - serial_up_start) < CO2_SERIAL_TIMEOUT))) {
+    Serial.println("Attempting to open serial port 1 to communicate to MH-Z14A CO2 sensor");
+    delay(1000); // wait 1 seconds for connection
+  }
+  
   // Timestamp for warming up start time
   int warming_up_start = millis();
 
@@ -390,15 +437,12 @@ void Setup_MHZ14A()
   Serial.println ("Warming up MH-Z14A CO2 sensor...");
 
   // Wait for warming time while blinking blue led
-  while ((millis() - warming_up_start) < CO2_WARMING_TIME)
-  {
+  while ((millis() - warming_up_start) < CO2_WARMING_TIME) {
     Serial.print(".");
     delay(500); // wait 500ms
     Serial.println(".");
     delay(500); // wait 500ms
   }
-
-  //delay(CO2_WARMING_TIME);
 
   // Print info
   Serial.println ("Warming up MH-Z14A CO2 sensor complete");
@@ -419,9 +463,12 @@ void Setup_MHZ14A()
 // Read MH-Z14A CO2 sensor
 void Read_MHZ14A()
 {
+  
+  // Timestamp for serial up start time
+  int serial_up_start = millis();
+  
   // clears out any garbage in the RX buffer
-  while (swSerial.available())
-  {
+  while (((swSerial.available()) && ((millis() - serial_up_start) < CO2_SERIAL_TIMEOUT))) {
     int garbage = swSerial.read();
     delay(100);
     Serial.println ("Cleaning swSerial data...");
@@ -433,9 +480,11 @@ void Read_MHZ14A()
   // pauses the sketch and waits for the TX buffer to send all its data to the sensor
   swSerial.flush();
 
+  // Timestamp for serial up start time
+  serial_up_start = millis();
+  
   // pauses the sketch and waits for the sensor response
-  if (!swSerial.available())
-  {
+  if (((!swSerial.available()) && ((millis() - serial_up_start) < CO2_SERIAL_TIMEOUT))) {
     Serial.println ("Waiting for swSerial data...");
     delay(1000);
   }
@@ -459,7 +508,7 @@ void Evaluate_CO2_Value() {
 
   // Status: ok
   if (CO2ppm_value < CO2ppm_warning_threshold) {
-    device_status = ok; // update device status
+    co2_device_status = ok; // update device status
     alarm_ack = false; // Init alarm ack status
     blinker.detach(); //Use attach_ms if you need time in ms CONTROL_LOOP_DURATION
     digitalWrite(co2_builtin_led_gpio16, LOW);
@@ -467,7 +516,7 @@ void Evaluate_CO2_Value() {
 
   // Status: warning
   else if ((CO2ppm_value >= CO2ppm_warning_threshold) && (CO2ppm_value < CO2ppm_alarm_threshold)) {
-    device_status = warning; // update device status
+    co2_device_status = warning; // update device status
     if (!alarm_ack) {
       blinker.attach_ms(WARNING_BLINK_PERIOD, changeState_co2_builtin_led_gpio16);
     }
@@ -475,14 +524,14 @@ void Evaluate_CO2_Value() {
 
   // Status: alarm
   else {
-    device_status = alarm; // update device status
+    co2_device_status = alarm; // update device status
     if (!alarm_ack) {
       blinker.attach_ms(ALARM_BLINK_PERIOD, changeState_co2_builtin_led_gpio16);
     }
   }
 
   // Print info
-  switch (device_status) {
+  switch (co2_device_status) {
     case ok:
       Serial.println ("STATUS: OK");
       break;
@@ -589,33 +638,22 @@ ICACHE_RAM_ATTR void push_button_handler() {
 
 }
 
-void Init_MQTT() {
-  Serial.print("Attempting to connect to the MQTT broker: ");
-  Serial.print(cloud_server_address);
-  Serial.print(":");
-  Serial.println(cloud_app_port);
-  if (!mqttClient.connect(cloud_server_address, cloud_app_port)) {
-    Serial.print("MQTT connection failed! Error code = ");
-    Serial.println(mqttClient.connectError());
-    while (1);
-  }
-  Serial.println("You're connected to the MQTT broker!");
-}
-
+// To blink on co2_builtin_led and buzzer
 void changeState_co2_builtin_led_gpio16() {
   digitalWrite(co2_builtin_led_gpio16, !(digitalRead(co2_builtin_led_gpio16)));  //Invert Current State of LED co2_builtin_led_gpio16
 }
 
+// Update CO2 info on OLED display
 void update_OLED_CO2() {
 
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.setFont(ArialMT_Plain_24);
-  
+
   display.drawString(0, 0, "CO2 " + String(CO2ppm_value));
-  
+
   // Print info
-  switch (device_status) {
+  switch (co2_device_status) {
     case ok:
       display.drawString(0, 24, "BIEN");
       break;
@@ -631,16 +669,25 @@ void update_OLED_CO2() {
 
 }
 
+// Update device status on OLED display
 void update_OLED_Status() {
 
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.setFont(ArialMT_Plain_16);
-
-  display.drawString(0, 0, "anaire.org");
-  display.drawString(0, 16, "ID " + String(anaire_device_id));
-  display.drawString(0, 32, "IP " + ip_address.toString());
-  
+  display.drawString(0, 0, String(anaire_device_id));
+  String ipaddress = WiFi.localIP().toString();
+  display.drawString(0, 20, ipaddress);
+  switch (global_device_status) {
+    case device_ok:
+      display.drawString(0, 40, "DEVICE OK");
+      break;
+    case err_wifi:
+      display.drawString(0, 40, "ERR WIFI");
+      break;
+    case err_mqtt:
+      display.drawString(0, 40, "ERR MQTT");
+      break;
+  }
   display.display();
-  
 }

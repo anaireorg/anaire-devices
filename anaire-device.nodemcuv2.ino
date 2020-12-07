@@ -53,6 +53,7 @@ const int ALARM_BLINK_PERIOD = 100;    // 0.1 seconds
 
 // WiFi
 #include <ESP8266WiFi.h> // Wifi ESP8266
+#include <ESP8266mDNS.h> // to be reached on anaire_device_id.local in the local network
 WiFiClient wifi_client;
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
 int wifi_status = WL_IDLE_STATUS;
@@ -81,8 +82,9 @@ const char mqtt_receive_topic[]  = "config";
 char mqtt_message[256];
 
 // MH-Z14A CO2 sensor: software serial port
-const unsigned long CO2_WARMING_TIME = 180000; // MH-Z14A CO2 sensor warming time: 3 minutes
-const unsigned long CO2_SERIAL_TIMEOUT = 5000; // MH-Z14A CO2 serial start timeout: 5 seconds
+const unsigned long CO2_WARMING_TIME = 180000;   // MH-Z14A CO2 sensor warming time: 3 minutes
+const unsigned long CO2_SERIAL_TIMEOUT = 5000;   // MH-Z14A CO2 serial start timeout: 5 seconds
+const unsigned long CALIBRATION_TIME = 1200000;  // MH-Z14A CO2 CALIBRATION TIME: 20 min->1200s
 #include "SoftwareSerial.h"
 #define swSerialRX_gpio 13
 #define swSerialTX_gpio 15
@@ -306,6 +308,17 @@ void Connect_WiFi() {
     Serial.println("WiFi connected");
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
+
+    // Set mDNS to anaire_device_id.local
+   if (!MDNS.begin(String(anaire_device_id))) {             
+     Serial.println("Error mDNS");
+   }
+   else {
+    Serial.print("Try to connect to ");
+    Serial.print(String(anaire_device_id));
+    Serial.println(".local");
+   }
+   
   }
 
   // Print ID & IP info on OLED display for 5 seconds
@@ -394,7 +407,7 @@ void Check_WiFi_Server() {
             client.println("Content-type:text/html");
             client.println();
             // the content of the HTTP response follows the header:
-            //client.print("Click <a href=\"/H\">here</a> turn the LED on pin 6 on<br>");
+            client.print("Click <a href=\"/H\">here</a> to calibrate the device<br>");
             //client.print("Click <a href=\"/L\">here</a> turn the LED on pin 6 off<br>");
             // Print current info
             client.print("Anaire Device ID: ");
@@ -444,6 +457,7 @@ void Check_WiFi_Server() {
         // Check to see if the client request was "GET /H" or "GET /L":
         if (currentLine.endsWith("GET /H")) {
           //digitalWrite(LED, HIGH);               // GET /H turns the LED on
+          Calibrate_MHZ14A();
         }
         if (currentLine.endsWith("GET /L")) {
           //digitalWrite(LED, LOW);                // GET /L turns the LED off
@@ -512,15 +526,6 @@ void Setup_MHZ14A()
   Serial.println ("Warming up MH-Z14A CO2 sensor complete");
 
   // Print info
-  //Serial.println ("Calibrating MH-Z14A CO2 sensor...");
-
-  // Write calibration command
-  //swSerial.write(calibration_command, 9);
-
-  // Waits for 3 seconds
-  //delay(3000);
-
-  // Print info
   Serial.println ("MH-Z14A CO2 sensor setup complete");
 }
 
@@ -565,6 +570,39 @@ void Read_MHZ14A()
   Serial.print ("CO2ppm_value = ");
   Serial.println (CO2ppm_value);
 
+}
+
+// Calibrate MHZ14A sensor
+void Calibrate_MHZ14A() {
+
+  // Timestamp for calibrating start time
+  int calibrating_start = millis();
+
+  // Print info
+  Serial.println ("Calibrating MH-Z14A CO2 sensor...");
+
+  // Write calibration command
+  swSerial.write(calibration_command, 9);
+
+  // Wait for calibrating time
+  int counter = CALIBRATION_TIME/1000;
+  while ((millis() - calibrating_start) < CALIBRATION_TIME) {
+    display.clear();
+    display.setFont(ArialMT_Plain_24);
+    display.drawString(0, 0, "anaire.org");
+    display.drawString(0, 21, "calibrating");
+    display.drawString(0, 42, String(counter));
+    display.display(); // update OLED display
+    Serial.print(".");
+    delay(500); // wait 500ms
+    Serial.println(".");
+    delay(500); // wait 500ms
+    counter = counter - 1;
+  }
+ 
+  
+  // Waits for 3 seconds
+  delay(3000);
 }
 
 // Evaluate CO2 value versus warning and alarm threasholds and process CO2 alarm information

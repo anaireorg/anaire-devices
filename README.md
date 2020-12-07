@@ -6,7 +6,7 @@ SW for anaire devices: Get CO2, temperature and humidity measurements and send t
 
 From 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
 
-Files:
+# Files:
 - anaire-device.nodemcuv2.ino: code for prototype on AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2
 - anaire_config.h: device configuration info
   device id, initial thresholds, WiFi setup, cloud app endpoint
@@ -15,7 +15,7 @@ Files:
 - NodeMCU_LUA_Amica_V2_Schematic.pdf: nodemcu schematic
 - Anaire Prototipo MH-Z14a.fzz: fritzing cabling design
 
-Parts:
+# Parts:
 - AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
 - MH-Z14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf 
 - AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
@@ -24,7 +24,7 @@ Parts:
 
 Parts list for a complete prototype in amazon: https://www.amazon.es/hz/wishlist/ls/8NAKLGML187W?ref_=wl_share
 
-Arduino IDE Setup:
+# Arduino IDE Setup:
  - Start Arduino and open Preferences window.
  - Enter http://arduino.esp8266.com/stable/package_esp8266com_index.json into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
  - Open Boards Manager from Tools > Board menu and find esp8266 platform by esp8266 community and install the software for Arduino from a drop-down box.
@@ -37,7 +37,7 @@ Install the following libraries in Arduino IDE:
 - ArduinoMqttClient - for MQTT communications https://github.com/arduino-libraries/ArduinoMqttClient
 - esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
 
-Design:
+# Design and usage:
 - Built in LED in GPIO16-D0 (the one that blinks near the nodemcu usb connector) is also connected to the external buzzer
   * When CO2 Status is "ok" (below warning threshold) LED keeps ON and buzzer is off
   * When CO2 Status is "warning" builtin LED and external buzzer alternate at a slow pace (WARNING_BLINK_PERIOD)
@@ -54,7 +54,7 @@ Design:
   * The hostname in the form <anaire_device_id>.local is definied by mDNS. But it will depend on the local router to be operative or not.
 - The web server allows to calibrate the CO2 sensor. Put the device on a clean environment (open air) and click the option in the web server. Waits during the calibration countdown time (20 minutes)
 
-Montaje:
+# Montaje:
 
 1. Soldar los cuatro pines en el sensor de CO2 donde está indicado en la imagen, para poder pincharlo en la breadboard
 
@@ -67,10 +67,10 @@ Montaje:
 3. Cargar los archivos anaire-device.nodemcuv2.ino y anaire_config.h en el IDE de Arduino.
 
 4. Editar el archivo anaire_config.h para configurar:
-* el id del dispositivo 
-* los umbrales de aviso y alarma de nivel de CO2 (por defecto 700 y 1000 respectivamente)
-* el ssid y la contraseña de la red Wifi
-* el endpoint de la app en la nube <nombrededominio>:30183 (la app se ha debido desplegar previamente)
+- el id del dispositivo 
+- los umbrales de aviso y alarma de nivel de CO2 (por defecto 700 y 1000 respectivamente)
+- el ssid y la contraseña de la red Wifi
+- el endpoint de la app en la nube <nombrededominio>:30183 (la app se ha debido desplegar previamente)
   
 5. Conectar el puerto USB y descargar los archivos a la tarjeta NodeMCU. El zumbador emitirá sonido durante la descarga del SW (varios segundos)
 
@@ -79,17 +79,17 @@ Montaje:
 7. Pulsar el botón de "Flash" en la NodeMCU para comprobar el ID y obtener la dirección IP asignada
 
 8. Calibración del dispositivo:
-* Colocar el dispositivo en un entorno limpio (en el exterior o al lado de una ventana abierta, con ventilación abundante)
-* En un navegador conectado en la misma red WiFi que el dispositivo introducir la dirección IP. Se obtendrá una imagen como la siguiente:
-* Hacer click en el enlace mostrado en la primera línea, y esperar a que se termine la cuenta atrás en el display del dispositivo y se vuelvan a mostrar medidas. El proceso se completa en aproximadamente 20 minutos.
+- Colocar el dispositivo en un entorno limpio (en el exterior o al lado de una ventana abierta, con ventilación abundante)
+- En un navegador conectado en la misma red WiFi que el dispositivo introducir la dirección IP. Se obtendrá una imagen como la siguiente:
+- Hacer click en el enlace mostrado en la primera línea, y esperar a que se termine la cuenta atrás en el display del dispositivo y se vuelvan a mostrar medidas. El proceso se completa en aproximadamente 20 minutos.
 
 ![Servidor Web](https://github.com/anaireorg/anaire-devices/blob/main/Captura_calibration.PNG)
 
 El dispositivo está listo para su uso.
 
 Errores mostrados en el display:
-* err_wifi: no se pudo conectar a la red WiFi. Compruebe los detalles en el archivo anaire_config.h.
-* err_mqtt: no se pudo conectar al endpoint de la app en la nube. Compruebe los detalles en el archivo anaire_config.h.
-* err_co2: no se pudo conectar con el sensor de CO2. Compruebe las conexiones.
-* err_dht: no se pudo conectar con el sensor de humedad y temperatura. Compruebe las conexiones.
+- err_wifi: no se pudo conectar a la red WiFi. Compruebe los detalles en el archivo anaire_config.h.
+- err_mqtt: no se pudo conectar al endpoint de la app en la nube. Compruebe los detalles en el archivo anaire_config.h.
+- err_co2: no se pudo conectar con el sensor de CO2. Compruebe las conexiones.
+- err_dht: no se pudo conectar con el sensor de humedad y temperatura. Compruebe las conexiones.
 

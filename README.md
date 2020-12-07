@@ -6,7 +6,7 @@ SW for anaire devices: Get CO2, temperature and humidity measurements and send t
 
 From 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
 
-# Files:
+# Files
 - anaire-device.nodemcuv2.ino: code for prototype on AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2
 - anaire_config.h: device configuration info
   device id, initial thresholds, WiFi setup, cloud app endpoint
@@ -15,7 +15,7 @@ From 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
 - NodeMCU_LUA_Amica_V2_Schematic.pdf: nodemcu schematic
 - Anaire Prototipo MH-Z14a.fzz: fritzing cabling design
 
-# Parts:
+# Parts
 - AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
 - MH-Z14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf 
 - AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
@@ -24,7 +24,7 @@ From 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
 
 Parts list for a complete prototype in amazon: https://www.amazon.es/hz/wishlist/ls/8NAKLGML187W?ref_=wl_share
 
-# Arduino IDE Setup:
+# Arduino IDE Setup
  - Start Arduino and open Preferences window.
  - Enter http://arduino.esp8266.com/stable/package_esp8266com_index.json into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
  - Open Boards Manager from Tools > Board menu and find esp8266 platform by esp8266 community and install the software for Arduino from a drop-down box.
@@ -37,7 +37,7 @@ Install the following libraries in Arduino IDE:
 - ArduinoMqttClient - for MQTT communications https://github.com/arduino-libraries/ArduinoMqttClient
 - esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
 
-# Design and usage:
+# Design and usage
 - Built in LED in GPIO16-D0 (the one that blinks near the nodemcu usb connector) is also connected to the external buzzer
   * When CO2 Status is "ok" (below warning threshold) LED keeps ON and buzzer is off
   * When CO2 Status is "warning" builtin LED and external buzzer alternate at a slow pace (WARNING_BLINK_PERIOD)
@@ -54,7 +54,7 @@ Install the following libraries in Arduino IDE:
   * The hostname in the form <anaire_device_id>.local is definied by mDNS. But it will depend on the local router to be operative or not.
 - The web server allows to calibrate the CO2 sensor. Put the device on a clean environment (open air) and click the option in the web server. Waits during the calibration countdown time (20 minutes)
 
-# Montaje:
+# Montaje
 
 1. Soldar los cuatro pines en el sensor de CO2 donde está indicado en la imagen, para poder pincharlo en la breadboard
 
@@ -85,9 +85,9 @@ Install the following libraries in Arduino IDE:
 
 ![Servidor Web](https://github.com/anaireorg/anaire-devices/blob/main/Captura_calibration.PNG)
 
-# Una vez calibrado el dispositivo está listo para su uso.
+Una vez calibrado el dispositivo está listo para su uso. Aún en caso de errores de conexión WiFi o MQTT el dispositivo seguirá mostrando las medidas actualizadas de CO2 en el display.
 
-# Errores mostrados en el display:
+# Errores mostrados en el display
 - err_wifi: no se pudo conectar a la red WiFi. Compruebe los detalles en el archivo anaire_config.h.
 - err_mqtt: no se pudo conectar al endpoint de la app en la nube. Compruebe los detalles en el archivo anaire_config.h.
 - err_co2: no se pudo conectar con el sensor de CO2. Compruebe las conexiones.

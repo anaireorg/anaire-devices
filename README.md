@@ -1,6 +1,6 @@
 # anaire-devices
 
-SW for anaire devices
+SW for anaire devices: Get CO2, temperature and humidity measurements and send them to the anaire cloud app
 
 From 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
 
@@ -12,9 +12,6 @@ Files:
 - NodeMCU_LUA_Amica_V2_Modul_mit_ESP8266_12E_Datenblatt.pdf: nodemcu datasheet
 - NodeMCU_LUA_Amica_V2_Schematic.pdf: nodemcu schematic
 - Anaire Prototipo MH-Z14a.fzz: fritzing cabling design
-
-
-Get CO2, temperature and humidity measurements and send them to the anaire cloud app
 
 Parts:
 - AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
@@ -47,7 +44,7 @@ Design:
 - Flash button, to the risht of the USB connector, allows to toggle between activating/deactivating local alarms (visual and sound)
   * It also shows device ID and IP address after being pressed until a new CO2 measurement is displayed
 - CO2 sensor is connected through a software serial port using GPIO13(D7) and GPIO15 (D8)
-- DHT11 humidity and temperature sensor ins connected on GPIO 5 (D1)
+- DHT11 humidity and temperature sensor is connected on GPIO 5 (D1)
 - SSD1306 OLED display is connected on GPIO14(D5) and GPIO12 (D6)
 - The device is designed to work only with the CO2 sensor, so buzzer, DHT11 humidity and temperature sensor, and OLED display are optional
 - The device is designed to recover from Wifi, MQTT or sensor reading temporal failures

@@ -1,9 +1,11 @@
 // From 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
+// GNU General Public License v3.0
 //
 // Get CO2, temperature and humidity measurements and send them to the anaire cloud app
 //
+// Parts:
 // AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
-// MH-Z14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf http://www.winsen-sensor.com/d/files/PDF/Infrared%20Gas%20Sensor/NDIR%20CO2%20SENSOR/MH-Z14%20CO2%20V2.4.pdf
+// MH-Z14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf
 // AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
 // AZ-Delivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r
 // AZ-Delivery 0.91 inch OLED I2C Display 128 x 32 Pixels  https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display
@@ -22,6 +24,21 @@
 // EspSoftwareSerial - to manage sw serial port to communicate with CO2 sensor https://github.com/plerup/espsoftwareserial/
 // ArduinoMqttClient - for MQTT communications https://github.com/arduino-libraries/ArduinoMqttClient
 // esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
+
+// Design:
+// - Built in LED in GPIO16-D0 (the one that blinks near the nodemcu usb connector) is also connected to the external buzzer
+//   * When CO2 Status is "ok" (below warning threshold) LED keeps ON and buzzer is off
+//   * When CO2 Status is "warning" builtin LED and external buzzer alternate at a slow pace (WARNING_BLINK_PERIOD)
+//   * When CO2 Status is "alarm" builtin LED and external buzzer alternate at fast pace (ALARM_BLINK_PERIOD)
+//   This GPIO16 is also used when downloading SW to the nodemcu board: the external buzzer sounds while downloading to the board
+// - Flash button, to the risht of the USB connector, allows to toggle between activating/deactivating local alarms (visual and sound)
+//   * It also shows device ID and IP address after being pressed until a new CO2 measurement is displayed
+// - CO2 sensor is connected through a software serial port using GPIO13(D7) and GPIO15 (D8)
+// - DHT11 humidity and temperature sensor ins connected on GPIO 5 (D1)
+// - SSD1306 OLED display is connected on GPIO14(D5) and GPIO12 (D6)
+// - The device is designed to work only with the CO2 sensor, so buzzer, DHT11 humidity and temperature sensor, and OLED display are optional
+// - The device is designed to recover from Wifi, MQTT or sensor reading temporal failures
+// - The web server is activated, therefore entering the IP on a browser allows to see the device data. The IP is showed during boot and after pressing the button.
 
 // edit the following file to configure the device: device id, wifi network and remote cloud endpoint
 #include "anaire_config.h"
@@ -97,21 +114,30 @@ float humidity;     // Read humidity in %
 int push_button_gpio = 0; // Flash button
 
 // Status info
-int co2_builtin_led_gpio16 = 16;    // GPIO16 (D0) builtin LED closer to the usb port, on the NodeMCU PCB, used to provide CO2 visual status info, as the buzzer produces sound info on the same pin
-int status_builtin_led_gpio2 = 2;   // GPIO2 (D4) builtin LED on on the ESP-12 module’s PCB, used to provide device status info
-
-int alarm_ack = false;                // to indicate if push button has been pushed to ack the alarm and switch off the buzzer
+// First builtin LED, used to provide CO2 visual status info, as the buzzer produces sound info on the same pin on nodemcu v1.0 board
+int co2_builtin_LED = 16;     // GPIO16 (D0), closer to the usb port, on the NodeMCU PCB
+// Second builtin LED on  used to provide device status info
+int status_builtin_LED = 2;   // GPIO2 (D4), on the ESP-12 module’s PCB
+int alarm_ack = false;        // to indicate if push button has been pushed to ack the alarm and switch off the buzzer
 
 // CO2 device status
 enum CO2_status {ok, warning, alarm}; // the device can have one of those CO2 status
 CO2_status co2_device_status = ok;        // initialized to ok
 
-// Global device status
-enum Global_status {device_ok, err_wifi, err_mqtt, err_co2, err_th, err_oled, err_unknown}; // the device can have one of those Global status
-Global_status global_device_status = device_ok;  // initialized to ok
+// device status
+boolean err_global = false;
+boolean err_wifi = false;
+boolean err_mqtt = false;
+boolean err_co2 = false;
+boolean err_dht = false;
+boolean err_oled = false;
 
 #include <Ticker.h>  //Ticker Library
-Ticker blinker;
+Ticker blinker_co2_builtin_LED;    // to blink co2_builtin_LED and buzzer
+Ticker blinker_status_builtin_LED;  // to blink status_builtin_LED
+
+// flag to update OLED display from main loop instead of button ISR
+boolean update_OLED_Status_flag = false;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // SETUP
@@ -131,12 +157,12 @@ void setup() {
   Serial.println("### INIT ANAIRE DEVICE ###########################################");
 
   // Initialize LEDs
-  pinMode(co2_builtin_led_gpio16, OUTPUT);
-  pinMode(status_builtin_led_gpio2, OUTPUT);
+  pinMode(co2_builtin_LED, OUTPUT);
+  pinMode(status_builtin_LED, OUTPUT);
 
   // Turn on both, to show init status
-  digitalWrite(co2_builtin_led_gpio16, LOW);
-  digitalWrite(status_builtin_led_gpio2, LOW);
+  digitalWrite(co2_builtin_LED, LOW);
+  digitalWrite(status_builtin_LED, LOW);
 
   // OLED Display init
   display.init();
@@ -144,32 +170,36 @@ void setup() {
   // Print welcome screen
   display.clear();
   display.setFont(ArialMT_Plain_24);
-  display.drawString(0, 0, "anaire.org");
-  display.drawString(0, 24, "INIT...");
-  display.display();
-
-  // Attempt to connect to WiFi network:
-  Connect_WiFi();
-
-  // Attempt to connect to MQTT broker
-  Init_MQTT();
-
-  // Buzzer: not required
-  //pinMode(buzzer_gpio, OUTPUT);
-
-  // Push button: attach interrupt to togle local report of CO2 status by blinking and buzzer
-  pinMode(push_button_gpio, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(push_button_gpio), push_button_handler, FALLING);
+  display.drawString(0, 21, "anaire.org");
+  display.display(); // update OLED display
+  delay(3000);
 
   // Initialize MH-Z14A CO2 sensor: warming up and calibrate
   Setup_MHZ14A();
 
   // Initialize DHT11 temperature and humidity sensor
   dht.setup(DHT_GPIO, DHTesp::DHTTYPE);
+  if (dht.getStatus() != 0) {
+    err_dht = true;
+  }
 
-  // turn off both, to show init status
-  digitalWrite(co2_builtin_led_gpio16, HIGH);
-  digitalWrite(status_builtin_led_gpio2, HIGH);
+  // Attempt to connect to WiFi network:
+  Connect_WiFi();
+
+  // Attempt to connect to MQTT broker
+  if (!err_wifi) {
+    Init_MQTT();
+  }
+
+  // Push button: attach interrupt to togle local report of CO2 status by blinking and buzzer
+  pinMode(push_button_gpio, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(push_button_gpio), push_button_handler, FALLING);
+
+
+
+  // turn off both, to show init status complete
+  digitalWrite(co2_builtin_LED, HIGH);
+  digitalWrite(status_builtin_LED, HIGH);
 
 }
 
@@ -184,7 +214,7 @@ void loop() {
   control_loop_start = millis();
 
   // Turn on status LED to indicate the start of measurement and evaluation process. This acts as a heart beat to indicate the device is alive, by showing activity each control loop duration time
-  digitalWrite(status_builtin_led_gpio2, LOW);
+  digitalWrite(status_builtin_LED, LOW);
 
   // Read MH-Z14A CO2 sensor
   Read_MHZ14A();
@@ -199,32 +229,37 @@ void loop() {
   Read_Humidity_Temperature();
 
   // Message the mqtt broker in the cloud app to send the measured values
-  Message_Cloud_App_MQTT();
-
-  // Print status on serial port
-  // Print_WiFi_Status();
+  if (!err_wifi) {
+    Message_Cloud_App_MQTT();
+  }
 
   // Turn off builtin status LED to indicate the end of measurement and evaluation process
-  digitalWrite(status_builtin_led_gpio2, HIGH);
+  digitalWrite(status_builtin_LED, HIGH);
 
   // Complete time up to ControlLoopTimerDuration and blink fast builtin LED to show it
   while ((millis() - control_loop_start) < CONTROL_LOOP_DURATION)
   {
     // Process wifi server requests
     Check_WiFi_Server();
-    delay(1000);
+    delay(500);
+
+    // if button was pressed flag to updated OLED was set
+    if (update_OLED_Status_flag) {
+      update_OLED_Status_flag = false;
+      update_OLED_Status();
+    }
 
     // Try to recover error conditions
-    if (global_device_status == err_wifi) {
+    if (err_wifi) {
       // Attempt to connect to WiFi network:
       Connect_WiFi();
     }
-    
-    if (global_device_status == err_mqtt) {
+
+    if ((err_mqtt) && (!err_wifi)) {
       // Attempt to connect to MQTT broker
       Init_MQTT();
     }
-    
+
   }
 
   Serial.println("--- END LOOP");
@@ -241,7 +276,7 @@ void Connect_WiFi() {
 
   Serial.print("Attempting to connect to Network named: ");
   Serial.println(ssid); // print the network name (SSID);
-  
+
   // connecting to a WiFi network
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
@@ -257,22 +292,25 @@ void Connect_WiFi() {
 
   // Status
   if (WiFi.status() != WL_CONNECTED) {
-    global_device_status = err_wifi;
+    err_wifi = true;
+    // Switch on blinking status_builtin_LED to reflect the error, with ALARM_BLINK_PERIOD
+    blinker_status_builtin_LED.attach_ms(ALARM_BLINK_PERIOD, changeState_status_builtin_LED);
+
   }
   else {
+    err_wifi = false;
+    // Switch off blinking status_builtin_LED
+    blinker_status_builtin_LED.detach();
 
-    global_device_status = device_ok;
-    
     wifi_server.begin(); // start the web server on port 80
     Serial.println("WiFi connected");
     Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
-
-    // Print ID & IP info on OLED display for 5 seconds
-    update_OLED_Status();
-    delay(10000);
-  
   }
+
+  // Print ID & IP info on OLED display for 5 seconds
+  //update_OLED_Status();
+  //delay(10000);
 
 }
 
@@ -281,17 +319,25 @@ void Init_MQTT() {
   Serial.print(cloud_server_address);
   Serial.print(":");
   Serial.println(cloud_app_port);
-  
+
   if (!mqttClient.connect(cloud_server_address, cloud_app_port)) {
+    err_mqtt = true;
     Serial.print("MQTT connection failed! Error code = ");
     Serial.println(mqttClient.connectError());
-    global_device_status = err_mqtt;
+    // Switch on blinking status_builtin_LED to reflect the error, with ALARM_BLINK_PERIOD
+    blinker_status_builtin_LED.attach_ms(ALARM_BLINK_PERIOD, changeState_status_builtin_LED);
   }
   else {
+    err_mqtt = false;
     Serial.println("You're connected to the MQTT broker!");
-    global_device_status = device_ok;
+    // Switch off blinking status_builtin_LED
+    blinker_status_builtin_LED.detach();
   }
-  
+
+  // Print ID & IP info on OLED display for 5 seconds
+  //update_OLED_Status();
+  //delay(10000);
+
 }
 
 // Print wifi status on serial monitor
@@ -429,7 +475,16 @@ void Setup_MHZ14A()
     Serial.println("Attempting to open serial port 1 to communicate to MH-Z14A CO2 sensor");
     delay(1000); // wait 1 seconds for connection
   }
-  
+
+  // If the timeout was completed it is an error
+  if ((millis() - serial_up_start) > CO2_SERIAL_TIMEOUT) {
+    err_co2 = true;
+    return;
+  }
+  else {
+    err_co2 = false;
+  }
+
   // Timestamp for warming up start time
   int warming_up_start = millis();
 
@@ -437,11 +492,20 @@ void Setup_MHZ14A()
   Serial.println ("Warming up MH-Z14A CO2 sensor...");
 
   // Wait for warming time while blinking blue led
+  int counter = 180; // default warming up 180s
   while ((millis() - warming_up_start) < CO2_WARMING_TIME) {
+    // Print welcome screen
+    display.clear();
+    display.setFont(ArialMT_Plain_24);
+    display.drawString(0, 0, "anaire.org");
+    display.drawString(0, 21, "Init...");
+    display.drawString(0, 42, String(counter));
+    display.display(); // update OLED display
     Serial.print(".");
     delay(500); // wait 500ms
     Serial.println(".");
     delay(500); // wait 500ms
+    counter = counter - 1;
   }
 
   // Print info
@@ -463,10 +527,10 @@ void Setup_MHZ14A()
 // Read MH-Z14A CO2 sensor
 void Read_MHZ14A()
 {
-  
+
   // Timestamp for serial up start time
   int serial_up_start = millis();
-  
+
   // clears out any garbage in the RX buffer
   while (((swSerial.available()) && ((millis() - serial_up_start) < CO2_SERIAL_TIMEOUT))) {
     int garbage = swSerial.read();
@@ -482,7 +546,7 @@ void Read_MHZ14A()
 
   // Timestamp for serial up start time
   serial_up_start = millis();
-  
+
   // pauses the sketch and waits for the sensor response
   if (((!swSerial.available()) && ((millis() - serial_up_start) < CO2_SERIAL_TIMEOUT))) {
     Serial.println ("Waiting for swSerial data...");
@@ -507,30 +571,36 @@ void Read_MHZ14A()
 void Evaluate_CO2_Value() {
 
   // Status: ok
+
+  // Recovering to "ok" status stops any warning or alarm warnings and quits special mode (after pressing flash button), therefore after passing by "ok" status
+  // the device is "reset" and when entering warning or alarm state the device will report localy again by blinking o2_builtin_led_gpio16 led and the buzzer,
+  // and pushing the flash button will be required if the user wanrts to stop lignt and sound alerting
+
   if (CO2ppm_value < CO2ppm_warning_threshold) {
-    co2_device_status = ok; // update device status
+    co2_device_status = ok; // update co2 status
+    blinker_co2_builtin_LED.detach(); // stop co2_builtin_LED and buzzer blinking
+    digitalWrite(co2_builtin_LED, LOW); // update co2_builtin_LED_gpio1 (always on) buzzer (off) status
+    blinker_status_builtin_LED.detach(); // stop blinkg status_builtin_LED_gpio16 to indicate reset to init state
     alarm_ack = false; // Init alarm ack status
-    blinker.detach(); //Use attach_ms if you need time in ms CONTROL_LOOP_DURATION
-    digitalWrite(co2_builtin_led_gpio16, LOW);
   }
 
   // Status: warning
   else if ((CO2ppm_value >= CO2ppm_warning_threshold) && (CO2ppm_value < CO2ppm_alarm_threshold)) {
     co2_device_status = warning; // update device status
-    if (!alarm_ack) {
-      blinker.attach_ms(WARNING_BLINK_PERIOD, changeState_co2_builtin_led_gpio16);
+    if (!alarm_ack) { // flash button hasn't been pressed
+      blinker_co2_builtin_LED.attach_ms(WARNING_BLINK_PERIOD, changeState_co2_builtin_LED); // warning blink of light and sound
     }
   }
 
   // Status: alarm
   else {
     co2_device_status = alarm; // update device status
-    if (!alarm_ack) {
-      blinker.attach_ms(ALARM_BLINK_PERIOD, changeState_co2_builtin_led_gpio16);
+    if (!alarm_ack) { // flash button hasn't been pressed
+      blinker_co2_builtin_LED.attach_ms(ALARM_BLINK_PERIOD, changeState_co2_builtin_LED); // warning blink of light and sound
     }
   }
 
-  // Print info
+  // Print info on serial monitor
   switch (co2_device_status) {
     case ok:
       Serial.println ("STATUS: OK");
@@ -563,9 +633,10 @@ void Read_Humidity_Temperature() {
   // Check if any reads failed and exit early (to try again).
   if (isnan(humidity) || isnan(temperature)) {
     Serial.println("Failed to read from DHT sensor!");
+    err_dht = true;
   }
-
   else {
+    err_dht = false;
     Serial.print("Humidity: ");
     Serial.print(humidity);
     Serial.print("%\n");
@@ -585,7 +656,11 @@ void Message_Cloud_App_MQTT() {
   if (!mqttClient.connect(cloud_server_address, cloud_app_port)) {
     Serial.print("MQTT connection failed! Error code = ");
     Serial.println(mqttClient.connectError());
-    //while (1);
+    err_mqtt = true;
+    return;
+  }
+  else {
+    err_mqtt = false;
   }
 
   // call poll() regularly to allow the library to send MQTT keep alives which
@@ -605,7 +680,7 @@ void Message_Cloud_App_MQTT() {
 
 }
 
-
+// ISR to respond to button pressing to toggle local alarm reporting thoriugh builtin LED and buzzer
 ICACHE_RAM_ATTR void push_button_handler() {
 
   if (!alarm_ack) {
@@ -613,9 +688,12 @@ ICACHE_RAM_ATTR void push_button_handler() {
     // Print info
     Serial.println ("FLASH Push button interrupt - alarm_ack ON");
 
-    // Switch off the buzzer and keep the LED on, as in normal status
-    blinker.detach(); //Use attach_ms if you need time in ms CONTROL_LOOP_DURATION
-    digitalWrite(co2_builtin_led_gpio16, LOW);
+    // Switch off the buzzer and co2_builtin_LED, as in normal status
+    blinker_co2_builtin_LED.detach(); //Use attach_ms if you need time in ms CONTROL_LOOP_DURATION
+    digitalWrite(co2_builtin_LED, LOW);
+
+    // Switch on blinking status_builtin_LED to reflect special mode, using WARNING_BLINK_PERIOD
+    blinker_status_builtin_LED.attach_ms(WARNING_BLINK_PERIOD, changeState_status_builtin_LED);
 
     alarm_ack = true; // alarm has been ack
 
@@ -626,6 +704,9 @@ ICACHE_RAM_ATTR void push_button_handler() {
     // Print info
     Serial.println ("FLASH Push button interrupt - alarm_ack OFF");
 
+    // Switch off blinking status_builtin_LED to reflect normal mode
+    blinker_status_builtin_LED.detach();
+
     alarm_ack = false; // alarm has been reset
 
     // Evaluate last CO2 measurement and update led and buzzer accordingly
@@ -634,60 +715,89 @@ ICACHE_RAM_ATTR void push_button_handler() {
   }
 
   // Print id and IP info in OLED display
-  //update_OLED_Status();
+  update_OLED_Status_flag = true;
 
 }
 
-// To blink on co2_builtin_led and buzzer
-void changeState_co2_builtin_led_gpio16() {
-  digitalWrite(co2_builtin_led_gpio16, !(digitalRead(co2_builtin_led_gpio16)));  //Invert Current State of LED co2_builtin_led_gpio16
+// To blink on co2_builtin_LED and buzzer
+void changeState_co2_builtin_LED() {
+  digitalWrite(co2_builtin_LED, !(digitalRead(co2_builtin_LED)));  //Invert Current State of LED co2_builtin_LED
+}
+
+// To blink on status_builtin_LED
+void changeState_status_builtin_LED() {
+  digitalWrite(status_builtin_LED, !(digitalRead(status_builtin_LED)));  //Invert Current State of LED status_builtin_LED
 }
 
 // Update CO2 info on OLED display
 void update_OLED_CO2() {
 
+  // setup display and text format
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.setFont(ArialMT_Plain_24);
 
+  // display CO2 measurement on first line
   display.drawString(0, 0, "CO2 " + String(CO2ppm_value));
 
-  // Print info
+  // display status on second line
   switch (co2_device_status) {
     case ok:
-      display.drawString(0, 24, "BIEN");
+      display.drawString(0, 21, "BIEN");
       break;
     case warning:
-      display.drawString(0, 24, "REGULAR");
+      display.drawString(0, 21, "REGULAR");
       break;
     case alarm:
-      display.drawString(0, 24, "¡MAL!");
+      display.drawString(0, 21, "¡MAL!");
       break;
   }
 
-  display.display();
+  // if there is an error display it on third line
+  if (err_wifi) {
+    display.drawString(0, 42, "err wifi");
+  }
+  else if (err_mqtt) {
+    display.drawString(0, 42, "err mqtt");
+  }
+  else if (err_co2) {
+    display.drawString(0, 42, "err co2");
+  }
+  else if (err_dht) {
+    display.drawString(0, 42, "err dht");
+  }
 
+  display.display(); // update OLED display
 }
 
 // Update device status on OLED display
 void update_OLED_Status() {
 
+  // setup display and text format
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.setFont(ArialMT_Plain_16);
+
+  // display device id on first line
   display.drawString(0, 0, String(anaire_device_id));
+
+  // display IP address on second line
   String ipaddress = WiFi.localIP().toString();
-  display.drawString(0, 20, ipaddress);
-  switch (global_device_status) {
-    case device_ok:
-      display.drawString(0, 40, "DEVICE OK");
-      break;
-    case err_wifi:
-      display.drawString(0, 40, "ERR WIFI");
-      break;
-    case err_mqtt:
-      display.drawString(0, 40, "ERR MQTT");
-      break;
+  display.drawStringMaxWidth(0, 21, 128, ipaddress);
+
+  // if there is an error display it on third line
+  if (err_wifi) {
+    display.drawString(0, 42, "err wifi");
   }
-  display.display();
+  else if (err_mqtt) {
+    display.drawString(0, 42, "err mqtt");
+  }
+  else if (err_co2) {
+    display.drawString(0, 42, "err co2");
+  }
+  else if (err_dht) {
+    display.drawString(0, 42, "err dht");
+  }
+
+  display.display(); // update OLED display
 }

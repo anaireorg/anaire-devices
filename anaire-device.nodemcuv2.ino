@@ -82,9 +82,9 @@ const char mqtt_receive_topic[]  = "config";
 char mqtt_message[256];
 
 // MH-Z14A CO2 sensor: software serial port
-const unsigned long CO2_WARMING_TIME = 180000;   // MH-Z14A CO2 sensor warming time: 3 minutes
-const unsigned long CO2_SERIAL_TIMEOUT = 5000;   // MH-Z14A CO2 serial start timeout: 5 seconds
-const unsigned long CALIBRATION_TIME = 1200000;  // MH-Z14A CO2 CALIBRATION TIME: 20 min->1200s
+const unsigned long CO2_WARMING_TIME = 180000;   // MH-Z14A CO2 sensor warming time: 3 minutes = 180000 ms
+const unsigned long CO2_SERIAL_TIMEOUT = 5000;   // MH-Z14A CO2 serial start timeout: 5 seconds = 5000 ms
+const unsigned long CALIBRATION_TIME = 1200000;  // MH-Z14A CO2 CALIBRATION TIME: 20 min = 1200000 ms
 #include "SoftwareSerial.h"
 #define swSerialRX_gpio 13
 #define swSerialTX_gpio 15
@@ -168,7 +168,8 @@ void setup() {
 
   // OLED Display init
   display.init();
-
+  display.flipScreenVertically();
+  
   // Print welcome screen
   display.clear();
   display.setFont(ArialMT_Plain_24);
@@ -197,8 +198,6 @@ void setup() {
   pinMode(push_button_gpio, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(push_button_gpio), push_button_handler, FALLING);
 
-
-
   // turn off both, to show init status complete
   digitalWrite(co2_builtin_LED, HIGH);
   digitalWrite(status_builtin_LED, HIGH);
@@ -224,12 +223,12 @@ void loop() {
   // Evaluate CO2 value
   Evaluate_CO2_Value();
 
-  // Update CO2 measurement on screen
-  update_OLED_CO2();
-
   // Read DHT sensor
   Read_Humidity_Temperature();
 
+   // Update CO2 measurement on screen
+  update_OLED_CO2();
+  
   // Message the mqtt broker in the cloud app to send the measured values
   if (!err_wifi) {
     Message_Cloud_App_MQTT();
@@ -237,7 +236,7 @@ void loop() {
 
   // Turn off builtin status LED to indicate the end of measurement and evaluation process
   digitalWrite(status_builtin_LED, HIGH);
-
+ 
   // Complete time up to ControlLoopTimerDuration and blink fast builtin LED to show it
   while ((millis() - control_loop_start) < CONTROL_LOOP_DURATION)
   {
@@ -574,15 +573,18 @@ void Read_MHZ14A()
 
 // Calibrate MHZ14A sensor
 void Calibrate_MHZ14A() {
-
-  // Timestamp for calibrating start time
-  int calibrating_start = millis();
-
+  
   // Print info
   Serial.println ("Calibrating MH-Z14A CO2 sensor...");
 
   // Write calibration command
   swSerial.write(calibration_command, 9);
+
+  // Waits for 3 seconds for the command to take effect
+  delay(3000);
+
+  // Timestamp for calibrating start time
+  int calibrating_start = millis();
 
   // Wait for calibrating time
   int counter = CALIBRATION_TIME/1000;
@@ -600,9 +602,6 @@ void Calibrate_MHZ14A() {
     counter = counter - 1;
   }
  
-  
-  // Waits for 3 seconds
-  delay(3000);
 }
 
 // Evaluate CO2 value versus warning and alarm threasholds and process CO2 alarm information
@@ -804,7 +803,10 @@ void update_OLED_CO2() {
   else if (err_dht) {
     display.drawString(0, 42, "err dht");
   }
-
+  else { // display temperature and humidity
+    display.drawString(0, 42, String(int(temperature)) + "º " + String(int(humidity)) + "%");
+  }
+  
   display.display(); // update OLED display
 }
 

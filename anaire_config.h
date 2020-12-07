@@ -1,5 +1,3 @@
-// Device data available on http://demo.anaire.org:30300/antonio01 user "demo" password "demo"
-
 // DEVICE
 char anaire_device_id[] = "antonio01";      // Unique device id
 int CO2ppm_warning_threshold = 700;                   // Warning threshold

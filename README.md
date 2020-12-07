@@ -54,11 +54,46 @@ Design:
   * The hostname in the form <anaire_device_id>.local is definied by mDNS. But it will depend on the local router to be operative or not.
 - The web server allows to calibrate the CO2 sensor. Put the device on a clean environment (open air) and click the option in the web server. Waits during the calibration countdown time (20 minutes)
 
-![Montaje]("https://github.com/anaireorg/anaire-devices/blob/main/medida_photo_2020-12-07_22-28-34.jpg")
-
 Montaje:
-- Soldar los cuatro pines en el sensor de CO2 donde está indicado en la imagen, para poder pincharlo en la breadboard
-![Montaje]("https://github.com/anaireorg/anaire-devices/blob/main/medida_photo_2020-12-07_22-28-34.jpg")
+
+1. Soldar los cuatro pines en el sensor de CO2 donde está indicado en la imagen, para poder pincharlo en la breadboard
+
+![Pines del sensor de CO2 MHZ-14A](https://github.com/anaireorg/anaire-devices/blob/main/pines_photo_2020-12-07_23-14-13.jpg)
+
+2. Disponer y cablear los elementos como se muestra en la siguiente imagen:
+
+![Montaje](https://github.com/anaireorg/anaire-devices/blob/main/medida_photo_2020-12-07_22-28-34.jpg)
+
+Se recomienda poner unas gotitas de pegamento en la base de la fuente de alimentación, para que no se pueda mover de su sitio.
+
+3. Cargar los archivos anaire-device.nodemcuv2.ino y anaire_config.h en el IDE de Arduino.
+
+4. Editar el archivo anaire_config.h para configurar:
+* el id del dispositivo 
+* los umbrales de aviso y alarma de nivel de CO2 (por defecto 700 y 1000 respectivamente)
+* el ssid y la contraseña de la red Wifi
+* el endpoint de la app en la nube <nombrededominio>:30183 (la app se ha debido desplegar previamente)
+  
+5. Conectar el puerto USB y descargar los archivos a la tarjeta NodeMCU. El zumbador emitirá sonido durante la descarga del SW (varios segundos)
+
+6. Esperar a que se complete la inicialización del dispositivo (cuando termine la cuenta atrás en el display) y que aparezcan las primeras medidas. Comprobar que los datos del dispositivo están accesibles en la app en el enlace <nombrededominio>:3300
+
+7. Pulsar el botón de "Flash" en la NodeMCU para comprobar el ID y obtener la dirección IP asignada
+
+8. Calibración del dispositivo:
+* Colocar el dispositivo en un entorno limpio (en el exterior o al lado de una ventana abierta, con ventilación abundante)
+* En un navegador conectado en la misma red WiFi que el dispositivo introducir la dirección IP. Se obtendrá una imagen como la siguiente:
+* Hacer click en el enlace mostrado en la primera línea, y esperar a que se termine la cuenta atrás en el display del dispositivo y se vuelvan a mostrar medidas. El proceso se completa en aproximadamente 20 minutos.
+
+![Pines del sensor de CO2 MHZ-14A](https://github.com/anaireorg/anaire-devices/blob/main/pines_photo_2020-12-07_23-14-13.jpg)
+
+El dispositivo está listo para su uso.
+
+Errores mostrados en el display:
+* err_wifi: no se pudo conectar a la red WiFi. Compruebe los detalles en el archivo anaire_config.h.
+* err_mqtt: no se pudo conectar al endpoint de la app en la nube. Compruebe los detalles en el archivo anaire_config.h.
+* err_co2: no se pudo conectar con el sensor de CO2. Compruebe las conexiones.
+* err_dht: no se pudo conectar con el sensor de humedad y temperatura. Compruebe las conexiones.
 
 
 

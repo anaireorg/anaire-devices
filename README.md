@@ -85,7 +85,7 @@ Se recomienda poner unas gotitas de pegamento en la base de la fuente de aliment
 * En un navegador conectado en la misma red WiFi que el dispositivo introducir la dirección IP. Se obtendrá una imagen como la siguiente:
 * Hacer click en el enlace mostrado en la primera línea, y esperar a que se termine la cuenta atrás en el display del dispositivo y se vuelvan a mostrar medidas. El proceso se completa en aproximadamente 20 minutos.
 
-![Pines del sensor de CO2 MHZ-14A](https://github.com/anaireorg/anaire-devices/blob/main/pines_photo_2020-12-07_23-14-13.jpg)
+![Servidor Web](https://github.com/anaireorg/anaire-devices/blob/main/Captura_calibration.PNG)
 
 El dispositivo está listo para su uso.
 
@@ -94,6 +94,4 @@ Errores mostrados en el display:
 * err_mqtt: no se pudo conectar al endpoint de la app en la nube. Compruebe los detalles en el archivo anaire_config.h.
 * err_co2: no se pudo conectar con el sensor de CO2. Compruebe las conexiones.
 * err_dht: no se pudo conectar con el sensor de humedad y temperatura. Compruebe las conexiones.
-
-
 

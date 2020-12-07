@@ -50,4 +50,6 @@ Design:
 - SSD1306 OLED display is connected on GPIO14(D5) and GPIO12 (D6)
 - The device is designed to work only with the CO2 sensor, so buzzer, DHT11 humidity and temperature sensor, and OLED display are optional
 - The device is designed to recover from Wifi, MQTT or sensor reading temporal failures
+- The web server is activated, therefore entering the IP on a browser allows to see the device data. The IP is showed during boot and after pressing the button.
+
 

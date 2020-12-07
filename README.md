@@ -1,5 +1,9 @@
 # anaire-devices
+
 SW for anaire devices
+
+From 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
+
 Files:
 - anaire-device.nodemcuv2.ino: code for prototype on AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2
 - anaire_config.h: device configuration info
@@ -7,17 +11,17 @@ Files:
 - mh-z14a_co2-manual-v1_01.pdf: CO2 sensor datasheet
 - NodeMCU_LUA_Amica_V2_Modul_mit_ESP8266_12E_Datenblatt.pdf: nodemcu datasheet
 - NodeMCU_LUA_Amica_V2_Schematic.pdf: nodemcu schematic
+- Anaire Prototipo MH-Z14a.fzz: fritzing cabling design
 
-From 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
 
 Get CO2, temperature and humidity measurements and send them to the anaire cloud app
 
 Parts:
-AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
-MH-Z14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf 
-AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
-AZ-Delivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r
-AZ-Delivery 0.91 inch OLED I2C Display 128 x 32 Pixels  https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display
+- AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
+- MH-Z14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf 
+- AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
+- AZ-Delivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r
+- AZ-Delivery 0.91 inch OLED I2C Display 128 x 32 Pixels  https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display
 
 Parts list for a complete prototype in amazon: https://www.amazon.es/hz/wishlist/ls/8NAKLGML187W?ref_=wl_share
 

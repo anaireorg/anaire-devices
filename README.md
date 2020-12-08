@@ -2,7 +2,7 @@
 
 SW for anaire devices: Get CO2, temperature and humidity measurements and send them to the anaire cloud app
 
-![Dispositivo](https://github.com/anaireorg/anaire-devices/blob/main/Anaire(3).png)
+![Dispositivo](https://github.com/anaireorg/anaire-devices/blob/main/Dispositvo_ANAIRE_display.png)
 
 From 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
 

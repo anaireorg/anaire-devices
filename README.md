@@ -81,7 +81,9 @@ Install the following libraries in Arduino IDE:
 8. Calibración del dispositivo:
 - Colocar el dispositivo en un entorno limpio (en el exterior o al lado de una ventana abierta, con ventilación abundante)
 - En un navegador conectado en la misma red WiFi que el dispositivo introducir la dirección IP. Se obtendrá una imagen como la siguiente:
-  ![(image)](https://github.com/anaireorg/anaire-devices/blob/main/Captura_calibration.PNG)
+  
+  ![Web server](https://github.com/anaireorg/anaire-devices/blob/main/Captura_calibration.PNG)
+  
 - Hacer click en "here" en el enlace mostrado en la primera línea, y esperar a que se termine la cuenta atrás en el display del dispositivo y se vuelvan a mostrar medidas. El proceso se completa en aproximadamente 20 minutos.
 
 Una vez calibrado el dispositivo está listo para su uso. Aún en caso de errores de conexión WiFi o MQTT el dispositivo seguirá mostrando las medidas actualizadas de CO2 en el display.

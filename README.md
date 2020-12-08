@@ -62,7 +62,7 @@ Install the following libraries in Arduino IDE:
 
 2. Disponer y cablear los elementos como se muestra en la siguiente imagen. Se recomienda poner unas gotitas de pegamento en la base de la fuente de alimentación, para que no se pueda mover de su sitio:
 
-![Montaje](https://github.com/anaireorg/anaire-devices/blob/main/medida_photo_2020-12-07_22-28-34.jpg)
+![Montaje](https://github.com/anaireorg/anaire-devices/blob/main/medida_photo_2020-12-07_22-28-34.png)
 
 3. Cargar los archivos anaire-device.nodemcuv2.ino y anaire_config.h en el IDE de Arduino.
 

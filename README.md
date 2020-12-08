@@ -62,7 +62,9 @@ Install the following libraries in Arduino IDE:
 
 ![Pines del sensor de CO2 MHZ-14A](https://github.com/anaireorg/anaire-devices/blob/main/Pines_CO2_ANAIRE.png)
 
-2. Disponer y cablear los elementos como se muestra en las siguientes imágenes. Se recomienda poner unas gotitas de pegamento en la base de la fuente de alimentación, para que no se pueda mover de su sitio:
+2. Disponer y cablear los elementos como se muestra en las siguientes imágenes. 
+- Comprobar que los dos jumper en la fuente de alimentación están en la posición de 5Vcc
+- Se recomienda poner unas gotitas de pegamento en la base de la fuente de alimentación, para que no se pueda mover de su sitio:
 
 Componentes:
 ![Montaje](https://github.com/anaireorg/anaire-devices/blob/main/medida_photo_2020-12-07_22-28-34.png)

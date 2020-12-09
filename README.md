@@ -59,6 +59,8 @@ Install the following libraries in Arduino IDE:
 # 3D Box design
  - https://www.thingiverse.com/thing:4678398/files
  
+ ![Cajas impresora 3D](https://github.com/anaireorg/anaire-devices/blob/main/WhatsApp%20Image%202020-12-07%20at%2011.47.58.jpeg)
+ 
 # Montaje
 
 1. Soldar los cuatro pines en el sensor de CO2 donde está indicado en la imagen, para poder pincharlo en la breadboard

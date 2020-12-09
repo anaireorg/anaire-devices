@@ -56,7 +56,7 @@ Install the following libraries in Arduino IDE:
   - The hostname in the form <anaire_device_id>.local is definied by mDNS. But it will depend on the local router to be operative or not.
 - The web server allows to calibrate the CO2 sensor. Put the device on a clean environment (open air) and click the option in the web server. Waits during the calibration countdown time (20 minutes)
 
-# 3D Box available:
+# 3D Box design
  - https://www.thingiverse.com/thing:4678398/files
  
 # Montaje

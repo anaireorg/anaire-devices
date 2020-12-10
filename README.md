@@ -34,7 +34,7 @@ Parts list for a complete prototype in amazon: https://www.amazon.es/hz/wishlist
 
 Install the following libraries in Arduino IDE:
 - ESP8266WiFi for WiFi https://github.com/bportaluri/WiFiEsp
-- DHTesp - to manage DHT11 or DHT22 temperature and humidity sensors https://github.com/markruys/arduino-DHT
+- DHTesp - to manage DHT11 or DHT22 temperature and humidity sensors https://github.com/beegee-tokyo/DHTesp
 - EspSoftwareSerial - to manage sw serial port to communicate with CO2 sensor https://github.com/plerup/espsoftwareserial/
 - ArduinoMqttClient - for MQTT communications https://github.com/arduino-libraries/ArduinoMqttClient
 - esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306

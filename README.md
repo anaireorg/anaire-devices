@@ -27,6 +27,7 @@ anaireorg/anaire-devices is licensed under the GNU General Public License v3.0
 Parts list for a complete prototype in amazon: https://www.amazon.es/hz/wishlist/ls/8NAKLGML187W?ref_=wl_share
 
 # Arduino IDE Setup
+ - Install the usb to uart driver from https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers
  - Start Arduino and open Preferences window.
  - Enter http://arduino.esp8266.com/stable/package_esp8266com_index.json into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
  - Open Boards Manager from Tools > Board menu and find esp8266 platform by esp8266 community and install the software for Arduino from a drop-down box.

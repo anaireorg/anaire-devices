@@ -20,7 +20,7 @@
 //
 // Install the following libraries in Arduino IDE:
 // ESP8266WiFi for WiFi https://github.com/bportaluri/WiFiEsp
-// DHTesp - to manage DHT11 or DHT22 temperature and humidity sensors https://github.com/markruys/arduino-DHT
+// DHTesp - to manage DHT11 or DHT22 temperature and humidity sensors https://github.com/beegee-tokyo/DHTesp
 // EspSoftwareSerial - to manage sw serial port to communicate with CO2 sensor https://github.com/plerup/espsoftwareserial/
 // ArduinoMqttClient - for MQTT communications https://github.com/arduino-libraries/ArduinoMqttClient
 // esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
@@ -71,8 +71,8 @@ WiFiServer wifi_server(80); // to check if it is alive
 #define OLED_SCL_GPIO 14 // signal GPIO14 (D5)
 #define OLED_SDA_GPIO 12 // signal GPIO12 (D6)
 
-// for 128x64 displays:
-SSD1306Wire display(0x3c, OLED_SDA_GPIO, OLED_SCL_GPIO);  // ADDRESS, SDA, SCL
+// for 128x32 displays:
+SSD1306Wire display(0x3c, OLED_SDA_GPIO, OLED_SCL_GPIO, GEOMETRY_128_32);  // ADDRESS, SDA, SCL
 
 // MQTT
 #include <ArduinoMqttClient.h>
@@ -169,11 +169,11 @@ void setup() {
   // OLED Display init
   display.init();
   display.flipScreenVertically();
-  
+
   // Print welcome screen
   display.clear();
   display.setFont(ArialMT_Plain_24);
-  display.drawString(0, 21, "anaire.org");
+  display.drawString(0, 4, "anaire.org");
   display.display(); // update OLED display
   delay(3000);
 
@@ -226,17 +226,17 @@ void loop() {
   // Read DHT sensor
   Read_Humidity_Temperature();
 
-   // Update CO2 measurement on screen
+  // Update CO2 measurement on screen
   update_OLED_CO2();
-  
+
   // Message the mqtt broker in the cloud app to send the measured values
   if (!err_wifi) {
-    Message_Cloud_App_MQTT();
+    Send_Message_Cloud_App_MQTT();
   }
 
   // Turn off builtin status LED to indicate the end of measurement and evaluation process
   digitalWrite(status_builtin_LED, HIGH);
- 
+
   // Complete time up to ControlLoopTimerDuration and blink fast builtin LED to show it
   while ((millis() - control_loop_start) < CONTROL_LOOP_DURATION)
   {
@@ -261,6 +261,10 @@ void loop() {
       Init_MQTT();
     }
 
+    // if not there are not connectivity errors, receive mqtt messages
+    if ((!err_mqtt) && (!err_wifi)) {
+      Receive_Message_Cloud_App_MQTT();
+    }
   }
 
   Serial.println("--- END LOOP");
@@ -309,15 +313,15 @@ void Connect_WiFi() {
     Serial.println(WiFi.localIP());
 
     // Set mDNS to anaire_device_id.local
-   if (!MDNS.begin(String(anaire_device_id))) {             
-     Serial.println("Error mDNS");
-   }
-   else {
-    Serial.print("Try to connect to ");
-    Serial.print(String(anaire_device_id));
-    Serial.println(".local");
-   }
-   
+    if (!MDNS.begin(String(anaire_device_id))) {
+      Serial.println("Error mDNS");
+    }
+    else {
+      Serial.print("Try to connect to ");
+      Serial.print(String(anaire_device_id));
+      Serial.println(".local");
+    }
+
   }
 
   // Print ID & IP info on OLED display for 5 seconds
@@ -342,8 +346,21 @@ void Init_MQTT() {
   else {
     err_mqtt = false;
     Serial.println("You're connected to the MQTT broker!");
+
     // Switch off blinking status_builtin_LED
     blinker_status_builtin_LED.detach();
+
+    // Set client id
+    mqttClient.setId(anaire_device_id);
+    
+    // subscribe to config topic, to receive configuration messages, with qos=1
+    mqttClient.subscribe(mqtt_receive_topic, 1);
+
+    // Set mqtt clean session
+    mqttClient.setCleanSession(false);
+
+    Serial.print("Waiting for messages on topic: ");
+    Serial.println(mqtt_receive_topic);
   }
 
   // Print ID & IP info on OLED display for 5 seconds
@@ -509,10 +526,10 @@ void Setup_MHZ14A()
   while ((millis() - warming_up_start) < CO2_WARMING_TIME) {
     // Print welcome screen
     display.clear();
-    display.setFont(ArialMT_Plain_24);
-    display.drawString(0, 0, "anaire.org");
-    display.drawString(0, 21, "Init...");
-    display.drawString(0, 42, String(counter));
+    display.setFont(ArialMT_Plain_10);
+    display.drawString(0, 0, "Init anaire.org");
+    display.drawString(0, 10, String(anaire_device_id));
+    display.drawString(0, 20, String(counter));
     display.display(); // update OLED display
     Serial.print(".");
     delay(500); // wait 500ms
@@ -573,7 +590,7 @@ void Read_MHZ14A()
 
 // Calibrate MHZ14A sensor
 void Calibrate_MHZ14A() {
-  
+
   // Print info
   Serial.println ("Calibrating MH-Z14A CO2 sensor...");
 
@@ -587,7 +604,7 @@ void Calibrate_MHZ14A() {
   int calibrating_start = millis();
 
   // Wait for calibrating time
-  int counter = CALIBRATION_TIME/1000;
+  int counter = CALIBRATION_TIME / 1000;
   while ((millis() - calibrating_start) < CALIBRATION_TIME) {
     display.clear();
     display.setFont(ArialMT_Plain_24);
@@ -601,7 +618,7 @@ void Calibrate_MHZ14A() {
     delay(500); // wait 500ms
     counter = counter - 1;
   }
- 
+
 }
 
 // Evaluate CO2 value versus warning and alarm threasholds and process CO2 alarm information
@@ -685,7 +702,7 @@ void Read_Humidity_Temperature() {
 }
 
 // Send measurements to the cloud application by MQTT
-void Message_Cloud_App_MQTT() {
+void Send_Message_Cloud_App_MQTT() {
 
   // Print info
   Serial.println("Making MQTT request");
@@ -700,10 +717,6 @@ void Message_Cloud_App_MQTT() {
     err_mqtt = false;
   }
 
-  // call poll() regularly to allow the library to send MQTT keep alives which
-  // avoids being disconnected by the broker
-  //(mqttClient.poll();
-
   Serial.print("Sending mqtt message to the send topic ");
   Serial.println(mqtt_send_topic);
   sprintf(mqtt_message, "{id: %s,CO2: %d,humidity: %f,temperature: %f}", anaire_device_id, CO2ppm_value, humidity, temperature);
@@ -714,6 +727,48 @@ void Message_Cloud_App_MQTT() {
   mqttClient.beginMessage(mqtt_send_topic);
   mqttClient.print(mqtt_message);
   mqttClient.endMessage();
+
+}
+
+// receive configuration messages from the cloud application by MQTT
+void Receive_Message_Cloud_App_MQTT() {
+
+  // Print info
+  Serial.println("Receiving MQTT message");
+
+  if (!mqttClient.connect(cloud_server_address, cloud_app_port)) {
+    Serial.print("MQTT connection failed! Error code = ");
+    Serial.println(mqttClient.connectError());
+    err_mqtt = true;
+    return;
+  }
+  else {
+    err_mqtt = false;
+    
+    // subscribe to config topic, to receive configuration messages, with qos=1
+    mqttClient.subscribe(mqtt_receive_topic, 1);
+
+    // Set mqtt clean session
+    mqttClient.setCleanSession(false);
+    
+    int messageSize = mqttClient.parseMessage();
+    
+    if (messageSize) {
+      // we received a message, print out the topic and contents
+      Serial.print("Received a message with topic '");
+      Serial.print(mqttClient.messageTopic());
+      Serial.print("', length ");
+      Serial.print(messageSize);
+      Serial.println(" bytes:");
+
+      // use the Stream interface to print the contents
+      while (mqttClient.available()) {
+        Serial.print((char)mqttClient.read());
+      }
+      Serial.println();
+    }
+
+  }
 
 }
 
@@ -772,41 +827,38 @@ void update_OLED_CO2() {
   // setup display and text format
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.setFont(ArialMT_Plain_24);
+  display.setFont(ArialMT_Plain_16);
 
   // display CO2 measurement on first line
-  display.drawString(0, 0, "CO2 " + String(CO2ppm_value));
-
-  // display status on second line
-  switch (co2_device_status) {
-    case ok:
-      display.drawString(0, 21, "BIEN");
-      break;
-    case warning:
-      display.drawString(0, 21, "REGULAR");
-      break;
-    case alarm:
-      display.drawString(0, 21, "¡MAL!");
-      break;
-  }
+  display.drawString(0, 0, String(CO2ppm_value) + "ppm " + String(int(temperature)) + "º " + String(int(humidity)) + "%");
 
   // if there is an error display it on third line
   if (err_wifi) {
-    display.drawString(0, 42, "err wifi");
+    display.drawString(0, 16, "err wifi");
   }
   else if (err_mqtt) {
-    display.drawString(0, 42, "err mqtt");
+    display.drawString(0, 16, "err mqtt");
   }
   else if (err_co2) {
-    display.drawString(0, 42, "err co2");
+    display.drawString(0, 16, "err co2");
   }
   else if (err_dht) {
-    display.drawString(0, 42, "err dht");
+    display.drawString(0, 16, "err dht");
   }
-  else { // display temperature and humidity
-    display.drawString(0, 42, String(int(temperature)) + "º " + String(int(humidity)) + "%");
+  else { // status
+    switch (co2_device_status) {
+      case ok:
+        display.drawString(0, 16, "CO2 BIEN");
+        break;
+      case warning:
+        display.drawString(0, 16, "CO2 REGULAR");
+        break;
+      case alarm:
+        display.drawString(0, 16, "CO2 MAL ¡Ventile!");
+        break;
+    }
   }
-  
+
   display.display(); // update OLED display
 }
 
@@ -816,27 +868,31 @@ void update_OLED_Status() {
   // setup display and text format
   display.clear();
   display.setTextAlignment(TEXT_ALIGN_LEFT);
-  display.setFont(ArialMT_Plain_16);
+  display.setFont(ArialMT_Plain_10);
 
   // display device id on first line
   display.drawString(0, 0, String(anaire_device_id));
 
   // display IP address on second line
   String ipaddress = WiFi.localIP().toString();
-  display.drawStringMaxWidth(0, 21, 128, ipaddress);
+  display.drawStringMaxWidth(0, 10, 128, ipaddress);
 
   // if there is an error display it on third line
   if (err_wifi) {
-    display.drawString(0, 42, "err wifi");
+    display.drawString(0, 20, "err wifi");
   }
   else if (err_mqtt) {
-    display.drawString(0, 42, "err mqtt");
+    display.drawString(0, 20, "err mqtt");
   }
   else if (err_co2) {
-    display.drawString(0, 42, "err co2");
+    display.drawString(0, 20, "err co2");
   }
   else if (err_dht) {
-    display.drawString(0, 42, "err dht");
+    display.drawString(0, 20, "err dht");
+  }
+
+  else {
+    display.drawString(0, 20, "device ok");
   }
 
   display.display(); // update OLED display

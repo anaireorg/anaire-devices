@@ -33,8 +33,8 @@ Parts list for a complete prototype in amazon: https://www.amazon.es/hz/wishlist
  - Open Boards Manager from Tools > Board menu and find esp8266 platform by esp8266 community and install the software for Arduino from a drop-down box.
  - Select "NodeMCU 1.0" board from Tools > Board menu after installation
 
-Install the following libraries in Arduino IDE:
-- ESP8266WiFi for WiFi https://github.com/bportaluri/WiFiEsp
+Install the following libraries in Arduino IDE. ¡Use Arduino IDE Tools->Manage Libraries to install libraries! (when installin directly zip files there is an issue with ssd1306 library and OLED display doesn't work):
+- WiFiEsp for WiFi https://github.com/bportaluri/WiFiEsp
 - DHTesp - to manage DHT11 or DHT22 temperature and humidity sensors https://github.com/beegee-tokyo/DHTesp
 - EspSoftwareSerial - to manage sw serial port to communicate with CO2 sensor https://github.com/plerup/espsoftwareserial/
 - ArduinoMqttClient - for MQTT communications https://github.com/arduino-libraries/ArduinoMqttClient

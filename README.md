@@ -38,7 +38,8 @@ Install the following libraries in Arduino IDE. ¡Use Arduino IDE Tools->Manage 
 - DHTesp - to manage DHT11 or DHT22 temperature and humidity sensors https://github.com/beegee-tokyo/DHTesp
 - EspSoftwareSerial - to manage sw serial port to communicate with CO2 sensor https://github.com/plerup/espsoftwareserial/
 - ArduinoMqttClient - for MQTT communications https://github.com/arduino-libraries/ArduinoMqttClient
-- esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
+- esp8266-oled-ssd1306 - for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
+- SparkFun_SCD30_Arduino_Library - for Sensirion SCD30 CO2, humidity and temperature sensor https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library
 
 # Design and usage
 - Built in LED in GPIO16-D0 (the one that blinks near the nodemcu usb connector) is also connected to the external buzzer

@@ -6,7 +6,7 @@ From 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
 
 anaireorg/anaire-devices is licensed under the GNU General Public License v3.0
 
-![Dispositivo](https://github.com/anaireorg/anaire-devices/blob/main/Dispositvo_ANAIRE_display.png)
+![Dispositivo](https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositvo_ANAIRE_display.png)
 
 # Files
 - anaire-device.nodemcuv2.ino: code for prototype on AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2
@@ -61,23 +61,23 @@ Install the following libraries in Arduino IDE. ¡Use Arduino IDE Tools->Manage 
 # 3D Box design
  - https://www.thingiverse.com/thing:4678398/files
  
- ![Cajas impresora 3D](https://github.com/anaireorg/anaire-devices/blob/main/WhatsApp%20Image%202020-12-07%20at%2011.47.58.jpeg)
+ ![Cajas impresora 3D](https://github.com/anaireorg/anaire-devices/blob/main/images/WhatsApp%20Image%202020-12-07%20at%2011.47.58.jpeg)
  
 # Montaje
 
 1. Soldar los cuatro pines en el sensor de CO2 donde está indicado en la imagen, para poder pincharlo en la breadboard
 
-![Pines del sensor de CO2 MHZ-14A](https://github.com/anaireorg/anaire-devices/blob/main/Pines_CO2_ANAIRE.png)
+![Pines del sensor de CO2 MHZ-14A](https://github.com/anaireorg/anaire-devices/blob/main/images/Pines_CO2_ANAIRE.png)
 
 2. Disponer y cablear los elementos como se muestra en las siguientes imágenes. 
 - Comprobar que los dos jumper en la fuente de alimentación están en la posición de 5Vcc
 - Se recomienda poner unas gotitas de pegamento en la base de la fuente de alimentación, para que no se pueda mover de su sitio:
 
 Componentes:
-![Montaje](https://github.com/anaireorg/anaire-devices/blob/main/medida_photo_2020-12-07_22-28-34.png)
+![Montaje](https://github.com/anaireorg/anaire-devices/blob/main/images/medida_photo_2020-12-07_22-28-34.png)
 
 Conexiones:
-![Conexiones](https://github.com/anaireorg/anaire-devices/blob/main/Connections_NodeMCU_LUA_Amica_V2_Schematic.png)
+![Conexiones](https://github.com/anaireorg/anaire-devices/blob/main/images/Connections_NodeMCU_LUA_Amica_V2_Schematic.png)
 
 3. Cargar los archivos anaire-device.nodemcuv2.ino y anaire_config.h en el IDE de Arduino.
 
@@ -97,11 +97,11 @@ Conexiones:
   - Colocar el dispositivo en un entorno limpio (en el exterior o al lado de una ventana abierta, con ventilación abundante)
   - En un navegador conectado en la misma red WiFi que el dispositivo introducir la dirección IP. Se obtendrá una imagen como la siguiente:
   
-  ![Web server](https://github.com/anaireorg/anaire-devices/blob/main/Captura_calibration.PNG)
+  ![Web server](https://github.com/anaireorg/anaire-devices/blob/main/images/Captura_calibration.PNG)
   
   - Hacer click en "here" en el enlace mostrado en la primera línea, y esperar a que se termine la cuenta atrás en el display del dispositivo y se vuelvan a mostrar medidas. El proceso se completa en aproximadamente 20 minutos.
 
-![Calibrating](https://github.com/anaireorg/anaire-devices/blob/main/calibrating_photo_2020-12-07_22-01-00.jpg)
+![Calibrating](https://github.com/anaireorg/anaire-devices/blob/main/images/calibrating_photo_2020-12-07_22-01-00.jpg)
 
 **Una vez calibrado el dispositivo está listo para su uso. Aún en caso de errores de conexión WiFi o MQTT el dispositivo seguirá mostrando las medidas actualizadas de CO2 en el display. El proceso de calibración debe repetirse una vez cada 30 días.**
 

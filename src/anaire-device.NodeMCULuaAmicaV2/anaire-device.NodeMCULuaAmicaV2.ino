@@ -5,7 +5,7 @@
 //
 // Parts:
 // AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
-// MH-Z14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf
+// MHZ14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf
 // AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
 // AZ-Delivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r
 // AZ-Delivery 0.91 inch OLED I2C Display 128 x 32 Pixels  https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display
@@ -59,11 +59,7 @@ const int ALARM_BLINK_PERIOD = 100;    // 0.1 seconds
 WiFiClient wifi_client;
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
 int wifi_status = WL_IDLE_STATUS;
-//String firmware_version;
-//long wifi_rssi_dbm; // Received signal strength
-//IPAddress ip_address; // Wifi shield IP address
 WiFiServer wifi_server(80); // to check if it is alive
-//char wifi_hostname[sizeof(anaire_device_id)];
 
 // OLED ssd1306 screen
 #include <Wire.h>
@@ -72,10 +68,9 @@ WiFiServer wifi_server(80); // to check if it is alive
 // SCL and SDA pin connections
 //#define OLED_SCK_GPIO 14 // signal GPIO14 (D5)
 //#define OLED_SDA_GPIO 12 // signal GPIO12 (D6)
-//#define OLED_SCK_GPIO 2 // signal GPIO2 (D4)
-//#define OLED_SDA_GPIO 0 // signal GPIO0 (D3)
 #define OLED_SCK_GPIO 4 // signal GPIO2 (D4)
 #define OLED_SDA_GPIO 2 // signal GPIO0 (D3)
+
 // for 128x32 displays:
 SSD1306Wire display(0x3c, OLED_SDA_GPIO, OLED_SCK_GPIO, GEOMETRY_128_32);  // ADDRESS, SDA, SCL
 
@@ -88,27 +83,31 @@ char mqtt_message[256];
 
 #include "SparkFun_SCD30_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD30
 SCD30 airSensor;
+#define SCD30_SCK_GPIO 14 // signal GPIO14 (D5)
+#define SCD30_SDA_GPIO 12 // signal GPIO12 (D6)
+const unsigned long SCD30_WARMING_TIME = 10000;           // SCD30 CO2 sensor warming time: 10 seconds 
+const unsigned long SCD30_SERIAL_TIMEOUT = 5000;          // SCD30 CO2 serial start timeout: 5 seconds 
+const unsigned long SCD30_CALIBRATION_TIME = 1200000;     // SCD30 CO2 CALIBRATION TIME: 20 min = 1200000 ms
 
-// MH-Z14A CO2 sensor: software serial port
-const unsigned long CO2_WARMING_TIME = 18000;   // MH-Z14A CO2 sensor warming time: 3 minutes = 180000 ms
-const unsigned long CO2_SERIAL_TIMEOUT = 5000;   // MH-Z14A CO2 serial start timeout: 5 seconds = 5000 ms
-const unsigned long CALIBRATION_TIME = 1200000;  // MH-Z14A CO2 CALIBRATION TIME: 20 min = 1200000 ms
+// MHZ14A CO2 sensor: software serial port
+const unsigned long MHZ14A_WARMING_TIME = 180000;      // MHZ14A CO2 sensor warming time: 3 minutes = 180000 ms
+const unsigned long MHZ14A_SERIAL_TIMEOUT = 5000;      // MHZ14A CO2 serial start timeout: 5 seconds = 5000 ms
+const unsigned long MHZ14A_CALIBRATION_TIME = 1200000; // MHZ14A CO2 CALIBRATION TIME: 20 min = 1200000 ms
 #include "SoftwareSerial.h"
 #define swSerialRX_gpio 13
 #define swSerialTX_gpio 15
 SoftwareSerial swSerial(swSerialRX_gpio, swSerialTX_gpio, false);
-byte measurement_command[9] = {0xFF, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};  // Command to get measurements from MH-Z14A CO2 sensor
-byte calibration_command[9] = {0xFF, 0x01, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x78};  // Command to calibrate MH-Z14A CO2 sensor
-char response_CO2[9]; // holds the received data from MH-Z14A CO2 sensor
+byte measurement_command[9] = {0xFF, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};  // Command to get measurements from MHZ14A CO2 sensor
+byte calibration_command[9] = {0xFF, 0x01, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x78};  // Command to calibrate MHZ14A CO2 sensor
+char response_CO2[9]; // holds the received data from MHZ14A CO2 sensor
 int response_CO2_high; // holds upper byte
 int response_CO2_low;  // holds lower byte
 int CO2ppm_value = 0;  // CO2 ppm measured value
 
 // AZ-Delivery DHT11
 #include "DHTesp.h"
-//#define DHT_GPIO 5        // signal GPIO5 (D1)
+#define DHT_GPIO 5        // signal GPIO5 (D1)
 #define DHTTYPE DHT11     // DHT (AM2302) Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-//#define DHTTYPE DHT22   // DHT 22 (AM2302)
 
 // Initialize DHT sensor
 DHTesp dht;
@@ -120,15 +119,19 @@ float humidity;     // Read humidity in %
 // int buzzer_gpio = 16;
 // It is not required to configure it, as it is configured and managed later on the builtin led configuration
 
-// GPIO 0 is button FLASH on nodemcu PCB
+// GPIO0 (D3) is button FLASH on nodemcu PCB
 int push_button_gpio = 0; // Flash button
 
 // Status info
 // First builtin LED, used to provide CO2 visual status info, as the buzzer produces sound info on the same pin on nodemcu v1.0 board
 int co2_builtin_LED = 16;     // GPIO16 (D0), closer to the usb port, on the NodeMCU PCB
 // Second builtin LED on  used to provide device status info
-int status_builtin_LED = 2;   // GPIO2 (D4), on the ESP-12 module’s PCB
+//int status_builtin_LED = 2;   // GPIO2 (D4), on the ESP-12 module’s PCB -> Not used since OLED display is also using that pin
 int alarm_ack = false;        // to indicate if push button has been pushed to ack the alarm and switch off the buzzer
+
+// CO2 sensors
+enum CO2_sensors {none, mhz14a, scd30}; // possible sensors integrated in the SW
+CO2_sensors co2_sensor = none;
 
 // CO2 device status
 enum CO2_status {ok, warning, alarm}; // the device can have one of those CO2 status
@@ -144,7 +147,7 @@ boolean err_oled = false;
 
 #include <Ticker.h>  //Ticker Library
 Ticker blinker_co2_builtin_LED;    // to blink co2_builtin_LED and buzzer
-Ticker blinker_status_builtin_LED;  // to blink status_builtin_LED
+//Ticker blinker_status_builtin_LED;  // to blink status_builtin_LED
 
 // flag to update OLED display from main loop instead of button ISR
 boolean update_OLED_Status_flag = false;
@@ -168,11 +171,11 @@ void setup() {
 
   // Initialize LEDs
   pinMode(co2_builtin_LED, OUTPUT);
-  pinMode(status_builtin_LED, OUTPUT);
+  //pinMode(status_builtin_LED, OUTPUT);
 
-  // Turn on both, to show init status
+  // Turn on both LEDs to show init status
   digitalWrite(co2_builtin_LED, LOW);
-  digitalWrite(status_builtin_LED, LOW);
+  //digitalWrite(status_builtin_LED, LOW);
 
   // Print welcome screen on OLED Display
   display.init();
@@ -180,23 +183,16 @@ void setup() {
   display.clear();
   display.setFont(ArialMT_Plain_24);
   display.drawString(0, 0, "anaire.org");
-  display.setFont(ArialMT_Plain_10);
-  display.drawString(0, 22, "anaireslim device");
+  //display.setFont(ArialMT_Plain_10);
+  //display.drawString(0, 22, "anaireslim device");
   display.display(); // update OLED display
-  delay(3000);
-  
-  
-  // Initialize MH-Z14A CO2 sensor: warming up and calibrate
-  //Setup_MHZ14A();
-  Setup_SCD30();
+  delay(3000); // to show anaire.org
 
-  /*
-    // Initialize DHT11 temperature and humidity sensor
-    dht.setup(DHT_GPIO, DHTesp::DHTTYPE);
-    if (dht.getStatus() != 0) {
-    err_dht = true;
-    }
-  */
+
+  // Initialize and warm up device sensors
+  //Setup_MHZ14A();
+  //Setup_SCD30();
+  Setup_sensors();
 
   // Attempt to connect to WiFi network:
   Connect_WiFi();
@@ -210,9 +206,9 @@ void setup() {
   pinMode(push_button_gpio, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(push_button_gpio), push_button_handler, FALLING);
 
-  // turn off both, to show init status complete
+  // turn off both LEDs to show init status complete
   digitalWrite(co2_builtin_LED, HIGH);
-  digitalWrite(status_builtin_LED, HIGH);
+  //digitalWrite(status_builtin_LED, HIGH);
 
 }
 
@@ -227,17 +223,15 @@ void loop() {
   control_loop_start = millis();
 
   // Turn on status LED to indicate the start of measurement and evaluation process. This acts as a heart beat to indicate the device is alive, by showing activity each control loop duration time
-  digitalWrite(status_builtin_LED, LOW);
+  //digitalWrite(status_builtin_LED, LOW);
 
-  // Read CO2 sensor
+  // Read sensor
   //Read_MHZ14A();
-  Read_SCD30();
+  //Read_SCD30();
+  Read_Sensors();
 
   // Evaluate CO2 value
   Evaluate_CO2_Value();
-
-  // Read DHT sensor
-  //Read_Humidity_Temperature();
 
   // Update CO2 measurement on screen
   update_OLED_CO2();
@@ -248,7 +242,7 @@ void loop() {
   }
 
   // Turn off builtin status LED to indicate the end of measurement and evaluation process
-  digitalWrite(status_builtin_LED, HIGH);
+  //digitalWrite(status_builtin_LED, HIGH);
 
   // Complete time up to ControlLoopTimerDuration and blink fast builtin LED to show it
   while ((millis() - control_loop_start) < CONTROL_LOOP_DURATION)
@@ -264,9 +258,8 @@ void loop() {
     }
 
     if (err_co2) {
-      // Initialize MH-Z14A CO2 sensor: warming up and calibrate
-      //Setup_MHZ14A();
-      Setup_SCD30();
+      // Init co2 sensors
+      Setup_sensors();
     }
 
     // Try to recover error conditions
@@ -318,13 +311,13 @@ void Connect_WiFi() {
   if (WiFi.status() != WL_CONNECTED) {
     err_wifi = true;
     // Switch on blinking status_builtin_LED to reflect the error, with ALARM_BLINK_PERIOD
-    blinker_status_builtin_LED.attach_ms(ALARM_BLINK_PERIOD, changeState_status_builtin_LED);
+    //blinker_status_builtin_LED.attach_ms(ALARM_BLINK_PERIOD, changeState_status_builtin_LED);
 
   }
   else {
     err_wifi = false;
     // Switch off blinking status_builtin_LED
-   blinker_status_builtin_LED.detach();
+    //blinker_status_builtin_LED.detach();
 
     wifi_server.begin(); // start the web server on port 80
     Serial.println("WiFi connected");
@@ -360,14 +353,14 @@ void Init_MQTT() {
     Serial.print("MQTT connection failed! Error code = ");
     Serial.println(mqttClient.connectError());
     // Switch on blinking status_builtin_LED to reflect the error, with ALARM_BLINK_PERIOD
-    blinker_status_builtin_LED.attach_ms(ALARM_BLINK_PERIOD, changeState_status_builtin_LED);
+    //blinker_status_builtin_LED.attach_ms(ALARM_BLINK_PERIOD, changeState_status_builtin_LED);
   }
   else {
     err_mqtt = false;
     Serial.println("You're connected to the MQTT broker!");
 
     // Switch off blinking status_builtin_LED
-    blinker_status_builtin_LED.detach();
+    //blinker_status_builtin_LED.detach();
 
     // Set client id
     //mqttClient.setId(anaire_device_id);
@@ -507,12 +500,132 @@ void Check_WiFi_Server() {
 
 }
 
+// Detect and initialize co2 sensors
+void Setup_sensors() {
 
-// Setup MH-Z14A CO2 sensor
+  // Try Sensirion SCD-30 first
+
+  // Init I2C bus
+  Wire.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
+
+  if (airSensor.begin(Wire) == true) {
+
+    co2_sensor = scd30;
+    Serial.println("Air sensor SCD30 detected.");
+    airSensor.setMeasurementInterval(15); //Change number of seconds between measurements: 2 to 1800 (30 minutes)
+    //My desk is ~600m above sealevel
+    airSensor.setAltitudeCompensation(650); // Madrid, barrio del Pilar
+    //Pressure in Boulder, CO is 24.65inHg or 834.74mBar
+    //airSensor.setAmbientPressure(1000); //Current ambient pressure in mBar: 700 to 1200
+    //float offset = airSensor.getTemperatureOffset();
+    //Serial.print("Current temp offset: ");
+    //Serial.print(offset, 2);
+    //Serial.println("C");
+    // Print info
+    // Timestamp for warming up start time
+    int warming_up_start = millis();
+
+    // Print info
+    Serial.println ("Warming up SCD30 sensor...");
+
+    // Wait for warming time while blinking blue led
+    int counter = int(SCD30_WARMING_TIME / 1000);
+    // Print welcome screen
+    display.init();
+    display.flipScreenVertically();
+    while ((millis() - warming_up_start) < SCD30_WARMING_TIME) {
+      display.clear();
+      display.setFont(ArialMT_Plain_10);
+      display.drawString(0, 0, "anaire.org Slim");
+      display.drawString(0, 10, String(anaire_device_id));
+      display.drawString(0, 20, String(counter));
+      display.display(); // update OLED display
+      Serial.print(".");
+      delay(500); // wait 500ms
+      Serial.println(".");
+      delay(500); // wait 500ms
+      counter = counter - 1;
+    }
+
+    // Print info
+    Serial.println ("Warming up SCD30 sensor complete");
+
+    // Print info
+    Serial.println ("Sensirion SCD30 CO2 sensor setup complete");
+
+  }
+
+  // Then MHZ14A
+  else {
+
+    // Initialize serial port to communicate with MHZ14A CO2 sensor. This is a software serial port
+    swSerial.begin(9600, SWSERIAL_8N1, swSerialRX_gpio, swSerialTX_gpio, false, 128);
+
+    Serial.println("swSerial Txd is on pin: " + String(swSerialTX_gpio));
+    Serial.println("swSerial Rxd is on pin: " + String(swSerialRX_gpio));
+
+    // Timestamp for serial up start time
+    int serial_up_start = millis();
+
+    while (((!swSerial) && ((millis() - serial_up_start) < MHZ14A_SERIAL_TIMEOUT))) {
+      Serial.println("Attempting to open serial port 1 to communicate to MHZ14A CO2 sensor");
+      delay(1000); // wait 1 seconds for connection
+    }
+
+    // If the timeout was completed it is an error
+    if ((millis() - serial_up_start) > MHZ14A_SERIAL_TIMEOUT) {
+      err_co2 = true;
+      co2_sensor = none;
+      return;
+    }
+
+    else {
+
+      err_co2 = false;
+      co2_sensor = mhz14a;
+
+      // Timestamp for warming up start time
+      int warming_up_start = millis();
+
+      // Print info
+      Serial.println ("Warming up MHZ14A CO2 sensor...");
+
+      // Wait for warming time while blinking blue led
+      int counter = int(MHZ14A_WARMING_TIME / 1000);
+      // Print welcome screen
+      display.init();
+      display.flipScreenVertically();
+      while ((millis() - warming_up_start) < MHZ14A_WARMING_TIME) {
+        display.clear();
+        display.setFont(ArialMT_Plain_10);
+        display.drawString(0, 0, "anaire.org Bread");
+        display.drawString(0, 10, String(anaire_device_id));
+        display.drawString(0, 20, String(counter));
+        display.display(); // update OLED display
+        Serial.print(".");
+        delay(500); // wait 500ms
+        Serial.println(".");
+        delay(500); // wait 500ms
+        counter = counter - 1;
+      }
+
+      // Print info
+      Serial.println ("Warming up MHZ14A CO2 sensor complete");
+
+      // Print info
+      Serial.println ("MHZ14A CO2 sensor setup complete");
+
+    }
+
+  }
+
+}
+
+// Setup MHZ14A CO2 sensor
 void Setup_MHZ14A()
 {
 
-  // Initialize serial port to communicate with MH-Z14A CO2 sensor. This is a software serial port
+  // Initialize serial port to communicate with MHZ14A CO2 sensor. This is a software serial port
   swSerial.begin(9600, SWSERIAL_8N1, swSerialRX_gpio, swSerialTX_gpio, false, 128);
 
   Serial.println("swSerial Txd is on pin: " + String(swSerialTX_gpio));
@@ -521,13 +634,13 @@ void Setup_MHZ14A()
   // Timestamp for serial up start time
   int serial_up_start = millis();
 
-  while (((!swSerial) && ((millis() - serial_up_start) < CO2_SERIAL_TIMEOUT))) {
-    Serial.println("Attempting to open serial port 1 to communicate to MH-Z14A CO2 sensor");
+  while (((!swSerial) && ((millis() - serial_up_start) < MHZ14A_SERIAL_TIMEOUT))) {
+    Serial.println("Attempting to open serial port 1 to communicate to MHZ14A CO2 sensor");
     delay(1000); // wait 1 seconds for connection
   }
 
   // If the timeout was completed it is an error
-  if ((millis() - serial_up_start) > CO2_SERIAL_TIMEOUT) {
+  if ((millis() - serial_up_start) > MHZ14A_SERIAL_TIMEOUT) {
     err_co2 = true;
     return;
   }
@@ -539,11 +652,11 @@ void Setup_MHZ14A()
   int warming_up_start = millis();
 
   // Print info
-  Serial.println ("Warming up MH-Z14A CO2 sensor...");
+  Serial.println ("Warming up MHZ14A CO2 sensor...");
 
   // Wait for warming time while blinking blue led
-  int counter = 180; // default warming up 180s
-  while ((millis() - warming_up_start) < CO2_WARMING_TIME) {
+  int counter = int(MHZ14A_WARMING_TIME / 1000);
+  while ((millis() - warming_up_start) < MHZ14A_WARMING_TIME) {
     // Print welcome screen
     display.init();
     display.flipScreenVertically();
@@ -561,21 +674,37 @@ void Setup_MHZ14A()
   }
 
   // Print info
-  Serial.println ("Warming up MH-Z14A CO2 sensor complete");
+  Serial.println ("Warming up MHZ14A CO2 sensor complete");
 
   // Print info
-  Serial.println ("MH-Z14A CO2 sensor setup complete");
+  Serial.println ("MHZ14A CO2 sensor setup complete");
+
 }
 
-// Read MH-Z14A CO2 sensor
-void Read_MHZ14A()
-{
+// Read sensors
+void Read_Sensors(){
+
+  switch (co2_sensor) {
+      case scd30:
+        Read_SCD30();
+        break;
+      case mhz14a:
+        Read_MHZ14A();
+        Read_DHT11();
+        break;
+      case none:
+        break;
+    }
+}
+
+// Read MHZ14A CO2 sensor
+void Read_MHZ14A() {
 
   // Timestamp for serial up start time
   int serial_up_start = millis();
 
   // clears out any garbage in the RX buffer
-  while (((swSerial.available()) && ((millis() - serial_up_start) < CO2_SERIAL_TIMEOUT))) {
+  while (((swSerial.available()) && ((millis() - serial_up_start) < MHZ14A_SERIAL_TIMEOUT))) {
     int garbage = swSerial.read();
     delay(100);
     Serial.println ("Cleaning swSerial data...");
@@ -591,7 +720,7 @@ void Read_MHZ14A()
   serial_up_start = millis();
 
   // pauses the sketch and waits for the sensor response
-  if (((!swSerial.available()) && ((millis() - serial_up_start) < CO2_SERIAL_TIMEOUT))) {
+  if (((!swSerial.available()) && ((millis() - serial_up_start) < MHZ14A_SERIAL_TIMEOUT))) {
     Serial.println ("Waiting for swSerial data...");
     delay(1000);
   }
@@ -614,7 +743,7 @@ void Read_MHZ14A()
 void Calibrate_MHZ14A() {
 
   // Print info
-  Serial.println ("Calibrating MH-Z14A CO2 sensor...");
+  Serial.println ("Calibrating MHZ14A CO2 sensor...");
 
   // Write calibration command
   swSerial.write(calibration_command, 9);
@@ -626,8 +755,8 @@ void Calibrate_MHZ14A() {
   int calibrating_start = millis();
 
   // Wait for calibrating time
-  int counter = CALIBRATION_TIME / 1000;
-  while ((millis() - calibrating_start) < CALIBRATION_TIME) {
+  int counter = MHZ14A_CALIBRATION_TIME / 1000;
+  while ((millis() - calibrating_start) < MHZ14A_CALIBRATION_TIME) {
     display.init();
     display.flipScreenVertically();
     display.clear();
@@ -651,13 +780,12 @@ void Setup_SCD30()
 
   //Serial.begin(115200);
   Serial.println                                                                                                                                                                                                                                                                                  ("Setup SCD30 air sensor");
-  
-  //Wire.begin(4,5);
-  //Wire.begin(7,6);
-  Wire.begin(12,14);
-  
+
+  // Init I2C bus
+  Wire.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
+
   if (airSensor.begin(Wire) == false)
- 
+
   {
     Serial.println("Air sensor not detected. Please check wiring.");
     //while (1);
@@ -665,8 +793,8 @@ void Setup_SCD30()
     return;
   }
 
-  Serial.println("Air sensor SCD-30 detected.");
-  
+  Serial.println("Air sensor SCD - 30 detected.");
+
   airSensor.setMeasurementInterval(15); //Change number of seconds between measurements: 2 to 1800 (30 minutes)
 
   //My desk is ~600m above sealevel
@@ -676,13 +804,13 @@ void Setup_SCD30()
   airSensor.setAmbientPressure(1000); //Current ambient pressure in mBar: 700 to 1200
 
   float offset = airSensor.getTemperatureOffset();
-  Serial.print("Current temp offset: ");
+  Serial.print("Current temp offset : ");
   Serial.print(offset, 2);
   Serial.println("C");
 
   // Print info
-  Serial.println ("Sensirion SCD-30 sensor setup complete");
- 
+  Serial.println ("Sensirion SCD - 30 sensor setup complete");
+
 }
 
 // Read Sensirion SCD30 CO2, humidity and temperature sensor
@@ -694,21 +822,21 @@ void Read_SCD30()
 
   //Wire.begin(4,5);
   //Wire.begin(7,6);
-  Wire.begin(12,14);
+  Wire.begin(12, 14);
 
   if (airSensor.dataAvailable())
   {
     CO2ppm_value = airSensor.getCO2();
     temperature = airSensor.getTemperature();
     humidity = airSensor.getHumidity();
-    
-    Serial.print("co2(ppm):");
+
+    Serial.print("co2(ppm) : ");
     Serial.print(CO2ppm_value);
 
-    Serial.print(" temp(C):");
+    Serial.print(" temp(C) : ");
     Serial.print(temperature, 1);
 
-    Serial.print(" humidity(%):");
+    Serial.print(" humidity( % ) : ");
     Serial.print(humidity, 1);
 
     Serial.println();
@@ -723,17 +851,17 @@ void Calibrate_SCD30() {
   Serial.println ("Calibrating SCD30 sensor...");
 
   // Write calibration command
-  swSerial.write(calibration_command, 9);
+  //swSerial.write(calibration_command, 9);
 
   // Waits for 3 seconds for the command to take effect
-  delay(3000);
+  //delay(3000);
 
   // Timestamp for calibrating start time
   int calibrating_start = millis();
 
   // Wait for calibrating time
-  int counter = CALIBRATION_TIME / 1000;
-  while ((millis() - calibrating_start) < CALIBRATION_TIME) {
+  int counter = SCD30_CALIBRATION_TIME / 1000;
+  while ((millis() - calibrating_start) < SCD30_CALIBRATION_TIME) {
     display.init();
     display.flipScreenVertically();
     display.clear();
@@ -747,7 +875,7 @@ void Calibrate_SCD30() {
     Serial.println(".");
     delay(500); // wait 500ms
     counter = counter - 1;
-    
+
   }
 
 }
@@ -765,7 +893,7 @@ void Evaluate_CO2_Value() {
     co2_device_status = ok; // update co2 status
     blinker_co2_builtin_LED.detach(); // stop co2_builtin_LED and buzzer blinking
     digitalWrite(co2_builtin_LED, LOW); // update co2_builtin_LED_gpio1 (always on) buzzer (off) status
-    blinker_status_builtin_LED.detach(); // stop blinkg status_builtin_LED_gpio16 to indicate reset to init state
+    //blinker_status_builtin_LED.detach(); // stop blinkg status_builtin_LED_gpio16 to indicate reset to init state
     alarm_ack = false; // Init alarm ack status
   }
 
@@ -788,31 +916,29 @@ void Evaluate_CO2_Value() {
   // Print info on serial monitor
   switch (co2_device_status) {
     case ok:
-      Serial.println ("STATUS: OK");
+      Serial.println ("STATUS : OK");
       break;
     case warning:
-      Serial.println ("STATUS: WARNING");
+      Serial.println ("STATUS : WARNING");
       break;
     case alarm:
-      Serial.println ("STATUS: ALARM");
+      Serial.println ("STATUS : ALARM");
       break;
   }
 
 }
 
-// Read temperature and humidity values
+// Read temperature and humidity values from DHT11
 // Reading temperature or humidity takes about 250 milliseconds!
 // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-void Read_Humidity_Temperature() {
+void Read_DHT11() {
 
   TempAndHumidity lastValues = dht.getTempAndHumidity();
 
   // Read humidity as percentage
-  //humidity = dht_client.readHumidity();
   humidity = lastValues.humidity;
 
   // Read temperature as Celsius
-  //temperature = dht_client.readTemperature();
   temperature = lastValues.temperature;
 
   // Check if any reads failed and exit early (to try again).
@@ -822,10 +948,10 @@ void Read_Humidity_Temperature() {
   }
   else {
     err_dht = false;
-    Serial.print("Humidity: ");
+    Serial.print("Humidity : ");
     Serial.print(humidity);
-    Serial.print("%\n");
-    Serial.print("Temperature: ");
+    Serial.print(" % \n");
+    Serial.print("Temperature : ");
     Serial.print(temperature);
     Serial.println("ºC");
   }
@@ -850,7 +976,7 @@ void Send_Message_Cloud_App_MQTT() {
 
   Serial.print("Sending mqtt message to the send topic ");
   Serial.println(mqtt_send_topic);
-  sprintf(mqtt_message, "{id: %s,CO2: %d,humidity: %f,temperature: %f}", anaire_device_id, CO2ppm_value, humidity, temperature);
+  sprintf(mqtt_message, " {id: % s, CO2: % d, humidity: % f, temperature: % f}", anaire_device_id, CO2ppm_value, humidity, temperature);
   Serial.print(mqtt_message);
   Serial.println();
 
@@ -890,7 +1016,7 @@ void Receive_Message_Cloud_App_MQTT() {
       Serial.print(mqttClient.messageTopic());
       Serial.print("', length ");
       Serial.print(messageSize);
-      Serial.println(" bytes:");
+      Serial.println(" bytes : ");
 
       // use the Stream interface to print the contents
       while (mqttClient.available()) {
@@ -916,7 +1042,7 @@ ICACHE_RAM_ATTR void push_button_handler() {
     digitalWrite(co2_builtin_LED, LOW);
 
     // Switch on blinking status_builtin_LED to reflect special mode, using WARNING_BLINK_PERIOD
-    blinker_status_builtin_LED.attach_ms(WARNING_BLINK_PERIOD, changeState_status_builtin_LED);
+    //blinker_status_builtin_LED.attach_ms(WARNING_BLINK_PERIOD, changeState_status_builtin_LED);
 
     alarm_ack = true; // alarm has been ack
 
@@ -928,7 +1054,7 @@ ICACHE_RAM_ATTR void push_button_handler() {
     Serial.println ("FLASH Push button interrupt - alarm_ack OFF");
 
     // Switch off blinking status_builtin_LED to reflect normal mode
-    blinker_status_builtin_LED.detach();
+    //blinker_status_builtin_LED.detach();
 
     alarm_ack = false; // alarm has been reset
 
@@ -948,9 +1074,9 @@ void changeState_co2_builtin_LED() {
 }
 
 // To blink on status_builtin_LED
-void changeState_status_builtin_LED() {
-  digitalWrite(status_builtin_LED, !(digitalRead(status_builtin_LED)));  //Invert Current State of LED status_builtin_LED
-}
+//void changeState_status_builtin_LED() {
+//  digitalWrite(status_builtin_LED, !(digitalRead(status_builtin_LED)));  //Invert Current State of LED status_builtin_LED
+//}
 
 // Update CO2 info on OLED display
 void update_OLED_CO2() {
@@ -963,7 +1089,7 @@ void update_OLED_CO2() {
   display.setFont(ArialMT_Plain_16);
 
   // display CO2 measurement on first line
-  display.drawString(0, 0, String(CO2ppm_value) + "ppm " + String(int(temperature)) + "º " + String(int(humidity)) + "%");
+  display.drawString(0, 0, String(CO2ppm_value) + "ppm " + String(int(temperature)) + "º " + String(int(humidity)) + " % ");
 
   // if there is an error display it on third line
   if (err_wifi) {
@@ -987,13 +1113,13 @@ void update_OLED_CO2() {
         display.drawString(0, 16, "CO2 REGULAR");
         break;
       case alarm:
-        display.drawString(0, 16, "CO2 MAL: Ventile");
+        display.drawString(0, 16, "CO2 MAL : Ventile");
         break;
     }
   }
 
   display.display(); // update OLED display
-  
+
 }
 
 // Update device status on OLED display
@@ -1032,5 +1158,5 @@ void update_OLED_Status() {
   }
 
   display.display(); // update OLED display
-  
+
 }

@@ -66,8 +66,6 @@ WiFiServer wifi_server(80); // to check if it is alive
 #include "SSD1306Wire.h"
 
 // SCL and SDA pin connections
-//#define OLED_SCK_GPIO 14 // signal GPIO14 (D5)
-//#define OLED_SDA_GPIO 12 // signal GPIO12 (D6)
 #define OLED_SCK_GPIO 4 // signal GPIO2 (D4)
 #define OLED_SDA_GPIO 2 // signal GPIO0 (D3)
 
@@ -106,8 +104,7 @@ int CO2ppm_value = 0;  // CO2 ppm measured value
 
 // AZ-Delivery DHT11
 #include "DHTesp.h"
-#define DHT_GPIO 5        // signal GPIO5 (D1)
-#define DHTTYPE DHT11     // DHT (AM2302) Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+#define DHT_GPIO 5   // signal GPIO5 (D1)
 
 // Initialize DHT sensor
 DHTesp dht;
@@ -190,8 +187,6 @@ void setup() {
 
 
   // Initialize and warm up device sensors
-  //Setup_MHZ14A();
-  //Setup_SCD30();
   Setup_sensors();
 
   // Attempt to connect to WiFi network:
@@ -225,9 +220,7 @@ void loop() {
   // Turn on status LED to indicate the start of measurement and evaluation process. This acts as a heart beat to indicate the device is alive, by showing activity each control loop duration time
   //digitalWrite(status_builtin_LED, LOW);
 
-  // Read sensor
-  //Read_MHZ14A();
-  //Read_SCD30();
+  // Read sensors
   Read_Sensors();
 
   // Evaluate CO2 value
@@ -511,7 +504,7 @@ void Setup_sensors() {
   if (airSensor.begin(Wire) == true) {
 
     co2_sensor = scd30;
-    Serial.println("Air sensor SCD30 detected.");
+    Serial.println("Air sensor Sensirion SCD30 detected.");
     airSensor.setMeasurementInterval(15); //Change number of seconds between measurements: 2 to 1800 (30 minutes)
     //My desk is ~600m above sealevel
     airSensor.setAltitudeCompensation(650); // Madrid, barrio del Pilar
@@ -560,9 +553,8 @@ void Setup_sensors() {
 
     // Initialize serial port to communicate with MHZ14A CO2 sensor. This is a software serial port
     swSerial.begin(9600, SWSERIAL_8N1, swSerialRX_gpio, swSerialTX_gpio, false, 128);
-
-    Serial.println("swSerial Txd is on pin: " + String(swSerialTX_gpio));
-    Serial.println("swSerial Rxd is on pin: " + String(swSerialRX_gpio));
+    //Serial.println("swSerial Txd is on pin: " + String(swSerialTX_gpio));
+    //Serial.println("swSerial Rxd is on pin: " + String(swSerialRX_gpio));
 
     // Timestamp for serial up start time
     int serial_up_start = millis();
@@ -580,7 +572,8 @@ void Setup_sensors() {
     }
 
     else {
-
+      
+      Serial.println("CO2 sensor MH-Z14A detected.");
       err_co2 = false;
       co2_sensor = mhz14a;
 
@@ -614,6 +607,9 @@ void Setup_sensors() {
 
       // Print info
       Serial.println ("MHZ14A CO2 sensor setup complete");
+
+      // Setup DHT11
+      dht.setup(DHT_GPIO, DHTesp::DHT11);
 
     }
 
@@ -686,11 +682,11 @@ void Read_Sensors(){
 
   switch (co2_sensor) {
       case scd30:
-        Read_SCD30();
+        Read_SCD30(); // Read co2, temperature and humidity
         break;
       case mhz14a:
-        Read_MHZ14A();
-        Read_DHT11();
+        Read_MHZ14A(); // Read co2
+        Read_DHT11();  // Read temperature and humidity
         break;
       case none:
         break;
@@ -945,6 +941,8 @@ void Read_DHT11() {
   if (isnan(humidity) || isnan(temperature)) {
     Serial.println("Failed to read from DHT sensor!");
     err_dht = true;
+    humidity = 0;
+    temperature = 0;
   }
   else {
     err_dht = false;
@@ -1089,7 +1087,7 @@ void update_OLED_CO2() {
   display.setFont(ArialMT_Plain_16);
 
   // display CO2 measurement on first line
-  display.drawString(0, 0, String(CO2ppm_value) + "ppm " + String(int(temperature)) + "º " + String(int(humidity)) + " % ");
+  display.drawString(0, 0, String(CO2ppm_value) + "ppm " + String(int(temperature)) + "º " + String(int(humidity)) + "%");
 
   // if there is an error display it on third line
   if (err_wifi) {
@@ -1113,7 +1111,7 @@ void update_OLED_CO2() {
         display.drawString(0, 16, "CO2 REGULAR");
         break;
       case alarm:
-        display.drawString(0, 16, "CO2 MAL : Ventile");
+        display.drawString(0, 16, "CO2 MAL: VENTILE");
         break;
     }
   }

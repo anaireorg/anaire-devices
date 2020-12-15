@@ -1,5 +1,5 @@
 // DEVICE
-char anaire_device_id[] = "anaireslim01";      // Unique device id
+char anaire_device_id[] = "antonio01";      // Unique device id
 int CO2ppm_warning_threshold = 700;                   // Warning threshold
 int CO2ppm_alarm_threshold = 1000;                     // Alarm threshold
 

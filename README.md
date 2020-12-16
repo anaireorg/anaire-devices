@@ -1,6 +1,6 @@
 # anaire-devices
 
-Watch out: OLED display pines have changed from initial SW versions!
+**Watch out: OLED display pines have changed from initial SW versions!**
 
 SW for anaire devices: Get CO2, temperature and humidity measurements and send them to the anaire cloud app
 

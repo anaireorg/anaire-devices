@@ -23,10 +23,13 @@
 // WiFiEsp for WiFi https://github.com/bportaluri/WiFiEsp
 // DHTesp - to manage DHT11 or DHT22 temperature and humidity sensors https://github.com/beegee-tokyo/DHTesp
 // EspSoftwareSerial - to manage sw serial port to communicate with CO2 sensor https://github.com/plerup/espsoftwareserial/
-// ArduinoMqttClient - for MQTT communications https://github.com/arduino-libraries/ArduinoMqttClient
+//// ArduinoMqttClient - for MQTT communications https://github.com/arduino-libraries/ArduinoMqttClient
+// Arduino Client for MQTT - for MQTT communications https://pubsubclient.knolleary.net/
+// ArduinoJson https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
 // esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
 // SparkFun_SCD30_Arduino_Library - for Sensirion SCD30 CO2, humidity and temperature sensor https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library
-
+// ESP_EEPROM - to save in EEPROM config values https://github.com/jwrw/ESP_EEPROM
+//
 // Design:
 // - Built in LED in GPIO16-D0 (the one that blinks near the nodemcu usb connector) is also connected to the external buzzer
 //   * When CO2 Status is "ok" (below warning threshold) LED keeps ON and buzzer is off
@@ -45,9 +48,32 @@
 // edit the following file to configure the device: device id, wifi network and remote cloud endpoint
 #include "anaire_config.h"
 
+// device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen
+// i.e: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
+String anaire_device_id = String(ESP.getChipId(), HEX);   // HEX version, for easier match to mac address
+String anaire_device_name = String(ESP.getChipId(), HEX); // By the default the name gets initialized to the device ID
+String sw_version = "v1.20201220";
+int CO2ppm_warning_threshold = 700; // Warning threshold initial value
+int CO2ppm_alarm_threshold = 1000;  // Alarm threshold initial value
+
+// Save config values to EEPROM
+#include <ESP_EEPROM.h>
+
+// The neatest way to access variables stored in EEPROM is using a structure
+struct MyEEPROMStruct {
+  String anaire_device_name = anaire_device_name;
+  int CO2ppm_warning_threshold = CO2ppm_warning_threshold;
+  int CO2ppm_alarm_threshold = CO2ppm_alarm_threshold;
+  String wifi_ssid = wifi_ssid;
+  String wifi_password = wifi_password;
+  String cloud_server_address = cloud_server_address;
+  int cloud_app_port = cloud_app_port;
+} eepromConfig;
+
 // Control Loop: time between measurements
 const int CONTROL_LOOP_DURATION = 30000; // 30 seconds
 unsigned long control_loop_start; // holds a timestamp for each control loop start
+unsigned long lastReconnectAttempt = 0; // MQTT reconnections
 
 // CO2 Blinking period, used to reflect CO2 status on builtin led and buzzer
 const int WARNING_BLINK_PERIOD = 1000; // 1 second
@@ -73,11 +99,14 @@ WiFiServer wifi_server(80); // to check if it is alive
 SSD1306Wire display(0x3c, OLED_SDA_GPIO, OLED_SCK_GPIO, GEOMETRY_128_32);  // ADDRESS, SDA, SCL
 
 // MQTT
-#include <ArduinoMqttClient.h>
-MqttClient mqttClient(wifi_client);
+#include <PubSubClient.h>
 const char mqtt_send_topic[]  = "measurement";
 const char mqtt_receive_topic[]  = "config";
 char mqtt_message[256];
+PubSubClient mqttClient(wifi_client);
+
+//JSON
+#include <ArduinoJson.h>
 
 #include "SparkFun_SCD30_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD30
 SCD30 airSensor;
@@ -165,29 +194,32 @@ void setup() {
   Serial.println();
   Serial.println();
   Serial.println("### INIT ANAIRE DEVICE ###########################################");
-
+    
   // Initialize LEDs
   pinMode(co2_builtin_LED, OUTPUT);
-  //pinMode(status_builtin_LED, OUTPUT);
 
-  // Turn on both LEDs to show init status
-  digitalWrite(co2_builtin_LED, LOW);
-  //digitalWrite(status_builtin_LED, LOW);
-
+  // Push button: attach interrupt to togle local report of CO2 status by blinking and buzzer
+  pinMode(push_button_gpio, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(push_button_gpio), push_button_handler, FALLING);
+  
   // Print welcome screen on OLED Display
   display.init();
   display.flipScreenVertically();
   display.clear();
   display.setFont(ArialMT_Plain_24);
   display.drawString(0, 0, "anaire.org");
-  //display.setFont(ArialMT_Plain_10);
-  //display.drawString(0, 22, "anaireslim device");
   display.display(); // update OLED display
   delay(3000); // to show anaire.org
 
+  // Read EEPROM config values
+  Read_EEPROM();
 
-  // Initialize and warm up device sensors
-  Setup_sensors();
+  Serial.print("ID: ");
+  Serial.println(anaire_device_id);
+  Serial.print("SW: ");
+  Serial.println(sw_version);
+  Serial.print("Name: ");
+  Serial.println(anaire_device_name);
 
   // Attempt to connect to WiFi network:
   Connect_WiFi();
@@ -197,14 +229,9 @@ void setup() {
     Init_MQTT();
   }
 
-  // Push button: attach interrupt to togle local report of CO2 status by blinking and buzzer
-  pinMode(push_button_gpio, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(push_button_gpio), push_button_handler, FALLING);
-
-  // turn off both LEDs to show init status complete
-  digitalWrite(co2_builtin_LED, HIGH);
-  //digitalWrite(status_builtin_LED, HIGH);
-
+  // Initialize and warm up device sensors
+  Setup_sensors();
+  
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -216,9 +243,6 @@ void loop() {
 
   // Timestamp for the loop start time
   control_loop_start = millis();
-
-  // Turn on status LED to indicate the start of measurement and evaluation process. This acts as a heart beat to indicate the device is alive, by showing activity each control loop duration time
-  //digitalWrite(status_builtin_LED, LOW);
 
   // Read sensors
   Read_Sensors();
@@ -234,15 +258,12 @@ void loop() {
     Send_Message_Cloud_App_MQTT();
   }
 
-  // Turn off builtin status LED to indicate the end of measurement and evaluation process
-  //digitalWrite(status_builtin_LED, HIGH);
-
-  // Complete time up to ControlLoopTimerDuration and blink fast builtin LED to show it
+  // Complete time up to ControlLoopTimerDuration
   while ((millis() - control_loop_start) < CONTROL_LOOP_DURATION)
   {
     // Process wifi server requests
     Check_WiFi_Server();
-    delay(500);
+    //delay(500);
 
     // if button was pressed flag to updated OLED was set
     if (update_OLED_Status_flag) {
@@ -250,26 +271,34 @@ void loop() {
       update_OLED_Status();
     }
 
+    // Try to recover error conditions
     if (err_co2) {
       // Init co2 sensors
       Setup_sensors();
     }
-
-    // Try to recover error conditions
+    
     if (err_wifi) {
       // Attempt to connect to WiFi network:
       Connect_WiFi();
     }
 
+    //Reconnect MQTT if needed
+    if (!mqttClient.connected()) {
+      err_mqtt = true;
+    }
+
+    //Reconnect MQTT if needed
     if ((err_mqtt) && (!err_wifi)) {
       // Attempt to connect to MQTT broker
-      Init_MQTT();
+      err_mqtt = false;
+      mqttReconnect();
     }
 
     // if not there are not connectivity errors, receive mqtt messages
     if ((!err_mqtt) && (!err_wifi)) {
-      //Receive_Message_Cloud_App_MQTT();
+      mqttClient.loop();
     }
+    
   }
 
   Serial.println("--- END LOOP");
@@ -285,11 +314,11 @@ void loop() {
 void Connect_WiFi() {
 
   Serial.print("Attempting to connect to Network named: ");
-  Serial.println(ssid); // print the network name (SSID);
+  Serial.println(wifi_ssid); // print the network name (SSID);
 
   // connecting to a WiFi network
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  WiFi.begin(wifi_ssid, wifi_password);
 
   // Timestamp for connection timeout
   int wifi_timeout_start = millis();
@@ -322,16 +351,12 @@ void Connect_WiFi() {
       Serial.println("Error mDNS");
     }
     else {
-      Serial.print("Try to connect to ");
+      Serial.print("Hostname: ");
       Serial.print(String(anaire_device_id));
       Serial.println(".local");
     }
 
   }
-
-  // Print ID & IP info on OLED display for 5 seconds
-  //update_OLED_Status();
-  //delay(10000);
 
 }
 
@@ -341,36 +366,23 @@ void Init_MQTT() {
   Serial.print(":");
   Serial.println(cloud_app_port);
 
-  if (!mqttClient.connect(cloud_server_address, cloud_app_port)) {
+  // Attempt to connect to MQTT broker
+  mqttClient.setServer(cloud_server_address.c_str(), cloud_app_port);
+  mqttClient.setCallback(Receive_Message_Cloud_App_MQTT);
+  mqttClient.connect(anaire_device_id.c_str());
+  
+  if (!mqttClient.connected()) {
     err_mqtt = true;
-    Serial.print("MQTT connection failed! Error code = ");
-    Serial.println(mqttClient.connectError());
-    // Switch on blinking status_builtin_LED to reflect the error, with ALARM_BLINK_PERIOD
-    //blinker_status_builtin_LED.attach_ms(ALARM_BLINK_PERIOD, changeState_status_builtin_LED);
+    mqttReconnect();
   }
   else {
     err_mqtt = false;
-    Serial.println("You're connected to the MQTT broker!");
-
-    // Switch off blinking status_builtin_LED
-    //blinker_status_builtin_LED.detach();
-
-    // Set client id
-    //mqttClient.setId(anaire_device_id);
-
-    // subscribe to config topic, to receive configuration messages, with qos=1
-    //mqttClient.subscribe(mqtt_receive_topic, 1);
-
-    // Set mqtt clean session
-    //mqttClient.setCleanSession(false);
-
-    //Serial.print("Waiting for messages on topic: ");
-    //Serial.println(mqtt_receive_topic);
+    lastReconnectAttempt = 0;
+    // Once connected resubscribe
+    mqttClient.subscribe("config");
+    Serial.println("MQTT connected");
   }
-
-  // Print ID & IP info on OLED display for 5 seconds
-  //update_OLED_Status();
-  //delay(10000);
+  
 
 }
 
@@ -530,7 +542,7 @@ void Setup_sensors() {
       display.clear();
       display.setFont(ArialMT_Plain_10);
       display.drawString(0, 0, "anaire.org Slim");
-      display.drawString(0, 10, String(anaire_device_id));
+      display.drawString(0, 10, "ID " + String(anaire_device_id));
       display.drawString(0, 20, String(counter));
       display.display(); // update OLED display
       Serial.print(".");
@@ -592,7 +604,7 @@ void Setup_sensors() {
         display.clear();
         display.setFont(ArialMT_Plain_10);
         display.drawString(0, 0, "anaire.org Bread");
-        display.drawString(0, 10, String(anaire_device_id));
+        display.drawString(0, 10, "ID " + String(anaire_device_id));
         display.drawString(0, 20, String(counter));
         display.display(); // update OLED display
         Serial.print(".");
@@ -730,7 +742,7 @@ void Read_MHZ14A() {
   CO2ppm_value = (256 * response_CO2_high) + response_CO2_low;
 
   // prints calculated CO2ppm value to serial monitor
-  Serial.print ("CO2ppm_value = ");
+  Serial.print ("MHZ14A CO2ppm_value: ");
   Serial.println (CO2ppm_value);
 
 }
@@ -826,10 +838,10 @@ void Read_SCD30()
     temperature = airSensor.getTemperature();
     humidity = airSensor.getHumidity();
 
-    Serial.print("co2(ppm) : ");
+    Serial.print("SCD30 co2(ppm): ");
     Serial.print(CO2ppm_value);
 
-    Serial.print(" temp(C) : ");
+    Serial.print(" temp(C): ");
     Serial.print(temperature, 1);
 
     Serial.print(" humidity( % ) : ");
@@ -946,10 +958,10 @@ void Read_DHT11() {
   }
   else {
     err_dht = false;
-    Serial.print("Humidity : ");
+    Serial.print("DHT11 Humidity: ");
     Serial.print(humidity);
     Serial.print(" % \n");
-    Serial.print("Temperature : ");
+    Serial.print("DHT11 Temperature: ");
     Serial.print(temperature);
     Serial.println("ºC");
   }
@@ -958,73 +970,83 @@ void Read_DHT11() {
 
 // Send measurements to the cloud application by MQTT
 void Send_Message_Cloud_App_MQTT() {
-
+  
   // Print info
-  Serial.println("Making MQTT request");
-
-  if (!mqttClient.connect(cloud_server_address, cloud_app_port)) {
-    Serial.print("MQTT connection failed! Error code = ");
-    Serial.println(mqttClient.connectError());
-    err_mqtt = true;
-    return;
-  }
-  else {
-    err_mqtt = false;
-  }
-
   Serial.print("Sending mqtt message to the send topic ");
   Serial.println(mqtt_send_topic);
-  sprintf(mqtt_message, " {id: % s, CO2: % d, humidity: % f, temperature: % f}", anaire_device_id, CO2ppm_value, humidity, temperature);
+  sprintf(mqtt_message, "{id: %s,CO2: %d,humidity: %f,temperature: %f}", anaire_device_id.c_str(), CO2ppm_value, humidity, temperature);
   Serial.print(mqtt_message);
   Serial.println();
 
   // send message, the Print interface can be used to set the message contents
-  mqttClient.beginMessage(mqtt_send_topic);
-  mqttClient.print(mqtt_message);
-  mqttClient.endMessage();
-
+  mqttClient.publish(mqtt_send_topic, mqtt_message);
 }
 
-// receive configuration messages from the cloud application by MQTT
-void Receive_Message_Cloud_App_MQTT() {
+// callback function to receive configuration messages from the cloud application by MQTT
+void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int length) {
+  StaticJsonDocument<128> jsonBuffer;
 
-  // Print info
-  Serial.println("Receiving MQTT message");
+  char received_payload[128];
+  memcpy(received_payload, payload, length);
+  Serial.print("Message arrived: ");
+  Serial.println(received_payload);
 
-  if (!mqttClient.connect(cloud_server_address, cloud_app_port)) {
-    Serial.print("MQTT connection failed! Error code = ");
-    Serial.println(mqttClient.connectError());
-    err_mqtt = true;
+  // Deserialize the JSON document
+  DeserializationError error = deserializeJson(jsonBuffer, received_payload);
+
+  // Test if parsing succeeds.
+  if (error) {
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.f_str());
     return;
   }
-  else {
-    err_mqtt = false;
 
-    // subscribe to config topic, to receive configuration messages, with qos=1
-    mqttClient.subscribe(mqtt_receive_topic, 1);
+  // If message the message is for this device update values.
+  if(strcmp(anaire_device_id.c_str(), jsonBuffer["id"]) == 0){
 
-    // Set mqtt clean session
-    mqttClient.setCleanSession(false);
+    // fill the values on the eeprom config struct
+    //eepromConfig.anaire_device_name = jsonBuffer["name"];
+    eepromConfig.CO2ppm_warning_threshold = jsonBuffer["warning"];
+    eepromConfig.CO2ppm_alarm_threshold = jsonBuffer["caution"];
 
-    int messageSize = mqttClient.parseMessage();
+    // save the new values
+    Write_EEPROM();
 
-    if (messageSize) {
-      // we received a message, print out the topic and contents
-      Serial.print("Received a message with topic '");
-      Serial.print(mqttClient.messageTopic());
-      Serial.print("', length ");
-      Serial.print(messageSize);
-      Serial.println(" bytes : ");
+    // update global variables
+    anaire_device_name = eepromConfig.anaire_device_name;     
+    CO2ppm_warning_threshold = eepromConfig.CO2ppm_warning_threshold;
+    CO2ppm_alarm_threshold = eepromConfig.CO2ppm_alarm_threshold;
 
-      // use the Stream interface to print the contents
-      while (mqttClient.available()) {
-        Serial.print((char)mqttClient.read());
-      }
-      Serial.println();
-    }
-
+    //print info
+    Serial.println("MQTT update:");
+    Serial.println(anaire_device_name);
+    Serial.println(CO2ppm_warning_threshold);
+    Serial.println(CO2ppm_alarm_threshold);
+    
   }
+}
 
+//MQTT reconnect function
+void mqttReconnect() {
+  //Try to reconnect only if it has been more than 5 sec since last attemp
+  unsigned long now = millis();
+  if (now - lastReconnectAttempt > 5000) {
+    lastReconnectAttempt = now;
+    Serial.print("Attempting MQTT connection...");
+    // Attempt to connect
+    if (mqttClient.connect(anaire_device_id.c_str())) {
+      Serial.println("MQTT connected");
+      lastReconnectAttempt = 0;
+      err_mqtt = false;
+      // Once connected resubscribe
+      mqttClient.subscribe("config");
+    } else {
+      err_mqtt = true;
+      Serial.print("failed, rc=");
+      Serial.print(mqttClient.state());
+      Serial.println(" try again in 5 seconds");
+    }
+  }
 }
 
 // ISR to respond to button pressing to toggle local alarm reporting thoriugh builtin LED and buzzer
@@ -1156,5 +1178,51 @@ void update_OLED_Status() {
   }
 
   display.display(); // update OLED display
+}
 
+void Read_EEPROM (){
+
+  // The begin() call will find the data previously saved in EEPROM if the same size
+  // as was previously committed. If the size is different then the EEEPROM data is cleared. 
+  // Note that this is not made permanent until you call commit();
+  EEPROM.begin(sizeof(MyEEPROMStruct));
+
+  // Check if the EEPROM contains valid data from another run
+  // If so, overwrite the 'default' values set up in our struct
+  if(EEPROM.percentUsed()>=0) {
+
+    Serial.println("EEPROM has data from a previous run.");
+    Serial.print(EEPROM.percentUsed());
+    Serial.println("% of ESP flash space currently used");
+    
+    // Read saved data
+    EEPROM.get(0, eepromConfig);
+    
+    // Restore config values
+    anaire_device_name = eepromConfig.anaire_device_name;     
+    CO2ppm_warning_threshold = eepromConfig.CO2ppm_warning_threshold;
+    CO2ppm_alarm_threshold = eepromConfig.CO2ppm_alarm_threshold;
+    wifi_ssid = eepromConfig.wifi_ssid;
+    wifi_password = eepromConfig.wifi_password;
+    cloud_server_address = eepromConfig.cloud_server_address;
+    cloud_app_port = eepromConfig.cloud_app_port;
+  } else {
+    Serial.println("No EEPROM data - using default config values");    
+  }
+}
+
+void Write_EEPROM (){
+
+  // The begin() call will find the data previously saved in EEPROM if the same size
+  // as was previously committed. If the size is different then the EEEPROM data is cleared. 
+  // Note that this is not made permanent until you call commit();
+  EEPROM.begin(sizeof(MyEEPROMStruct));
+
+  // set the EEPROM data ready for writing
+  EEPROM.put(0, eepromConfig);
+
+  // write the data to EEPROM
+  boolean ok = EEPROM.commit();
+  Serial.println((ok) ? "EEPROM Commit OK" : "EEPROM Commit failed");
+  
 }

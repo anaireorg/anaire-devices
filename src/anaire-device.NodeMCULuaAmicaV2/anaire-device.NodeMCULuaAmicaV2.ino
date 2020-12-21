@@ -51,7 +51,7 @@
 // i.e: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String anaire_device_id = String(ESP.getChipId(), HEX);   // HEX version, for easier match to mac address
 String anaire_device_name = String(ESP.getChipId(), HEX); // By the default the name gets initialized to the device ID
-String sw_version = "v1.20201221asperotiernoliberalesquivo";
+String sw_version = "v1.20201221quienloprobolosabe";
 int CO2ppm_warning_threshold = 700; // Warning threshold initial value
 int CO2ppm_alarm_threshold = 1000;  // Alarm threshold initial value
 
@@ -1035,7 +1035,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   CO2ppm_alarm_threshold = eepromConfig.CO2ppm_alarm_threshold;
 
   // Use update flag to wipe EEPROM and update to latest bin
-  if (jsonBuffer["update"]) {
+  if (jsonBuffer["update"] == "ON") {
     
     boolean result = EEPROM.wipe();
     if (result) {
@@ -1316,9 +1316,14 @@ void firmware_update(){
     ESPhttpUpdate.onProgress(update_progress);
     ESPhttpUpdate.onError(update_error);
 
-    t_httpUpdate_return ret = ESPhttpUpdate.update(wifi_client, "https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
+    BearSSL::WiFiClientSecure UpdateClient;
+    UpdateClient.setInsecure();
+  
+    //t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
+    t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
+
     // Or:
-    //t_httpUpdate_return ret = ESPhttpUpdate.update(client, "server", 80, "file.bin");
+    //t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "github.com", 443, "anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
 
     switch (ret) {
       case HTTP_UPDATE_FAILED:

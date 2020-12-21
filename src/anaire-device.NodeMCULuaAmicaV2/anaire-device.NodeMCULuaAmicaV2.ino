@@ -23,7 +23,6 @@
 // WiFiEsp for WiFi https://github.com/bportaluri/WiFiEsp
 // DHTesp - to manage DHT11 or DHT22 temperature and humidity sensors https://github.com/beegee-tokyo/DHTesp
 // EspSoftwareSerial - to manage sw serial port to communicate with CO2 sensor https://github.com/plerup/espsoftwareserial/
-//// ArduinoMqttClient - for MQTT communications https://github.com/arduino-libraries/ArduinoMqttClient
 // Arduino Client for MQTT - for MQTT communications https://pubsubclient.knolleary.net/
 // ArduinoJson https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
 // esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
@@ -61,13 +60,15 @@ int CO2ppm_alarm_threshold = 1000;  // Alarm threshold initial value
 
 // The neatest way to access variables stored in EEPROM is using a structure
 struct MyEEPROMStruct {
-  String anaire_device_name = anaire_device_name;
-  int CO2ppm_warning_threshold = CO2ppm_warning_threshold;
-  int CO2ppm_alarm_threshold = CO2ppm_alarm_threshold;
-  String wifi_ssid = wifi_ssid;
-  String wifi_password = wifi_password;
-  String cloud_server_address = cloud_server_address;
-  int cloud_app_port = cloud_app_port;
+  String anaire_device_name;
+  int CO2ppm_warning_threshold;
+  int CO2ppm_alarm_threshold;
+  String wifi_ssid;
+  String wifi_password;
+  String cloud_server_address;
+  int cloud_app_port;
+  boolean local_alarm;
+  boolean update_latest;
 } eepromConfig;
 
 // Control Loop: time between measurements
@@ -78,6 +79,10 @@ unsigned long lastReconnectAttempt = 0; // MQTT reconnections
 // CO2 Blinking period, used to reflect CO2 status on builtin led and buzzer
 const int WARNING_BLINK_PERIOD = 1000; // 1 second
 const int ALARM_BLINK_PERIOD = 100;    // 0.1 seconds
+
+// For http binary updates
+#include <ESP8266HTTPClient.h>
+#include <ESP8266httpUpdate.h>
 
 // WiFi
 #include <ESP8266WiFi.h> // Wifi ESP8266
@@ -100,24 +105,27 @@ SSD1306Wire display(0x3c, OLED_SDA_GPIO, OLED_SCK_GPIO, GEOMETRY_128_32);  // AD
 
 // MQTT
 #include <PubSubClient.h>
-const char mqtt_send_topic[]  = "measurement";
-const char mqtt_receive_topic[]  = "config";
+//const char mqtt_send_topic[]  = "measurement";
+//const char mqtt_receive_topic[]  = "config";
 char mqtt_message[256];
+String mqtt_send_topic = "measurement";
+String mqtt_receive_topic = "config/" + anaire_device_id;  // config messages will be received in config/id
+//String mqtt_message;
 PubSubClient mqttClient(wifi_client);
 
 //JSON
 #include <ArduinoJson.h>
 
-#include "SparkFun_SCD30_Arduino_Library.h" //Click here to get the library: http://librarymanager/All#SparkFun_SCD30
+#include "SparkFun_SCD30_Arduino_Library.h"
 SCD30 airSensor;
 #define SCD30_SCK_GPIO 14 // signal GPIO14 (D5)
 #define SCD30_SDA_GPIO 12 // signal GPIO12 (D6)
-const unsigned long SCD30_WARMING_TIME = 10000;           // SCD30 CO2 sensor warming time: 10 seconds 
-const unsigned long SCD30_SERIAL_TIMEOUT = 5000;          // SCD30 CO2 serial start timeout: 5 seconds 
+const unsigned long SCD30_WARMING_TIME = 10000;           // SCD30 CO2 sensor warming time: 10 seconds
+const unsigned long SCD30_SERIAL_TIMEOUT = 5000;          // SCD30 CO2 serial start timeout: 5 seconds
 const unsigned long SCD30_CALIBRATION_TIME = 1200000;     // SCD30 CO2 CALIBRATION TIME: 20 min = 1200000 ms
 
 // MHZ14A CO2 sensor: software serial port
-const unsigned long MHZ14A_WARMING_TIME = 180000;      // MHZ14A CO2 sensor warming time: 3 minutes = 180000 ms
+const unsigned long MHZ14A_WARMING_TIME = 18000;      // MHZ14A CO2 sensor warming time: 3 minutes = 180000 ms
 const unsigned long MHZ14A_SERIAL_TIMEOUT = 5000;      // MHZ14A CO2 serial start timeout: 5 seconds = 5000 ms
 const unsigned long MHZ14A_CALIBRATION_TIME = 1200000; // MHZ14A CO2 CALIBRATION TIME: 20 min = 1200000 ms
 #include "SoftwareSerial.h"
@@ -183,6 +191,17 @@ boolean update_OLED_Status_flag = false;
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void setup() {
 
+  // Init config struct with default values
+  eepromConfig.anaire_device_name = anaire_device_name;
+  eepromConfig.CO2ppm_warning_threshold = CO2ppm_warning_threshold;
+  eepromConfig.CO2ppm_alarm_threshold = CO2ppm_alarm_threshold;
+  eepromConfig.wifi_ssid = wifi_ssid;
+  eepromConfig.wifi_password = wifi_password;
+  eepromConfig.cloud_server_address = cloud_server_address;
+  eepromConfig.cloud_app_port = cloud_app_port;
+  eepromConfig.local_alarm = true;
+  eepromConfig.update_latest = false;
+
   // Initialize serial port for serial monitor in Arduino IDE
   Serial.begin(115200);
   while (!Serial) {
@@ -194,14 +213,14 @@ void setup() {
   Serial.println();
   Serial.println();
   Serial.println("### INIT ANAIRE DEVICE ###########################################");
-    
+
   // Initialize LEDs
   pinMode(co2_builtin_LED, OUTPUT);
 
   // Push button: attach interrupt to togle local report of CO2 status by blinking and buzzer
   pinMode(push_button_gpio, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(push_button_gpio), push_button_handler, FALLING);
-  
+
   // Print welcome screen on OLED Display
   display.init();
   display.flipScreenVertically();
@@ -214,12 +233,8 @@ void setup() {
   // Read EEPROM config values
   Read_EEPROM();
 
-  Serial.print("ID: ");
-  Serial.println(anaire_device_id);
-  Serial.print("SW: ");
-  Serial.println(sw_version);
-  Serial.print("Name: ");
-  Serial.println(anaire_device_name);
+  // Print config
+  Print_Config();
 
   // Attempt to connect to WiFi network:
   Connect_WiFi();
@@ -231,7 +246,7 @@ void setup() {
 
   // Initialize and warm up device sensors
   Setup_sensors();
-  
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -276,7 +291,7 @@ void loop() {
       // Init co2 sensors
       Setup_sensors();
     }
-    
+
     if (err_wifi) {
       // Attempt to connect to WiFi network:
       Connect_WiFi();
@@ -298,7 +313,7 @@ void loop() {
     if ((!err_mqtt) && (!err_wifi)) {
       mqttClient.loop();
     }
-    
+
   }
 
   Serial.println("--- END LOOP");
@@ -361,6 +376,7 @@ void Connect_WiFi() {
 }
 
 void Init_MQTT() {
+
   Serial.print("Attempting to connect to the MQTT broker: ");
   Serial.print(cloud_server_address);
   Serial.print(":");
@@ -370,7 +386,7 @@ void Init_MQTT() {
   mqttClient.setServer(cloud_server_address.c_str(), cloud_app_port);
   mqttClient.setCallback(Receive_Message_Cloud_App_MQTT);
   mqttClient.connect(anaire_device_id.c_str());
-  
+
   if (!mqttClient.connected()) {
     err_mqtt = true;
     mqttReconnect();
@@ -379,10 +395,9 @@ void Init_MQTT() {
     err_mqtt = false;
     lastReconnectAttempt = 0;
     // Once connected resubscribe
-    mqttClient.subscribe("config");
+    mqttClient.subscribe(mqtt_receive_topic.c_str());
     Serial.println("MQTT connected");
   }
-  
 
 }
 
@@ -584,7 +599,7 @@ void Setup_sensors() {
     }
 
     else {
-      
+
       Serial.println("CO2 sensor MH-Z14A detected.");
       err_co2 = false;
       co2_sensor = mhz14a;
@@ -690,19 +705,19 @@ void Setup_MHZ14A()
 }
 
 // Read sensors
-void Read_Sensors(){
+void Read_Sensors() {
 
   switch (co2_sensor) {
-      case scd30:
-        Read_SCD30(); // Read co2, temperature and humidity
-        break;
-      case mhz14a:
-        Read_MHZ14A(); // Read co2
-        Read_DHT11();  // Read temperature and humidity
-        break;
-      case none:
-        break;
-    }
+    case scd30:
+      Read_SCD30(); // Read co2, temperature and humidity
+      break;
+    case mhz14a:
+      Read_MHZ14A(); // Read co2
+      Read_DHT11();  // Read temperature and humidity
+      break;
+    case none:
+      break;
+  }
 }
 
 // Read MHZ14A CO2 sensor
@@ -970,7 +985,7 @@ void Read_DHT11() {
 
 // Send measurements to the cloud application by MQTT
 void Send_Message_Cloud_App_MQTT() {
-  
+
   // Print info
   Serial.print("Sending mqtt message to the send topic ");
   Serial.println(mqtt_send_topic);
@@ -979,13 +994,13 @@ void Send_Message_Cloud_App_MQTT() {
   Serial.println();
 
   // send message, the Print interface can be used to set the message contents
-  mqttClient.publish(mqtt_send_topic, mqtt_message);
+  mqttClient.publish(mqtt_send_topic.c_str(), mqtt_message);
+
 }
 
 // callback function to receive configuration messages from the cloud application by MQTT
 void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int length) {
   StaticJsonDocument<128> jsonBuffer;
-
   char received_payload[128];
   memcpy(received_payload, payload, length);
   Serial.print("Message arrived: ");
@@ -1001,29 +1016,46 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     return;
   }
 
-  // If message the message is for this device update values.
-  if(strcmp(anaire_device_id.c_str(), jsonBuffer["id"]) == 0){
+  //JsonObject obj = jsonBuffer.as<JsonObject>();
+  //Serial.println(jsonBuffer["warning"]);
+  //Serial.println(jsonBuffer["caution"]);
+  //Serial.println(jsonBuffer["alarm"]);
+  //Serial.println(jsonBuffer["name"]);
+  //Serial.println(jsonBuffer["update"]);
+  //Serial.println(jsonBuffer);
 
-    // fill the values on the eeprom config struct
-    //eepromConfig.anaire_device_name = jsonBuffer["name"];
-    eepromConfig.CO2ppm_warning_threshold = jsonBuffer["warning"];
-    eepromConfig.CO2ppm_alarm_threshold = jsonBuffer["caution"];
+  // fill the values on the eeprom config struct
+  //eepromConfig.anaire_device_name = jsonBuffer["name"];
+  eepromConfig.CO2ppm_warning_threshold = (int)jsonBuffer["warning"];
+  eepromConfig.CO2ppm_alarm_threshold = (int)jsonBuffer["caution"];
 
-    // save the new values
-    Write_EEPROM();
+  // update global variables
+  //anaire_device_name = eepromConfig.anaire_device_name;
+  CO2ppm_warning_threshold = eepromConfig.CO2ppm_warning_threshold;
+  CO2ppm_alarm_threshold = eepromConfig.CO2ppm_alarm_threshold;
 
-    // update global variables
-    anaire_device_name = eepromConfig.anaire_device_name;     
-    CO2ppm_warning_threshold = eepromConfig.CO2ppm_warning_threshold;
-    CO2ppm_alarm_threshold = eepromConfig.CO2ppm_alarm_threshold;
-
-    //print info
-    Serial.println("MQTT update:");
-    Serial.println(anaire_device_name);
-    Serial.println(CO2ppm_warning_threshold);
-    Serial.println(CO2ppm_alarm_threshold);
+  // Use update flag to wipe EEPROM and update to latest bin
+  if (jsonBuffer["update"]) {
     
+    boolean result = EEPROM.wipe();
+    if (result) {
+      Serial.println("All EEPROM data wiped");
+    } else {
+      Serial.println("EEPROM data could not be wiped from flash store");
+    }
+
+    // update firmware to latest bin
+    firmware_update();
+   
   }
+
+  //print info
+  Serial.println("MQTT update ->");
+  Print_Config();
+
+  // save the new values
+  Write_EEPROM();
+
 }
 
 //MQTT reconnect function
@@ -1039,7 +1071,7 @@ void mqttReconnect() {
       lastReconnectAttempt = 0;
       err_mqtt = false;
       // Once connected resubscribe
-      mqttClient.subscribe("config");
+      mqttClient.subscribe(mqtt_receive_topic.c_str());
     } else {
       err_mqtt = true;
       Serial.print("failed, rc=");
@@ -1180,43 +1212,55 @@ void update_OLED_Status() {
   display.display(); // update OLED display
 }
 
-void Read_EEPROM (){
+void Read_EEPROM () {
 
   // The begin() call will find the data previously saved in EEPROM if the same size
-  // as was previously committed. If the size is different then the EEEPROM data is cleared. 
+  // as was previously committed. If the size is different then the EEEPROM data is cleared.
   // Note that this is not made permanent until you call commit();
   EEPROM.begin(sizeof(MyEEPROMStruct));
 
+  /*
+    boolean result = EEPROM.wipe();
+    if (result) {
+    Serial.println("All EEPROM data wiped");
+    } else {
+    Serial.println("EEPROM data could not be wiped from flash store");
+    }
+  */
+
   // Check if the EEPROM contains valid data from another run
   // If so, overwrite the 'default' values set up in our struct
-  if(EEPROM.percentUsed()>=0) {
+  if (EEPROM.percentUsed() >= 0) {
 
     Serial.println("EEPROM has data from a previous run.");
     Serial.print(EEPROM.percentUsed());
     Serial.println("% of ESP flash space currently used");
-    
+
     // Read saved data
     EEPROM.get(0, eepromConfig);
-    
+
     // Restore config values
-    anaire_device_name = eepromConfig.anaire_device_name;     
+    anaire_device_name = eepromConfig.anaire_device_name;
     CO2ppm_warning_threshold = eepromConfig.CO2ppm_warning_threshold;
     CO2ppm_alarm_threshold = eepromConfig.CO2ppm_alarm_threshold;
     wifi_ssid = eepromConfig.wifi_ssid;
     wifi_password = eepromConfig.wifi_password;
     cloud_server_address = eepromConfig.cloud_server_address;
     cloud_app_port = eepromConfig.cloud_app_port;
+
+    Print_Config();
+
   } else {
-    Serial.println("No EEPROM data - using default config values");    
+    Serial.println("No EEPROM data - using default config values");
   }
 }
 
-void Write_EEPROM (){
+void Write_EEPROM () {
 
   // The begin() call will find the data previously saved in EEPROM if the same size
-  // as was previously committed. If the size is different then the EEEPROM data is cleared. 
+  // as was previously committed. If the size is different then the EEEPROM data is cleared.
   // Note that this is not made permanent until you call commit();
-  EEPROM.begin(sizeof(MyEEPROMStruct));
+  //EEPROM.begin(sizeof(MyEEPROMStruct));
 
   // set the EEPROM data ready for writing
   EEPROM.put(0, eepromConfig);
@@ -1224,5 +1268,86 @@ void Write_EEPROM (){
   // write the data to EEPROM
   boolean ok = EEPROM.commit();
   Serial.println((ok) ? "EEPROM Commit OK" : "EEPROM Commit failed");
-  
+
+}
+
+void Print_Config() {
+  Serial.println("#######################################");
+  Serial.print("Device ID: ");
+  Serial.println(anaire_device_id);
+  Serial.print("SW: ");
+  Serial.println(sw_version);
+  Serial.print("anaire_device_name: ");
+  Serial.println(anaire_device_name);
+  //Serial.println(eepromConfig.anaire_device_name);
+  Serial.print("CO2ppm_warning_threshold: ");
+  Serial.println(CO2ppm_warning_threshold);
+  //Serial.println(eepromConfig.CO2ppm_warning_threshold);
+  Serial.print("CO2ppm_alarm_threshold: ");
+  Serial.println(CO2ppm_alarm_threshold);
+  //Serial.println(eepromConfig.CO2ppm_alarm_threshold);
+  Serial.print("wifi_ssid: ");
+  Serial.println(wifi_ssid);
+  Serial.println(eepromConfig.wifi_ssid);
+  Serial.print("wifi_password: ");
+  Serial.println(wifi_password);
+  Serial.println(eepromConfig.wifi_password);
+  Serial.print("cloud_server_address: ");
+  Serial.println(cloud_server_address);
+  Serial.println(eepromConfig.cloud_server_address);
+  Serial.print("cloud_app_port: ");
+  Serial.println(cloud_app_port);
+  //Serial.println(eepromConfig.cloud_app_port);
+  Serial.print("local_alarm: ");
+  //Serial.println(local_alarm);
+  Serial.println(eepromConfig.local_alarm);
+  Serial.print("update_latest: ");
+  //Serial.println(update_latest);
+  Serial.println(eepromConfig.update_latest);
+  Serial.println("#######################################");
+
+}
+
+void firmware_update(){
+
+    // Add optional callback notifiers
+    ESPhttpUpdate.onStart(update_started);
+    ESPhttpUpdate.onEnd(update_finished);
+    ESPhttpUpdate.onProgress(update_progress);
+    ESPhttpUpdate.onError(update_error);
+
+    t_httpUpdate_return ret = ESPhttpUpdate.update(wifi_client, "https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.bin");
+    // Or:
+    //t_httpUpdate_return ret = ESPhttpUpdate.update(client, "server", 80, "file.bin");
+
+    switch (ret) {
+      case HTTP_UPDATE_FAILED:
+        Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+        break;
+
+      case HTTP_UPDATE_NO_UPDATES:
+        Serial.println("HTTP_UPDATE_NO_UPDATES");
+        break;
+
+      case HTTP_UPDATE_OK:
+        Serial.println("HTTP_UPDATE_OK");
+        break;
+    }
+
+}
+
+void update_started() {
+  Serial.println("CALLBACK:  HTTP update process started");
+}
+
+void update_finished() {
+  Serial.println("CALLBACK:  HTTP update process finished");
+}
+
+void update_progress(int cur, int total) {
+  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
+}
+
+void update_error(int err) {
+  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
 }

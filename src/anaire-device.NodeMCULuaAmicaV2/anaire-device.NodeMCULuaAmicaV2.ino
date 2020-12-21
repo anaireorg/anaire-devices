@@ -51,7 +51,7 @@
 // i.e: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String anaire_device_id = String(ESP.getChipId(), HEX);   // HEX version, for easier match to mac address
 String anaire_device_name = String(ESP.getChipId(), HEX); // By the default the name gets initialized to the device ID
-String sw_version = "v1.20201220";
+String sw_version = "v1.20201221asperotiernoliberalesquivo";
 int CO2ppm_warning_threshold = 700; // Warning threshold initial value
 int CO2ppm_alarm_threshold = 1000;  // Alarm threshold initial value
 
@@ -1219,14 +1219,14 @@ void Read_EEPROM () {
   // Note that this is not made permanent until you call commit();
   EEPROM.begin(sizeof(MyEEPROMStruct));
 
-  /*
+  
     boolean result = EEPROM.wipe();
     if (result) {
     Serial.println("All EEPROM data wiped");
     } else {
     Serial.println("EEPROM data could not be wiped from flash store");
     }
-  */
+  
 
   // Check if the EEPROM contains valid data from another run
   // If so, overwrite the 'default' values set up in our struct
@@ -1316,7 +1316,7 @@ void firmware_update(){
     ESPhttpUpdate.onProgress(update_progress);
     ESPhttpUpdate.onError(update_error);
 
-    t_httpUpdate_return ret = ESPhttpUpdate.update(wifi_client, "https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.bin");
+    t_httpUpdate_return ret = ESPhttpUpdate.update(wifi_client, "https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
     // Or:
     //t_httpUpdate_return ret = ESPhttpUpdate.update(client, "server", 80, "file.bin");
 

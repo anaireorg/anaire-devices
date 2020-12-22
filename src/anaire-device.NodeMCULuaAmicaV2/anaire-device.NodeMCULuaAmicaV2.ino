@@ -51,7 +51,7 @@
 // i.e: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String anaire_device_id = String(ESP.getChipId(), HEX);   // HEX version, for easier match to mac address
 String anaire_device_name = String(ESP.getChipId(), HEX); // By the default the name gets initialized to the device ID
-String sw_version = "v1.20201221quienloprobolosabe";
+String sw_version = "v1.20201222.atucuerpoyatucaraconquegustomearrimara";
 int CO2ppm_warning_threshold = 700; // Warning threshold initial value
 int CO2ppm_alarm_threshold = 1000;  // Alarm threshold initial value
 
@@ -120,12 +120,12 @@ PubSubClient mqttClient(wifi_client);
 SCD30 airSensor;
 #define SCD30_SCK_GPIO 14 // signal GPIO14 (D5)
 #define SCD30_SDA_GPIO 12 // signal GPIO12 (D6)
-const unsigned long SCD30_WARMING_TIME = 10000;           // SCD30 CO2 sensor warming time: 10 seconds
+const unsigned long SCD30_WARMING_TIME = 60000;           // SCD30 CO2 sensor warming time: 60 seconds
 const unsigned long SCD30_SERIAL_TIMEOUT = 5000;          // SCD30 CO2 serial start timeout: 5 seconds
 const unsigned long SCD30_CALIBRATION_TIME = 1200000;     // SCD30 CO2 CALIBRATION TIME: 20 min = 1200000 ms
 
 // MHZ14A CO2 sensor: software serial port
-const unsigned long MHZ14A_WARMING_TIME = 18000;      // MHZ14A CO2 sensor warming time: 3 minutes = 180000 ms
+const unsigned long MHZ14A_WARMING_TIME = 180000;      // MHZ14A CO2 sensor warming time: 3 minutes = 180000 ms
 const unsigned long MHZ14A_SERIAL_TIMEOUT = 5000;      // MHZ14A CO2 serial start timeout: 5 seconds = 5000 ms
 const unsigned long MHZ14A_CALIBRATION_TIME = 1200000; // MHZ14A CO2 CALIBRATION TIME: 20 min = 1200000 ms
 #include "SoftwareSerial.h"
@@ -1034,9 +1034,12 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   CO2ppm_warning_threshold = eepromConfig.CO2ppm_warning_threshold;
   CO2ppm_alarm_threshold = eepromConfig.CO2ppm_alarm_threshold;
 
+  // update status over new thresholds
+  Evaluate_CO2_Value();
+  
   // Use update flag to wipe EEPROM and update to latest bin
   if (jsonBuffer["update"] == "ON") {
-    
+
     boolean result = EEPROM.wipe();
     if (result) {
       Serial.println("All EEPROM data wiped");
@@ -1046,7 +1049,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
 
     // update firmware to latest bin
     firmware_update();
-   
+
   }
 
   //print info
@@ -1058,7 +1061,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
 
 }
 
-//MQTT reconnect function
+// MQTT reconnect function
 void mqttReconnect() {
   //Try to reconnect only if it has been more than 5 sec since last attemp
   unsigned long now = millis();
@@ -1219,14 +1222,14 @@ void Read_EEPROM () {
   // Note that this is not made permanent until you call commit();
   EEPROM.begin(sizeof(MyEEPROMStruct));
 
-  
+  /*
     boolean result = EEPROM.wipe();
     if (result) {
     Serial.println("All EEPROM data wiped");
     } else {
     Serial.println("EEPROM data could not be wiped from flash store");
     }
-  
+  */
 
   // Check if the EEPROM contains valid data from another run
   // If so, overwrite the 'default' values set up in our struct
@@ -1260,7 +1263,7 @@ void Write_EEPROM () {
   // The begin() call will find the data previously saved in EEPROM if the same size
   // as was previously committed. If the size is different then the EEEPROM data is cleared.
   // Note that this is not made permanent until you call commit();
-  //EEPROM.begin(sizeof(MyEEPROMStruct));
+  EEPROM.begin(sizeof(MyEEPROMStruct));
 
   // set the EEPROM data ready for writing
   EEPROM.put(0, eepromConfig);
@@ -1288,13 +1291,13 @@ void Print_Config() {
   //Serial.println(eepromConfig.CO2ppm_alarm_threshold);
   Serial.print("wifi_ssid: ");
   Serial.println(wifi_ssid);
-  Serial.println(eepromConfig.wifi_ssid);
+  //Serial.println(eepromConfig.wifi_ssid);
   Serial.print("wifi_password: ");
   Serial.println(wifi_password);
-  Serial.println(eepromConfig.wifi_password);
+  //Serial.println(eepromConfig.wifi_password);
   Serial.print("cloud_server_address: ");
   Serial.println(cloud_server_address);
-  Serial.println(eepromConfig.cloud_server_address);
+  //Serial.println(eepromConfig.cloud_server_address);
   Serial.print("cloud_app_port: ");
   Serial.println(cloud_app_port);
   //Serial.println(eepromConfig.cloud_app_port);
@@ -1308,36 +1311,36 @@ void Print_Config() {
 
 }
 
-void firmware_update(){
+void firmware_update() {
 
-    // Add optional callback notifiers
-    ESPhttpUpdate.onStart(update_started);
-    ESPhttpUpdate.onEnd(update_finished);
-    ESPhttpUpdate.onProgress(update_progress);
-    ESPhttpUpdate.onError(update_error);
+  // Add optional callback notifiers
+  ESPhttpUpdate.onStart(update_started);
+  ESPhttpUpdate.onEnd(update_finished);
+  ESPhttpUpdate.onProgress(update_progress);
+  ESPhttpUpdate.onError(update_error);
 
-    BearSSL::WiFiClientSecure UpdateClient;
-    UpdateClient.setInsecure();
-  
-    //t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
-    t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
+  BearSSL::WiFiClientSecure UpdateClient;
+  UpdateClient.setInsecure();
 
-    // Or:
-    //t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "github.com", 443, "anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
+  //t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
 
-    switch (ret) {
-      case HTTP_UPDATE_FAILED:
-        Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
-        break;
+  // Or:
+  //t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "github.com", 443, "anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
 
-      case HTTP_UPDATE_NO_UPDATES:
-        Serial.println("HTTP_UPDATE_NO_UPDATES");
-        break;
+  switch (ret) {
+    case HTTP_UPDATE_FAILED:
+      Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+      break;
 
-      case HTTP_UPDATE_OK:
-        Serial.println("HTTP_UPDATE_OK");
-        break;
-    }
+    case HTTP_UPDATE_NO_UPDATES:
+      Serial.println("HTTP_UPDATE_NO_UPDATES");
+      break;
+
+    case HTTP_UPDATE_OK:
+      Serial.println("HTTP_UPDATE_OK");
+      break;
+  }
 
 }
 

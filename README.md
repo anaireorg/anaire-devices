@@ -1,6 +1,16 @@
 # anaire-devices
 
-**Watch out: OLED display pines have changed from initial SW versions!**
+**Nueva versión de SW v1.20201222.atucuerpoyatucaraconquegustomearrimara**
+
+***El mismo SW funciona con ambas opciones: tanto con el Sensirion SCD30 (CO2, temperatura y humedad) como con el el MH-Z14A (CO2) y el DHT-11 (temperatura y humedad). El sistema detecta en el inicio los sensores y aplica la configuración necesaria de forma automática***
+
+***Configuración Wifi: tras pulsar 2 veces consecutivas el botón de reset, el dispositivo se reinicia en un portal cautivo con su propia red wifi***
+
+****Conectar a la red ESP_IdDispositivo y acceder con un navegador a la dirección 192.168.4.1 para seleccionar la red wifi e introducir la contraseña****
+
+***Actualización de firmware mediante la Aplicación de Anaire en la nube***
+
+***Modificación de umbrales de aviso y alarma de CO2 desde la aplicación de Anaire en la nube***
 
 SW for anaire devices: Get CO2, temperature and humidity measurements and send them to the anaire cloud app
 

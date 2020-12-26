@@ -5,10 +5,10 @@
 //
 // Parts:
 // AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
-// MHZ14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf
-// AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
 // AZ-Delivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r
 // AZ-Delivery 0.91 inch OLED I2C Display 128 x 32 Pixels  https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display
+// MHZ14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf
+// AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
 //
 // Parts list for a complete prototype in amazon: https://www.amazon.es/hz/wishlist/ls/8NAKLGML187W?ref_=wl_share
 //
@@ -28,24 +28,38 @@
 // esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
 // SparkFun_SCD30_Arduino_Library - for Sensirion SCD30 CO2, humidity and temperature sensor https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library
 // ESP_EEPROM - to save in EEPROM config values https://github.com/jwrw/ESP_EEPROM
-//
+// WifiManager kentaylor - to create a captive portal to configure wifi https://github.com/kentaylor/WiFiManager
+// Double Reset detector - to detect double press of reset button and restart with the captive portal to configure Wifi https://github.com/datacute/DoubleResetDetector
+
 // Design:
+// - The ID and IP address are shown on OLED display during boot and after pressing the Flash button
+// - Pressing the reset button (left of usb connector when facing it) twice in less than 10 seconds restarts the device in a captive web configuration portal, useful to configure local wifi settings
+// - All other local config parameters (like name, thresholds, local alarm, etc.) are configured via the cloud app, after connecting
+// - Pressing Flash button (right of the USB connector while facing it) toggles between activating/deactivating local alarms (visual and sound)
+//   * Stops local alerting (both sound and blinking) until pressed again or until CO2 level decays below the warning threshold, deactivating therefore local alerting and reseting the local alerting system
+//   * It also shows device ID and IP address after being pressed until a new CO2 measurement is displayed
+// - Firmware update with latest fimrware available though cloud app
+//   * Always using latest firmware on https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin
 // - Built in LED in GPIO16-D0 (the one that blinks near the nodemcu usb connector) is also connected to the external buzzer
 //   * When CO2 Status is "ok" (below warning threshold) LED keeps ON and buzzer is off
 //   * When CO2 Status is "warning" builtin LED and external buzzer alternate at a slow pace (WARNING_BLINK_PERIOD)
 //   * When CO2 Status is "alarm" builtin LED and external buzzer alternate at fast pace (ALARM_BLINK_PERIOD)
 //   This GPIO16 is also used when downloading SW to the nodemcu board: the external buzzer sounds while downloading to the board
-// - Flash button, to the risht of the USB connector, allows to toggle between activating/deactivating local alarms (visual and sound)
-//   * It also shows device ID and IP address after being pressed until a new CO2 measurement is displayed
-// - CO2 sensor is connected through a software serial port using GPIO13(D7) and GPIO15 (D8)
-// - DHT11 humidity and temperature sensor ins connected on GPIO 5 (D1)
-// - SSD1306 OLED display is connected on GPIO14(D5) and GPIO12 (D6)
+// - SSD1306 OLED display is connected on GPIO4(D2) and GPIO2 (D4)
+// - Two options for sensors:
+//   * Either Sensirion SCD30 for CO2, temperature and humidity
+//     * connected on pins 3V3, GND, GPIO14(D5) and GPIO12(D6), all consecutive on the NodeMCU LUA Amica V2 right hand side and coincident on the first 4 pins on SCD30
+//   * Or MH-Z14A for CO2, and DHT11 for temnperature and humidity
+//     * MHZ-14A CO2 sensor is connected through a software serial port using GPIO13(D7) and GPIO15(D8)
+//     * DHT11 humidity and temperature sensor ins connected on GPIO 5 (D1)
 // - The device is designed to work only with the CO2 sensor, so buzzer, DHT11 humidity and temperature sensor, and OLED display are optional
-// - The device is designed to recover from Wifi, MQTT or sensor reading temporal failures
-// - The web server is activated, therefore entering the IP on a browser allows to see the device data. The IP is showed during boot and after pressing the button.
+// - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
+// - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds. 
 
-// edit the following file to configure the device: device id, wifi network and remote cloud endpoint
-#include "anaire_config.h"
+// CLOUD CONFIGURATION: remote app url
+// CHANGE HERE if connecting to a different Anaire Cloud App
+String cloud_server_address = "demo.anaire.org";     // server public IP address
+int cloud_app_port = 30183;                          // cloud application port
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen
 // i.e: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
@@ -63,8 +77,6 @@ struct MyEEPROMStruct {
   String anaire_device_name;
   int CO2ppm_warning_threshold;
   int CO2ppm_alarm_threshold;
-  String wifi_ssid;
-  String wifi_password;
   String cloud_server_address;
   int cloud_app_port;
   boolean local_alarm;
@@ -91,6 +103,26 @@ WiFiClient wifi_client;
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
 int wifi_status = WL_IDLE_STATUS;
 WiFiServer wifi_server(80); // to check if it is alive
+String wifi_ssid = WiFi.SSID();                  // your network SSID (name)
+//String wifi_password = "mel0nc0njam0n";       // your network password (use for WPA, or use as key for WEP)
+
+// Double reset for wifi configuration
+#include <ESP8266WebServer.h>
+#include <DNSServer.h>
+#include <WiFiManager.h>          //https://github.com/kentaylor/WiFiManager
+#include <DoubleResetDetector.h>  //https://github.com/datacute/DoubleResetDetector
+
+// Number of seconds after reset during which a
+// subseqent reset will be considered a double reset.
+#define DRD_TIMEOUT 10
+
+// RTC Memory Address for the DoubleResetDetector to use
+#define DRD_ADDRESS 0
+
+DoubleResetDetector drd(DRD_TIMEOUT, DRD_ADDRESS);
+
+// Indicates whether ESP has WiFi credentials saved from previous session, or double reset detected
+bool initialConfig = false;
 
 // OLED ssd1306 screen
 #include <Wire.h>
@@ -195,8 +227,8 @@ void setup() {
   eepromConfig.anaire_device_name = anaire_device_name;
   eepromConfig.CO2ppm_warning_threshold = CO2ppm_warning_threshold;
   eepromConfig.CO2ppm_alarm_threshold = CO2ppm_alarm_threshold;
-  eepromConfig.wifi_ssid = wifi_ssid;
-  eepromConfig.wifi_password = wifi_password;
+  //eepromConfig.wifi_ssid = wifi_ssid;
+  //eepromConfig.wifi_password = wifi_password;
   eepromConfig.cloud_server_address = cloud_server_address;
   eepromConfig.cloud_app_port = cloud_app_port;
   eepromConfig.local_alarm = true;
@@ -230,23 +262,88 @@ void setup() {
   display.display(); // update OLED display
   delay(3000); // to show anaire.org
 
-  // Read EEPROM config values
-  Read_EEPROM();
-
-  // Print config
-  Print_Config();
-
-  // Attempt to connect to WiFi network:
-  Connect_WiFi();
-
-  // Attempt to connect to MQTT broker
-  if (!err_wifi) {
-    Init_MQTT();
+  // Wifi captive portal if double reset detection
+  WiFi.printDiag(Serial); //Remove this line if you do not want to see WiFi password printed
+  if (WiFi.SSID() == "") {
+    Serial.println("We haven't got any access point credentials, so get them now");
+    initialConfig = true;
+  } else {
+    Serial.println("Access point credentials existing");
+    initialConfig = false;
+  }
+  if (drd.detectDoubleReset()) {
+    Serial.println("Double Reset Detected");
+    initialConfig = true;
+  } else {
+    Serial.println("Double Reset NOT Detected");
+    initialConfig = false;
   }
 
-  // Initialize and warm up device sensors
-  Setup_sensors();
+  // If a double reset was detected start configuration portal
+  if (initialConfig) {
 
+    Serial.println("Starting configuration portal...");
+
+    //Local intialization. Once its business is done, there is no need to keep it around
+    WiFiManager wifiManager;
+
+    //sets timeout in seconds until configuration portal gets turned off.
+    //If not specified device will remain in configuration mode until
+    //switched off via webserver or device is restarted.
+    //wifiManager.setConfigPortalTimeout(600);
+
+    //it starts an access point
+    //and goes into a blocking loop awaiting configuration
+    if (!wifiManager.startConfigPortal()) {
+      Serial.println("Not connected to WiFi but continuing anyway.");
+    } else {
+      //if you get here you have connected to the WiFi
+      Serial.println("connected...yeey :)");
+    }
+    ESP.reset(); // This is a bit crude. For some unknown reason webserver can only be started once per boot up
+    // so resetting the device allows to go back into config mode again when it reboots.
+    delay(5000);
+
+    /*
+    WiFi.mode(WIFI_STA); // Force to station mode because if device was switched off while in access point mode it will start up next time in access point mode.
+    unsigned long startedAt = millis();
+    Serial.print("After waiting ");
+    int connRes = WiFi.waitForConnectResult();
+    float waited = (millis()- startedAt);
+    Serial.print(waited/1000);
+    Serial.print(" secs in setup() connection result is ");
+    Serial.println(connRes);
+    if (WiFi.status()!=WL_CONNECTED){
+    Serial.println("failed to connect, finishing setup anyway");
+    } else{
+    Serial.print("local ip: ");
+    Serial.println(WiFi.localIP());
+    }
+  */
+
+  }
+
+  else {
+    
+    // Read EEPROM config values
+    Read_EEPROM();
+
+    // Print config
+    Print_Config();
+
+    // Attempt to connect to WiFi network:
+    Connect_WiFi();
+
+    // Attempt to connect to MQTT broker
+    if (!err_wifi) {
+      Init_MQTT();
+    }
+
+    // Initialize and warm up device sensors
+    Setup_sensors();
+
+  }
+  
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -258,6 +355,12 @@ void loop() {
 
   // Timestamp for the loop start time
   control_loop_start = millis();
+
+  // Call the double reset detector loop method every so often,
+  // so that it can recognise when the timeout expires.
+  // You can also call drd.stop() when you wish to no longer
+  // consider the next reset as a double reset.
+  drd.loop();
 
   // Read sensors
   Read_Sensors();
@@ -333,7 +436,8 @@ void Connect_WiFi() {
 
   // connecting to a WiFi network
   WiFi.mode(WIFI_STA);
-  WiFi.begin(wifi_ssid, wifi_password);
+  //WiFi.begin(wifi_ssid, wifi_password);
+  WiFi.begin();
 
   // Timestamp for connection timeout
   int wifi_timeout_start = millis();
@@ -644,66 +748,6 @@ void Setup_sensors() {
 
 }
 
-// Setup MHZ14A CO2 sensor
-void Setup_MHZ14A()
-{
-
-  // Initialize serial port to communicate with MHZ14A CO2 sensor. This is a software serial port
-  swSerial.begin(9600, SWSERIAL_8N1, swSerialRX_gpio, swSerialTX_gpio, false, 128);
-
-  Serial.println("swSerial Txd is on pin: " + String(swSerialTX_gpio));
-  Serial.println("swSerial Rxd is on pin: " + String(swSerialRX_gpio));
-
-  // Timestamp for serial up start time
-  int serial_up_start = millis();
-
-  while (((!swSerial) && ((millis() - serial_up_start) < MHZ14A_SERIAL_TIMEOUT))) {
-    Serial.println("Attempting to open serial port 1 to communicate to MHZ14A CO2 sensor");
-    delay(1000); // wait 1 seconds for connection
-  }
-
-  // If the timeout was completed it is an error
-  if ((millis() - serial_up_start) > MHZ14A_SERIAL_TIMEOUT) {
-    err_co2 = true;
-    return;
-  }
-  else {
-    err_co2 = false;
-  }
-
-  // Timestamp for warming up start time
-  int warming_up_start = millis();
-
-  // Print info
-  Serial.println ("Warming up MHZ14A CO2 sensor...");
-
-  // Wait for warming time while blinking blue led
-  int counter = int(MHZ14A_WARMING_TIME / 1000);
-  while ((millis() - warming_up_start) < MHZ14A_WARMING_TIME) {
-    // Print welcome screen
-    display.init();
-    display.flipScreenVertically();
-    display.clear();
-    display.setFont(ArialMT_Plain_10);
-    display.drawString(0, 0, "Init anaire.org");
-    display.drawString(0, 10, String(anaire_device_id));
-    display.drawString(0, 20, String(counter));
-    display.display(); // update OLED display
-    Serial.print(".");
-    delay(500); // wait 500ms
-    Serial.println(".");
-    delay(500); // wait 500ms
-    counter = counter - 1;
-  }
-
-  // Print info
-  Serial.println ("Warming up MHZ14A CO2 sensor complete");
-
-  // Print info
-  Serial.println ("MHZ14A CO2 sensor setup complete");
-
-}
-
 // Read sensors
 void Read_Sensors() {
 
@@ -898,7 +942,6 @@ void Calibrate_SCD30() {
     Serial.println(".");
     delay(500); // wait 500ms
     counter = counter - 1;
-
   }
 
 }
@@ -939,13 +982,13 @@ void Evaluate_CO2_Value() {
   // Print info on serial monitor
   switch (co2_device_status) {
     case ok:
-      Serial.println ("STATUS : OK");
+      Serial.println ("STATUS: OK");
       break;
     case warning:
-      Serial.println ("STATUS : WARNING");
+      Serial.println ("STATUS: WARNING");
       break;
     case alarm:
-      Serial.println ("STATUS : ALARM");
+      Serial.println ("STATUS: ALARM");
       break;
   }
 
@@ -1025,7 +1068,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   //Serial.println(jsonBuffer);
 
   // fill the values on the eeprom config struct
-  //eepromConfig.anaire_device_name = jsonBuffer["name"];
+  //eepromConfig.anaire_device_name = String(jsonBuffer["name"]);
   eepromConfig.CO2ppm_warning_threshold = (int)jsonBuffer["warning"];
   eepromConfig.CO2ppm_alarm_threshold = (int)jsonBuffer["caution"];
 
@@ -1036,7 +1079,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
 
   // update status over new thresholds
   Evaluate_CO2_Value();
-  
+
   // Use update flag to wipe EEPROM and update to latest bin
   if (jsonBuffer["update"] == "ON") {
 
@@ -1168,7 +1211,7 @@ void update_OLED_CO2() {
         display.drawString(0, 16, "CO2 REGULAR");
         break;
       case alarm:
-        display.drawString(0, 16, "CO2 MAL: VENTILE");
+        display.drawString(0, 16, "¡¡¡ CO2 MAL !!!");
         break;
     }
   }
@@ -1246,8 +1289,8 @@ void Read_EEPROM () {
     anaire_device_name = eepromConfig.anaire_device_name;
     CO2ppm_warning_threshold = eepromConfig.CO2ppm_warning_threshold;
     CO2ppm_alarm_threshold = eepromConfig.CO2ppm_alarm_threshold;
-    wifi_ssid = eepromConfig.wifi_ssid;
-    wifi_password = eepromConfig.wifi_password;
+    //wifi_ssid = eepromConfig.wifi_ssid;
+    //wifi_password = eepromConfig.wifi_password;
     cloud_server_address = eepromConfig.cloud_server_address;
     cloud_app_port = eepromConfig.cloud_app_port;
 
@@ -1292,8 +1335,8 @@ void Print_Config() {
   Serial.print("wifi_ssid: ");
   Serial.println(wifi_ssid);
   //Serial.println(eepromConfig.wifi_ssid);
-  Serial.print("wifi_password: ");
-  Serial.println(wifi_password);
+  //Serial.print("wifi_password: ");
+  //Serial.println(wifi_password);
   //Serial.println(eepromConfig.wifi_password);
   Serial.print("cloud_server_address: ");
   Serial.println(cloud_server_address);

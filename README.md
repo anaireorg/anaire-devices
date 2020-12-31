@@ -1,27 +1,41 @@
-# anaire-devices
+# Medidor de CO2 ANAIRE
 
-**Watch out: OLED display pines have changed from initial SW versions!**
-
-SW for anaire devices: Get CO2, temperature and humidity measurements and send them to the anaire cloud app
-
-From 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
+Proyecto para la fabricación de un medidor de CO2, temperatura y humedad de mínimo coste y alta precisión, conectado por WiFi a una aplicación en la nube Anaire Cloud App para mostrar los valores instantáneos y el histórico de mediciones de CO2, temperatura y humedad. Las mediciones se realizan cada 30 segundos, y por defecto se almacenan los últimos 15 días de medidas en la aplicación en la nube.
 
 anaireorg/anaire-devices is licensed under the GNU General Public License v3.0
 
+@Anaire 2020 - 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
+sw_version = "v1.20201231.ladinadainaladinaidi"
+
+En este repositorio se publica información completa para la fabricación del medidor de CO2 Anaire, desde el código fuente hasta las especificaciones de componentes, cableados y opciones de montaje tanto en placa de prototipado como utilizando cajas de impresión 3D para la disposición de los componentes.
+
+# Especificaciones
+
+# Hardware
+
+# Software
+
+# Fabricación
+
+# Configuración
+
+# Instrucciones de uso
+
+
+
+
+
+
+
+
+
+
 ![Dispositivo](https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositvo_ANAIRE_display.png)
 
-# Files
-- anaire-device.nodemcuv2.ino: code for prototype on AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2
-- anaire_config.h: device configuration info
-  device id, initial thresholds, WiFi setup, cloud app endpoint
-- mh-z14a_co2-manual-v1_01.pdf: CO2 sensor datasheet
-- NodeMCU_LUA_Amica_V2_Modul_mit_ESP8266_12E_Datenblatt.pdf: nodemcu datasheet
-- NodeMCU_LUA_Amica_V2_Schematic.pdf: nodemcu schematic
-- Anaire Prototipo MH-Z14a.fzz: fritzing cabling design
 
 # Parts
 - AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
-- MH-Z14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf 
+- MH-Z14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf
 - AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
 - AZ-Delivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r
 - AZ-Delivery 0.91 inch OLED I2C Display 128 x 32 Pixels  https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display
@@ -62,16 +76,16 @@ Install the following libraries in Arduino IDE. ¡Use Arduino IDE Tools->Manage 
 
 # 3D Box design
  - https://www.thingiverse.com/thing:4678398/files
- 
+
  ![Cajas impresora 3D](https://github.com/anaireorg/anaire-devices/blob/main/images/WhatsApp%20Image%202020-12-07%20at%2011.47.58.jpeg)
- 
+
 # Montaje
 
 1. Soldar los cuatro pines en el sensor de CO2 donde está indicado en la imagen, para poder pincharlo en la breadboard
 
 ![Pines del sensor de CO2 MHZ-14A](https://github.com/anaireorg/anaire-devices/blob/main/images/Pines_CO2_ANAIRE.png)
 
-2. Disponer y cablear los elementos como se muestra en las siguientes imágenes. 
+2. Disponer y cablear los elementos como se muestra en las siguientes imágenes.
 - Comprobar que los dos jumper en la fuente de alimentación están en la posición de 5Vcc
 - Se recomienda poner unas gotitas de pegamento en la base de la fuente de alimentación, para que no se pueda mover de su sitio:
 
@@ -84,11 +98,11 @@ Conexiones:
 3. Cargar los archivos anaire-device.nodemcuv2.ino y anaire_config.h en el IDE de Arduino.
 
 4. Editar el archivo anaire_config.h para configurar:
-  - el id del dispositivo 
+  - el id del dispositivo
   - los umbrales de aviso y alarma de nivel de CO2 (por defecto 700 y 1000 respectivamente)
   - el ssid y la contraseña de la red Wifi
   - el endpoint de la app en la nube <nombrededominio>:30183 (la app se ha debido desplegar previamente)
-  
+
 5. Conectar el puerto USB y descargar los archivos a la tarjeta NodeMCU. El zumbador emitirá sonido durante la descarga del SW (varios segundos)
 
 6. Esperar a que se complete la inicialización del dispositivo (cuando termine la cuenta atrás en el display) y que aparezcan las primeras medidas. Comprobar que los datos del dispositivo están accesibles en la app en el enlace <nombrededominio>:3300
@@ -98,9 +112,9 @@ Conexiones:
 8. Calibración del dispositivo:
   - Colocar el dispositivo en un entorno limpio (en el exterior o al lado de una ventana abierta, con ventilación abundante)
   - En un navegador conectado en la misma red WiFi que el dispositivo introducir la dirección IP. Se obtendrá una imagen como la siguiente:
-  
+
   ![Web server](https://github.com/anaireorg/anaire-devices/blob/main/images/Captura_calibration.PNG)
-  
+
   - Hacer click en "here" en el enlace mostrado en la primera línea, y esperar a que se termine la cuenta atrás en el display del dispositivo y se vuelvan a mostrar medidas. El proceso se completa en aproximadamente 20 minutos.
 
 ![Calibrating](https://github.com/anaireorg/anaire-devices/blob/main/images/calibrating_photo_2020-12-07_22-01-00.jpg)
@@ -112,4 +126,3 @@ Conexiones:
   - err_mqtt: no se pudo conectar al endpoint de la app en la nube. Compruebe los detalles en el archivo anaire_config.h.
   - err_co2: no se pudo conectar con el sensor de CO2. Compruebe las conexiones.
   - err_dht: no se pudo conectar con el sensor de humedad y temperatura. Compruebe las conexiones.
-

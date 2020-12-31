@@ -1,37 +1,39 @@
-// From 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
+// Since 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
+//
 // GNU General Public License v3.0
 //
-// Get CO2, temperature and humidity measurements and send them to the anaire cloud app
+// Get CO2, temperature and humidity measurements and send them to the Anaire Cloud Application
+// Show local measurements and provide local warning and alarm visual and sound indications
 //
-// Parts:
-// AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
-// AZ-Delivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r
-// AZ-Delivery 0.91 inch OLED I2C Display 128 x 32 Pixels  https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display
-// MHZ14A - CO2 sensor. Connected by serial port (swSerial on NodeMCU) http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf
-// AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
+// Parts - Common platform:
+//   Control board: AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
+//   Buzzer: AZDelivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r
+//   Display: AZDelivery 0.91 inch OLED I2C Display 128 x 32 Pixels  https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display
 //
-// Parts list for a complete prototype in amazon: https://www.amazon.es/hz/wishlist/ls/8NAKLGML187W?ref_=wl_share
+// Parts - Sensors:
+//   Option 1, better measurements precission: Sensirion SCD30 for CO2, temperature and humidity https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/
+//   Option 2, less cost: MHZ14A for CO2 http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf and AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
 //
 // Arduino IDE Setup:
-// Install the usb to uart driver from https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers
-// Start Arduino and open Preferences window.
-// Enter http://arduino.esp8266.com/stable/package_esp8266com_index.json into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
-// Open Boards Manager from Tools > Board menu and find esp8266 platform by esp8266 community and install the software for Arduino from a drop-down box.
-// Select "NodeMCU 1.0" board from Tools > Board menu after installation
+//   Install the usb to uart driver from https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers
+//   Start Arduino and open Preferences window.
+//   Enter http://arduino.esp8266.com/stable/package_esp8266com_index.json into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
+//   Open Boards Manager from Tools > Board menu and find esp8266 platform by esp8266 community and install the software for Arduino from a drop-down box.
+//   Select "NodeMCU 1.0" board from Tools > Board menu after installation
 //
 // Install the following libraries in Arduino IDE:
-// WiFiEsp for WiFi https://github.com/bportaluri/WiFiEsp
-// DHTesp - to manage DHT11 or DHT22 temperature and humidity sensors https://github.com/beegee-tokyo/DHTesp
-// EspSoftwareSerial - to manage sw serial port to communicate with CO2 sensor https://github.com/plerup/espsoftwareserial/
-// Arduino Client for MQTT - for MQTT communications https://pubsubclient.knolleary.net/
-// ArduinoJson https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
-// esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
-// SparkFun_SCD30_Arduino_Library - for Sensirion SCD30 CO2, humidity and temperature sensor https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library
-// ESP_EEPROM - to save in EEPROM config values https://github.com/jwrw/ESP_EEPROM
-// WifiManager kentaylor - to create a captive portal to configure wifi https://github.com/kentaylor/WiFiManager
-// Double Reset detector - to detect double press of reset button and restart with the captive portal to configure Wifi https://github.com/datacute/DoubleResetDetector
+//   WiFiEsp for WiFi https://github.com/bportaluri/WiFiEsp
+//   DHTesp - to manage DHT11 or DHT22 temperature and humidity sensors https://github.com/beegee-tokyo/DHTesp
+//   EspSoftwareSerial - to manage sw serial port to communicate with CO2 sensor https://github.com/plerup/espsoftwareserial/
+//   Arduino Client for MQTT - for MQTT communications https://pubsubclient.knolleary.net/
+//   ArduinoJson https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
+//   esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
+//   SparkFun_SCD30_Arduino_Library - for Sensirion SCD30 CO2, humidity and temperature sensor https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library
+//   ESP_EEPROM - to save in EEPROM config values https://github.com/jwrw/ESP_EEPROM
+//   WifiManager kentaylor - to create a captive portal to configure wifi https://github.com/kentaylor/WiFiManager
+//   Double Reset detector - to detect double press of reset button and restart with the captive portal to configure Wifi https://github.com/datacute/DoubleResetDetector
 
-// Design:
+// Design leads:
 // - The ID and IP address are shown on OLED display during boot and after pressing the Flash button
 // - Pressing the reset button (left of usb connector when facing it) twice in less than 10 seconds restarts the device in a captive web configuration portal, useful to configure local wifi settings
 // - All other local config parameters (like name, thresholds, local alarm, etc.) are configured via the cloud app, after connecting
@@ -65,7 +67,7 @@ int cloud_app_port = 30183;                          // cloud application port
 // i.e: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String anaire_device_id = String(ESP.getChipId(), HEX);   // HEX version, for easier match to mac address
 String anaire_device_name = String(ESP.getChipId(), HEX); // By the default the name gets initialized to the device ID
-String sw_version = "v1.20201222.atucuerpoyatucaraconquegustomearrimara";
+String sw_version = "v1.20201231.ladinadainaladinaidi";
 int CO2ppm_warning_threshold = 700; // Warning threshold initial value
 int CO2ppm_alarm_threshold = 1000;  // Alarm threshold initial value
 

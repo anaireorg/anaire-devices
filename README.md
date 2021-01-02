@@ -195,8 +195,55 @@ https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCUL
 Haga click en el enlace para abrirlo desde el IDE de Arduino.
 
 # Fabricación del medidor
-Véase el archivo Montaje.md (https://github.com/anaireorg/anaire-devices/blob/main/Montaje.md) para conocer las principales opciones de montaje que se proponen, siempre tratando de simplificar al máximo el proceso y manteniendo las prestaciones técnicas. En cualquier caso se proporciona toda la información necesaria para que cualquiera pueda plantearse alternativas de fabricación, por ejemplo, mediante placas PCB. Para ello se publican en este mismo repositorio los archivos Fritzing con información detallada del cableado requerido.
+Las principales opciones de montaje que se proponen pretenden simplificar al máximo el proceso, manteniendo las máximas prestaciones técnicas. En cualquier caso se proporciona toda la información necesaria para que cualquiera pueda plantearse alternativas de fabricación, por ejemplo, mediante placas PCB. Para ello se publican en este mismo repositorio los archivos Fritzing con información detallada del cableado requerido.
+  
+Se proponen tres opciones de fabricación: AnaireSlim, con el sensor SCD30 sobre tarjeta de prototipado de 400 puntos; AnaireBread, con los sensores MHZ14A y DHT11 sobre tarjeta de prototipado de 830 puntos y caja opcional mediante impresora 3D, y el AnaireBox, que utiliza una caja de impresión 3D para montar los componentes y que puede acoger cualquiera de las dos combinaciones de sensores anteriores (la caja es compatible con ambos).
 
+## Opción 1: AnaireSlim
+
+### Esquema de conexiones  
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/ConexionesAnaireSlim.png" width="60%" height="60%" />
+</p>  
+  
+### Esquema de montaje  
+
+### Detalle del sensor SCD30  
+Hay que soldar 4 pines como se muestra en la siguiente imagen  
+
+### Montaje final  
+En la siguiente imagen se muestra el montaje final realizado  
+
+## Opción 2: AnaireBread
+
+### Esquema de conexiones  
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/ConexionesAnaireBread.png" width="60%" height="60%" />
+</p>  
+  
+### Esquema de montaje  
+
+### Detalle del sensor MH-Z14A  
+Hay que soldar 4 pines como se muestra en la siguiente imagen  
+
+### Montaje final  
+En la siguiente imagen se muestra el montaje final realizado  
+
+## Opción 3: AnaireBox
+
+### Esquema de conexiones  
+Utilizar cualquiera de los dos anteriores
+  
+### Esquema de montaje  
+Realizar las conexiones mediante cables dupoont hembra, y encajar a continuación los componentes en el interior de la caja, en los compartimentos diseñados para tal fin.
+
+### Detalle del sensor SCD30 o MH-Z14A
+Hay que soldar 4 pines como se muestra en las imágenes anteriores según el sensor que se esté utilizando.
+
+### Montaje final  
+En la siguiente imagen se muestra el montaje final realizado  
+
+## Carga del software en la tarjeta NodeMCU
 Una vez completado el montaje de los componentes, hay que proceder a la descarga del software en la tarjeta de control NodeMCU. Para ello realice los siguientes pasos:
 
 * Conecte mediante un cable USB el dispositivo al ordenador en el que haya configurado el IDE de Arduino

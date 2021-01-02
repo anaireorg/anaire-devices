@@ -1,4 +1,4 @@
-# Medidor de CO2, temperatura y humedad ANAIRE (sensores NDIR)
+# Medidor ANAIRE: CO2(NDIR), temperatura y humedad
 *anaireorg/anaire-devices is licensed under the GNU General Public License v3.0*
 
 *@Asociación Anaire www.anaire.org anaire@anaire.org* 
@@ -50,17 +50,19 @@ A continuación se enumeran los elementos citados, incluyendo enlaces a sus cara
 https://www.az-delivery.de/es/products/nodemcu  
 https://www.amazon.es/dp/B06Y1LZLLY/ref=twister_B082DJVXFC?_encoding=UTF8&psc=1  
 <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/NodeMCU/NodeMCU%20transparente.png" width="20%" height="20%" />  
+
 * Display OLED: AZDelivery 0.91 inch OLED I2C Display 128 x 32 Pixels  
 https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display  
 https://www.amazon.es/dp/B079H2C7WH/ref=twister_B082MC4QJ4?_encoding=UTF8&psc=1  
 <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Display/Display%20transparente.png" width="25%" height="25%" />  
+
 * Zumbador: AZDelivery Active Buzzer  
 https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r  
 https://www.amazon.es/dp/B089QJKJXW/ref=twister_B082MHYNND?_encoding=UTF8&psc=1  
 <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Zumbador/Zumbador%20transparente.png" width="10%" height="10%" />  
 
 ## Sensores
-(especificaciones detalladas en la carpeta de documentos). Actualmente se soportan dos sensores de CO2, ambos con tecnología NDIR:
+Actualmente se soportan dos sensores de CO2, ambos con tecnología NDIR:
 * Sensirion SCD30
 <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/SCD30/SCD30%20transparente.png" width="20%" height="20%" />
 * Winsen MH-Z14A

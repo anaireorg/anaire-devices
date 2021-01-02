@@ -207,7 +207,10 @@ Se proponen tres opciones de fabricación: AnaireSlim, con el sensor SCD30 sobre
 </p>  
   
 ### Esquema de montaje  
-
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireSlim.jpg" width="60%" height="60%" />
+</p>  
+  
 ### Detalle del sensor SCD30  
 Hay que soldar 4 pines como se muestra en la siguiente imagen  
 
@@ -222,10 +225,16 @@ En la siguiente imagen se muestra el montaje final realizado
 </p>  
   
 ### Esquema de montaje  
-
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireBread.jpg" width="60%" height="60%" />
+</p>  
+  
 ### Detalle del sensor MH-Z14A  
 Hay que soldar 4 pines como se muestra en la siguiente imagen  
-
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/Pines_CO2_ANAIRE.png" width="60%" height="60%" />
+</p>  
+  
 ### Montaje final  
 En la siguiente imagen se muestra el montaje final realizado  
 
@@ -235,7 +244,7 @@ En la siguiente imagen se muestra el montaje final realizado
 Utilizar cualquiera de los dos anteriores
   
 ### Esquema de montaje  
-Realizar las conexiones mediante cables dupoont hembra, y encajar a continuación los componentes en el interior de la caja, en los compartimentos diseñados para tal fin.
+Realizar las conexiones mediante cables dupont hembra, y encajar a continuación los componentes en el interior de la caja, en los compartimentos diseñados para tal fin.
 
 ### Detalle del sensor SCD30 o MH-Z14A
 Hay que soldar 4 pines como se muestra en las imágenes anteriores según el sensor que se esté utilizando.

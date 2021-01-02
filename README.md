@@ -32,26 +32,48 @@ Toda la información se publica en formato "open source", tanto diseño hardware
   * Agregar la información de múltiples dispositivos permitiendo visualizar de forma simultánea el estado de todos ellos, siguiendo un código de colores sencillo (verde, amarillo y rojo) para indicar el estado actual de una organización con múltiples dispositivos. La idea es, sobre todo, poder monitorizar la medida del CO2 en centros de enseñanza, donde alumnos y profesores deben compartir espacios cerrados
   * Almacenar las medidas de CO2, temperatura y humedad realizadas cada 30 segundos durante al menos 15 días.
   * Facilitar el análisis de las medidas almacenadas, permitiendo el acceso al histórico de medidas de forma sencilla, para de este modo facilitar el análisis del funcionamiento de los protocolos de ventilación.  
+   
 * Toda la información almacenada en la nube es accesible vía Internet, tanto en modo individual para cada dispositivo como en modo agregado en cuadros de mandos configurables con usuarios y permisos de visualización y de edición arbitrarios. De este modo se pueden definir distintos tipos de usuarios con distintos niveles de visualización de la información: personal del centro, alumnos, padres de alumnos, etc.  
+  
 * Para el acceso a la información sólo es preciso un dispositivo con conexión a Internet (ordenador, teléfono móvil, tableta, etc.), la url de acceso al dispositivo o a la organización, y un usuario y contraseña (en caso de que se hayan habilitado políticas de acceso).  
+  
 * Comunicación entre el dispositivo y la aplicación en la nube mediante protocolo MQTT securizado con TLS.  
+  
 * Fabricación sencilla, simplemente "pinchando" los componentes en placas de prototipado ("breadboard"), soldando únicamente los cuatro pines necesarios en el sensor de CO2. En el caso del sensor SCD30, es especialmente sencillo, ya que tras soldar los cuatro pines necesarios se puede "pinchar" el sensor en la placa de prototipado de forma alineada y consecutiva con la tarjeta de control NodeMCU, ahorrando así esos cables y proporcionando mayor robustez al montaje.
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireSlim.jpeg" width="30%" height="30%" />
 </p>  
+  
 * Alternativa para la fabricación mucho más robusta utilizando cajas diseñadas a medida y fabricadas mediante impresoras 3D, y simplemente conectando los componentes mediante cables dupont hembra y encajándolos en los espacios preparados para ello en la caja. La caja es compatible para los dos sensores, y alberga adicionalmente el display OLED (y el resto de los componentes) de forma que sea muy fácil la lectura de las medidas. Todos los detalles para la fabricación de la caja se pueden encontrar en la carpeta "3D print" en este repositorio.  
-* Alimentación directamente a través del puerto Micro USB de la tarjeta de control NodeMCU LUA Amica V2 (el mismo que se utiliza para programarla y para observar mensajes de diagnóstico). Se recomienda utilizar fuentes de alimentación (enchufes USB, puertos USB en ordenadores, etc.) que puedan proporcionar al menos 500 mA (que es lo más frecuente, aunque podría no ser así en el caso de antiguos cargadores de teléfonos móviles, por ejemplo).  
-* Actualización remota del SW del dispositivo, iniciada desde la aplicación en la nube. Permite la actualización automática a la última versión del software en modo binario, almacenada en este repositorio en github:
-https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin  
-* Actualización remota de parámetros (umbrales de aviso y de alarma, aviso local de alarma, etc.) desde la aplicación en la nube.   
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxFrontal.jpg" width="30%" height="30%" />
+</p>  
+  
+* Alimentación a través del puerto Micro USB de la tarjeta de control NodeMCU LUA Amica V2.   
+  
+* Actualización remota de parámetros (umbrales de aviso y de alarma, aviso local de alarma, etc.) desde la aplicación en la nube.    
+  
 * Portal cautivo para la configuración de la red WiFi en la localización final, sin necesidad de modificar el software del dispositivo. Accesible mediante botón en el dispositivo.  
-
+  
+* Actualización remota del SW del dispositivo, iniciada desde la aplicación en la nube. Permite la actualización automática a la última versión del software en modo binario, almacenada en este repositorio en github: https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin    
+  
 # Hardware
-Se trata de un dispositivo basado en un microcontrolador ESP8266 montado sobre una tarjeta de control NodeMCU Lua Amica V2, al que se conectan sensores de CO2, temperatura y humedad. El dispositivo tiene un display para mostrar las mediciones e indicaciones de estado, un LED y un zumbador para poder emitir alertas visuales y sonoras, y un botón para poder deshabilitar la alerta local. El dispositivo es plenamente operativo incluso sin el display y sin el zumbador. Para funcionar con mínimo coste sólo es necesaria una tarjeta de control NodeMCU y un sensor de CO2, todos los demás elementos son opcionales.
+Se trata de un dispositivo basado en un microcontrolador ESP8266 montado sobre una tarjeta de control NodeMCU Lua Amica V2, que proporciona también conectividad WiFi, y permite su programación desde el IDE de Arduino. Para realizar las medidas se conectan sensores de CO2, temperatura y humedad. Adicionalmente se conectan un display para mostrar las mediciones e indicaciones de estado, y un zumbador para poder emitir alertas sonoras. Con objeto de simplificar la fabricación y no añadir más componentes se utilizan los siguientes elementos ya disponibles en la tarjeta NodeMCU:
 
-Para los sensores de CO2 existen dos alternativas:
+* Se emplea uno de los dos LED incorporados a la tarjeta NodeMCU para proporcionar alertas visuales. El LED está apagado normalmente; parpadea lentamente cuando el dispositivo está en estado de aviso por CO2, y parpadea rápidamente en caso de encontrarse en alarma. Las frecuencias de parpadeo son iguales a las de la alerta sonora proporcionada por el zumbador.
 
-A continuación se enumeran los elementos citados, incluyendo enlaces a sus características en incluso alguna alternativa para su adquisición.
+* Se emplea el botón de Flash (a la derecha del conector Micro USB) poder deshabilitar la alerta local. Y para volverla a habilitar, ya que el botón conmuta entre ambos estados.
+  * Adicionalmente, cada vez que se presiona el botón de Fllash se muestran el modelo, ID y dirección IP del dispositivo, hasta la realización de la siguiente medición.
+
+* Presionando dos veces consecutivas el botón de Reset (a la izquierda del conector MicroUSB) el dispositivo se reinicia en modo de portal cautivo, lo que permite la configuración de la red WiFi y el acceso a otros parámetros de configuración.
+  
+El dispositivo es plenamente operativo incluso sin el display y sin el zumbador. Para funcionar con mínimo coste sólo es necesaria una tarjeta de control NodeMCU y un sensor de CO2, todos los demás elementos son opcionales.
+
+Para los sensores de CO2 existen dos alternativas. Actualmente se soportan dos sensores de CO2, ambos con tecnología NDIR: el Sensirion SCD30 y el Winsen MH-Z14A. El Sensirion SCD30 es un sensor de mayor calidad: tiene mayor precisión (30 ppm frente a los 50 ppm del MH-Z14A); incorpora sensor de temperatura y humedad, con lo que no hay que añadir un sensor adicional para medir temperatura y humedad, facilitando la fabricación (además de permitir mecanismos de compensación, etc.); tiene un mecanismo de autocalibración más robusto, en el que se hace uso de las mediciones de los últimos 30 días, en lugar de las últimas 24 horas, como en el caso del MH-Z14A; su respuesta es también más rápida ante cambios atmosféricos (por ejemplo, al introducir ventilación en un espacio cerrado). El inconveniente del Sensirion SCD30 es que suele ser más caro y tiene menos opciones de compra y normalmente mayores plazos de entrega. El MH-Z14A está disponible en todo tipo de plataformas de comercio electrónico. Para comprar el Sensirion SCD30 hay que recurrir normalmente a plataformas más especializadas en componentes electrónicos.
+
+La alimentación del dispositivo se realiza directamente a través del puerto Micro USB de la tarjeta de control NodeMCU LUA Amica V2, el mismo que se utiliza para programarla y para observar mensajes de diagnóstico. Se recomienda utilizar fuentes de alimentación (enchufes USB, puertos USB en ordenadores, etc.) que puedan proporcionar al menos 500 mA (que es lo más frecuente, aunque podría no ser así en el caso de antiguos cargadores de teléfonos móviles, por ejemplo).   
+
+A continuación se enumeran los elementos citados, incluyendo enlaces a su documentación y a opciones para su adquisición.
 
 ## Elementos comunes
 * Tarjeta de control basada en microcontrolador ESP8266: AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2  
@@ -74,23 +96,26 @@ https://www.amazon.es/dp/B089QJKJXW/ref=twister_B082MHYNND?_encoding=UTF8&psc=1
 </p>
 
 ## Sensores
-Actualmente se soportan dos sensores de CO2, ambos con tecnología NDIR:
-* Sensirion SCD30
-<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/SCD30/SCD30%20transparente.png" width="20%" height="20%" />
-* Winsen MH-Z14A
-<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/MH-Z14A%20transparente.png" width="30%" height="30%" />
+* Anaire Slim: sensor de CO2, temperatura y humedad Sensirion SCD30 
+https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/
 
-El Sensirion SCD30 tiene mayor precisión (30 ppm frente a los 50 ppm del MH-Z14A); incorpora sensor de temperatura y humedad, con lo que no hay que añadir un sensor adicional para medir temperatura y humedad, facilitando la fabricación (además de permitir mecanismos de compensación, etc.); además tiene un mecanismo de autocalibración más robusto, en el que se hace uso de las mediciones de los últimos 30 días, en lugar de las últimas 24 horas, como en el caso del MH-Z14A. Su respuesta es también más rápida ante cambios atmosféricos (por ejemplo, al introducir ventilación en un espacio cerrado).
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/SCD30/SCD30%20transparente.png" width="20%" height="20%" />
+</p>  
+  
+* Anaire Bread: sensor de CO2 Winsen MHZ14A
+http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf 
 
-El inconveniente del Sensirion SCD30 es que suele ser más caro y tiene menos opciones de compra. El MH-Z14A está disponible en todo tipo de plataformas de comercio electrónico. Para comprar el Sensirion SCD30 hay que recurrir normalmente a plataformas más especializadas en componentes electrónicos.
+  * Adicionalmente, el AnaireBread necesita el sensor de temperatura y humedad AZ-Delivery DHT11
+  https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
+  
+  <p align="center">
+    <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/MH-Z14A%20transparente.png" width="30%" height="30%" />
+  </p>  
 
-* Anaire Slim: Sensirion SCD30 para medidas de CO2, temperatura y humedad https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/
- * Anaire Bread: MHZ14A para medidas de CO2 http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf y AZ-Delivery DHT11 para medidas de temperatura y humedad https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
+El software del medidor de CO2 de Anaire es compatible con ambos sensores, y detecta automáticamente cuál de los dos está en uso, adaptándose a ello sin necesidad de realizar ningún cambio de configuración.
 
- * El software del medidor de CO2 de Anaire es compatible con ambos sensores, y detecta automáticamente cuál de los dos está en uso, adaptándose a ello sin necesidad de realizar ningún cambio de configuración.
- ![Enlace al SW](https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositvo_ANAIRE_display.png)
-
- Nuestra recomendación es utilizar el Sensirion SCD30 siempre que sea posible, ya que permite fabricar, por un coste muy similar. En cualquier caso se recomienda encarecidamente el análisis de la documentación técnica de ambos sensores (disponible en la carpeta "documentos" de este repositorio), especialmente para la interpretación de las medidas y la determinación de procedimientos de recalibración, en caso de considerarlo necesario para optimizar la evolución de la precisión de las medidas con el paso del tiempo.
+**Nuestra recomendación es utilizar el Sensirion SCD30 siempre que sea posible, ya que permite fabricar, por un coste muy similar, un dispositivo de mayor precisión y estabilidad en el tiempo**. En cualquier caso se recomienda encarecidamente el análisis de la documentación técnica de ambos sensores (disponible en la carpeta "documentos" de este repositorio), especialmente para la interpretación de las medidas y la determinación de procedimientos de recalibración, en caso de considerarlo necesario para optimizar la evolución de la precisión de las medidas con el paso del tiempo.
 
  * Medición adicional de temperatura y humedad. En caso de utilizar el MH-Z14A como medidor de CO2 hemos incorporado el AZ Delivery DHT11 como sensor de temperatura y humedad. En caso de utilizar el SCD30 no es necesario incorporar ningún componente adicional.
 <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Zumbador/Zumbador%20transparente.png" width="10%" height="10%" />

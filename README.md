@@ -132,6 +132,7 @@ https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3gica-ambiente/dp
 ## Otros:
  * O bien caja AnaireBox imprimida por 3D  
  https://www.thingiverse.com/thing:4694633  
+   
  acompañada por cables dupont hembra-hembra  
  https://www.amazon.es/SODIAL-Puente-Hembra-Soldadura-Flexible/dp/B00HUH9GOC/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cable+dupont+hembra+hembra&qid=1609613291&s=industrial&sr=1-4  
  
@@ -168,21 +169,21 @@ https://www.arduino.cc/en/software
 
  6. Tras la instalación seleccionar en *Herramientas -> Placa* la opción *NodeMCU 1.0*, para de esta forma trabajar con esa tarjetas
 
- 7. Instalar las siguientes Librerías, utilizando la opción *Herramientas -> Administrar Bibliotecas* del IDE de Arduino. Cuidado: se ha observado que puede fallar si se instalan directamente los archivos zip de las librerías y se descomprimen en el PC local. **Se recomienda encarecidamente instalar las librerías desde el IDE de Arduino**.
-
-  - WiFiEsp https://github.com/bportaluri/WiFiEsp (uso de WiFi con ESP8266)
-  - Arduino Client for MQTT https://pubsubclient.knolleary.net/ (cliente MQTT para comunicación con la nube)
-  - ArduinoJson https://arduinojson.org/?utm_source=meta&utm_medium=library.properties (para procesar mensajes MQTT)
-  - esp8266-oled-ssd1306 https://github.com/ThingPulse/esp8266-oled-ssd1306 (gestión del display OLED)
-  - SparkFun_SCD30_Arduino_Library https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library (gestión del sensor de CO2, temperatura y humedad Sensirion SCD30)
-  - DHTesp https://github.com/beegee-tokyo/DHTesp (gestión del sensor de temperatura y humedad DHT11)
-  - EspSoftwareSerial https://github.com/plerup/espsoftwareserial/ (comunicación serie con el sensor de CO2 MH-Z14A)
-  - ESP_EEPROM https://github.com/jwrw/ESP_EEPROM (almacenamiento de parámetros persistentes en la memoria flash de la NodeMCU)
-  - WifiManager kentaylor https://github.com/kentaylor/WiFiManager (gestión de la conexión WiFi)
-  - Double Reset detector https://github.com/datacute/DoubleResetDetector (detector de doble pulsación del botón reset para reinicio en el portal cautivo y poder configurar la WiFi y otros parámetros)
+ 7. Instalar las siguientes Librerías, utilizando la opción *Herramientas -> Administrar Bibliotecas* del IDE de Arduino. Cuidado: se ha observado que puede fallar si se instalan directamente los archivos zip de las librerías y se descomprimen en el PC local. **Se recomienda encarecidamente instalar las librerías desde el IDE de Arduino, ya que se han observado comportamientos incorrectos al instalar las librerías por otros procedimientos**.
+  ** WiFiEsp https://github.com/bportaluri/WiFiEsp (uso de WiFi con ESP8266)
+  ** Arduino Client for MQTT https://pubsubclient.knolleary.net/ (cliente MQTT para comunicación con la nube)
+  ** ArduinoJson https://arduinojson.org/?utm_source=meta&utm_medium=library.properties (para procesar mensajes MQTT)
+  ** esp8266-oled-ssd1306 https://github.com/ThingPulse/esp8266-oled-ssd1306 (gestión del display OLED)
+  ** SparkFun_SCD30_Arduino_Library https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library (gestión del sensor de CO2, temperatura y humedad Sensirion SCD30)
+  ** DHTesp https://github.com/beegee-tokyo/DHTesp (gestión del sensor de temperatura y humedad DHT11)
+  ** EspSoftwareSerial https://github.com/plerup/espsoftwareserial/ (comunicación serie con el sensor de CO2 MH-Z14A)
+  ** ESP_EEPROM https://github.com/jwrw/ESP_EEPROM (almacenamiento de parámetros persistentes en la memoria flash de la NodeMCU)
+  ** WifiManager kentaylor https://github.com/kentaylor/WiFiManager (gestión de la conexión WiFi)
+  ** Double Reset detector https://github.com/datacute/DoubleResetDetector (detector de doble pulsación del botón reset para reinicio en el portal cautivo y poder configurar la WiFi y otros parámetros)
 
 ## Obtención del software del Medidor de CO2 de ANAIRE
-El software está disponible en su última versión en el siguiente enlace:
+El software está disponible en su última versión en el siguiente enlace de este repositorio:  
+https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino  
 
 Una vez configurado el entorno de desarrollo en el apartado anterior, cargar este programa en el entorno de Arduino, y descargarlo en la tarjeta haciendo click en el botón del IDE que muestra una flecha horizontal apuntando hacia la derecha
 

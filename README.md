@@ -108,27 +108,27 @@ https://www.amazon.es/dp/B089QJKJXW/ref=twister_B082MHYNND?_encoding=UTF8&psc=1
 </p>
   
 ## Sensores
-* Dispositivo Anaire Slim: sensor de CO2, temperatura y humedad Sensirion SCD30   
+* Dispositivo AnaireSlim: sensor de CO2, temperatura y humedad Sensirion SCD30   
 https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/  
 https://www.digikey.es/product-detail/en/sensirion-ag/SCD30/1649-1098-ND/8445334  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/SCD30/SCD30%20transparente.png" width="20%" height="20%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/SCD30/SCD30%20transparente.png" width="30%" height="30%" />
 </p>  
   
-* Dispositivo Anaire Bread: sensor de CO2 Winsen MHZ14A
+* Dispositivo AnaireBread: sensor de CO2 Winsen MHZ14A  
 http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf  
 https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3gica-ambiente/dp/B07CXGL7XG  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/MH-Z14A%20transparente.png" width="30%" height="30%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/MH-Z14A%20transparente.png" width="40%" height="40%" />
 </p> 
-  
-  * Adicionalmente, el AnaireBread necesita el sensor de temperatura y humedad AZ-Delivery DHT11
-  https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
-  https://www.amazon.es/dp/B089W8DB5P/ref=twister_B089YSBB1N?_encoding=UTF8&psc=1
+    
+  * Adicionalmente, el AnaireBread necesita el sensor de temperatura y humedad AZ-Delivery DHT11  
+  https://www.az-delivery.de/es/products/dht11-temperatursensor-modul  
+  https://www.amazon.es/dp/B089W8DB5P/ref=twister_B089YSBB1N?_encoding=UTF8&psc=1  
   <p align="center">
-    <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/DHT-11/DHT-11%20transparente.png" width="30%" height="30%" />
+    <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/DHT-11/DHT-11%20transparente.png" width="10%" height="10%" />
   </p>  
-
+  
 ## Otros:
  * O bien caja AnaireBox imprimida por 3D  
  https://www.thingiverse.com/thing:4694633  

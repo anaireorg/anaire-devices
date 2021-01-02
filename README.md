@@ -5,12 +5,13 @@
 
 Proyecto libre y abierto (opensource), tanto hardware como software, para la fabricación de un medidor de CO2, temperatura y humedad, de mínimo coste y alta precisión, conectado por WiFi a una aplicación en la nube denominada Anaire Cloud App para mostrar los valores instantáneos y el histórico de mediciones de CO2, temperatura y humedad, facilitando así el análisis de la infortmación de las medidas y su correlación con protocolos de ventilación anti COVID-19.
 
-El concepto se muestra en la siguiente imagen. Se trata de un dispositivo basado en un microcontrolador ESP8266 montado sobre una tarjeta de control NodeMCU, al que se conectan sensores para la medida de CO2, temperatura y humedad. El dispositivo tiene un display para mostrar las medidas e indicaciones de estado, un LED y un zumbador para poder emitir alertas visuales y sonoras, y un botón para poder deshabilitar la alerta local. Dispone de conectividad WiFi para poder enviar las mediciones realizadas a una aplicación en la nube, Anaire Cloud App, que permite agregar la información de múltiples dispositivos y acceder al histórico de medidas desde cualquier dispositivo vía Internet.
+El concepto se muestra en la siguiente imagen. Se trata de un dispositivo basado en un microcontrolador ESP8266, al que se conectan sensores para la medida de CO2, temperatura y humedad. El dispositivo tiene un display para mostrar las medidas e indicaciones de estado, un LED y un zumbador para poder emitir alertas visuales y sonoras, y un botón para poder deshabilitar la alerta local. Dispone de conectividad WiFi para poder enviar las mediciones realizadas a una aplicación en la nube, Anaire Cloud (https://github.com/anaireorg/anaire-cloud), que permite agregar la información de múltiples dispositivos y acceder al histórico de medidas desde cualquier dispositivo vía Internet.
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositivo_ANAIRE.png" width="80%" height="80%"/>
 </p>
-En este repositorio se publica información completa para la fabricación del medidor de CO2 Anaire, desde el código fuente hasta las especificaciones de componentes, cableados y opciones de montaje tanto en placa de prototipado como utilizando cajas de impresión 3D para la disposición de los componentes. La intención es que cualquier persona pueda encontrar aquí la información necesaria y suficiente para montar su propio sensor de CO2, con o sin conexión a la nube, sin necesidad de grandes conocimientos técnicos, como ayuda para combatir la pandemia causada por la COVID-19, ayudando a preparar entornos más seguros, con mínimos niveles de CO2, que puedan ayudar a prevenir contagios en entornos cerrados.
 
+En este repositorio se publica información completa para la fabricación del medidor de CO2 Anaire, desde el código fuente hasta las especificaciones de componentes, cableados y opciones de montaje tanto en placa de prototipado como utilizando cajas de impresión 3D para la disposición de los componentes. La intención es que cualquier persona pueda encontrar aquí la información necesaria y suficiente para montar su propio sensor de CO2, con o sin conexión a la nube, sin necesidad de grandes conocimientos técnicos, como ayuda para combatir la pandemia causada por la COVID-19, ayudando a preparar entornos más seguros, con mínimos niveles de CO2, que puedan ayudar a prevenir contagios en entornos cerrados.
+  
 Toda la información se publica en formato "open source", tanto diseño hardware como código software, con el ánimo de facilitar el uso y difusión de la tecnología todo lo posible. Con el mismo espíritu se tratan de resolver todas las incidencias reportadas en los repositorios de Anaire (*issues*).
 
 ---  
@@ -21,28 +22,32 @@ Toda la información se publica en formato "open source", tanto diseño hardware
 # Características principales
 * Medición de CO2 mediante sensores NDIR de alta precisión
   * Adicionalmente se realizan de forma simultánea mediciones de temperatura y de humedad
-* Completamente opensource, tanto hardware como software. Toda la información, tanto sobre este dispositivo como sobre la aplicación en la nube con la que se comunica, está disponible en los repositorios de Anaire en github. Sin excepciones.
+    
+* Completamente opensource, tanto hardware como software. Toda la información, tanto sobre este dispositivo como sobre la aplicación en la nube con la que se comunica, está disponible en los repositorios de Anaire en github (https://github.com/anaireorg). Sin excepciones.  
+  
 * Alarma local, visual y sonora, cuando el nivel de CO2 sobrepara los umbrales de aviso (700 ppm por defecto) y alarma (1000 ppm por defecto)
-  * Esta alarma puede conmutarse localmente (encendido/apagado) mediante un botón en el dispositivo o desde la configuración del dispositivo en la nube
+  * Esta alarma puede conmutarse localmente (encendido/apagado) mediante un botón en el dispositivo o desde la configuración del dispositivo en la nube.  
+    
 * Conexión a una red WiFi para el envío de las medidas a una aplicación desplegada en la nube con objeto de obtener los siguientes beneficios adicionales:
   * Agregar la información de múltiples dispositivos permitiendo visualizar de forma simultánea el estado de todos ellos, siguiendo un código de colores sencillo (verde, amarillo y rojo) para indicar el estado actual de una organización con múltiples dispositivos. La idea es, sobre todo, poder monitorizar la medida del CO2 en centros de enseñanza, donde alumnos y profesores deben compartir espacios cerrados
   * Almacenar las medidas de CO2, temperatura y humedad realizadas cada 30 segundos durante al menos 15 días.
-  * Facilitar el análisis de las medidas almacenadas, permitiendo el acceso al histórico de medidas de forma sencilla, para de este modo facilitar el análisis del funcionamiento de los protocolos de ventilación.
-* Toda la información almacenada en la nube es accesible vía Internet, tanto en modo individual para cada dispositivo como en modo agregado en cuadros de mandos configurables con usuarios y permisos de visualización y de edición arbitrarios. De este modo se pueden definir distintos tipos de usuarios con distintos niveles de visualización de la información: personal del centro, alumnos, padres de alumnos, etc.
-* Para el acceso a la información sólo es preciso un dispositivo con conexión a Internet (ordenador, teléfono móvil, tableta, etc.), la url de acceso al dispositivo o a la organización, y un usuario y contraseña (en caso de que se hayan habilitado políticas de acceso)
-* Comunicación entre el dispositivo y la aplicación en la nube mediante protocolo MQTT securizado con TLS. Para detalles de cómo desplegar la aplicación y su arquitectura véase el repositorio de Anaire ...
+  * Facilitar el análisis de las medidas almacenadas, permitiendo el acceso al histórico de medidas de forma sencilla, para de este modo facilitar el análisis del funcionamiento de los protocolos de ventilación.  
+* Toda la información almacenada en la nube es accesible vía Internet, tanto en modo individual para cada dispositivo como en modo agregado en cuadros de mandos configurables con usuarios y permisos de visualización y de edición arbitrarios. De este modo se pueden definir distintos tipos de usuarios con distintos niveles de visualización de la información: personal del centro, alumnos, padres de alumnos, etc.  
+* Para el acceso a la información sólo es preciso un dispositivo con conexión a Internet (ordenador, teléfono móvil, tableta, etc.), la url de acceso al dispositivo o a la organización, y un usuario y contraseña (en caso de que se hayan habilitado políticas de acceso).  
+* Comunicación entre el dispositivo y la aplicación en la nube mediante protocolo MQTT securizado con TLS.  
 * Fabricación sencilla, simplemente "pinchando" los componentes en placas de prototipado ("breadboard"), soldando únicamente los cuatro pines necesarios en el sensor de CO2. En el caso del sensor SCD30, es especialmente sencillo, ya que tras soldar los cuatro pines necesarios se puede "pinchar" el sensor en la placa de prototipado de forma alineada y consecutiva con la tarjeta de control NodeMCU, ahorrando así esos cables y proporcionando mayor robustez al montaje.
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireSlim.jpeg" width="30%" height="30%" />
-</p>
-* Alternativa para la fabricación mucho más robusta utilizando cajas diseñadas a medida y fabricadas mediante impresoras 3D, y simplemente conectando los componentes mediante cables dupont hembra y encajándolos en los espacios preparados para ello en la caja. La caja es compatible para los dos sensores, y alberga adicionalmente el display OLED (y el resto de los componentes) de forma que sea muy fácil la lectura de las medidas. Todos los detalles para la fabricación de la caja se pueden encontrar en la carpeta "3D print" en este repositorio.
-* Alimentación directamente a través del puerto Micro USB de la tarjeta de control NodeMCU LUA Amica V2 (el mismo que se utiliza para programarla y para observar mensajes de diagnóstico). Se recomienda utilizar fuentes de alimentación (enchufes USB, puertos USB en ordenadores, etc.) que puedan proporcionar al menos 500 mA (que es lo más frecuente, aunque podría no ser así en el caso de antiguos cargadores de teléfonos móviles, por ejemplo)
-* Actualización remota del SW del dispositivo, iniciada desde la aplicación en la nube. Permite la actualización automática a la última versión del software en modo binario, almacenada en este repositorio en github.
-* Actualización remota de parámetros (umbrales de aviso y de alarma, aviso local de alarma, etc.) desde la aplicación en la nube.
-* Portal cautivo para la configuración de la red WiFi en la localización final, sin necesidad de modificar el software del dispositivo. Accesible mediante botón en el dispositivo.
+</p>  
+* Alternativa para la fabricación mucho más robusta utilizando cajas diseñadas a medida y fabricadas mediante impresoras 3D, y simplemente conectando los componentes mediante cables dupont hembra y encajándolos en los espacios preparados para ello en la caja. La caja es compatible para los dos sensores, y alberga adicionalmente el display OLED (y el resto de los componentes) de forma que sea muy fácil la lectura de las medidas. Todos los detalles para la fabricación de la caja se pueden encontrar en la carpeta "3D print" en este repositorio.  
+* Alimentación directamente a través del puerto Micro USB de la tarjeta de control NodeMCU LUA Amica V2 (el mismo que se utiliza para programarla y para observar mensajes de diagnóstico). Se recomienda utilizar fuentes de alimentación (enchufes USB, puertos USB en ordenadores, etc.) que puedan proporcionar al menos 500 mA (que es lo más frecuente, aunque podría no ser así en el caso de antiguos cargadores de teléfonos móviles, por ejemplo).  
+* Actualización remota del SW del dispositivo, iniciada desde la aplicación en la nube. Permite la actualización automática a la última versión del software en modo binario, almacenada en este repositorio en github:
+https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin  
+* Actualización remota de parámetros (umbrales de aviso y de alarma, aviso local de alarma, etc.) desde la aplicación en la nube.   
+* Portal cautivo para la configuración de la red WiFi en la localización final, sin necesidad de modificar el software del dispositivo. Accesible mediante botón en el dispositivo.  
 
 # Hardware
-Se trata de un dispositivo basado en un microcontrolador ESP8266 montado sobre una tarjeta de control NodeMCU, al que se conectan sensores de CO2, temperatura y humedad. El dispositivo tiene un display para mostrar las mediciones e indicaciones de estado, un LED y un zumbador para poder emitir alertas visuales y sonoras, y un botón para poder deshabilitar la alerta local. El dispositivo es plenamente operativo incluso sin el display y sin el zumbador. Para funcionar con mínimo coste sólo es necesaria una tarjeta de control NodeMCU y un sensor de CO2, todos los demás elementos son opcionales.
+Se trata de un dispositivo basado en un microcontrolador ESP8266 montado sobre una tarjeta de control NodeMCU Lua Amica V2, al que se conectan sensores de CO2, temperatura y humedad. El dispositivo tiene un display para mostrar las mediciones e indicaciones de estado, un LED y un zumbador para poder emitir alertas visuales y sonoras, y un botón para poder deshabilitar la alerta local. El dispositivo es plenamente operativo incluso sin el display y sin el zumbador. Para funcionar con mínimo coste sólo es necesaria una tarjeta de control NodeMCU y un sensor de CO2, todos los demás elementos son opcionales.
 
 Para los sensores de CO2 existen dos alternativas:
 
@@ -52,17 +57,21 @@ A continuación se enumeran los elementos citados, incluyendo enlaces a sus cara
 * Tarjeta de control basada en microcontrolador ESP8266: AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2  
 https://www.az-delivery.de/es/products/nodemcu  
 https://www.amazon.es/dp/B06Y1LZLLY/ref=twister_B082DJVXFC?_encoding=UTF8&psc=1  
-<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/NodeMCU/NodeMCU%20transparente.png" width="20%" height="20%" />  
-
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/NodeMCU/NodeMCU%20transparente.png" width="20%" height="20%" />  
+</p>
 * Display OLED: AZDelivery 0.91 inch OLED I2C Display 128 x 32 Pixels  
 https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display  
 https://www.amazon.es/dp/B079H2C7WH/ref=twister_B082MC4QJ4?_encoding=UTF8&psc=1  
-<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Display/Display%20transparente.png" width="25%" height="25%" />  
-
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Display/Display%20transparente.png" width="25%" height="25%" />  
+</p>
 * Zumbador: AZDelivery Active Buzzer  
 https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r  
 https://www.amazon.es/dp/B089QJKJXW/ref=twister_B082MHYNND?_encoding=UTF8&psc=1  
-<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Zumbador/Zumbador%20transparente.png" width="10%" height="10%" />  
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Zumbador/Zumbador%20transparente.png" width="10%" height="10%" />  
+</p>
 
 ## Sensores
 Actualmente se soportan dos sensores de CO2, ambos con tecnología NDIR:

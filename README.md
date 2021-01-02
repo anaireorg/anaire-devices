@@ -71,7 +71,9 @@ Con objeto de simplificar la fabricación y no añadir más componentes aun prop
   
 El dispositivo es plenamente operativo incluso sin el display y sin el zumbador. Para funcionar con mínimo coste sólo es necesaria una tarjeta de control NodeMCU y un sensor de CO2, todos los demás elementos son opcionales.
 
-Para los sensores de CO2 existen dos alternativas. Actualmente se soportan dos sensores de CO2, ambos con tecnología NDIR: el Sensirion SCD30 y el Winsen MH-Z14A. El Sensirion SCD30 es un sensor de mayor calidad: tiene mayor precisión (30 ppm frente a los 50 ppm del MH-Z14A); incorpora sensor de temperatura y humedad, con lo que no hay que añadir un sensor adicional para medir temperatura y humedad, facilitando la fabricación (además de permitir mecanismos de compensación, etc.); tiene un mecanismo de autocalibración más robusto, en el que se hace uso de las mediciones de los últimos 30 días, en lugar de las últimas 24 horas, como en el caso del MH-Z14A; su respuesta es también más rápida ante cambios atmosféricos (por ejemplo, al introducir ventilación en un espacio cerrado). El inconveniente del Sensirion SCD30 es que suele ser más caro y tiene menos opciones de compra y normalmente mayores plazos de entrega. El MH-Z14A está disponible en todo tipo de plataformas de comercio electrónico. Para comprar el Sensirion SCD30 hay que recurrir normalmente a plataformas más especializadas en componentes electrónicos.
+Para los sensores de CO2 existen dos alternativas. Actualmente se soportan dos sensores de CO2, ambos con tecnología NDIR: el Sensirion SCD30 (https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/) y el Winsen MH-Z14A (http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf). 
+  
+El Sensirion SCD30 es un sensor de mayor calidad: tiene mayor precisión (30 ppm frente a los 50 ppm del MH-Z14A); incorpora sensor de temperatura y humedad, con lo que no hay que añadir un sensor adicional para medir temperatura y humedad, facilitando la fabricación (además de permitir mecanismos de compensación, etc.); tiene un mecanismo de autocalibración más robusto, en el que se hace uso de las mediciones de los últimos 30 días, en lugar de las últimas 24 horas, como en el caso del MH-Z14A; su respuesta es también más rápida ante cambios atmosféricos (por ejemplo, al introducir ventilación en un espacio cerrado). El inconveniente del Sensirion SCD30 es que suele ser más caro y tiene menos opciones de compra y normalmente mayores plazos de entrega. El MH-Z14A está disponible en todo tipo de plataformas de comercio electrónico. Para comprar el Sensirion SCD30 hay que recurrir normalmente a plataformas más especializadas en componentes electrónicos.
   
 El software del medidor de CO2 de Anaire es compatible con ambos sensores, y detecta automáticamente cuál de los dos está en uso, adaptándose a ello sin necesidad de realizar ningún cambio de configuración.
   
@@ -90,30 +92,32 @@ https://www.amazon.es/dp/B06Y1LZLLY/ref=twister_B082DJVXFC?_encoding=UTF8&psc=1
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/NodeMCU/NodeMCU%20transparente.png" width="20%" height="20%" />  
 </p>
+  
 * Display OLED: AZDelivery 0.91 inch OLED I2C Display 128 x 32 Pixels  
 https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display  
 https://www.amazon.es/dp/B079H2C7WH/ref=twister_B082MC4QJ4?_encoding=UTF8&psc=1  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Display/Display%20transparente.png" width="25%" height="25%" />  
 </p>
+  
 * Zumbador: AZDelivery Active Buzzer  
 https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r  
 https://www.amazon.es/dp/B089QJKJXW/ref=twister_B082MHYNND?_encoding=UTF8&psc=1  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Zumbador/Zumbador%20transparente.png" width="10%" height="10%" />  
 </p>
-
+  
 ## Sensores
 * Anaire Slim: sensor de CO2, temperatura y humedad Sensirion SCD30 
-https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/
-https://www.digikey.es/product-detail/en/sensirion-ag/SCD30/1649-1098-ND/8445334
+https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/  
+https://www.digikey.es/product-detail/en/sensirion-ag/SCD30/1649-1098-ND/8445334  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/SCD30/SCD30%20transparente.png" width="20%" height="20%" />
 </p>  
   
 * Anaire Bread: sensor de CO2 Winsen MHZ14A
-http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf 
-https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3gica-ambiente/dp/B07CXGL7XG
+http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf  
+https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3gica-ambiente/dp/B07CXGL7XG  
   
   * Adicionalmente, el AnaireBread necesita el sensor de temperatura y humedad AZ-Delivery DHT11
   https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
@@ -123,20 +127,21 @@ https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3gica-ambiente/dp
   </p>  
 
 ## Otros:
- * O bien caja AnaireBox imprimida por 3D, acompañada por cables dupont hembra-hembra
- https://www.thingiverse.com/thing:4694633
- https://www.amazon.es/SODIAL-Puente-Hembra-Soldadura-Flexible/dp/B00HUH9GOC/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cable+dupont+hembra+hembra&qid=1609613291&s=industrial&sr=1-4
+ * O bien caja AnaireBox imprimida por 3D, acompañada por cables dupont hembra-hembra  
+ https://www.thingiverse.com/thing:4694633  
+ https://www.amazon.es/SODIAL-Puente-Hembra-Soldadura-Flexible/dp/B00HUH9GOC/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cable+dupont+hembra+hembra&qid=1609613291&s=industrial&sr=1-4  
  
  * O bien placas de prototipado
-   * Placa de 400 puntos, para el AnaireSlim
-   https://www.amazon.es/dp/B071ZGC75Y/ref=twister_B07T88TTXF?_encoding=UTF8&psc=1
+   * Placa de 400 puntos, para el AnaireSlim  
+   https://www.amazon.es/dp/B071ZGC75Y/ref=twister_B07T88TTXF?_encoding=UTF8&psc=1  
+     
+   * Placa de 830 puntos, para el AnaireBread  
+   https://www.amazon.es/dp/B071ZGC75Y/ref=twister_B07T88TTXF?_encoding=UTF8&psc=1  
+     
+   * En ambos casos son necesarios cables dupont macho-macho  
+   https://www.amazon.es/Neuftech-jumper-20cm-Arduino-Breadboard/dp/B00NBNIETC/ref=sr_1_4?dchild=1&keywords=dupont+macho+macho&qid=1609613744&sr=8-4  
    
-   * Placa de 830 puntos, para el AnaireBread
-   https://www.amazon.es/dp/B071ZGC75Y/ref=twister_B07T88TTXF?_encoding=UTF8&psc=1
    
-   * En ambos casos son necesarios cables dupont macho-macho
-   https://www.amazon.es/Neuftech-jumper-20cm-Arduino-Breadboard/dp/B00NBNIETC/ref=sr_1_4?dchild=1&keywords=dupont+macho+macho&qid=1609613744&sr=8-4
-
  * Será necesario un cable válido para conectar desde un puerto USB del ordenador al puerto Micro USB de la tarjeta NodeMCU, para poder descargar el software del dispositivo. Este mismo cable puede ser utilizado para la alimentación eléctrica desde un ordenador, o desde un enchufe USB o includo desde una batería portátil USB. También podría utilizarse, una vez descargado el software, un transformador de un antiguo teléfono móvil u otro tipo de dispositivo que tenga un conector Micro USB y proporcione al menos 500 mili amperios
 https://www.amazon.es/TM-Electron-CXU201020-Cable-Blanco/dp/B07BQD6P74/ref=sr_1_22?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=usb+micro+usb&qid=1609613811&sr=8-22
 

@@ -1,3 +1,5 @@
+# En elaboración actualmente, información inestable en proceso de actualización
+----
 
 # 3D Box design
  - https://www.thingiverse.com/thing:4678398/files

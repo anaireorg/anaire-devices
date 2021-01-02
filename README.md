@@ -254,8 +254,16 @@ Realizar las conexiones mediante cables dupont hembra, y encajar a continuación
 Hay que soldar 4 pines como se muestra en las imágenes anteriores según el sensor que se esté utilizando.
 
 ### Montaje final  
-En la siguiente imagen se muestra el montaje final realizado  
+En las siguientes imágenes se muestra el montaje final realizado  
 
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxFrontal2.jpg" width="30%" height="30%" />
+</p>  
+
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxInterior.jpg" width="30%" height="30%" />
+</p>  
+  
 ## Carga del software en la tarjeta NodeMCU
 Una vez completado el montaje de los componentes, hay que proceder a la descarga del software en la tarjeta de control NodeMCU. Para ello realice los siguientes pasos:
 

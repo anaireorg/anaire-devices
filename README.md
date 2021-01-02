@@ -1,38 +1,37 @@
-# Medidor de CO2 ANAIRE (con sensor NDIR)
+# Medidor de CO2 ANAIRE (sensor NDIR)
 
-Proyecto opensource (HW y SW) para la fabricación de un medidor de CO2, temperatura y humedad de mínimo coste y alta precisión, conectado por WiFi a una aplicación en la nube denominada Anaire Cloud App para mostrar los valores instantáneos y el histórico de mediciones de CO2, temperatura y humedad.
+Proyecto abierto (opensource), harware y software, para la fabricación de un medidor de CO2, temperatura y humedad de mínimo coste y alta precisión, conectado por WiFi a una aplicación en la nube denominada Anaire Cloud App para mostrar los valores instantáneos y el histórico de mediciones de CO2, temperatura y humedad, facilitando así el análisis de la infortmación de las medidas y su correlación con protocolos de ventilación anti COVID-19.
 
-anaireorg/anaire-devices is licensed under the GNU General Public License v3.0
+*anaireorg/anaire-devices is licensed under the GNU General Public License v3.0*
+*20201109 ANAIRE DEVICE CODE - anaire@anaire.org*
 
-![Dispositivo](https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositvo_ANAIRE_display.png)
-
-20201109 ANAIRE DEVICE CODE - anaire@anaire.org
+<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositvo_ANAIRE_display.png" width="50%" height="50%" />
 
 En este repositorio se publica información completa para la fabricación del medidor de CO2 Anaire, desde el código fuente hasta las especificaciones de componentes, cableados y opciones de montaje tanto en placa de prototipado como utilizando cajas de impresión 3D para la disposición de los componentes. La intención es que cualquier persona pueda encontrar aquí la información necesaria y suficiente para montar su propio sensor de CO2, con o sin conexión a la nube, sin necesidad de grandes conocimientos técnicos, como ayuda para combatir la pandemia causada por la COVID-19, ayudando a preparar entornos más seguros, con mínimos niveles de CO2, que puedan ayudar a prevenir contagios en entornos cerrados.
 
-Toda la información se publica en formato "open source", tanto diseño hardware como código software, con el ánimo de facilitar el uso y difusión de la tecnología.
+Toda la información se publica en formato "open source", tanto diseño hardware como código software, con el ánimo de facilitar el uso y difusión de la tecnología todo lo posible. Con el mismo espíritu se tratan de resolver todas las incidencias/issues reportadas en los repositorios de Anaire.
+
+# En elaboración actualmente, información inestable en proceso de actualización
+----
 
 # Versión actual
-21.01 Ladinadaina (enero de 2021)
+21.01 ladinadaina (enero de 2021)
 
 # Características principales
 * Medición de CO2 mediante sensores NDIR de alta precisión
- * Adicionalmente se realizan de forma simultánea mediciones de temperatura y de humedad
+  * Adicionalmente se realizan de forma simultánea mediciones de temperatura y de humedad
 * Completamente opensource, tanto hardware como software. Toda la información, tanto sobre este dispositivo como sobre la aplicación en la nube con la que se comunica, está disponible en los repositorios de Anaire en github. Sin excepciones.
 * Alarma local, visual y sonora, cuando el nivel de CO2 sobrepara los umbrales de aviso (700 ppm por defecto) y alarma (1000 ppm por defecto)
- * Esta alarma puede conmutarse localmente (encendido/apagado) mediante un botón en el dispositivo o desde la configuración del dispositivo en la nube
+  * Esta alarma puede conmutarse localmente (encendido/apagado) mediante un botón en el dispositivo o desde la configuración del dispositivo en la nube
 * Conexión a una red WiFi para el envío de las medidas a una aplicación desplegada en la nube con objeto de obtener los siguientes beneficios adicionales:
- * Agregar la información de múltiples dispositivos permitiendo visualizar de forma simultánea el estado de todos ellos, siguiendo un código de colores sencillo (verde, amarillo y rojo) para indicar el estado actual de una organización con múltiples dispositivos. La idea es, sobre todo, poder monitorizar la medida del CO2 en centros de enseñanza, donde alumnos y profesores deben compartir espacios cerrados
- * Almacenar las medidas de CO2, temperatura y humedad realizadas cada 30 segundos durante al menos 15 días.
- * Facilitar el análisis de las medidas almacenadas, permitiendo el acceso al histórico de medidas de forma sencilla, para de este modo facilitar el análisis del funcionamiento de los protocolos de ventilación.
- * Toda la información almacenada en la nube es accesible vía Internet, tanto en modo individual para cada dispositivo como en modo agregado en cuadros de mandos configurables con usuarios y permisos de visualización y de edición arbitrarios. De este modo se pueden definir distintos tipos de usuarios con distintos niveles de visualización de la información: personal del centro, alumnos, padres de alumnos, etc.
- * Para el acceso a la información sólo es preciso un dispositivo con conexión a Internet (ordenador, teléfono móvil, tableta, etc.), la url de acceso al dispositivo o a la organización, y un usuario y contraseña (en caso de que se hayan habilitado políticas de acceso)
- * Comunicación entre el dispositivo y la aplicación en la nube mediante protocolo MQTT securizado con TLS. Para detalles de cómo desplegar la aplicación y su arquitectura véase el repositorio de Anaire ...
-
-
-* Fabricación sencilla simplemente "pinchando" los componentes en placas de prototipado ("breadboard"), soldando únicamente los cuatro pines necesarios en el sensor de CO2. En el caso del sensor SCD30, es especialmente sencillo, ya que tras soldar los cuatro pines necesarios se puede "pinchar" el sensor en la placa de prototipado de forma alineada y consecutiva con la tarjeta de control NodeMCU, ahorrando así esos cables y proporcionando mayor robustez al montaje.
-![SCD30 pines](https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositvo_ANAIRE_display.png)
-![Slim Device](https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositvo_ANAIRE_display.png)
+  * Agregar la información de múltiples dispositivos permitiendo visualizar de forma simultánea el estado de todos ellos, siguiendo un código de colores sencillo (verde, amarillo y rojo) para indicar el estado actual de una organización con múltiples dispositivos. La idea es, sobre todo, poder monitorizar la medida del CO2 en centros de enseñanza, donde alumnos y profesores deben compartir espacios cerrados
+  * Almacenar las medidas de CO2, temperatura y humedad realizadas cada 30 segundos durante al menos 15 días.
+  * Facilitar el análisis de las medidas almacenadas, permitiendo el acceso al histórico de medidas de forma sencilla, para de este modo facilitar el análisis del funcionamiento de los protocolos de ventilación.
+* Toda la información almacenada en la nube es accesible vía Internet, tanto en modo individual para cada dispositivo como en modo agregado en cuadros de mandos configurables con usuarios y permisos de visualización y de edición arbitrarios. De este modo se pueden definir distintos tipos de usuarios con distintos niveles de visualización de la información: personal del centro, alumnos, padres de alumnos, etc.
+* Para el acceso a la información sólo es preciso un dispositivo con conexión a Internet (ordenador, teléfono móvil, tableta, etc.), la url de acceso al dispositivo o a la organización, y un usuario y contraseña (en caso de que se hayan habilitado políticas de acceso)
+* Comunicación entre el dispositivo y la aplicación en la nube mediante protocolo MQTT securizado con TLS. Para detalles de cómo desplegar la aplicación y su arquitectura véase el repositorio de Anaire ...
+* Fabricación sencilla, simplemente "pinchando" los componentes en placas de prototipado ("breadboard"), soldando únicamente los cuatro pines necesarios en el sensor de CO2. En el caso del sensor SCD30, es especialmente sencillo, ya que tras soldar los cuatro pines necesarios se puede "pinchar" el sensor en la placa de prototipado de forma alineada y consecutiva con la tarjeta de control NodeMCU, ahorrando así esos cables y proporcionando mayor robustez al montaje.
+<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositvo_ANAIRE_display.png" width="50%" height="50%" />
 
 * Alternativa para la fabricación mucho más robusta utilizando cajas diseñadas a medida y fabricadas mediante impresoras 3D, y simplemente conectando los componentes mediante cables dupont hembra y encajándolos en los espacios preparados para ello en la caja. La caja es compatible para los dos sensores, y alberga adicionalmente el display OLED (y el resto de los componentes) de forma que sea muy fácil la lectura de las medidas. Todos los detalles para la fabricación de la caja se pueden encontrar en la carpeta "3D print" en este repositorio.
 
@@ -46,25 +45,28 @@ Toda la información se publica en formato "open source", tanto diseño hardware
 * Portal cautivo para la configuración de la red WiFi en la localización final, sin necesidad de modificar el software del dispositivo. Accesible mediante botón en el dispositivo.
 
 # Hardware
+El dispositivo se ha desarrollado sobr el microcontrolador ESP8266, utilizando una placa de 
 
-* Elementos comunes (fotos)
+## Elementos comunes
+* Tarjeta de control basada en microcontrolador ESP8266: AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
+<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/NodeMCU/NodeMCU%20transparente.png" width="20%" height="20%" />
+* Display OLED: AZDelivery 0.91 inch OLED I2C Display 128 x 32 Pixels  https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display
+<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Display/Display%20transparente.png" width="25%" height="25%" />
+* Zumbador: AZDelivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r
+<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Zumbador/Zumbador%20transparente.png" width="10%" height="10%" />
 
- * Tarjeta de control basada en microcontrolador ESP8266: AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
- * Display OLED: AZDelivery 0.91 inch OLED I2C Display 128 x 32 Pixels  https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display
- * Zumbador: AZDelivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r
-
-
-* Sensores (fotos)
+## Sensores
 (especificaciones detalladas en la carpeta de documentos). Actualmente se soportan dos sensores de CO2, ambos con tecnología NDIR:
- * Sensirion SCD30
- ![SCD30](https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositvo_ANAIRE_display.png)
- * Winsen MH-Z14A
- ![MH-Z14A](https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositvo_ANAIRE_display.png)
+* Sensirion SCD30
+<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/SCD30/SCD30%20transparente.png" width="20%" height="20%" />
+* Winsen MH-Z14A
+<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/MH-Z14A%20transparente.png" width="30%" height="30%" />
 
- El Sensirion SCD30 tiene mayor precisión (30 ppm frente a los 50 ppm del MH-Z14A); incorpora sensor de temperatura y humedad, con lo que no hay que añadir un sensor adicional para medir temperatura y humedad, facilitando la fabricación (además de permitir mecanismos de compensación, etc.); además tiene un mecanismo de autocalibración más robusto, en el que se hace uso de las mediciones de los últimos 30 días, en lugar de las últimas 24 horas, como en el caso del MH-Z14A. Su respuesta es también más rápida ante cambios atmosféricos (por ejemplo, al introducir ventilación en un espacio cerrado).
+El Sensirion SCD30 tiene mayor precisión (30 ppm frente a los 50 ppm del MH-Z14A); incorpora sensor de temperatura y humedad, con lo que no hay que añadir un sensor adicional para medir temperatura y humedad, facilitando la fabricación (además de permitir mecanismos de compensación, etc.); además tiene un mecanismo de autocalibración más robusto, en el que se hace uso de las mediciones de los últimos 30 días, en lugar de las últimas 24 horas, como en el caso del MH-Z14A. Su respuesta es también más rápida ante cambios atmosféricos (por ejemplo, al introducir ventilación en un espacio cerrado).
 
- El inconveniente del Sensirion SCD30 es que suele ser más caro y tiene menos opciones de compra. El MH-Z14A está disponible en todo tipo de plataformas de comercio electrónico. Para comprar el Sensirion SCD30 hay que recurrir normalmente a plataformas más especializadas en componentes electrónicos.
- * Anaire Slim: Sensirion SCD30 para medidas de CO2, temperatura y humedad https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/
+El inconveniente del Sensirion SCD30 es que suele ser más caro y tiene menos opciones de compra. El MH-Z14A está disponible en todo tipo de plataformas de comercio electrónico. Para comprar el Sensirion SCD30 hay que recurrir normalmente a plataformas más especializadas en componentes electrónicos.
+
+* Anaire Slim: Sensirion SCD30 para medidas de CO2, temperatura y humedad https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/
  * Anaire Bread: MHZ14A para medidas de CO2 http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf y AZ-Delivery DHT11 para medidas de temperatura y humedad https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
 
  * El software del medidor de CO2 de Anaire es compatible con ambos sensores, y detecta automáticamente cuál de los dos está en uso, adaptándose a ello sin necesidad de realizar ningún cambio de configuración.
@@ -73,9 +75,9 @@ Toda la información se publica en formato "open source", tanto diseño hardware
  Nuestra recomendación es utilizar el Sensirion SCD30 siempre que sea posible, ya que permite fabricar, por un coste muy similar. En cualquier caso se recomienda encarecidamente el análisis de la documentación técnica de ambos sensores (disponible en la carpeta "documentos" de este repositorio), especialmente para la interpretación de las medidas y la determinación de procedimientos de recalibración, en caso de considerarlo necesario para optimizar la evolución de la precisión de las medidas con el paso del tiempo.
 
  * Medición adicional de temperatura y humedad. En caso de utilizar el MH-Z14A como medidor de CO2 hemos incorporado el AZ Delivery DHT11 como sensor de temperatura y humedad. En caso de utilizar el SCD30 no es necesario incorporar ningún componente adicional.
- ![DHT11](https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositvo_ANAIRE_display.png)
+<img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Zumbador/Zumbador%20transparente.png" width="10%" height="10%" />
 
-* Otros:
+## Otros:
  * O bien caja AnaireBox imprimida por 3D, acompañada por cables dupont hembra-hembra
  ![Enlace a ambas cosas](https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositvo_ANAIRE_display.png)
  * O bien placas de prototipado. Pequeña, para el AnaireSlim, grande para el AnaireBread. En ambos casos son necesarios cables dupont macho-macho

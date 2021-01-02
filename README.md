@@ -61,7 +61,11 @@ Toda la información se publica en formato "open source", tanto diseño hardware
 El medidor Anaire es un dispositivo basado en un microcontrolador ESP8266 dispuesto en una tarjeta de control AZ Delivery NodeMCU Lua Amica V2, que proporciona también conectividad WiFi, y permite su programación desde el IDE de Arduino. Para realizar las medidas se conectan sensores de CO2, temperatura y humedad. Adicionalmente se conectan un display para mostrar las mediciones e indicaciones de estado, y un zumbador para poder emitir alertas sonoras. 
   
 Con objeto de simplificar la fabricación y no añadir más componentes aun proporcionando máxima funcionalidad, se utilizan los siguientes elementos ya disponibles en la tarjeta NodeMCU:
-  
+
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/NodeMCUV2botonesyleds.png" width="30%" height="30%" />
+</p> 
+
 * Se emplea uno de los dos LED incorporados a la tarjeta NodeMCU para proporcionar alertas visuales. El LED está apagado normalmente; parpadea lentamente cuando el dispositivo está en estado de aviso por CO2, y parpadea rápidamente en caso de encontrarse en alarma. Las frecuencias de parpadeo son iguales a las de la alerta sonora proporcionada por el zumbador.
 
 * Se emplea el botón de Flash (a la derecha del conector Micro USB) poder deshabilitar la alerta local. Y para volverla a habilitar, ya que el botón conmuta entre ambos estados.
@@ -133,7 +137,7 @@ https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3gica-ambiente/dp
  * O bien caja AnaireBox imprimida por 3D  
  https://www.thingiverse.com/thing:4694633  
    
- acompañada por cables dupont hembra-hembra  
+   acompañada por cables dupont hembra-hembra  
  https://www.amazon.es/SODIAL-Puente-Hembra-Soldadura-Flexible/dp/B00HUH9GOC/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cable+dupont+hembra+hembra&qid=1609613291&s=industrial&sr=1-4  
  
  * O bien placas de prototipado  
@@ -185,18 +189,20 @@ https://www.arduino.cc/en/software
 El software está disponible en su última versión en el siguiente enlace de este repositorio:  
 https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino  
 
-Una vez configurado el entorno de desarrollo en el apartado anterior, cargar este programa en el entorno de Arduino, y descargarlo en la tarjeta haciendo click en el botón del IDE que muestra una flecha horizontal apuntando hacia la derecha
+Haga click en el enlace para abrirlo desde el IDE de Arduino.
 
-# Fabricación
-Véase el archivo Montaje.md (enlace) para conocer las principales opciones de fabricación que se proponen, siempre tratando de simplificar al máximo manteniendo las prestaciones técnicas. En cualquier caso se proporciona toda la información necesaria para que cualquiera pueda plantearse alternativas de fabricación (por ejemplo, mediante placas PCB).
+# Fabricación del medidor
+Véase el archivo Montaje.md (https://github.com/anaireorg/anaire-devices/blob/main/Montaje.md) para conocer las principales opciones de montaje que se proponen, siempre tratando de simplificar al máximo el proceso y manteniendo las prestaciones técnicas. En cualquier caso se proporciona toda la información necesaria para que cualquiera pueda plantearse alternativas de fabricación, por ejemplo, mediante placas PCB. Para ello se publican en este mismo repositorio los archivos Fritzing con información detallada del cableado requerido.
+
 Una vez completado el montaje de los componentes, hay que proceder a la descarga del software en la tarjeta de control NodeMCU. Para ello realice los siguientes pasos:
+
 * Conecte mediante un cable USB el dispositivo al ordenador en el que haya configurado el IDE de Arduino
 * Compruebe que la tarjeta se ha detectado y se ha seleccionado el puerto apropiado
-**Verifique que las variables de conexión a la aplicación de la nube son correctas:
-**Presione el botón de descarga, como se muestra en la siguiente imagen
-**Espere varios minutos. Primero compilación, luego descarga. Durante la descarga suena el pitido del zumbador (sirve como comprobación)
-**Compruebe en el display que el dispositivo se ha reiniciado al término del pitido del zumbador. debería ver...,
-
+* Verifique que las variables de conexión a la aplicación de la nube son correctas:
+* Presione el botón de descarga, como se muestra en la siguiente imagen
+* Espere varios minutos. Primero compilación, luego descarga. Durante la descarga suena el pitido del zumbador (sirve como comprobación)
+* Compruebe en el display que el dispositivo se ha reiniciado al término del pitido del zumbador. debería ver...,
+Una vez configurado el entorno de desarrollo en el apartado anterior, cargar este programa en el entorno de Arduino, y descargarlo en la tarjeta haciendo click en el botón del IDE que muestra una flecha horizontal apuntando hacia la derecha. Se tardará unos minutos, primero en la compilación, y luego en la descarga del binario a la tarjeta NodeMCU. El IDE de Arduino proporciona información del avance de las operaciones. Durante la descarga el zumbador debe de sonar, que que se está utilizando para su activación un pin compartido con la descarga por puerto serie en la tarjeta del software. Cuando termine la descarga (no debe tardar más de unos cuantos segundos) el software habrá quedado instalado y el dispositivo se reiniciará de forma normal.
 
 # Configuración
 * ID

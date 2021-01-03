@@ -287,42 +287,53 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
 * Cargue el programa en el IDE de Arduino como se ha indicado previamente en el apartado de *Software*
 * Conecte mediante un cable USB el dispositivo al ordenador en el que haya configurado el IDE de Arduino
 * Compruebe que la tarjeta se ha detectado y se ha seleccionado el puerto apropiado en *Herramientas -> Puerto*
-* Verifique que las variables de conexión a la aplicación de la nube son correctas, en las siguientes líneas al inicio del código. Por defecto se indican los valores de la aplicación de demo de Anaire:
-  > String cloud_server_address = "demo.anaire.org";     // server public IP address
-  > int cloud_app_port = 30183;                          // cloud application port  
+* Verifique que las variables de conexión a la aplicación de la nube son correctas, en las siguientes líneas al inicio del programa. Por defecto se indican los valores de la aplicación de demo de Anaire:
+  > String cloud_server_address = "demo.anaire.org";     // server public IP address  
+  > int cloud_app_port = 30183;                          // cloud application port   
 * Presione el botón de descarga, que se indica en el IDE con una flecha apuntando hacia la derecha
 * Espere varios minutos. Primero se realiza la compilación, luego la descarga del binario compilado en la tarjeta. Durante la fase de descarga debe sonar el pitido del zumbador, por diseño de la aplicación (se ha utilizado a propósito para el zumbador uno de los pines que se emplea para la descarga de software en la tarjeta)
 * Compruebe en el display que el dispositivo se ha reiniciado al término del pitido del zumbador
-  * Durante los primeros 3 segundos debería ver el texto *anaire.org* en el display
-  * A continuación se mostrarán tres líneas en el display, indicando el modelo de dispositivo, el ID automáticamente asignado y un número con una cuenta atrás por segundos debida al precalentamiento del sensor de CO2 (1 minuto en el Anaire30ppm, 3 minutos en el Anaire50ppm)
-  * Una vez concluida la cuenta atrás el dispositivo mostrará las medidas de CO2, temperatura y humedad en la primera línea, y una indicación del estado del CO2 (*CO2 BIEN*, *CO2 REGULAR* o *CO2 MAL*) en la segunda
-    * En caso de que haya algún error el estado de CO2 será sustituido por un mensaje indicando el tipo de error experimentado
-* El dispositivo está ya operativo, y cada 30 segundos realizará nuevas medidas y mostrará éstas en el display.
 
 # Configuración
-* ID
+* El dispositivo tienen un identificador único (o ID) generado a partir de la dirección MAC de la interfaz WiFi de cada tarjeta Nodemcu. Este ID es un texto hexadecimal de 6 caracteres, utilizado para el acceso a las medidas en Internet y la integración del medidor en la aplicación en la nube de Anaire. No es preciso realizar ninguna configuración sobre este identificador, se realiza de forma automática.
+  * El ID del dispositivo se muestra durante el inicio y tras pulsar el botón de Flash
 * Configuración de la conexión WiFi
- * Tras pulsar 2 veces consecutivas el botón de reset, el dispositivo se reinicia en un portal cautivo con su propia red wifi
- * Conectar a la red ESP_IdDispositivo y acceder con un navegador a la dirección 192.168.4.1 para seleccionar la red wifi e introducir la contraseña
-* Configuración de la conexión a la aplicación en la nube
-** Se podrá modificar la conexión a la nube en el portal cautivo WiFi en una versión posterior.
+ * Tras pulsar 2 veces consecutivas el botón de reset, el dispositivo se reinicia en modo de configuración:
+   * Se crea una red WiFi abierta con el nombre ESP_XXXXXX, donde XXXXXX es el identificador del dispositivo
+   * Conecte a esa red con un PC, tablet o teléfono móvil
+   * Una vez conectado a la red introduzca la siguiente drección IP en su navegador: 192.168.4.1
+   * De esta forma se accede al portal de configuración del dispositivo
+   * En elportal puede escoger una red WiFi entre las detectadas, e introducir la contraseña de la red. Pulse en el botón de *Save* tras escribir la contraseña.
+     * Si todo ha ido correctamente el dispositivo se reiniciará con conexión a la nueva red Wifi
+     * Si ha habido algún problema de conexión (por ejemplo, si se ha introducido una contraseña errónea), el dispositivo mostrará un mensaje de error WiFi en el display, y deberá repetir el procedimiento
+   * En versiones posteriores del *software* está previsto que en este portal se puedan modificar otros parámetros de configuración, como la conexión a la aplicación en la nube o los umbrales de aviso y alerta CO2.Se podrá modificar la conexión a la nube en el portal cautivo WiFi en una versión posterior.
 
 # Instrucciones de uso
 * Alimentar el dispositivo con un cable conectado al conector micro usb   
-* El display mostrará el texto "anaire.org" durante unos segundos, y a continuación mostrará el nombre y el ID del dispositivo, junto a una cuenta atrás debida a que los sensores de CO2 requieren de un tiempo de estabilización y calentamiento para su puesta en marcha correcta   
-* Una vez concluida la cuenta atrás, el dispositivo mostrará en el display la última medida de CO2, temperatura y humedad realizada, y un texto indicando si el CO2 está bien, regular o mal
-* En caso de que el valor medido de CO2 supere el umbral de aviso, el dispositivo empezará a emitir un pitido intermitente, así como el parpadeo del LED de estado de CO2, de forma alternativas
-  * Los valores por defecto de los umbrales son 700 PPM para el aviso y 1.000 PPM para la alarma. Estos valores se pueden modificar desde la aplicación de Anaire en la nube
+* Durante los primeros 3 segundos debería ver el texto *anaire.org* en el display
+  * A continuación se mostrarán tres líneas en el display, indicando el modelo de dispositivo, el ID automáticamente asignado y un número con una cuenta atrás por segundos debida al precalentamiento del sensor de CO2 (1 minuto en el Anaire30ppm, 3 minutos en el Anaire50ppm). Los sensores de CO2 requieren de un tiempo de estabilización y calentamiento para su puesta en marcha de forma correcta.  
+  * Una vez concluida la cuenta atrás el dispositivo mostrará las medidas de CO2, temperatura y humedad en la primera línea, y una indicación del estado del CO2 (*CO2 BIEN*, *CO2 REGULAR* o *CO2 MAL*) en la segunda
+    * En caso de que haya algún error el estado de CO2 será sustituido por un mensaje indicando el tipo de error experimentado
+* En caso de que el valor medido de CO2 supere el umbral de aviso, el dispositivo empezará a emitir un pitido intermitente, así como el parpadeo del LED de estado de CO2, de forma alternativa
+  * Los valores por defecto de los umbrales son 700 PPM para el aviso y 1.000 PPM para la alarma. Estos valores se pueden modificar desde la aplicación de Anaire en la nube.
   * En caso de que el valor medido de CO2 supero el umbral de alarma, el dispositivo empezará a emitir un pitido intermitente, así como el parpadeo del LED de estado de CO2, de forma alternativas y con una frecuencia mayor que en el caso de aviso
-* Enlaces de dispositivo y de organización
 * Si se desea detener la indicación local de alarma (visual y sonora), presione una vez el botón de Flash (a la derecha del conector USB)
   * El display mostrará, de forma adicional, el modelo, el ID y la dirección IP del dispositivo
   * Si se vuelve a presional el botón de Flash, se reactivará el aviso de alarma local. Es decir, el botón de Flñash permite conmutar entre avisar o no de forma local cuando los valores de CO2 superen los umbrales estabilizaciónecidos
   * Cuando la medida de CO2 sea inferior al umbral de aviso, el dispositivo reseteará el estado de la señal local de alarma, de forma que automáticamente volverá a dar indicaciones locales de alarma si se vuelven a superar los umbrales de aviso o de alarma en el futuro, sin necesidad de reactivar la alarma local
 * Si hay algún error, la última línea del display mostrará el error, en lugar de dar una indicación del estado de CO2. El dispositivo está diseñado para recuperarse automáticamente de los errores cuando la causa que los provoca se ha resuelto. El usuario no tiene que hacer nada para recuperarse de los errores
-* Servidor Web
-* Portal cautivo
-* Calibración de los Sensores
+* Si se conecta con un dispositivo a la misma red WiFi a la que esta conectado el medidor, accediendo a la dirección IP del medidor se pueden ver las últimas medidas realizadas y los umbrales de aviso y alarma CO2 definidos.
+* En la misma dirección IP del medidor se puede también hacer click en un enlace que realiza la calibración del medidor de CO2. Debe disponer el medidor en un entorno ventilado, preferiblemente al aire libre, y esperar el tiempo indicado por la cuenta atrás en el display una vez iniciado el proceso desde un navegador.
+* Acceso por internet a las medidas:
+  * Si se han dejado los valores por defecto de la aplicación en la nube, se puede acceder a los valores medidos por el dispositivo en los siguientes enlaces:
+    * Valores actuales en modo kiosko: demo.anaire.org/sensor/<ID del sensor>/<Nombre que se desea visualizar>
+    <p align="center">
+      <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MedidasModoKioskoSensor.jpg" width="60%" height="60%" />
+    </p>
+    * Valores actuales con acceso a histórico: demo.anaire.org/detalle/<ID del sensor>/<Nombre que se desea visualizar>
+    <p align="center">
+      <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MedidasModoKioskoDetalle.jpg" width="60%" height="60%" />
+    </p>
 
 ## Errores mostrados en el display
 * err_wifi: no se pudo conectar a la red WiFi. Compruebe el estado presionando dos veces consecutivas el botón de Reset y conectando al portal cautivo, como se explica en el apartado de Configuración del dispositivo

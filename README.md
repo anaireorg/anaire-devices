@@ -208,6 +208,10 @@ https://www.thingiverse.com/thing:4694633
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxFrontal2.jpg" width="40%" height="40%" />
 </p>  
   
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxInterior.jpg" width="40%" height="40%" />
+</p> 
+  
 * Caja grande AnaireBread para encajar una placa de prototipado de 830 puntos, con los componentes pinchados y cableados mediante cables Dupont macho-macho:  
 https://www.thingiverse.com/thing:4678398  
 <p align="center">  

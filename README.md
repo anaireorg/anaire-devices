@@ -201,12 +201,24 @@ Haga click en el enlace para abrirlo desde el IDE de Arduino.
 
 # Fabricación del medidor
 Las principales opciones de montaje que se proponen pretenden simplificar al máximo el proceso, manteniendo las máximas prestaciones técnicas. En cualquier caso se proporciona toda la información necesaria para que cualquiera pueda plantearse alternativas de fabricación, por ejemplo, mediante placas PCB. Para ello se publican en este mismo repositorio los archivos Fritzing con la información detallada del cableado requerido:  
-https://github.com/anaireorg/anaire-devices/blob/main/src/AnaireSlimSCD30.fzz  
-https://github.com/anaireorg/anaire-devices/blob/main/src/AnaireBreadMH-Z14A.fzz  
+https://github.com/anaireorg/anaire-devices/blob/main/src/Anaire30ppm_SCD30.fzz  
+https://github.com/anaireorg/anaire-devices/blob/main/src/Anaire50ppm_MHZ14A.fzz  
   
-Se proponen tres opciones de fabricación: AnaireSlim, con el sensor SCD30 sobre tarjeta de prototipado de 400 puntos; AnaireBread, con los sensores MHZ14A y DHT11 sobre tarjeta de prototipado de 830 puntos y caja opcional mediante impresora 3D, y el AnaireBox, que utiliza una caja de impresión 3D para montar los componentes y que puede acoger cualquiera de las dos combinaciones de sensores anteriores (la caja es compatible con ambos).
-
-## Opción 1: AnaireSlim
+Se han diseñados dos modelos de medidores: Anaire30ppm, con precisión de 30ppm (Sensirion SCD30) y Anaire50ppm, con precisión de 50ppm (sensores Winsen MHZ14A y AZDelivery DHT11). Ambos se pueden montar sobre tarjeta de prototipado o en caja de plástico, utilizando una caja de impresión 3D para montar los componentes. La caja puede acoger cualquiera de las dos combinaciones de sensores anteriores ya que está diseñada para ser compatible con ambos. Para el caso de montaje sobre placas de prototipado también se ha diseñado una caja a medida sobre la que se puede disponer la placa con los componentes pinchados:
+  
+* Caja pequeña AnaireBox para encajar los componentes y cablear mediante cables Dupont hembra-hembra:
+https://www.thingiverse.com/thing:4694633
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/MH-Z14A%20transparente.png" width="40%" height="40%" />
+</p>  
+  
+* Caja grande AnaireBread para encajar una placa de prototipado de 830 puntos, con los componentes pinchados y cableados mediante cables Dupont macho-macho:
+https://www.thingiverse.com/thing:4678398
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/MH-Z14A%20transparente.png" width="40%" height="40%" />
+</p>  
+  
+## Anaire30ppm
 
 ### Esquema de conexiones  
 <p align="center">
@@ -224,9 +236,9 @@ En este caso es relevante destacar que tras soldar los cuatro piner en el SCD30,
 Hay que soldar 4 pines como se muestra en la siguiente imagen  
 
 ### Montaje final  
-En la siguiente imagen se muestra el montaje final realizado  
+En las siguientes imágenes se muestra el montaje final realizado sobre breadboard 
 
-## Opción 2: AnaireBread
+## Anaire50ppm
 
 ### Esquema de conexiones  
 <p align="center">
@@ -246,28 +258,6 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
   
 ### Montaje final  
 En la siguiente imagen se muestra el montaje final realizado  
-
-## Opción 3: AnaireBox
-
-### Esquema de conexiones  
-Utilizar cualquiera de los dos anteriores
-  
-### Esquema de montaje  
-Realizar las conexiones mediante cables dupont hembra, y encajar a continuación los componentes en el interior de la caja, en los compartimentos diseñados para tal fin.
-
-### Detalle del sensor SCD30 o MH-Z14A
-Hay que soldar 4 pines como se muestra en las imágenes anteriores según el sensor que se esté utilizando.
-
-### Montaje final  
-En las siguientes imágenes se muestra el montaje final realizado  
-
-<p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxFrontal2.jpg" width="30%" height="30%" />
-</p>  
-
-<p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxInterior.jpg" width="30%" height="30%" />
-</p>  
   
 ## Carga del software en la tarjeta NodeMCU
 Una vez completado el montaje de los componentes, hay que proceder a la descarga del software en la tarjeta de control NodeMCU. Para ello realice los siguientes pasos:

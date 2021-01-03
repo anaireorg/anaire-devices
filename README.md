@@ -213,6 +213,9 @@ https://www.thingiverse.com/thing:4678398
 <p align="center">  
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBread.jpg" width="40%" height="40%" />
 </p>  
+<p align="center">  
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBreadAbiertas.jpg" width="40%" height="40%" />
+</p> 
   
 Las opciones de montaje que se proponen pretenden simplificar al máximo el proceso, manteniendo las máximas prestaciones técnicas. En cualquier caso se proporciona toda la información necesaria para que cualquiera pueda plantearse alternativas de fabricación, por ejemplo, mediante placas PCB y soldadura de los componentes. Para ello se publican en este mismo repositorio los archivos Fritzing (véase https://fritzing.org/) con la información detallada del cableado requerido:  
   

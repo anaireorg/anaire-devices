@@ -205,13 +205,13 @@ Se han diseñado dos modelos de medidores: **Anaire30ppm**, con precisión de 30
 * Caja pequeña AnaireBox para encajar los componentes y cablear mediante cables Dupont hembra-hembra:
 https://www.thingiverse.com/thing:4694633  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/MH-Z14A%20transparente.png" width="40%" height="40%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxFrontal2.jpg" width="40%" height="40%" />
 </p>  
   
 * Caja grande AnaireBread para encajar una placa de prototipado de 830 puntos, con los componentes pinchados y cableados mediante cables Dupont macho-macho:  
 https://www.thingiverse.com/thing:4678398  
 <p align="center">  
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/MH-Z14A%20transparente.png" width="40%" height="40%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBread.jpg" width="40%" height="40%" />
 </p>  
   
 Las opciones de montaje que se proponen pretenden simplificar al máximo el proceso, manteniendo las máximas prestaciones técnicas. En cualquier caso se proporciona toda la información necesaria para que cualquiera pueda plantearse alternativas de fabricación, por ejemplo, mediante placas PCB y soldadura de los componentes. Para ello se publican en este mismo repositorio los archivos Fritzing (véase https://fritzing.org/) con la información detallada del cableado requerido:  

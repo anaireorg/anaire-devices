@@ -337,12 +337,12 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
 * Acceso por internet a las medidas:
   * Si se han dejado los valores por defecto de la aplicación en la nube, se puede acceder a los valores medidos por el dispositivo en los siguientes enlaces:
     * Valores actuales en modo kiosko: 
-    https://demo.anaire.org/sensor/<ID del sensor>/<Nombre que se desea visualizar>
+    https://demo.anaire.org/sensor/\<ID del sensor\>/\<Nombre que se desea visualizar\>
     <p align="center">
       <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="60%" height="60%" />
     </p>
     * Valores actuales con acceso a histórico: 
-    https://demo.anaire.org/detalle/<ID del sensor>/<Nombre que se desea visualizar>
+    https://demo.anaire.org/detalle/\<ID del sensor\>/\<Nombre que se desea visualizar\>
     <p align="center">
       <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="60%" height="60%" />
     </p>

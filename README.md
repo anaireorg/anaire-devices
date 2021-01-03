@@ -236,12 +236,7 @@ https://github.com/anaireorg/anaire-devices/blob/main/src/Anaire50ppm_MHZ14A.fzz
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/ConexionesAnaireSlim.png" width="60%" height="60%" />
 </p>  
-  
-### Esquema de montaje  
-<p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireSlim.jpg" width="60%" height="60%" />
-</p>  
-    
+     
 ### Detalle del sensor SCD30  
 Hay que soldar 4 pines como se muestra en la siguiente imagen  
 
@@ -263,12 +258,7 @@ Montaje en caja AnaireBox:
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/ConexionesAnaireBread.png" width="60%" height="60%" />
 </p>  
-  
-### Esquema de montaje  
-<p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireBread.jpg" width="60%" height="60%" />
-</p>  
-  
+   
 ### Detalle del sensor MH-Z14A  
 Hay que soldar 4 pines como se muestra en la siguiente imagen  
 <p align="center">
@@ -278,17 +268,17 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
 ### Montaje final  
 Montaje sobre breadboard:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireSlim.jpg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireBread.jpg" width="60%" height="60%" />
 </p>  
   
 Montaje sobre breadboard y caja AnaireBread:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireSlim.jpg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireBread.jpg" width="60%" height="60%" />
 </p>
 
 Montaje en caja AnaireBox:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireSlim.jpg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireBread.jpg" width="60%" height="60%" />
 </p>  
 
 ## Carga del software en la tarjeta NodeMCU
@@ -341,7 +331,7 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
     <p align="center">
       <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="30%" height="30%" />
     </p>  
-    * Valores actuales con acceso a histórico:  
+    * Valores actuales con acceso a histórico:   
     https://demo.anaire.org/detalle/ID_del_sensor/Nombre_que_se_desea_visualizar  
     <p align="center">
       <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="30%" height="30%" />

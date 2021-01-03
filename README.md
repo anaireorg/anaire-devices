@@ -200,7 +200,7 @@ https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCUL
 Haga click en el enlace para abrirlo desde el IDE de Arduino.
 
 # Fabricación del medidor
-Se han diseñado dos modelos de medidores: **Anaire30ppm**, con precisión de 30ppm (Sensirion SCD30) y **Anaire50ppm**, con precisión de 50ppm (sensores Winsen MHZ14A y AZDelivery DHT11). Ambos se pueden montar sobre tarjeta de prototipado o en caja de plástico, utilizando una caja de impresión 3D para montar los componentes. La caja puede acoger cualquiera de las dos combinaciones de sensores anteriores ya que está diseñada para ser compatible con ambos. Para el caso de montaje sobre placas de prototipado también se ha diseñado una caja a medida sobre la que se puede disponer la placa con los componentes pinchados.
+Se han diseñado dos modelos de medidores: **Anaire30ppm**, con precisión de 30ppm (Sensirion SCD30) y **Anaire50ppm**, con precisión de 50ppm (sensores Winsen MHZ14A y AZDelivery DHT11). Ambos se pueden montar sobre placa de prototipado o en caja de plástico, utilizando una caja de impresión 3D, para montar mecánicamente los componentes. La caja puede acoger cualquiera de las dos combinaciones de sensores anteriores ya que está diseñada para ser compatible con ambos. Para el caso de montaje sobre placas de prototipado también se ha diseñado una caja a medida sobre la que se puede disponer la placa con los componentes pinchados.
 
 * Caja pequeña AnaireBox para encajar los componentes y cablear mediante cables Dupont hembra-hembra:
 https://www.thingiverse.com/thing:4694633  
@@ -211,10 +211,10 @@ https://www.thingiverse.com/thing:4694633
 * Caja grande AnaireBread para encajar una placa de prototipado de 830 puntos, con los componentes pinchados y cableados mediante cables Dupont macho-macho:  
 https://www.thingiverse.com/thing:4678398  
 <p align="center">  
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBread.jpg" width="40%" height="40%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBread.png" width="40%" height="40%" />
 </p>  
 <p align="center">  
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBreadAbiertas.jpg" width="40%" height="40%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBreadAbiertas.jpeg" width="40%" height="40%" />
 </p> 
   
 Las opciones de montaje que se proponen pretenden simplificar al máximo el proceso, manteniendo las máximas prestaciones técnicas. En cualquier caso se proporciona toda la información necesaria para que cualquiera pueda plantearse alternativas de fabricación, por ejemplo, mediante placas PCB y soldadura de los componentes. Para ello se publican en este mismo repositorio los archivos Fritzing (véase https://fritzing.org/) con la información detallada del cableado requerido:  

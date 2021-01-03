@@ -5,11 +5,12 @@
 
 Proyecto libre y abierto (opensource), tanto hardware como software, para la fabricación de un medidor de CO2, temperatura y humedad, de mínimo coste y alta precisión, conectado por WiFi a una aplicación en la nube denominada Anaire Cloud App para mostrar los valores instantáneos y el histórico de mediciones de CO2, temperatura y humedad, facilitando así el análisis de la infortmación de las medidas y su correlación con protocolos de ventilación anti COVID-19.
 
-El concepto se muestra en la siguiente imagen. Se trata de un dispositivo basado en un microcontrolador ESP8266, al que se conectan sensores para la medida de CO2, temperatura y humedad. El dispositivo tiene un display para mostrar las medidas e indicaciones de estado, un LED y un zumbador para poder emitir alertas visuales y sonoras, y un botón para poder deshabilitar la alerta local. Dispone de conectividad WiFi para poder enviar las mediciones realizadas a una aplicación en la nube, Anaire Cloud (https://github.com/anaireorg/anaire-cloud), que permite agregar la información de múltiples dispositivos y acceder al histórico de medidas desde cualquier dispositivo vía Internet.
+El concepto se muestra en la siguiente imagen. Se trata de un dispositivo basado en un microcontrolador ESP8266, al que se conectan sensores para la medida de CO2, temperatura y humedad. El dispositivo tiene un display para mostrar las medidas e indicaciones de estado, un LED y un zumbador para poder emitir alertas visuales y sonoras, y un botón para poder deshabilitar la alerta local. Dispone de conectividad WiFi para poder enviar las mediciones realizadas a una aplicación en la nube, Anaire Cloud (https://github.com/anaireorg/anaire-cloud), que permite agregar la información de múltiples dispositivos y acceder al histórico de medidas desde cualquier dispositivo vía Internet.  
+  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositivo_ANAIRE.png" width="80%" height="80%"/>
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositivo_ANAIRE.png" width="90%" height="90%"/>
 </p>
-
+  
 En este repositorio se publica información completa para la fabricación del medidor de CO2 Anaire, desde el código fuente hasta las especificaciones de componentes, cableados y opciones de montaje tanto en placa de prototipado como utilizando cajas de impresión 3D para la disposición de los componentes. La intención es que cualquier persona pueda encontrar aquí la información necesaria y suficiente para montar su propio sensor de CO2, con o sin conexión a la nube, sin necesidad de grandes conocimientos técnicos, como ayuda para combatir la pandemia causada por la COVID-19, ayudando a preparar entornos más seguros, con mínimos niveles de CO2, que puedan ayudar a prevenir contagios en entornos cerrados.
   
 Toda la información se publica en formato "open source", tanto diseño hardware como código software, con el ánimo de facilitar el uso y difusión de la tecnología todo lo posible. Con el mismo espíritu se tratan de resolver todas las incidencias reportadas en los repositorios de Anaire (*issues*).
@@ -45,10 +46,15 @@ Toda la información se publica en formato "open source", tanto diseño hardware
 </p>  
   
 * Alternativa para la fabricación mucho más robusta utilizando cajas diseñadas a medida y fabricadas mediante impresoras 3D, y simplemente conectando los componentes mediante cables dupont hembra y encajándolos en los espacios preparados para ello en la caja. La caja es compatible para los dos sensores, y alberga adicionalmente el display OLED (y el resto de los componentes) de forma que sea muy fácil la lectura de las medidas. Todos los detalles para la fabricación de la caja se pueden encontrar en la carpeta "3D print" en este repositorio.  
+  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxFrontal.jpg" width="30%" height="30%" />
 </p>  
   
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxInterior.jpg" width="30%" height="30%" />
+</p>  
+
 * Alimentación a través del puerto Micro USB de la tarjeta de control NodeMCU LUA Amica V2.   
   
 * Actualización remota de parámetros (umbrales de aviso y de alarma, aviso local de alarma, etc.) desde la aplicación en la nube.    
@@ -66,14 +72,14 @@ Con objeto de simplificar la fabricación y no añadir más componentes aun prop
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/NodeMCUV2botonesyleds.png" width="30%" height="30%" />
 </p> 
 
-* Se emplea uno de los dos LED incorporados a la tarjeta NodeMCU para proporcionar alertas visuales. El LED está apagado normalmente; parpadea lentamente cuando el dispositivo está en estado de aviso por CO2, y parpadea rápidamente en caso de encontrarse en alarma. Las frecuencias de parpadeo son iguales a las de la alerta sonora proporcionada por el zumbador.
+* Se emplea uno de los dos LED incorporados a la tarjeta NodeMCU, el más próximo al conector Micro USB, para proporcionar alertas visuales sobre el estado de CO2. El LED está apagado normalmente; parpadea lentamente cuando el dispositivo está en estado de aviso por CO2, y parpadea rápidamente en caso de encontrarse en alarma. Las frecuencias de parpadeo son iguales a las de la alerta sonora proporcionada por el zumbador.
 
 * Se emplea el botón de Flash (a la derecha del conector Micro USB) poder deshabilitar la alerta local. Y para volverla a habilitar, ya que el botón conmuta entre ambos estados.
-  * Adicionalmente, cada vez que se presiona el botón de Flash se muestran el modelo, ID y dirección IP del dispositivo, hasta la realización de la siguiente medición.
+  * Adicionalmente, cada vez que se presiona el botón de Flash se muestran el modelo, el ID y la dirección IP del dispositivo, hasta la realización de la siguiente medición.
 
-* Presionando dos veces consecutivas el botón de Reset (a la izquierda del conector MicroUSB) el dispositivo se reinicia en modo de portal cautivo, lo que permite la configuración de la red WiFi y el acceso a otros parámetros de configuración.
+* Presionando dos veces consecutivas el botón de Reset (a la izquierda del conector MicroUSB) el dispositivo se reinicia en modo de portal cautivo, lo que permite la configuración de la red WiFi y el acceso a otros parámetros de configuración, como se explica en el apartado de Configuración, más adelante.
   
-El dispositivo es plenamente operativo incluso sin el display y sin el zumbador. Para funcionar con mínimo coste sólo es necesaria una tarjeta de control NodeMCU y un sensor de CO2, todos los demás elementos son opcionales.
+El dispositivo es plenamente operativo incluso sin el display y sin el zumbador. Para funcionar con mínimo coste y complejidad sólo es necesaria una tarjeta de control NodeMCU y un sensor de CO2. Todos los demás elementos son opcionales.
 
 Para los sensores de CO2 existen dos alternativas. Actualmente se soportan dos sensores de CO2, ambos con tecnología NDIR: el **Sensirion SCD30** (https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/) y el **Winsen MH-Z14A** (http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf). 
   
@@ -81,81 +87,80 @@ El Sensirion SCD30 es un sensor de mayor calidad: tiene mayor precisión (30 ppm
   
 El software del medidor de CO2 de Anaire es compatible con ambos sensores, y detecta automáticamente cuál de los dos está en uso, adaptándose a ello sin necesidad de realizar ningún cambio de configuración.
   
-En caso de utilizar el MH-Z14A como medidor de CO2 hemos incorporado el AZ Delivery DHT11 como sensor de temperatura y humedad. En caso de utilizar el SCD30 no es necesario incorporar ningún componente adicional.
+En caso de utilizar el sensor MH-Z14A como medidor de CO2 se ha incorporado el sensor AZ Delivery DHT11 como sensor de temperatura y humedad. Si se está utilizando el semnsor SCD30 no es necesario incorporar ningún componente adicional, ya que éste incorpora sensor de temperatura y humedad, además de realizar la medida del CO2.
   
-**Nuestra recomendación es utilizar el Sensirion SCD30 siempre que sea posible, ya que permite fabricar, por un coste similar y de forma más sencilla, un dispositivo de mayor precisión y estabilidad en el tiempo**. En cualquier caso se recomienda encarecidamente el análisis de la documentación técnica de ambos sensores, especialmente para la interpretación de las medidas y la determinación de procedimientos de recalibración, en caso de considerarlo necesario para optimizar la evolución de la precisión de las medidas con el paso del tiempo.
+**Anaire recomienda utilizar el Sensirion SCD30 siempre que sea posible, ya que permite fabricar, por un coste similar y de forma más sencilla, un dispositivo de mayor precisión y estabilidad en el tiempo**. En cualquier caso se recomienda encarecidamente el análisis de la documentación técnica de ambos sensores, especialmente para la interpretación de las medidas y la determinación de procedimientos de recalibración, en caso de considerarlo necesario para optimizar la evolución de la precisión de las medidas con el paso del tiempo y en función de la utilización del dipositivo (ubicación, régimen de ventilación, etc.)
   
-La alimentación del dispositivo se realiza directamente a través del puerto Micro USB de la tarjeta de control NodeMCU LUA Amica V2, el mismo que se utiliza para programarla y para observar mensajes de diagnóstico. Se recomienda utilizar fuentes de alimentación (enchufes USB, puertos USB en ordenadores, etc.) que puedan proporcionar al menos 500 mA (que es lo más frecuente, aunque podría no ser así en el caso de antiguos cargadores de teléfonos móviles, por ejemplo).   
+La alimentación del dispositivo se realiza directamente a través del puerto Micro USB de la tarjeta de control NodeMCU LUA Amica V2, el mismo que se utiliza para programarla y para comunicarse con ella. Se recomienda utilizar fuentes de alimentación (enchufes USB, puertos USB en ordenadores, etc.) que puedan proporcionar al menos 500 mA (que es lo más frecuente, aunque podría no ser así en el caso de antiguos cargadores de teléfonos móviles, por ejemplo).   
 
 A continuación se enumeran los elementos citados, incluyendo enlaces a su documentación y a opciones para su adquisición.
 
 ## Elementos comunes
 * Tarjeta de control basada en microcontrolador ESP8266: AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2  
-https://www.az-delivery.de/es/products/nodemcu  
-https://www.amazon.es/dp/B06Y1LZLLY/ref=twister_B082DJVXFC?_encoding=UTF8&psc=1  
+Detalles del producto: https://www.az-delivery.de/es/products/nodemcu  
+Disponible en: https://www.amazon.es/dp/B06Y1LZLLY/ref=twister_B082DJVXFC?_encoding=UTF8&psc=1  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/NodeMCU/NodeMCU%20transparente.png" width="20%" height="20%" />  
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/NodeMCU/NodeMCU%20transparente.png" width="25%" height="25%" />  
 </p>
   
 * Display OLED: AZDelivery 0.91 inch OLED I2C Display 128 x 32 Pixels  
-https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display  
-https://www.amazon.es/dp/B079H2C7WH/ref=twister_B082MC4QJ4?_encoding=UTF8&psc=1  
+Detalles del producto: https://www.az-delivery.de/es/products/0-91-zoll-i2c-oled-display  
+Disponible en: https://www.amazon.es/dp/B079H2C7WH/ref=twister_B082MC4QJ4?_encoding=UTF8&psc=1  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Display/Display%20transparente.png" width="25%" height="25%" />  
 </p>
   
 * Zumbador: AZDelivery Active Buzzer  
-https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r  
-https://www.amazon.es/dp/B089QJKJXW/ref=twister_B082MHYNND?_encoding=UTF8&psc=1  
+Detalles del producto: https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r  
+Disponible en: https://www.amazon.es/dp/B089QJKJXW/ref=twister_B082MHYNND?_encoding=UTF8&psc=1  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Zumbador/Zumbador%20transparente.png" width="10%" height="10%" />  
 </p>
   
 ## Sensores
 * Dispositivo AnaireSlim: sensor de CO2, temperatura y humedad Sensirion SCD30   
-https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/  
-https://www.digikey.es/product-detail/en/sensirion-ag/SCD30/1649-1098-ND/8445334  
+Detalles del producto: https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/  
+Disponible en: https://www.digikey.es/product-detail/en/sensirion-ag/SCD30/1649-1098-ND/8445334  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/SCD30/SCD30%20transparente.png" width="30%" height="30%" />
 </p>  
   
 * Dispositivo AnaireBread: sensor de CO2 Winsen MHZ14A  
-http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf  
-https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3gica-ambiente/dp/B07CXGL7XG  
+Detalles del producto: http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf  
+Disponible en: https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3gica-ambiente/dp/B07CXGL7XG  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/MH-Z14A%20transparente.png" width="40%" height="40%" />
 </p> 
     
   * Adicionalmente, el AnaireBread necesita el sensor de temperatura y humedad AZ-Delivery DHT11  
-  https://www.az-delivery.de/es/products/dht11-temperatursensor-modul  
-  https://www.amazon.es/dp/B089W8DB5P/ref=twister_B089YSBB1N?_encoding=UTF8&psc=1  
+  Detalles del producto: https://www.az-delivery.de/es/products/dht11-temperatursensor-modul  
+  Disponible en: https://www.amazon.es/dp/B089W8DB5P/ref=twister_B089YSBB1N?_encoding=UTF8&psc=1  
   <p align="center">
     <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/DHT-11/DHT-11%20transparente.png" width="10%" height="10%" />
   </p>  
   
 ## Otros:
  * O bien caja AnaireBox imprimida por 3D  
- https://www.thingiverse.com/thing:4694633  
+ Detalles del producto: https://www.thingiverse.com/thing:4694633  
    
    acompañada por cables dupont hembra-hembra  
- https://www.amazon.es/SODIAL-Puente-Hembra-Soldadura-Flexible/dp/B00HUH9GOC/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cable+dupont+hembra+hembra&qid=1609613291&s=industrial&sr=1-4  
+   Disponible en: https://www.amazon.es/SODIAL-Puente-Hembra-Soldadura-Flexible/dp/B00HUH9GOC/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cable+dupont+hembra+hembra&qid=1609613291&s=industrial&sr=1-4  
  
  * O bien placas de prototipado  
    * Placa de 400 puntos, para el AnaireSlim  
-   https://www.amazon.es/dp/B071ZGC75Y/ref=twister_B07T88TTXF?_encoding=UTF8&psc=1  
+   Disponible en: https://www.amazon.es/dp/B071ZGC75Y/ref=twister_B07T88TTXF?_encoding=UTF8&psc=1  
      
    * Placa de 830 puntos, para el AnaireBread  
-   https://www.amazon.es/dp/B071ZGC75Y/ref=twister_B07T88TTXF?_encoding=UTF8&psc=1  
+   Disponible en: https://www.amazon.es/dp/B071ZGC75Y/ref=twister_B07T88TTXF?_encoding=UTF8&psc=1  
      
    * En ambos casos son necesarios cables dupont macho-macho  
-   https://www.amazon.es/Neuftech-jumper-20cm-Arduino-Breadboard/dp/B00NBNIETC/ref=sr_1_4?dchild=1&keywords=dupont+macho+macho&qid=1609613744&sr=8-4  
-   
+   Disponible en: https://www.amazon.es/Neuftech-jumper-20cm-Arduino-Breadboard/dp/B00NBNIETC/ref=sr_1_4?dchild=1&keywords=dupont+macho+macho&qid=1609613744&sr=8-4  
    
  * Será necesario un cable válido para conectar desde un puerto USB del ordenador al puerto Micro USB de la tarjeta NodeMCU, para poder descargar el software del dispositivo. Este mismo cable puede ser utilizado para la alimentación eléctrica desde un ordenador, o desde un enchufe USB o includo desde una batería portátil USB. También podría utilizarse, una vez descargado el software, un transformador de un antiguo teléfono móvil u otro tipo de dispositivo que tenga un conector Micro USB y proporcione al menos 500 mili amperios. Por ejemplo, el siguiente:
-https://www.amazon.es/TM-Electron-CXU201020-Cable-Blanco/dp/B07BQD6P74/ref=sr_1_22?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=usb+micro+usb&qid=1609613811&sr=8-22
+Disponible en: https://www.amazon.es/TM-Electron-CXU201020-Cable-Blanco/dp/B07BQD6P74/ref=sr_1_22?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=usb+micro+usb&qid=1609613811&sr=8-22
   
  * Para la conexión de cualquiera de los dos sensores de CO2 es preciso conectar 4 pines y soldarlos en las posiciones indicadas en el proceso de fabricación. Se pueden comprar pines como los siguientes:  
- https://www.amazon.es/Pin-Header-Way-Straight-Pitch/dp/B00QXBRCKG/ref=sr_1_5?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=pin+header&qid=1609617099&s=electronics&sr=1-5  
+ Disponible en: https://www.amazon.es/Pin-Header-Way-Straight-Pitch/dp/B00QXBRCKG/ref=sr_1_5?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=pin+header&qid=1609617099&s=electronics&sr=1-5  
 
 # Software
 El dispositivo se programa exactamente igual que una tarjeta arduino, utilizando el IDE (entorno de desarrollo) de Arduino. Hay que instalar de forma adicional algunos componentes de software, tanto en el PC utilizado como en el propio entorno de Arduino. A continuación se describe en detalle el procedimiento para poder preparar un entorno de desarrollo de SW operativo que permita la descarga del software en los dispositivos (y su programación para modificarlo, en caso deseado).

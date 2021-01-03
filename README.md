@@ -331,7 +331,7 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
     <p align="center">
       <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="30%" height="30%" />
     </p>  
-    * Valores actuales con acceso a histórico:   
+    * Valores actuales con acceso a histórico:  
     https://demo.anaire.org/detalle/ID_del_sensor/Nombre_que_se_desea_visualizar  
     <p align="center">
       <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="30%" height="30%" />

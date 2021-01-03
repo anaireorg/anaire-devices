@@ -339,20 +339,20 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
     * Valores actuales en modo kiosko:  
     https://demo.anaire.org/sensor/ID_del_sensor/Nombre_que_se_desea_visualizar
     <p align="center">
-      <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="60%" height="60%" />
+      <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="30%" height="30%" />
     </p>  
     * Valores actuales con acceso a histórico:  
     https://demo.anaire.org/detalle/ID_del_sensor/Nombre_que_se_desea_visualizar  
     <p align="center">
-      <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="60%" height="60%" />
+      <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="30%" height="30%" />
     </p>
 
 ## Errores mostrados en el display
-* err_wifi: no se pudo conectar a la red WiFi. Compruebe el estado presionando dos veces consecutivas el botón de Reset y conectando al portal cautivo, como se explica en el apartado de Configuración del dispositivo
-* err_mqtt: no se pudo conectar al endpoint de la app en la nube. Compruebe los detalles al inicio del código del dispositivo y verifique la conectividad del endpoint dwfinido
-* err_co2: no se pudo conectar con el sensor de CO2. Compruebe las conexiones
-* err_dht: no se pudo conectar con el sensor de humedad y temperatura DHT11. Compruebe las conexiones
+* err_wifi: no se pudo conectar a la red WiFi. Compruebe el estado de la conexión presionando dos veces consecutivas el botón de Reset y conectando al portal cautivo, como se explica en el apartado de Configuración del dispositivo.
+* err_mqtt: no se pudo conectar al endpoint de la aplicación de Anaire en la nube. Compruebe los detalles al inicio del código del dispositivo y verifique la conectividad del endpoint definido.
+* err_co2: no se pudo conectar con el sensor de CO2. Compruebe las conexiones.
+* err_dht: no se pudo conectar con el sensor de humedad y temperatura DHT11. Compruebe las conexiones.
   
 ## Diagnóstico de problemas
-Conecte el dispositivo al PC utilizando un cable USB. Arranque el monitor serie del IDE de Arduino con la opción *Herramientas -> Monitor serie*. Se abrirá una nueva ventana en la que se imprimirán todos los mensajes emitidos por el dispositivo durante su funciionamiento, que ayudarán a diagnosticar lso posibles problemas. Se recomienda presionar una vez el botón de *Reset* para reiniciar el dispositivo y poder observar un ciclo completo de funcionamiento.
+Conecte el dispositivo al PC utilizando un cable USB. Arranque el monitor serie del IDE de Arduino con la opción *Herramientas -> Monitor serie*. Se abrirá una nueva ventana en la que se imprimirán todos los mensajes emitidos por el dispositivo durante su funcionamiento, que ayudarán a diagnosticar los posibles problemas. Se recomienda presionar una vez el botón de *Reset* para reiniciar el dispositivo y poder observar un ciclo completo de funcionamiento desde el principio.
   

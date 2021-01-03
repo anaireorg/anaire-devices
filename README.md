@@ -308,15 +308,15 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
 * El dispositivo tienen un identificador único (o ID) generado a partir de la dirección MAC de la interfaz WiFi de cada tarjeta Nodemcu. Este ID es un texto hexadecimal de 6 caracteres, utilizado para el acceso a las medidas en Internet y la integración del medidor en la aplicación en la nube de Anaire. No es preciso realizar ninguna configuración sobre este identificador, se realiza de forma automática.
   * El ID del dispositivo se muestra durante el inicio y tras pulsar el botón de Flash
 * Configuración de la conexión WiFi
- * Tras pulsar 2 veces consecutivas el botón de reset, el dispositivo se reinicia en modo de configuración:
+   * Tras pulsar 2 veces consecutivas el botón de reset, el dispositivo se reinicia en modo de configuración:
    * Se crea una red WiFi abierta con el nombre ESP_XXXXXX, donde XXXXXX es el identificador del dispositivo
    * Conecte a esa red con un PC, tablet o teléfono móvil
    * Una vez conectado a la red introduzca la siguiente drección IP en su navegador: 192.168.4.1
    * De esta forma se accede al portal de configuración del dispositivo
-   * En elportal puede escoger una red WiFi entre las detectadas, e introducir la contraseña de la red. Pulse en el botón de *Save* tras escribir la contraseña.
-     * Si todo ha ido correctamente el dispositivo se reiniciará con conexión a la nueva red Wifi
+   * En el ortal puede escoger una red WiFi entre las detectadas, e introducir la contraseña de la red. Pulse en el botón *Save* tras escribir la contraseña.
+     * Si todo ha ido correctamente el dispositivo se reiniciará con conexión a la nueva red WiFi
      * Si ha habido algún problema de conexión (por ejemplo, si se ha introducido una contraseña errónea), el dispositivo mostrará un mensaje de error WiFi en el display, y deberá repetir el procedimiento
-   * En versiones posteriores del *software* está previsto que en este portal se puedan modificar otros parámetros de configuración, como la conexión a la aplicación en la nube o los umbrales de aviso y alerta CO2.Se podrá modificar la conexión a la nube en el portal cautivo WiFi en una versión posterior.
+   * En versiones posteriores del software está previsto que en este portal se puedan modificar otros parámetros de configuración, como la conexión a la aplicación en la nube o los umbrales de aviso y alerta CO2. Actualmente se puede configurar únicamente la conexión WiFi.
 
 # Instrucciones de uso
 * Alimentar el dispositivo con un cable conectado al conector micro usb   
@@ -331,18 +331,20 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
   * El display mostrará, de forma adicional, el modelo, el ID y la dirección IP del dispositivo
   * Si se vuelve a presional el botón de Flash, se reactivará el aviso de alarma local. Es decir, el botón de Flñash permite conmutar entre avisar o no de forma local cuando los valores de CO2 superen los umbrales estabilizaciónecidos
   * Cuando la medida de CO2 sea inferior al umbral de aviso, el dispositivo reseteará el estado de la señal local de alarma, de forma que automáticamente volverá a dar indicaciones locales de alarma si se vuelven a superar los umbrales de aviso o de alarma en el futuro, sin necesidad de reactivar la alarma local
-* Si hay algún error, la última línea del display mostrará el error, en lugar de dar una indicación del estado de CO2. El dispositivo está diseñado para recuperarse automáticamente de los errores cuando la causa que los provoca se ha resuelto. El usuario no tiene que hacer nada para recuperarse de los errores
+* Si hay algún error, la última línea del display mostrará el error, en lugar de dar una indicación del estado de CO2. El dispositivo está diseñado para recuperarse automáticamente de los errores cuando la causa que los provoca se ha resuelto, sin que el usuario tenga que intervenir.
 * Si se conecta con un dispositivo a la misma red WiFi a la que esta conectado el medidor, accediendo a la dirección IP del medidor se pueden ver las últimas medidas realizadas y los umbrales de aviso y alarma CO2 definidos.
 * En la misma dirección IP del medidor se puede también hacer click en un enlace que realiza la calibración del medidor de CO2. Debe disponer el medidor en un entorno ventilado, preferiblemente al aire libre, y esperar el tiempo indicado por la cuenta atrás en el display una vez iniciado el proceso desde un navegador.
 * Acceso por internet a las medidas:
   * Si se han dejado los valores por defecto de la aplicación en la nube, se puede acceder a los valores medidos por el dispositivo en los siguientes enlaces:
-    * Valores actuales en modo kiosko: demo.anaire.org/sensor/<ID del sensor>/<Nombre que se desea visualizar>
+    * Valores actuales en modo kiosko: 
+    https://demo.anaire.org/sensor/<ID del sensor>/<Nombre que se desea visualizar>
     <p align="center">
-      <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MedidasModoKioskoSensor.jpg" width="60%" height="60%" />
+      <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="60%" height="60%" />
     </p>
-    * Valores actuales con acceso a histórico: demo.anaire.org/detalle/<ID del sensor>/<Nombre que se desea visualizar>
+    * Valores actuales con acceso a histórico: 
+    https://demo.anaire.org/detalle/<ID del sensor>/<Nombre que se desea visualizar>
     <p align="center">
-      <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MedidasModoKioskoDetalle.jpg" width="60%" height="60%" />
+      <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="60%" height="60%" />
     </p>
 
 ## Errores mostrados en el display

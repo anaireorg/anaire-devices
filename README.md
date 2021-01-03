@@ -200,24 +200,25 @@ https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCUL
 Haga click en el enlace para abrirlo desde el IDE de Arduino.
 
 # Fabricación del medidor
-Las principales opciones de montaje que se proponen pretenden simplificar al máximo el proceso, manteniendo las máximas prestaciones técnicas. En cualquier caso se proporciona toda la información necesaria para que cualquiera pueda plantearse alternativas de fabricación, por ejemplo, mediante placas PCB. Para ello se publican en este mismo repositorio los archivos Fritzing con la información detallada del cableado requerido:  
-https://github.com/anaireorg/anaire-devices/blob/main/src/Anaire30ppm_SCD30.fzz  
-https://github.com/anaireorg/anaire-devices/blob/main/src/Anaire50ppm_MHZ14A.fzz  
-  
-Se han diseñados dos modelos de medidores: Anaire30ppm, con precisión de 30ppm (Sensirion SCD30) y Anaire50ppm, con precisión de 50ppm (sensores Winsen MHZ14A y AZDelivery DHT11). Ambos se pueden montar sobre tarjeta de prototipado o en caja de plástico, utilizando una caja de impresión 3D para montar los componentes. La caja puede acoger cualquiera de las dos combinaciones de sensores anteriores ya que está diseñada para ser compatible con ambos. Para el caso de montaje sobre placas de prototipado también se ha diseñado una caja a medida sobre la que se puede disponer la placa con los componentes pinchados:
-  
+Se han diseñado dos modelos de medidores: **Anaire30ppm**, con precisión de 30ppm (Sensirion SCD30) y **Anaire50ppm**, con precisión de 50ppm (sensores Winsen MHZ14A y AZDelivery DHT11). Ambos se pueden montar sobre tarjeta de prototipado o en caja de plástico, utilizando una caja de impresión 3D para montar los componentes. La caja puede acoger cualquiera de las dos combinaciones de sensores anteriores ya que está diseñada para ser compatible con ambos. Para el caso de montaje sobre placas de prototipado también se ha diseñado una caja a medida sobre la que se puede disponer la placa con los componentes pinchados.
+
 * Caja pequeña AnaireBox para encajar los componentes y cablear mediante cables Dupont hembra-hembra:
-https://www.thingiverse.com/thing:4694633
+https://www.thingiverse.com/thing:4694633  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/MH-Z14A%20transparente.png" width="40%" height="40%" />
 </p>  
   
-* Caja grande AnaireBread para encajar una placa de prototipado de 830 puntos, con los componentes pinchados y cableados mediante cables Dupont macho-macho:
-https://www.thingiverse.com/thing:4678398
-<p align="center">
+* Caja grande AnaireBread para encajar una placa de prototipado de 830 puntos, con los componentes pinchados y cableados mediante cables Dupont macho-macho:  
+https://www.thingiverse.com/thing:4678398  
+<p align="center">  
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/MH-Z14A/MH-Z14A%20transparente.png" width="40%" height="40%" />
 </p>  
   
+Las opciones de montaje que se proponen pretenden simplificar al máximo el proceso, manteniendo las máximas prestaciones técnicas. En cualquier caso se proporciona toda la información necesaria para que cualquiera pueda plantearse alternativas de fabricación, por ejemplo, mediante placas PCB y soldadura de los componentes. Para ello se publican en este mismo repositorio los archivos Fritzing (véase https://fritzing.org/) con la información detallada del cableado requerido:  
+  
+https://github.com/anaireorg/anaire-devices/blob/main/src/Anaire30ppm_SCD30.fzz  
+https://github.com/anaireorg/anaire-devices/blob/main/src/Anaire50ppm_MHZ14A.fzz   
+   
 ## Anaire30ppm
 
 ### Esquema de conexiones  
@@ -236,7 +237,15 @@ En este caso es relevante destacar que tras soldar los cuatro piner en el SCD30,
 Hay que soldar 4 pines como se muestra en la siguiente imagen  
 
 ### Montaje final  
-En las siguientes imágenes se muestra el montaje final realizado sobre breadboard 
+Montaje sobre breadboard:  
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireSlim.jpg" width="60%" height="60%" />
+</p>  
+  
+Montaje en caja AnaireBox:  
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireSlim.jpg" width="60%" height="60%" />
+</p>  
 
 ## Anaire50ppm
 
@@ -257,18 +266,38 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
 </p>  
   
 ### Montaje final  
-En la siguiente imagen se muestra el montaje final realizado  
+Montaje sobre breadboard:  
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireSlim.jpg" width="60%" height="60%" />
+</p>  
   
+Montaje sobre breadboard y caja AnaireBread:  
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireSlim.jpg" width="60%" height="60%" />
+</p>
+
+Montaje en caja AnaireBox:  
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireSlim.jpg" width="60%" height="60%" />
+</p>  
+
 ## Carga del software en la tarjeta NodeMCU
 Una vez completado el montaje de los componentes, hay que proceder a la descarga del software en la tarjeta de control NodeMCU. Para ello realice los siguientes pasos:
 
+* Cargue el programa en el IDE de Arduino como se ha indicado previamente en el apartado de *Software*
 * Conecte mediante un cable USB el dispositivo al ordenador en el que haya configurado el IDE de Arduino
-* Compruebe que la tarjeta se ha detectado y se ha seleccionado el puerto apropiado
-* Verifique que las variables de conexión a la aplicación de la nube son correctas:
-* Presione el botón de descarga, como se muestra en la siguiente imagen
-* Espere varios minutos. Primero compilación, luego descarga. Durante la descarga suena el pitido del zumbador (sirve como comprobación)
-* Compruebe en el display que el dispositivo se ha reiniciado al término del pitido del zumbador. debería ver...,
-Una vez configurado el entorno de desarrollo en el apartado anterior, cargar este programa en el entorno de Arduino, y descargarlo en la tarjeta haciendo click en el botón del IDE que muestra una flecha horizontal apuntando hacia la derecha. Se tardará unos minutos, primero en la compilación, y luego en la descarga del binario a la tarjeta NodeMCU. El IDE de Arduino proporciona información del avance de las operaciones. Durante la descarga el zumbador debe de sonar, que que se está utilizando para su activación un pin compartido con la descarga por puerto serie en la tarjeta del software. Cuando termine la descarga (no debe tardar más de unos cuantos segundos) el software habrá quedado instalado y el dispositivo se reiniciará de forma normal.
+* Compruebe que la tarjeta se ha detectado y se ha seleccionado el puerto apropiado en *Herramientas -> Puerto*
+* Verifique que las variables de conexión a la aplicación de la nube son correctas, en las siguientes líneas al inicio del código. Por defecto se indican los valores de la aplicación de demo de Anaire:
+  > String cloud_server_address = "demo.anaire.org";     // server public IP address
+  > int cloud_app_port = 30183;                          // cloud application port  
+* Presione el botón de descarga, que se indica en el IDE con una flecha apuntando hacia la derecha
+* Espere varios minutos. Primero se realiza la compilación, luego la descarga del binario compilado en la tarjeta. Durante la fase de descarga debe sonar el pitido del zumbador, por diseño de la aplicación (se ha utilizado a propósito para el zumbador uno de los pines que se emplea para la descarga de software en la tarjeta)
+* Compruebe en el display que el dispositivo se ha reiniciado al término del pitido del zumbador
+  * Durante los primeros 3 segundos debería ver el texto *anaire.org* en el display
+  * A continuación se mostrarán tres líneas en el display, indicando el modelo de dispositivo, el ID automáticamente asignado y un número con una cuenta atrás por segundos debida al precalentamiento del sensor de CO2 (1 minuto en el Anaire30ppm, 3 minutos en el Anaire50ppm)
+  * Una vez concluida la cuenta atrás el dispositivo mostrará las medidas de CO2, temperatura y humedad en la primera línea, y una indicación del estado del CO2 (*CO2 BIEN*, *CO2 REGULAR* o *CO2 MAL*) en la segunda
+    * En caso de que haya algún error el estado de CO2 será sustituido por un mensaje indicando el tipo de error experimentado
+* El dispositivo está ya operativo, y cada 30 segundos realizará nuevas medidas y mostrará éstas en el display.
 
 # Configuración
 * ID

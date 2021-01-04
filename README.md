@@ -104,7 +104,7 @@ Con objeto de simplificar la fabricación y no añadir más componentes aun prop
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/NodeMCUV2botonesyleds.png" width="30%" height="30%" />
 </p> 
 
-* Se emplea uno de los dos LED incorporados a la tarjeta NodeMCU, el más próximo al conector Micro USB, para proporcionar alertas visuales sobre el estado de CO2. El LED está apagado normalmente; parpadea lentamente cuando el dispositivo está en estado de aviso por CO2, y parpadea rápidamente en caso de encontrarse en alarma. Las frecuencias de parpadeo son iguales a las de la alerta sonora proporcionada por el zumbador.
+* Se emplea uno de los dos LED incorporados a la tarjeta NodeMCU, el más próximo al conector Micro USB, para proporcionar alertas visuales sobre el estado de CO2. El LED está encendido en estado normal, es decir, cuando el valor medido del CO2 está por debajo del umbral de aviso; parpadea lentamente cuando el dispositivo está en estado de aviso por CO2, y parpadea rápidamente en caso de encontrarse en alarma. Las frecuencias de parpadeo son iguales a las de la alerta sonora proporcionada por el zumbador.
 
 * Se emplea el botón de Flash (a la derecha del conector Micro USB) poder deshabilitar la alerta local. Y para volverla a habilitar, ya que el botón conmuta entre ambos estados.
   * Adicionalmente, cada vez que se presiona el botón de Flash se muestran el modelo, el ID y la dirección IP del dispositivo, hasta la realización de la siguiente medición.

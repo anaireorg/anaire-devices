@@ -53,7 +53,8 @@ Toda la información se publica en formato "open source", tanto diseño hardware
 
 * Medición de CO2 mediante sensores NDIR de alta precisión
   * Adicionalmente se realizan de forma simultánea mediciones de temperatura y de humedad
-    
+  * Cada 30 segundos las medidas se vuelven a realizar, se actualizan en el display y se envían a la nube
+      
 * Completamente opensource, tanto hardware como software. Toda la información, tanto sobre este dispositivo como sobre la aplicación en la nube con la que se comunica, está disponible en los repositorios de Anaire en github (https://github.com/anaireorg). Sin excepciones.  
   
 * Alarma local, visual y sonora, cuando el nivel de CO2 sobrepara los umbrales de aviso (700 ppm por defecto) y alarma (1000 ppm por defecto)

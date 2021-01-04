@@ -4,7 +4,7 @@
 //
 // Get CO2, temperature and humidity measurements and send them to the Anaire Cloud Application
 // Show local measurements and provide local warning and alarm visual and sound indications
-//
+//147b92
 // Parts - Common platform:
 //   Control board: AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
 //   Buzzer: AZDelivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r

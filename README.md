@@ -284,7 +284,7 @@ Montaje sobre breadboard:
   
 Montaje sobre breadboard y caja AnaireBread:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBreadAbiertas.jpeg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire50ppmBreadBox.jpg" width="60%" height="60%" />
 </p>
 
 Montaje en caja AnaireBox:  

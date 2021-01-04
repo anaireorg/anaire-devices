@@ -160,7 +160,7 @@ Disponible en: https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3g
      <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Breadboard400.png" width="30%" height="30%" />
    </p> 
  
-   * Placa de 830 puntos, para el Anaire50ppm 
+   * Placa de 830 puntos, para el Anaire50ppm  
    Disponible en: https://www.amazon.es/dp/B071ZGC75Y/ref=twister_B07T88TTXF?_encoding=UTF8&psc=1  
    <p align="center">
      <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Breadboard830.png" width="30%" height="30%" />
@@ -245,7 +245,7 @@ https://github.com/anaireorg/anaire-devices/blob/main/src/Anaire50ppm_MHZ14A.fzz
 
 ### Esquema de conexiones  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/ConexionesAnaireSlim.png" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/ConexionesAnaire30ppm.png" width="60%" height="60%" />
 </p>  
      
 ### Detalle del sensor SCD30  
@@ -255,19 +255,19 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
 Montaje sobre breadboard. En este caso es relevante destacar que tras soldar los cuatro pines en el SCD30, utilizando éstos se puede pinchar el componente directamente en la placa de prototipado, alineado correctamente con los pines de la NodeMCU para que se verifique el cableado deseado, ahorrando así cuatro cables y facilitando el engarce mecánico del conjunto de una forma sencilla y muy efectiva.  
   
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireSlim.jpg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire30ppm.jpg" width="60%" height="60%" />
 </p>  
   
 Montaje en caja AnaireBox:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireSlim.jpg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire30ppm.jpg" width="60%" height="60%" />
 </p>  
 
 ## Anaire50ppm
 
 ### Esquema de conexiones  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/ConexionesAnaireBread.png" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/ConexionesAnaire50ppm.png" width="60%" height="60%" />
 </p>  
    
 ### Detalle del sensor MH-Z14A  
@@ -279,17 +279,17 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
 ### Montaje final  
 Montaje sobre breadboard:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireBread.jpg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire50ppm.jpg" width="60%" height="60%" />
 </p>  
   
 Montaje sobre breadboard y caja AnaireBread:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireBread.jpg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBreadAbiertas.jpeg" width="60%" height="60%" />
 </p>
 
 Montaje en caja AnaireBox:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/EsquemaAnaireBread.jpg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire50ppm.jpg" width="60%" height="60%" />
 </p>  
 
 ## Carga del software en la tarjeta NodeMCU

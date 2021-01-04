@@ -151,17 +151,23 @@ Disponible en: https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3g
    <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBox.jpg" width="30%" height="30%" />
  </p>    
    acompañada por cables Dupont hembra-hembra  
-   Disponibles en: https://www.amazon.es/SODIAL-Puente-Hembra-Soldadura-Flexible/dp/B00HUH9GOC/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cable+dupont+hembra+hembra&qid=1609613291&s=industrial&sr=1-4  
+   https://www.amazon.es/SODIAL-Puente-Hembra-Soldadura-Flexible/dp/B00HUH9GOC/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cable+dupont+hembra+hembra&qid=1609613291&s=industrial&sr=1-4  
  
  * O bien placas de prototipado  
    * Placa de 400 puntos, para el Anaire30ppm  
    Disponible en: https://www.amazon.es/dp/B071ZGC75Y/ref=twister_B07T88TTXF?_encoding=UTF8&psc=1  
-     
+   <p align="center">
+     <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Breadboard400.png" width="30%" height="30%" />
+   </p> 
+ 
    * Placa de 830 puntos, para el Anaire50ppm 
    Disponible en: https://www.amazon.es/dp/B071ZGC75Y/ref=twister_B07T88TTXF?_encoding=UTF8&psc=1  
+   <p align="center">
+     <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Breadboard830.png" width="50%" height="50%" />
+   </p> 
      
    * En ambos casos son necesarios cables Dupont macho-macho  
-   Disponibles en: https://www.amazon.es/Neuftech-jumper-20cm-Arduino-Breadboard/dp/B00NBNIETC/ref=sr_1_4?dchild=1&keywords=dupont+macho+macho&qid=1609613744&sr=8-4  
+   https://www.amazon.es/Neuftech-jumper-20cm-Arduino-Breadboard/dp/B00NBNIETC/ref=sr_1_4?dchild=1&keywords=dupont+macho+macho&qid=1609613744&sr=8-4  
    
  * Será necesario un cable válido para conectar desde un puerto USB del ordenador al puerto Micro USB de la tarjeta NodeMCU, para poder descargar el software del dispositivo. Este mismo cable puede ser utilizado para la alimentación eléctrica desde un ordenador, o desde un enchufe USB o includo desde una batería portátil USB. También podría utilizarse, una vez descargado el software, un transformador de un antiguo teléfono móvil u otro tipo de dispositivo que tenga un conector Micro USB y proporcione al menos 500 mili amperios. Por ejemplo, el siguiente cable:  
  https://www.amazon.es/TM-Electron-CXU201020-Cable-Blanco/dp/B07BQD6P74/ref=sr_1_22?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=usb+micro+usb&qid=1609613811&sr=8-22  

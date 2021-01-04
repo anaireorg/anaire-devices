@@ -7,7 +7,7 @@
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxFrontal2.jpg" width="40%" height="40%" />
 </p>  
   
-Proyecto libre y abierto (opensource), tanto hardware como software, para la fabricación de un medidor de CO2, temperatura y humedad, de mínimo coste y alta precisión, conectado por WiFi a una aplicación en la nube denominada Anaire Cloud App para mostrar los valores instantáneos y el histórico de mediciones de CO2, temperatura y humedad, facilitando así el análisis de la infortmación de las medidas y su correlación con protocolos de ventilación anti COVID-19.
+Proyecto libre y abierto (opensource), tanto hardware como software, para la fabricación de un medidor de CO2, temperatura y humedad, de mínimo coste y alta precisión, conectado por WiFi a una aplicación en la nube denominada Anaire Cloud App para mostrar los valores instantáneos y el histórico de mediciones de CO2, temperatura y humedad, facilitando así el análisis de la información de las medidas y su correlación con protocolos de ventilación anti COVID-19.
 
 El concepto se muestra en la siguiente imagen. Se trata de un dispositivo basado en un microcontrolador ESP8266, al que se conectan sensores para la medida de CO2, temperatura y humedad. El dispositivo tiene un display para mostrar las medidas e indicaciones de estado, un LED y un zumbador para poder emitir alertas visuales y sonoras, y un botón para poder deshabilitar la alerta local. Dispone de conectividad WiFi para poder enviar las mediciones realizadas a una aplicación en la nube, Anaire Cloud (https://github.com/anaireorg/anaire-cloud), que permite agregar la información de múltiples dispositivos y acceder al histórico de medidas desde cualquier dispositivo vía Internet.  
   
@@ -169,7 +169,7 @@ Disponible en: https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3g
    * En ambos casos son necesarios cables Dupont macho-macho  
    https://www.amazon.es/Neuftech-jumper-20cm-Arduino-Breadboard/dp/B00NBNIETC/ref=sr_1_4?dchild=1&keywords=dupont+macho+macho&qid=1609613744&sr=8-4  
    
- * Será necesario un cable válido para conectar desde un puerto USB del ordenador al puerto Micro USB de la tarjeta NodeMCU, para poder descargar el software del dispositivo. Este mismo cable puede ser utilizado para la alimentación eléctrica desde un ordenador, o desde un enchufe USB o includo desde una batería portátil USB. También podría utilizarse, una vez descargado el software, un transformador de un antiguo teléfono móvil u otro tipo de dispositivo que tenga un conector Micro USB y proporcione al menos 500 mili amperios. Por ejemplo, el siguiente cable:  
+ * Será necesario un cable válido para conectar desde un puerto USB del ordenador al puerto Micro USB de la tarjeta NodeMCU, para poder descargar el software del dispositivo. Este mismo cable puede ser utilizado para la alimentación eléctrica desde un ordenador, o desde un enchufe USB o incluso desde una batería portátil USB. También podría utilizarse, una vez descargado el software, un transformador de un antiguo teléfono móvil u otro tipo de dispositivo que tenga un conector Micro USB y proporcione al menos 500 mili amperios. Por ejemplo, el siguiente cable:  
  https://www.amazon.es/TM-Electron-CXU201020-Cable-Blanco/dp/B07BQD6P74/ref=sr_1_22?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=usb+micro+usb&qid=1609613811&sr=8-22  
  O el siguiente alimentador:
  https://www.amazon.es/gp/product/B00U88KSHO/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&psc=1  
@@ -192,7 +192,7 @@ https://www.arduino.cc/en/software
 
  4. Para gestionar tarjetas como la NodeMCU, basadas en el microcontrolador ESP8266, introducir en el campo *Gestor de URLs adicionales de tarjetas* lo siguiente: http://arduino.esp8266.com/stable/package_esp8266com_index.json. Se pueden introducir URLs múltiples, separados por comas.
 
- 5. Abrir *Herramientas -> Placa -> Gestor de tarjetas*, localizar *esp8266 platform by esp8266 community* e instalar el software desde la cxaja de selección
+ 5. Abrir *Herramientas -> Placa -> Gestor de tarjetas*, localizar *esp8266 platform by esp8266 community* e instalar el software desde la caja de selección
 
  6. Tras la instalación seleccionar en *Herramientas -> Placa* la opción *NodeMCU 1.0*, para de esta forma trabajar con esa tarjetas
 
@@ -309,7 +309,7 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
 * Compruebe en el display que el dispositivo se ha reiniciado al término del pitido del zumbador
 
 # Configuración
-* El dispositivo tienen un identificador único (o ID) generado a partir de la dirección MAC de la interfaz WiFi de cada tarjeta Nodemcu. Este ID es un texto hexadecimal de 6 caracteres, utilizado para el acceso a las medidas en Internet y la integración del medidor en la aplicación en la nube de Anaire. No es preciso realizar ninguna configuración sobre este identificador, se realiza de forma automática.
+* El dispositivo tiene un identificador único (o ID) generado a partir de la dirección MAC de la interfaz WiFi de cada tarjeta Nodemcu. Este ID es un texto hexadecimal de 6 caracteres, utilizado para el acceso a las medidas en Internet y la integración del medidor en la aplicación en la nube de Anaire. No es preciso realizar ninguna configuración sobre este identificador, se realiza de forma automática.
   * El ID del dispositivo se muestra durante el inicio y tras pulsar el botón de Flash (en la caja AnaireBox es el botón superior, con la letra *A*).
 * Configuración de la conexión WiFi
    * Tras pulsar 2 veces consecutivas el botón de Reset (en la caja AnaireBox es el botón superior, con la letra *R*), el dispositivo se reinicia en modo de configuración:
@@ -317,7 +317,7 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
    * Conecte a esa red con un PC, tablet o teléfono móvil
    * Una vez conectado a la red introduzca la siguiente drección IP en su navegador: 192.168.4.1
    * De esta forma se accede al portal de configuración del dispositivo
-   * En el ortal puede escoger una red WiFi entre las detectadas, e introducir la contraseña de la red. Pulse en el botón *Save* tras escribir la contraseña.
+   * En el portal puede escoger una red WiFi entre las detectadas, e introducir la contraseña de la red. Pulse en el botón *Save* tras escribir la contraseña.
      * Si todo ha ido correctamente el dispositivo se reiniciará con conexión a la nueva red WiFi
      * Si ha habido algún problema de conexión (por ejemplo, si se ha introducido una contraseña errónea), el dispositivo mostrará un mensaje de error WiFi en el display, y deberá repetir el procedimiento
    * En versiones posteriores del software está previsto que en este portal se puedan modificar otros parámetros de configuración, como la conexión a la aplicación en la nube o los umbrales de aviso y alerta CO2. Actualmente se puede configurar únicamente la conexión WiFi.
@@ -333,7 +333,7 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
   * En caso de que el valor medido de CO2 supero el umbral de alarma, el dispositivo empezará a emitir un pitido intermitente, así como el parpadeo del LED de estado de CO2, de forma alternativas y con una frecuencia mayor que en el caso de aviso
 * Si se desea detener la indicación local de alarma (visual y sonora), presione una vez el botón de Flash (a la derecha del conector USB)
   * El display mostrará, de forma adicional, el modelo, el ID y la dirección IP del dispositivo
-  * Si se vuelve a presional el botón de Flash, se reactivará el aviso de alarma local. Es decir, el botón de Flñash permite conmutar entre avisar o no de forma local cuando los valores de CO2 superen los umbrales estabilizaciónecidos
+  * Si se vuelve a presional el botón de Flash, se reactivará el aviso de alarma local. Es decir, el botón de Flash permite conmutar entre avisar o no de forma local cuando los valores de CO2 superen los umbrales estabilizaciónecidos
   * Cuando la medida de CO2 sea inferior al umbral de aviso, el dispositivo reseteará el estado de la señal local de alarma, de forma que automáticamente volverá a dar indicaciones locales de alarma si se vuelven a superar los umbrales de aviso o de alarma en el futuro, sin necesidad de reactivar la alarma local
 * Si hay algún error, la última línea del display mostrará el error, en lugar de dar una indicación del estado de CO2. El dispositivo está diseñado para recuperarse automáticamente de los errores cuando la causa que los provoca se ha resuelto, sin que el usuario tenga que intervenir.
 * Si se conecta con un dispositivo a la misma red WiFi a la que esta conectado el medidor, accediendo a la dirección IP del medidor se pueden ver las últimas medidas realizadas y los umbrales de aviso y alarma CO2 definidos.
@@ -341,12 +341,12 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
 * Acceso por internet a las medidas:
   * Si se han dejado los valores por defecto de la aplicación en la nube, se puede acceder a los valores medidos por el dispositivo en los siguientes enlaces:
     * Valores actuales en modo kiosko:  
-    https://demo.anaire.org/sensor/ID_del_sensor/Nombre_que_se_desea_visualizar
+    https://demo.anaire.org/sensor/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]
     <p align="center">
       <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="30%" height="30%" />
     </p>  
     * Valores actuales con acceso a histórico:  
-    https://demo.anaire.org/detalle/ID_del_sensor/Nombre_que_se_desea_visualizar  
+    https://demo.anaire.org/detalle/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]  
 
 ## Errores mostrados en el display
 * err_wifi: no se pudo conectar a la red WiFi. Compruebe el estado de la conexión presionando dos veces consecutivas el botón de Reset y conectando al portal cautivo, como se explica en el apartado de Configuración del dispositivo.

@@ -251,7 +251,7 @@ https://github.com/anaireorg/anaire-devices/blob/main/src/Anaire50ppm_MHZ14A.fzz
 ### Detalle del sensor SCD30  
 Hay que soldar 4 pines como se muestra en la siguiente imagen  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/SCD30/SCD30%20transparente.png" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/SCD30/pines_soldados_SCD30.jpg" width="60%" height="60%" />
 </p>  
   
 ### Montaje final  

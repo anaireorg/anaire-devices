@@ -263,7 +263,7 @@ Montaje sobre breadboard. En este caso es relevante destacar que tras soldar los
   
 Montaje en caja AnaireBox:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire30ppmBox.jpg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire30ppmBox.jpg" width="40%" height="40%" />
 </p>  
 
 ## Anaire50ppm
@@ -282,7 +282,7 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
 ### Montaje final  
 Montaje sobre breadboard:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire50ppm.jpg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire50ppm.jpg" width="50%" height="50%" />
 </p>  
   
 Montaje sobre breadboard y caja AnaireBread:  

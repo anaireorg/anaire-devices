@@ -269,7 +269,11 @@ Montaje en caja AnaireBox:
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire30ppmBox.jpg" width="40%" height="40%" />
 </p>  
-
+  
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxFrontal.jpg" width="40%" height="40%" />
+</p>  
+  
 ## Anaire50ppm
 
 ### Esquema de conexiones  
@@ -302,7 +306,11 @@ Montaje en caja AnaireBox:
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire50ppmBox.jpg" width="50%" height="50%" />
 </p>  
-
+  
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxFrontal.jpg" width="40%" height="40%" />
+</p>  
+  
 ## Carga del software en la tarjeta NodeMCU
 Una vez completado el montaje de los componentes, hay que proceder a la descarga del software en la tarjeta de control NodeMCU. Para ello realice los siguientes pasos:
 

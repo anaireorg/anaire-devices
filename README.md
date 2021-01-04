@@ -46,7 +46,7 @@ Toda la información se publica en formato "open source", tanto diseño hardware
   
 * Fabricación sencilla, simplemente "pinchando" los componentes en placas de prototipado ("breadboard"), soldando únicamente los cuatro pines necesarios en el sensor de CO2. En el caso del sensor SCD30, es especialmente sencillo, ya que tras soldar los cuatro pines necesarios se puede "pinchar" el sensor en la placa de prototipado de forma alineada y consecutiva con la tarjeta de control NodeMCU, ahorrando así esos cables y proporcionando mayor robustez al montaje.
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireSlim.jpeg" width="30%" height="30%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire30ppm.jpg" width="30%" height="30%" />
 </p>  
   
 * Alternativa para la fabricación mucho más robusta utilizando cajas diseñadas a medida y fabricadas mediante impresoras 3D, y simplemente conectando los componentes mediante cables dupont hembra y encajándolos en los espacios preparados para ello en la caja. La caja es compatible para los dos sensores, y alberga adicionalmente el display OLED (y el resto de los componentes) de forma que sea muy fácil la lectura de las medidas. Todos los detalles para la fabricación de la caja se pueden encontrar en la carpeta "3D print" en este repositorio.  

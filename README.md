@@ -146,7 +146,10 @@ Disponible en: https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3g
 ## Otros:
  * O bien caja AnaireBox imprimida por 3D  
  Detalles del producto: https://www.thingiverse.com/thing:4694633  
-   
+ 
+ <p align="center">
+   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBox.jpg" width="30%" height="30%" />
+ </p>    
    acompañada por cables Dupont hembra-hembra  
    Disponibles en: https://www.amazon.es/SODIAL-Puente-Hembra-Soldadura-Flexible/dp/B00HUH9GOC/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cable+dupont+hembra+hembra&qid=1609613291&s=industrial&sr=1-4  
  

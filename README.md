@@ -11,7 +11,7 @@ Fabricación de un medidor de CO2, temperatura y humedad, de mínimo coste y alt
  
 
 # Tabla de contenidos
-1. [ Medición de CO2 con sensores NDIR, y envío de las medidas a la nube para su monitorización contínua ](#1)
+1. [ Medición de CO2 con sensores NDIR y envío de las medidas a la nube para su monitorización contínua ](#1)
 2. [ Características ](#2)
 3. [ Hardware ](#3)  
 3.1 [ Elementos comunes ](#3.1)  
@@ -32,7 +32,7 @@ Fabricación de un medidor de CO2, temperatura y humedad, de mínimo coste y alt
 ---
   
 <a name="1"></a>
-# 1. Medición de CO2 con sensores NDIR, y envío de las medidas a la nube para su monitorización contínua
+# 1. Medición de CO2 con sensores NDIR y envío de las medidas a la nube para su monitorización contínua
 
 El concepto se muestra en la siguiente imagen. Se trata de un dispositivo basado en un microcontrolador ESP8266, al que se conectan sensores para la medida de CO2, temperatura y humedad. El dispositivo tiene un display para mostrar las medidas e indicaciones de estado, un LED y un zumbador para poder emitir alertas visuales y sonoras, y un botón para poder deshabilitar la alerta local. Dispone de conectividad WiFi para poder enviar las mediciones realizadas a una aplicación en la nube, Anaire Cloud (https://github.com/anaireorg/anaire-cloud), que permite agregar la información de múltiples dispositivos y acceder al histórico de medidas desde cualquier dispositivo vía Internet.  
   

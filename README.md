@@ -12,7 +12,7 @@ Proyecto libre y abierto (opensource), tanto hardware como software, para la fab
 El concepto se muestra en la siguiente imagen. Se trata de un dispositivo basado en un microcontrolador ESP8266, al que se conectan sensores para la medida de CO2, temperatura y humedad. El dispositivo tiene un display para mostrar las medidas e indicaciones de estado, un LED y un zumbador para poder emitir alertas visuales y sonoras, y un botón para poder deshabilitar la alerta local. Dispone de conectividad WiFi para poder enviar las mediciones realizadas a una aplicación en la nube, Anaire Cloud (https://github.com/anaireorg/anaire-cloud), que permite agregar la información de múltiples dispositivos y acceder al histórico de medidas desde cualquier dispositivo vía Internet.  
   
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Dispositivo_ANAIRE.png" width="90%" height="90%"/>
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Dispositivo_ANAIRE.png" width="90%" height="90%"/>
 </p>
   
 En este repositorio se publica información completa para la fabricación del medidor de CO2 Anaire, desde el código fuente hasta las especificaciones de componentes, cableados y opciones de montaje tanto en placa de prototipado como utilizando cajas de impresión 3D para la disposición de los componentes. La intención es que cualquier persona pueda encontrar aquí la información necesaria y suficiente para montar su propio sensor de CO2, con o sin conexión a la nube, sin necesidad de grandes conocimientos técnicos, como ayuda para combatir la pandemia causada por la COVID-19, ayudando a preparar entornos más seguros, con mínimos niveles de CO2, que puedan ayudar a prevenir contagios en entornos cerrados.

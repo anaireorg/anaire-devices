@@ -292,7 +292,9 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
 </p>  
   
 ### Montaje final  
-Montaje sobre breadboard. En este caso es relevante destacar que tras soldar los cuatro pines en el SCD30, utilizando éstos se puede pinchar el componente directamente en la placa de prototipado, alineado correctamente con los pines de la NodeMCU para que se verifique el cableado deseado, ahorrando así cuatro cables y facilitando el engarce mecánico del conjunto de una forma sencilla y muy efectiva.  
+Montaje sobre breadboard: 
+  
+En este caso es relevante destacar que tras soldar los cuatro pines en el SCD30, utilizando éstos se puede pinchar el componente directamente en la placa de prototipado, alineado correctamente con los pines de la NodeMCU para que se verifique el cableado deseado, ahorrando así cuatro cables y facilitando el engarce mecánico del conjunto de una forma sencilla y muy efectiva.  
   
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire30ppm.jpg" width="60%" height="60%" />
@@ -303,6 +305,7 @@ Montaje sobre breadboard. En este caso es relevante destacar que tras soldar los
 </p>  
 
 Montaje en caja AnaireBox:  
+
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire30ppmBox.jpg" width="40%" height="40%" />
 </p>  
@@ -327,6 +330,7 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
   
 ### Montaje final  
 Montaje sobre breadboard:  
+  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire50ppm.jpg" width="50%" height="50%" />
 </p>  
@@ -368,7 +372,7 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
 * El dispositivo tiene un identificador único (o ID) generado a partir de la dirección MAC de la interfaz WiFi de cada tarjeta Nodemcu. Este ID es un texto hexadecimal de 6 caracteres, utilizado para el acceso a las medidas en Internet y la integración del medidor en la aplicación en la nube de Anaire. No es preciso realizar ninguna configuración sobre este identificador, se realiza de forma automática.
   * El ID del dispositivo se muestra durante el inicio y tras pulsar el botón de Flash (en la caja AnaireBox es el botón superior, con la letra *A*).
 * Configuración de la conexión WiFi
-   * Tras pulsar 2 veces consecutivas el botón de Reset (en la caja AnaireBox es el botón superior, con la letra *R*), el dispositivo se reinicia en modo de configuración:
+   * Tras pulsar 2 veces consecutivas el botón de Reset (en la caja AnaireBox es el botón inferior, con la letra *R* o con la letra *B*), el dispositivo se reinicia en modo de configuración:
    * Se crea una red WiFi abierta con el nombre ESP_XXXXXX, donde XXXXXX es el identificador del dispositivo
    * Conecte a esa red con un PC, tablet o teléfono móvil
    * Una vez conectado a la red introduzca la siguiente drección IP en su navegador: 192.168.4.1
@@ -381,7 +385,7 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
 <a name="7"></a>
 # 7. Uso
 * Alimentar el dispositivo con un cable conectado al conector micro usb   
-* Durante los primeros 3 segundos debería ver el texto *anaire.org* en el display
+* Durante los primeros 3 segundos se muestra el texto *anaire.org* en el display
   * A continuación se mostrarán tres líneas en el display, indicando el modelo de dispositivo, el ID automáticamente asignado y un número con una cuenta atrás por segundos debida al precalentamiento del sensor de CO2 (1 minuto en el Anaire30ppm, 3 minutos en el Anaire50ppm). Los sensores de CO2 requieren de un tiempo de estabilización y calentamiento para su puesta en marcha de forma correcta.  
   * Una vez concluida la cuenta atrás el dispositivo mostrará las medidas de CO2, temperatura y humedad en la primera línea, y una indicación del estado del CO2 (*CO2 BIEN*, *CO2 REGULAR* o *CO2 MAL*) en la segunda
     * En caso de que haya algún error el estado de CO2 será sustituido por un mensaje indicando el tipo de error experimentado
@@ -407,6 +411,8 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
 
 <a name="7.1"></a>
 ## 7.1 Errores
+Los siguientes errores se pueden mostrar en el display del medidor. Se indica su significado y cómo proceder para cada uno de ellos:
+  
 * err_wifi: no se pudo conectar a la red WiFi. Compruebe el estado de la conexión presionando dos veces consecutivas el botón de Reset y conectando al portal cautivo, como se explica en el apartado de Configuración del dispositivo.
 * err_mqtt: no se pudo conectar al endpoint de la aplicación de Anaire en la nube. Compruebe los detalles al inicio del código del dispositivo y verifique la conectividad del endpoint definido.
 * err_co2: no se pudo conectar con el sensor de CO2. Compruebe las conexiones.

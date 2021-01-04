@@ -261,6 +261,10 @@ Montaje sobre breadboard. En este caso es relevante destacar que tras soldar los
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire30ppm.jpg" width="60%" height="60%" />
 </p>  
   
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire30ppm.jpg" width="60%" height="60%" />
+</p>  
+
 Montaje en caja AnaireBox:  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire30ppmBox.jpg" width="40%" height="40%" />
@@ -285,7 +289,11 @@ Montaje sobre breadboard:
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire50ppm.jpg" width="50%" height="50%" />
 </p>  
   
-Montaje sobre breadboard y caja AnaireBread:  
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire50ppm.jpg" width="60%" height="60%" />
+</p>  
+  
+Montaje sobre breadboard en caja AnaireBread:  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire50ppmBreadBox.jpg" width="40%" height="40%" />
 </p>

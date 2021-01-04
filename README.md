@@ -250,7 +250,10 @@ https://github.com/anaireorg/anaire-devices/blob/main/src/Anaire50ppm_MHZ14A.fzz
      
 ### Detalle del sensor SCD30  
 Hay que soldar 4 pines como se muestra en la siguiente imagen  
-
+<p align="center">
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/SCD30/SCD30%20transparente.png" width="60%" height="60%" />
+</p>  
+  
 ### Montaje final  
 Montaje sobre breadboard. En este caso es relevante destacar que tras soldar los cuatro pines en el SCD30, utilizando éstos se puede pinchar el componente directamente en la placa de prototipado, alineado correctamente con los pines de la NodeMCU para que se verifique el cableado deseado, ahorrando así cuatro cables y facilitando el engarce mecánico del conjunto de una forma sencilla y muy efectiva.  
   
@@ -284,7 +287,7 @@ Montaje sobre breadboard:
   
 Montaje sobre breadboard y caja AnaireBread:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire50ppmBreadBox.jpg" width="30%" height="30%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire50ppmBreadBox.jpg" width="40%" height="40%" />
 </p>
 
 Montaje en caja AnaireBox:  

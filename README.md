@@ -14,9 +14,9 @@ Fabricación de un medidor de CO2, temperatura y humedad, de mínimo coste y alt
 1. [ Medición de CO2 con sensores NDIR, y envío de las medidas a la nube para su monitorización contínua ](#1)
 2. [ Características ](#2)
 3. [ Hardware ](#3)  
-3.1 [ Elementos comunes ](#3.1)
-3.2 [ Sensores ](#3.2)
-3.3 [ Otros componentes ](#3.3)
+3.1 [ Elementos comunes ](#3.1)  
+3.2 [ Sensores ](#3.2)  
+3.3 [ Otros componentes ](#3.3)  
 4. [ Software ](#4)  
 4.1 [ Preparación del entorno ](#4)  
 4.2 [ Software del Medidor de CO2 de ANAIRE ](#4)
@@ -25,9 +25,9 @@ Fabricación de un medidor de CO2, temperatura y humedad, de mínimo coste y alt
 5.2 [ Anaire50ppm ](#5.2)  
 5.3 [ Carga del software ](#5.3)  
 6. [ Configuración ](#6)  
-7. [ Uso ](#7)
-7.1 [ Errores ](#7.1)
-7.2 [ Diagnóstico ](#7.2)
+7. [ Uso ](#7)  
+7.1 [ Errores ](#7.1)  
+7.2 [ Diagnóstico ](#7.2)  
   
 ---
   

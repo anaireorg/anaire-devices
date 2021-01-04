@@ -13,14 +13,22 @@ Fabricación de un medidor de CO2, temperatura y humedad, de mínimo coste y alt
 # Tabla de contenidos
 1. [ Medición de CO2 con sensores NDIR, y envío de las medidas a la nube para su monitorización contínua ](#1)
 2. [ Características ](#2)
-3. [ Hardware ](#3)
-4. [ Software ](#4)
-5. [ Fabricación ](#5)
-5.1 [ Anaire30ppm ](#5.1)
-5.2 [ Anaire50ppm ](#5.2)
-6. [ Configuración ](#6)
+3. [ Hardware ](#3)  
+3.1 [ Elementos comunes ](#3.1)
+3.2 [ Sensores ](#3.2)
+3.3 [ Otros componentes ](#3.3)
+4. [ Software ](#4)  
+4.1 [ Preparación del entorno ](#4)  
+4.2 [ Software del Medidor de CO2 de ANAIRE ](#4)
+5. [ Fabricación ](#5)  
+5.1 [ Anaire30ppm ](#5.1)  
+5.2 [ Anaire50ppm ](#5.2)  
+5.3 [ Carga del software ](#5.3)  
+6. [ Configuración ](#6)  
 7. [ Uso ](#7)
-
+7.1 [ Errores ](#7.1)
+7.2 [ Diagnóstico ](#7.2)
+  
 ---
   
 <a name="1"></a>
@@ -117,7 +125,8 @@ En caso de utilizar el sensor MH-Z14A como medidor de CO2 se ha incorporado el s
 La alimentación del dispositivo se realiza directamente a través del puerto Micro USB de la tarjeta de control NodeMCU LUA Amica V2, el mismo que se utiliza para programarla y para comunicarse con ella. Se recomienda utilizar fuentes de alimentación (enchufes USB, puertos USB en ordenadores, etc.) que puedan proporcionar al menos 500 mA (que es lo más frecuente, aunque podría no ser así en el caso de antiguos cargadores de teléfonos móviles, por ejemplo).   
 
 A continuación se enumeran los elementos citados, incluyendo enlaces a su documentación y a opciones para su adquisición.
-
+  
+<a name="3.1"></a>
 ## 3.1 Elementos comunes
 * Tarjeta de control basada en microcontrolador ESP8266: AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2  
 Detalles del producto: https://www.az-delivery.de/es/products/nodemcu  
@@ -140,6 +149,7 @@ Disponible en: https://www.amazon.es/dp/B089QJKJXW/ref=twister_B082MHYNND?_encod
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/Zumbador/Zumbador%20transparente.png" width="10%" height="10%" />  
 </p>
   
+<a name="3.2"></a>
 ## 3.2 Sensores
 * Medidor Anaire30ppm: sensor de CO2, temperatura y humedad Sensirion SCD30   
 Detalles del producto: https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/  
@@ -162,6 +172,7 @@ Disponible en: https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3g
     <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/DHT-11/DHT-11%20transparente.png" width="10%" height="10%" />
   </p>  
   
+<a name="3.3"></a>
 ## 3.3 Otros componentes
  * O bien caja AnaireBox imprimida por 3D  
  Detalles del producto: https://www.thingiverse.com/thing:4694633  
@@ -199,8 +210,10 @@ Disponible en: https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3g
 <a name="4"></a>
 # 4. Software
 El dispositivo se programa exactamente igual que una tarjeta arduino, utilizando el IDE (entorno de desarrollo) de Arduino. Hay que instalar de forma adicional algunos componentes de software, tanto en el PC utilizado como en el propio entorno de Arduino. A continuación se describe en detalle el procedimiento para poder preparar un entorno de desarrollo de SW operativo que permita la descarga del software en los dispositivos (y su programación para modificarlo, en caso deseado).
-
-## 4.1 Preparación del entorno de Arduino
+  
+<a name="4.1"></a>
+## 4.1 Preparación del entorno
+Hay que instalar el IDE de Arduino y descargar las librerías que se han empleado en el desarrollo del programa de los medidores de Anaire, siguiendo los siguientes pasos:
   
  1. Instalar en el ordenador el driver USB-UART (conversión USB a puerto serie) para poder comunicarse con la tarjeta NodeMCU:
 https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers
@@ -228,8 +241,9 @@ https://www.arduino.cc/en/software
     * WifiManager kentaylor https://github.com/kentaylor/WiFiManager (gestión de la conexión WiFi)
     * Double Reset detector https://github.com/datacute/DoubleResetDetector (detector de doble pulsación del botón reset para reinicio en el portal cautivo y poder configurar la WiFi y otros parámetros)
 
-## 4.2 Obtención del software del Medidor de CO2 de ANAIRE
-El software está disponible en su última versión en el siguiente enlace de este repositorio:  
+<a name="4.2"></a>
+## 4.2 Software del Medidor de CO2 de ANAIRE
+El programa (software) está disponible en su última versión en el siguiente enlace de este repositorio:  
 https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino  
 
 Haga click en el enlace para abrirlo desde el IDE de Arduino.
@@ -334,6 +348,7 @@ Montaje en caja AnaireBox:
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxFrontal.jpg" width="40%" height="40%" />
 </p>  
   
+<a name="5.3"></a>
 ## 5.3 Carga del software
 Una vez completado el montaje de los componentes, hay que proceder a la descarga del software en la tarjeta de control NodeMCU. El software es el mismo, independientemente del modelo de medidor que se haya fabricado. Para ello realice los siguientes pasos:
 
@@ -389,12 +404,15 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
     * Valores actuales con acceso a histórico (sustituir [ID_del_sensor] por el ID del medidor, y [Nombre_que_se_desea_visualizar] por el nombre deseado):  
     https://demo.anaire.org/detalle/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]  
 
-## 7.1 Errores mostrados en el display
+<a name="7.1"></a>
+## 7.1 Errores
 * err_wifi: no se pudo conectar a la red WiFi. Compruebe el estado de la conexión presionando dos veces consecutivas el botón de Reset y conectando al portal cautivo, como se explica en el apartado de Configuración del dispositivo.
 * err_mqtt: no se pudo conectar al endpoint de la aplicación de Anaire en la nube. Compruebe los detalles al inicio del código del dispositivo y verifique la conectividad del endpoint definido.
 * err_co2: no se pudo conectar con el sensor de CO2. Compruebe las conexiones.
 * err_dht: no se pudo conectar con el sensor de humedad y temperatura DHT11. Compruebe las conexiones.
   
-## 7.2 Diagnóstico de problemas
+<a name="7.2"></a>
+## 7.2 Diagnóstico
 Conecte el dispositivo al PC utilizando un cable USB. Arranque el monitor serie del IDE de Arduino con la opción *Herramientas -> Monitor serie*. Se abrirá una nueva ventana en la que se imprimirán todos los mensajes emitidos por el dispositivo durante su funcionamiento, que ayudarán a diagnosticar los posibles problemas. Se recomienda presionar una vez el botón de *Reset* para reiniciar el dispositivo y poder observar un ciclo completo de funcionamiento desde el principio.
   
+---

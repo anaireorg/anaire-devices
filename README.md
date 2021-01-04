@@ -263,7 +263,7 @@ Montaje sobre breadboard. En este caso es relevante destacar que tras soldar los
   
 Montaje en caja AnaireBox:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire30ppm.jpg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire30ppmBox.jpg" width="60%" height="60%" />
 </p>  
 
 ## Anaire50ppm
@@ -292,7 +292,7 @@ Montaje sobre breadboard y caja AnaireBread:
 
 Montaje en caja AnaireBox:  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire50ppm.jpg" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire50ppmBox.jpg" width="60%" height="60%" />
 </p>  
 
 ## Carga del software en la tarjeta NodeMCU

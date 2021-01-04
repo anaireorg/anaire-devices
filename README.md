@@ -16,6 +16,8 @@ Fabricación de un medidor de CO2, temperatura y humedad, de mínimo coste y alt
 3. [ Hardware ](#3)
 4. [ Software ](#4)
 5. [ Fabricación ](#5)
+5.1 [ Anaire30ppm ](#5.1)
+5.2 [ Anaire50ppm ](#5.2)
 6. [ Configuración ](#6)
 7. [ Uso ](#7)
 
@@ -260,6 +262,7 @@ Las opciones de montaje que se proponen pretenden simplificar al máximo el proc
 https://github.com/anaireorg/anaire-devices/blob/main/src/Anaire30ppm_SCD30.fzz  
 https://github.com/anaireorg/anaire-devices/blob/main/src/Anaire50ppm_MHZ14A.fzz   
    
+<a name="5.1"></a>
 ## 5.1 Anaire30ppm
 
 ### Esquema de conexiones  
@@ -293,6 +296,7 @@ Montaje en caja AnaireBox:
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxFrontal.jpg" width="40%" height="40%" />
 </p>  
   
+<a name="5.2"></a>
 ## 5.2 Anaire50ppm
 
 ### Esquema de conexiones  

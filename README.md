@@ -163,7 +163,7 @@ Disponible en: https://www.amazon.es/MH-Z14A-di%C3%B3xido-infrarrojo-anal%C3%B3g
    * Placa de 830 puntos, para el Anaire50ppm 
    Disponible en: https://www.amazon.es/dp/B071ZGC75Y/ref=twister_B07T88TTXF?_encoding=UTF8&psc=1  
    <p align="center">
-     <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Breadboard830.png" width="50%" height="50%" />
+     <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Breadboard830.png" width="30%" height="30%" />
    </p> 
      
    * En ambos casos son necesarios cables Dupont macho-macho  

@@ -310,9 +310,9 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
 
 # Configuración
 * El dispositivo tienen un identificador único (o ID) generado a partir de la dirección MAC de la interfaz WiFi de cada tarjeta Nodemcu. Este ID es un texto hexadecimal de 6 caracteres, utilizado para el acceso a las medidas en Internet y la integración del medidor en la aplicación en la nube de Anaire. No es preciso realizar ninguna configuración sobre este identificador, se realiza de forma automática.
-  * El ID del dispositivo se muestra durante el inicio y tras pulsar el botón de Flash
+  * El ID del dispositivo se muestra durante el inicio y tras pulsar el botón de Flash (en la caja AnaireBox es el botón superior, con la letra *A*).
 * Configuración de la conexión WiFi
-   * Tras pulsar 2 veces consecutivas el botón de reset, el dispositivo se reinicia en modo de configuración:
+   * Tras pulsar 2 veces consecutivas el botón de Reset (en la caja AnaireBox es el botón superior, con la letra *R*), el dispositivo se reinicia en modo de configuración:
    * Se crea una red WiFi abierta con el nombre ESP_XXXXXX, donde XXXXXX es el identificador del dispositivo
    * Conecte a esa red con un PC, tablet o teléfono móvil
    * Una vez conectado a la red introduzca la siguiente drección IP en su navegador: 192.168.4.1

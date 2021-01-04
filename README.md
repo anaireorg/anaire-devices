@@ -340,12 +340,12 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
 * En la misma dirección IP del medidor se puede también hacer click en un enlace que realiza la calibración del medidor de CO2. Debe disponer el medidor en un entorno ventilado, preferiblemente al aire libre, y esperar el tiempo indicado por la cuenta atrás en el display una vez iniciado el proceso desde un navegador.
 * Acceso por internet a las medidas:
   * Si se han dejado los valores por defecto de la aplicación en la nube, se puede acceder a los valores medidos por el dispositivo en los siguientes enlaces:
-    * Valores actuales en modo kiosko:  
+    * Valores actuales en modo kiosko (sustituir [ID_del_sensor] por el ID del medidor, y [Nombre_que_se_desea_visualizar] por el nombre deseado):  
     https://demo.anaire.org/sensor/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]
     <p align="center">
       <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="30%" height="30%" />
     </p>  
-    * Valores actuales con acceso a histórico:  
+    * Valores actuales con acceso a histórico (sustituir [ID_del_sensor] por el ID del medidor, y [Nombre_que_se_desea_visualizar] por el nombre deseado):  
     https://demo.anaire.org/detalle/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]  
 
 ## Errores mostrados en el display

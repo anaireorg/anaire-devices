@@ -28,7 +28,8 @@
 //   Arduino Client for MQTT - for MQTT communications https://pubsubclient.knolleary.net/
 //   ArduinoJson https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
 //   esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
-//   SparkFun_SCD30_Arduino_Library - for Sensirion SCD30 CO2, humidity and temperature sensor https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library
+//   //SparkFun_SCD30_Arduino_Library - for Sensirion SCD30 CO2, humidity and temperature sensor https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library
+//   paulvha SCD30 library https://github.com/paulvha/scd30 - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
 //   ESP_EEPROM - to save in EEPROM config values https://github.com/jwrw/ESP_EEPROM
 //   WifiManager kentaylor - to create a captive portal to configure wifi https://github.com/kentaylor/WiFiManager
 //   Double Reset detector - to detect double press of reset button and restart with the captive portal to configure Wifi https://github.com/datacute/DoubleResetDetector
@@ -58,7 +59,7 @@
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
 // - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
 
-String sw_version = "v1.20210107.abrelapuertateresa";
+String sw_version = "v1.20210108.abremelaflordelis";
 
 // CLOUD CONFIGURATION: remote app url
 // CHANGE HERE if connecting to a different Anaire Cloud App
@@ -167,9 +168,13 @@ PubSubClient mqttClient(wifi_client);
 SCD30 airSensor;
 #define SCD30_SCK_GPIO 14 // signal GPIO14 (D5)
 #define SCD30_SDA_GPIO 12 // signal GPIO12 (D6)
-const unsigned long SCD30_WARMING_TIME = 60000;           // SCD30 CO2 sensor warming time: 60 seconds
-const unsigned long SCD30_SERIAL_TIMEOUT = 5000;          // SCD30 CO2 serial start timeout: 5 seconds
-const unsigned long SCD30_CALIBRATION_TIME = 180000;     // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
+unsigned long SCD30_WARMING_TIME = 60000;          // SCD30 CO2 sensor warming time: 60 seconds
+//const unsigned long SCD30_SERIAL_TIMEOUT = 5000; // SCD30 CO2 serial start timeout: 5 seconds
+unsigned long SCD30_CALIBRATION_TIME = 180000;     // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
+uint16_t SCD30_MEASUREMENT_INTERVAL = 30;     // 30 seconds
+uint16_t SCD30_FORCED_CALIBRATION = 500;      // SCD30 cero reference in a clean environment - Recommended 400 to 500 ppm
+uint16_t SCD30_TEMPERATURE_OFFSET = 0;        // SCD30 TEMPERATURE OFFSET: 0ºC
+uint16_t SCD30_ALTITUDE_COMPENSATION = 650;   // Set to 650meters, Madrid (Spain) mean altitude
 
 // MHZ14A CO2 sensor: software serial port
 const unsigned long MHZ14A_WARMING_TIME = 180000;      // MHZ14A CO2 sensor warming time: 3 minutes = 180000 ms
@@ -276,7 +281,7 @@ void setup() {
   //delay(3000); // to show anaire.org
 
   // Wifi captive portal if double reset detection
-  WiFi.printDiag(Serial); //Remove this line if you do not want to see WiFi password printed
+  //WiFi.printDiag(Serial); //Remove this line if you do not want to see WiFi password printed
   if (WiFi.SSID() == "") {
     Serial.println("We haven't got any access point credentials, so get them now");
     initialConfig = true;
@@ -660,25 +665,22 @@ void Setup_sensors() {
   
   //if (airSensor.begin(Wire) == true) {
   if (airSensor.begin(SCD30WIRE) == true) {
-    
+
+    Serial.println("Air sensor Sensirion SCD30 detected.");
+
     co2_sensor = scd30;
 
     // display device info
     SCD30DeviceInfo();
 
-    Serial.println("Air sensor Sensirion SCD30 detected.");
-    airSensor.setMeasurementInterval(30); // 30 secs - Change number of seconds between measurements: 2 to 1800 (30 minutes)
+    // Set AutoSelfCalibration
+    airSensor.setAutoSelfCalibration(true);
 
-    // Madrid, barrio del Pilar, ~600 mts
-    // airSensor.setAltitudeCompensation(600);
-
-    //Pressure in Boulder, CO is 24.65inHg or 834.74mBar
-    //airSensor.setAmbientPressure(1000); //Current ambient pressure in mBar: 700 to 1200
-    //float offset = airSensor.getTemperatureOffset();
-    //Serial.print("Current temp offset: ");
-    //Serial.print(offset, 2);
-    //Serial.println("C");
-    // Print info
+    // Set SCD30 (change in global variables at the start of SCD section in the initial section of this program)
+    SCD30_Do_Measurement_interval();
+    SCD30_Do_Temperature_Offset();
+    SCD30_Do_Altitude_Compensation();
+      
     // Timestamp for warming up start time
     int warming_up_start = millis();
 
@@ -703,9 +705,6 @@ void Setup_sensors() {
       delay(500); // wait 500ms
       counter = counter - 1;
     }
-
-    // Print info
-    Serial.println ("Warming up SCD30 sensor complete");
 
     // Print info
     Serial.println ("Sensirion SCD30 CO2 sensor setup complete");
@@ -913,45 +912,12 @@ void Calibrate_SCD30() {
   // Print info
   Serial.println ();
   Serial.println ("Calibrating SCD30 sensor...");
-
-  // Altitude in Madrid, Spain
-  //airSensor.setAltitudeCompensation(650); 
-  
-  // Pressure in Madrid, Spain
-  //airSensor.setAmbientPressure(942); 
-
-  // Disable auto self calibration
-  //airSensor.setAutoSelfCalibration(true);
-  
-  // Read temperature offset
-  //float offset = airSensor.getTemperatureOffset();
-  //Serial.print("Current temp offset: ");
-  //Serial.print(offset, 2);
-  //Serial.println("C");
-
-  // Read altitude compensation value
-  //unsigned int altitude = airSensor.getAltitudeCompensation();
-  //Serial.print("Current altitude: ");
-  //Serial.print(altitude);
-  //Serial.println("m");
-
-  // Print info
-  //Serial.print ("Autocalibration: ");
-  //if (airSensor.getAutoSelfCalibration()) {
-  //  Serial.println ("True");
-  //}
-  //else {
-  //  Serial.println ("False");
-  //}
   
   // Timestamp for calibrating start time
   int calibrating_start = millis();
 
   // Set 2 seconds between measurements, required at least 2 minutes prior to calibration
   airSensor.setMeasurementInterval(2);
-
-  // Star measuring
-  //airSensor.beginMeasuring();
   
   // Wait for calibrating time while reading values at maximum speed
   int counter = SCD30_CALIBRATION_TIME / 1000;
@@ -964,30 +930,163 @@ void Calibrate_SCD30() {
     display.drawString(0, 16, "SCD30 " + String(counter));
     display.display(); // update OLED display
     Serial.print(".");
-    delay(1000);
+    delay(500);
     Serial.println(".");
-    delay(1000);
-    counter = counter - 2;
-
-    if (airSensor.dataAvailable()) {
-      CO2ppm_value = airSensor.getCO2();
-      temperature = airSensor.getTemperature();
-      humidity = airSensor.getHumidity();
-    }
-
+    delay(500);
+    counter = counter - 1;
   }
   
-  // Send forced calibration command setting 500ppm as zero reference value
-  //airSensor.setForcedRecalibrationFactor(500);
+  // Send forced calibration command setting as zero reference value
+  SCD30_Do_Forced_Calibration_Factor();
 
   delay(2000);
   
-  // Restore 30 seconds between measurements
-  airSensor.setMeasurementInterval(30);
+  // Restore Measurement Interval
+  SCD30_Do_Measurement_interval();
 
   // Print info
   Serial.println ("MHZ14A CO2 sensor calibrated");
 
+}
+
+void SCD30_Do_Temperature_Offset()
+{
+  uint16_t val;
+
+  if (airSensor.getTemperatureOffset(&val)) {
+    
+    Serial.print("\nReading SCD30 Temperature Offset before change: ");
+    Serial.println(val);
+
+    Serial.print("Setting new SCD30 Temperature Offset to: ");
+    Serial.println(SCD30_TEMPERATURE_OFFSET);
+
+    if ( airSensor.setTemperatureOffset(SCD30_TEMPERATURE_OFFSET) ) {
+
+        if ( airSensor.getTemperatureOffset(&val) ) {
+          Serial.print("Reading SCD30 Temperature Offset after making change: ");
+          Serial.println(val);
+        }
+        else {
+          Serial.println("Could not obtain SCD30 Temperature Offset");
+        }
+    }
+    else {
+      Serial.println("Could not set new SCD30 Temperature Offset");
+    }
+  }
+  else {
+    Serial.println("Could not obtain Temperature Offset");
+  }
+}
+
+void SCD30_Do_Measurement_interval()
+{
+  uint16_t val;
+
+  if ( airSensor.getMeasurementInterval(&val) ) {
+    Serial.print("\nReading SCD30 Measurement Interval before change: ");
+    Serial.println(val);
+
+    Serial.print("Setting SCD30 new Measurement Interval to: ");
+    Serial.println(SCD30_MEASUREMENT_INTERVAL);
+
+    if ( airSensor.setMeasurementInterval(SCD30_MEASUREMENT_INTERVAL) ) {
+      Serial.print("Reset SCD30 Measurement Interval to: ");
+      Serial.println(SCD30_MEASUREMENT_INTERVAL);
+
+      if ( airSensor.getMeasurementInterval(&val) ) {
+        Serial.print("Reading SCD30 Measurement Interval after change: ");
+        Serial.println(val);       
+      }
+      else {
+        Serial.println("Could not obtain SCD30 Measurement Interval");
+      }
+      
+    }
+    else {
+      Serial.print("Could not reset SCD30 Measurement Interval to ");
+      Serial.println(SCD30_MEASUREMENT_INTERVAL);
+    }    
+    
+  }
+  else {
+    Serial.println("Could not obtain SCD30 Measurement Interval");
+  }
+}
+
+void SCD30_Do_Forced_Calibration_Factor()
+{
+  uint16_t val;
+
+  if ( airSensor.getForceRecalibration(&val) ) {
+    Serial.print("\nReading SCD30 Forced Calibration Factor before change: ");
+    Serial.println(val);
+
+    Serial.print("Setting new SCD30 Forced Calibration Factor to: ");
+    Serial.println(SCD30_FORCED_CALIBRATION);
+
+    if (airSensor.setForceRecalibration(SCD30_FORCED_CALIBRATION)) {
+
+        if (airSensor.getForceRecalibration(&val)) {
+
+          Serial.print("Reading SCD30 Forced Calibration Factor after change: ");
+          Serial.println(val);
+        }
+        else {
+          Serial.println("Could not obtain SCD30 forced calibration factor");
+        }
+    }
+    else {
+      Serial.println("Could not set SCD30 Forced Calibration Factor");
+    }
+  }
+  else {
+    Serial.println("Could not obtain SCD30 Forced Calibration Factor");
+  }
+}
+
+void SCD30_Do_Altitude_Compensation()
+{
+  uint16_t val;
+
+  /* paulvha : you can set EITHER the Altitude compensation of the pressure.
+   * Setting both does not make sense as both overrule each other, but it is included for demonstration
+   *
+   * see Sensirion_CO2_Sensors_SCD30_Interface_Description.pdf
+   *
+   *    The CO2 measurement value can be compensated for ambient pressure by feeding the pressure value in mBar to the sensor.
+   *    Setting the ambient pressure will overwrite previous and future settings of altitude compensation. Setting the argument to zero
+   *    will deactivate the ambient pressure compensation. For setting a new ambient pressure when continuous measurement is running
+   *    the whole command has to be written to SCD30.
+   *
+   *    Setting altitude is disregarded when an ambient pressure is given to the sensor
+   */ 
+     
+  if ( airSensor.getAltitudeCompensation(&val) ) {
+    Serial.print("\nReading SCD30 Altitude Compensation before change: ");
+    Serial.println(val);
+
+    Serial.print("Setting new SCD30 Altitude Compensation to: ");
+    Serial.println(SCD30_ALTITUDE_COMPENSATION);
+
+    if (airSensor.setAltitudeCompensation(SCD30_ALTITUDE_COMPENSATION)) {
+
+        if (airSensor.getAltitudeCompensation(&val)) {
+          Serial.print("Reading SCD30 Altitude Compensation after change: ");
+          Serial.println(val);
+        }
+        else {
+          Serial.println("Could not obtain SCD30 Altitude Compensation");
+        }
+    }
+    else {
+      Serial.println("Could not set new SCD30 Altitude Compensation");
+    }
+  }
+  else {
+    Serial.println("Could not obtain SCD30 Altitude Compensation");
+  }
 }
 
 void SCD30DeviceInfo()
@@ -999,7 +1098,7 @@ void SCD30DeviceInfo()
   // buffer MUST be at least 33 digits (32 serial + 0x0)
   if (airSensor.getSerialNumber(buf))
   {
-   Serial.print(F("SCD30 serial number : "));
+   Serial.print(F("SCD30 serial number: "));
    Serial.println(buf);
   }
 

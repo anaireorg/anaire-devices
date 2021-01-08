@@ -1,10 +1,10 @@
-// Since 20201109 ANAIRE DEVICE CODE - anaire@anaire.org
+// Since 20201109 ANAIRE DEVICE CODE anaire.org anaire@anaire.org
 //
 // GNU General Public License v3.0
 //
 // Get CO2, temperature and humidity measurements and send them to the Anaire Cloud Application
 // Show local measurements and provide local warning and alarm visual and sound indications
-//147b92
+//
 // Parts - Common platform:
 //   Control board: AZDelivery ESP8266 ESP-12F NodeMCU Lua Amica V2 https://www.az-delivery.de/es/products/nodemcu
 //   Buzzer: AZDelivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r
@@ -56,7 +56,9 @@
 //     * DHT11 humidity and temperature sensor ins connected on GPIO 5 (D1)
 // - The device is designed to work only with the CO2 sensor, so buzzer, DHT11 humidity and temperature sensor, and OLED display are optional
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
-// - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds. 
+// - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
+
+String sw_version = "v1.20210107.abrelapuertateresa";
 
 // CLOUD CONFIGURATION: remote app url
 // CHANGE HERE if connecting to a different Anaire Cloud App
@@ -67,7 +69,6 @@ int cloud_app_port = 30183;                          // cloud application port
 // i.e: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String anaire_device_id = String(ESP.getChipId(), HEX);   // HEX version, for easier match to mac address
 String anaire_device_name = String(ESP.getChipId(), HEX); // By the default the name gets initialized to the device ID
-String sw_version = "v1.20201231.ladinadainaladinaidi";
 int CO2ppm_warning_threshold = 700; // Warning threshold initial value
 int CO2ppm_alarm_threshold = 1000;  // Alarm threshold initial value
 
@@ -156,7 +157,7 @@ SCD30 airSensor;
 #define SCD30_SDA_GPIO 12 // signal GPIO12 (D6)
 const unsigned long SCD30_WARMING_TIME = 60000;           // SCD30 CO2 sensor warming time: 60 seconds
 const unsigned long SCD30_SERIAL_TIMEOUT = 5000;          // SCD30 CO2 serial start timeout: 5 seconds
-const unsigned long SCD30_CALIBRATION_TIME = 1200000;     // SCD30 CO2 CALIBRATION TIME: 20 min = 1200000 ms
+const unsigned long SCD30_CALIBRATION_TIME = 180000;     // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
 
 // MHZ14A CO2 sensor: software serial port
 const unsigned long MHZ14A_WARMING_TIME = 180000;      // MHZ14A CO2 sensor warming time: 3 minutes = 180000 ms
@@ -229,8 +230,6 @@ void setup() {
   eepromConfig.anaire_device_name = anaire_device_name;
   eepromConfig.CO2ppm_warning_threshold = CO2ppm_warning_threshold;
   eepromConfig.CO2ppm_alarm_threshold = CO2ppm_alarm_threshold;
-  //eepromConfig.wifi_ssid = wifi_ssid;
-  //eepromConfig.wifi_password = wifi_password;
   eepromConfig.cloud_server_address = cloud_server_address;
   eepromConfig.cloud_app_port = cloud_app_port;
   eepromConfig.local_alarm = true;
@@ -286,6 +285,14 @@ void setup() {
 
     Serial.println("Starting configuration portal...");
 
+    // Update display to inform
+    display.flipScreenVertically();
+    display.clear();
+    display.setFont(ArialMT_Plain_16);
+    display.drawString(0, 0, "CONFIG");
+    display.drawString(0, 16, "ESP_" + String(anaire_device_id));
+    display.display(); // update OLED display
+  
     //Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wifiManager;
 
@@ -306,27 +313,10 @@ void setup() {
     // so resetting the device allows to go back into config mode again when it reboots.
     delay(5000);
 
-    /*
-    WiFi.mode(WIFI_STA); // Force to station mode because if device was switched off while in access point mode it will start up next time in access point mode.
-    unsigned long startedAt = millis();
-    Serial.print("After waiting ");
-    int connRes = WiFi.waitForConnectResult();
-    float waited = (millis()- startedAt);
-    Serial.print(waited/1000);
-    Serial.print(" secs in setup() connection result is ");
-    Serial.println(connRes);
-    if (WiFi.status()!=WL_CONNECTED){
-    Serial.println("failed to connect, finishing setup anyway");
-    } else{
-    Serial.print("local ip: ");
-    Serial.println(WiFi.localIP());
     }
-  */
-
-  }
 
   else {
-    
+
     // Read EEPROM config values
     Read_EEPROM();
 
@@ -345,7 +335,7 @@ void setup() {
     Setup_sensors();
 
   }
-  
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -560,9 +550,6 @@ void Check_WiFi_Server() {
             client.println("HTTP/1.1 200 OK");
             client.println("Content-type:text/html");
             client.println();
-            // the content of the HTTP response follows the header:
-            client.print("Click <a href=\"/H\">here</a> to calibrate the device<br>");
-            //client.print("Click <a href=\"/L\">here</a> turn the LED on pin 6 off<br>");
             // Print current info
             client.print("Anaire Device ID: ");
             client.print(anaire_device_id);
@@ -594,6 +581,13 @@ void Check_WiFi_Server() {
                 client.print("ALARM");
                 break;
             }
+
+            client.println("<br>");
+
+            // the content of the HTTP response follows the header:
+            client.print("Click <a href=\"/H\">here</a> to calibrate the device. Locate the device on open air.<br>");
+            //client.print("Click <a href=\"/L\">here</a> turn the LED on pin 6 off<br>");
+
             client.println("<br>");
             // The HTTP response ends with another blank line:
             client.println();
@@ -610,8 +604,15 @@ void Check_WiFi_Server() {
 
         // Check to see if the client request was "GET /H" or "GET /L":
         if (currentLine.endsWith("GET /H")) {
-          //digitalWrite(LED, HIGH);               // GET /H turns the LED on
-          Calibrate_MHZ14A();
+
+          if (co2_sensor == mhz14a) {
+            Calibrate_MHZ14A();
+          }
+
+          if (co2_sensor == scd30) {
+            Calibrate_SCD30();
+          }
+
         }
         if (currentLine.endsWith("GET /L")) {
           //digitalWrite(LED, LOW);                // GET /L turns the LED off
@@ -637,10 +638,13 @@ void Setup_sensors() {
   if (airSensor.begin(Wire) == true) {
 
     co2_sensor = scd30;
+
     Serial.println("Air sensor Sensirion SCD30 detected.");
-    airSensor.setMeasurementInterval(15); //Change number of seconds between measurements: 2 to 1800 (30 minutes)
-    //My desk is ~600m above sealevel
-    airSensor.setAltitudeCompensation(650); // Madrid, barrio del Pilar
+    airSensor.setMeasurementInterval(2); //Change number of seconds between measurements: 2 to 1800 (30 minutes)
+
+    // Madrid, barrio del Pilar, ~600 mts
+    // airSensor.setAltitudeCompensation(600);
+
     //Pressure in Boulder, CO is 24.65inHg or 834.74mBar
     //airSensor.setAmbientPressure(1000); //Current ambient pressure in mBar: 700 to 1200
     //float offset = airSensor.getTemperatureOffset();
@@ -662,7 +666,7 @@ void Setup_sensors() {
     while ((millis() - warming_up_start) < SCD30_WARMING_TIME) {
       display.clear();
       display.setFont(ArialMT_Plain_10);
-      display.drawString(0, 0, "anaire.org Slim");
+      display.drawString(0, 0, "Anaire30ppm");
       display.drawString(0, 10, "ID " + String(anaire_device_id));
       display.drawString(0, 20, String(counter));
       display.display(); // update OLED display
@@ -724,7 +728,7 @@ void Setup_sensors() {
       while ((millis() - warming_up_start) < MHZ14A_WARMING_TIME) {
         display.clear();
         display.setFont(ArialMT_Plain_10);
-        display.drawString(0, 0, "anaire.org Bread");
+        display.drawString(0, 0, "Anaire50ppm");
         display.drawString(0, 10, "ID " + String(anaire_device_id));
         display.drawString(0, 20, String(counter));
         display.display(); // update OLED display
@@ -809,6 +813,7 @@ void Read_MHZ14A() {
 }
 
 // Calibrate MHZ14A sensor
+// Requires that the device is localed on open air for several minutes
 void Calibrate_MHZ14A() {
 
   // Print info
@@ -829,56 +834,19 @@ void Calibrate_MHZ14A() {
     display.init();
     display.flipScreenVertically();
     display.clear();
-    display.setFont(ArialMT_Plain_24);
-    display.drawString(0, 0, "anaire.org");
-    display.drawString(0, 21, "calibrating");
-    display.drawString(0, 42, String(counter));
+    display.setFont(ArialMT_Plain_16);
+    display.drawString(0, 0, "Calibrando");
+    display.drawString(0, 16, "MHZ14A " + String(counter));
     display.display(); // update OLED display
     Serial.print(".");
-    delay(500); // wait 500ms
+    delay(500);
     Serial.println(".");
-    delay(500); // wait 500ms
+    delay(500);
     counter = counter - 1;
   }
 
-}
-
-// Setup Sensirion SCD30 CO2, humidity and temperature sensor
-void Setup_SCD30()
-{
-
-  //Serial.begin(115200);
-  Serial.println                                                                                                                                                                                                                                                                                  ("Setup SCD30 air sensor");
-
-  // Init I2C bus
-  Wire.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
-
-  if (airSensor.begin(Wire) == false)
-
-  {
-    Serial.println("Air sensor not detected. Please check wiring.");
-    //while (1);
-    err_co2 = true;
-    return;
-  }
-
-  Serial.println("Air sensor SCD - 30 detected.");
-
-  airSensor.setMeasurementInterval(15); //Change number of seconds between measurements: 2 to 1800 (30 minutes)
-
-  //My desk is ~600m above sealevel
-  airSensor.setAltitudeCompensation(650); // Madrid, barrio del Pilar
-
-  //Pressure in Boulder, CO is 24.65inHg or 834.74mBar
-  airSensor.setAmbientPressure(1000); //Current ambient pressure in mBar: 700 to 1200
-
-  float offset = airSensor.getTemperatureOffset();
-  Serial.print("Current temp offset : ");
-  Serial.print(offset, 2);
-  Serial.println("C");
-
   // Print info
-  Serial.println ("Sensirion SCD - 30 sensor setup complete");
+  Serial.println ("MHZ14A CO2 sensor calibrated");
 
 }
 
@@ -889,8 +857,6 @@ void Read_SCD30()
   // Timestamp for serial up start time
   //int serial_up_start = millis();
 
-  //Wire.begin(4,5);
-  //Wire.begin(7,6);
   Wire.begin(12, 14);
 
   if (airSensor.dataAvailable())
@@ -914,37 +880,86 @@ void Read_SCD30()
 }
 
 // Calibrate Sensirion SCD30 CO2, humidity and temperature sensor
+// Requires that the device is localed on open air for several minutes
 void Calibrate_SCD30() {
 
   // Print info
+  Serial.println ();
   Serial.println ("Calibrating SCD30 sensor...");
 
-  // Write calibration command
-  //swSerial.write(calibration_command, 9);
+  // Altitude in Madrid, Spain
+  airSensor.setAltitudeCompensation(650); 
+  
+  // Pressure in Madrid, Spain
+  airSensor.setAmbientPressure(942); 
 
-  // Waits for 3 seconds for the command to take effect
-  //delay(3000);
+  // Disable auto self calibration
+  airSensor.setAutoSelfCalibration(true);
+  
+  // Read temperature offset
+  float offset = airSensor.getTemperatureOffset();
+  Serial.print("Current temp offset: ");
+  Serial.print(offset, 2);
+  Serial.println("C");
 
+  // Read altitude compensation value
+  unsigned int altitude = airSensor.getAltitudeCompensation();
+  Serial.print("Current altitude: ");
+  Serial.print(altitude);
+  Serial.println("m");
+
+  // Print info
+  Serial.print ("Autocalibration: ");
+  if (airSensor.getAutoSelfCalibration()) {
+    Serial.println ("True");
+  }
+  else {
+    Serial.println ("False");
+  }
+  
   // Timestamp for calibrating start time
   int calibrating_start = millis();
 
-  // Wait for calibrating time
+  // Set 2 seconds between measurements
+  airSensor.setMeasurementInterval(2);
+
+  // Star measuring
+  //airSensor.beginMeasuring();
+  
+  // Wait for calibrating time while reading values at maximum speed
   int counter = SCD30_CALIBRATION_TIME / 1000;
   while ((millis() - calibrating_start) < SCD30_CALIBRATION_TIME) {
     display.init();
     display.flipScreenVertically();
     display.clear();
-    display.setFont(ArialMT_Plain_24);
-    display.drawString(0, 0, "anaire.org");
-    display.drawString(0, 21, "calibrating");
-    display.drawString(0, 42, String(counter));
+    display.setFont(ArialMT_Plain_16);
+    display.drawString(0, 0, "Calibrando");
+    display.drawString(0, 16, "SCD30 " + String(counter));
     display.display(); // update OLED display
     Serial.print(".");
-    delay(500); // wait 500ms
+    delay(1000);
     Serial.println(".");
-    delay(500); // wait 500ms
-    counter = counter - 1;
+    delay(1000);
+    counter = counter - 2;
+
+    if (airSensor.dataAvailable()) {
+      CO2ppm_value = airSensor.getCO2();
+      temperature = airSensor.getTemperature();
+      humidity = airSensor.getHumidity();
+    }
+
   }
+  
+  // Send forced calibration command setting 400ppm as zero reference value
+  airSensor.setForcedRecalibrationFactor(400);
+
+  delay(2000);
+  
+  // Restore 15 seconds between measurements
+  airSensor.setMeasurementInterval(2);
+
+  // Print info
+  Serial.println ("MHZ14A CO2 sensor calibrated");
 
 }
 

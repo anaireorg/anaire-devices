@@ -151,7 +151,19 @@ PubSubClient mqttClient(wifi_client);
 //JSON
 #include <ArduinoJson.h>
 
-#include "SparkFun_SCD30_Arduino_Library.h"
+// Sensirion SCD CO2, temperature and humidity sensor
+//////////////////////////////////////////////////////////////////////////
+// set SCD30 driver debug level (only NEEDED case of errors)            //
+// Requires serial monitor (remove DTR-jumper before starting monitor)  //
+// 0 : no messages                                                      //
+// 1 : request sending and receiving                                    //
+// 2 : request sending and receiving + show protocol errors             //
+//////////////////////////////////////////////////////////////////////////
+#define scd_debug 0
+#define SCD30WIRE Wire
+
+//#include "SparkFun_SCD30_Arduino_Library.h"
+#include "paulvha_SCD30.h"
 SCD30 airSensor;
 #define SCD30_SCK_GPIO 14 // signal GPIO14 (D5)
 #define SCD30_SDA_GPIO 12 // signal GPIO12 (D6)
@@ -256,12 +268,12 @@ void setup() {
 
   // Print welcome screen on OLED Display
   display.init();
-  display.flipScreenVertically();
-  display.clear();
-  display.setFont(ArialMT_Plain_24);
-  display.drawString(0, 0, "anaire.org");
-  display.display(); // update OLED display
-  delay(3000); // to show anaire.org
+  //display.flipScreenVertically();
+  //display.clear();
+  //display.setFont(ArialMT_Plain_24);
+  //display.drawString(0, 0, "anaire.org");
+  //display.display(); // update OLED display
+  //delay(3000); // to show anaire.org
 
   // Wifi captive portal if double reset detection
   WiFi.printDiag(Serial); //Remove this line if you do not want to see WiFi password printed
@@ -317,6 +329,14 @@ void setup() {
 
   else {
 
+    // Put anaire.org in the display
+    display.flipScreenVertically();
+    display.clear();
+    display.setFont(ArialMT_Plain_24);
+    display.drawString(0, 0, "anaire.org");
+    display.display(); // update OLED display
+    delay(3000); // to show anaire.org
+    
     // Read EEPROM config values
     Read_EEPROM();
 
@@ -632,15 +652,22 @@ void Setup_sensors() {
 
   // Try Sensirion SCD-30 first
 
-  // Init I2C bus
+  // Init I2C bus for OLED display
   Wire.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
 
-  if (airSensor.begin(Wire) == true) {
-
+  // Init I2C bus for SCD30
+  SCD30WIRE.begin();
+  
+  //if (airSensor.begin(Wire) == true) {
+  if (airSensor.begin(SCD30WIRE) == true) {
+    
     co2_sensor = scd30;
 
+    // display device info
+    SCD30DeviceInfo();
+
     Serial.println("Air sensor Sensirion SCD30 detected.");
-    airSensor.setMeasurementInterval(2); //Change number of seconds between measurements: 2 to 1800 (30 minutes)
+    airSensor.setMeasurementInterval(30); // 30 secs - Change number of seconds between measurements: 2 to 1800 (30 minutes)
 
     // Madrid, barrio del Pilar, ~600 mts
     // airSensor.setAltitudeCompensation(600);
@@ -888,39 +915,39 @@ void Calibrate_SCD30() {
   Serial.println ("Calibrating SCD30 sensor...");
 
   // Altitude in Madrid, Spain
-  airSensor.setAltitudeCompensation(650); 
+  //airSensor.setAltitudeCompensation(650); 
   
   // Pressure in Madrid, Spain
-  airSensor.setAmbientPressure(942); 
+  //airSensor.setAmbientPressure(942); 
 
   // Disable auto self calibration
-  airSensor.setAutoSelfCalibration(true);
+  //airSensor.setAutoSelfCalibration(true);
   
   // Read temperature offset
-  float offset = airSensor.getTemperatureOffset();
-  Serial.print("Current temp offset: ");
-  Serial.print(offset, 2);
-  Serial.println("C");
+  //float offset = airSensor.getTemperatureOffset();
+  //Serial.print("Current temp offset: ");
+  //Serial.print(offset, 2);
+  //Serial.println("C");
 
   // Read altitude compensation value
-  unsigned int altitude = airSensor.getAltitudeCompensation();
-  Serial.print("Current altitude: ");
-  Serial.print(altitude);
-  Serial.println("m");
+  //unsigned int altitude = airSensor.getAltitudeCompensation();
+  //Serial.print("Current altitude: ");
+  //Serial.print(altitude);
+  //Serial.println("m");
 
   // Print info
-  Serial.print ("Autocalibration: ");
-  if (airSensor.getAutoSelfCalibration()) {
-    Serial.println ("True");
-  }
-  else {
-    Serial.println ("False");
-  }
+  //Serial.print ("Autocalibration: ");
+  //if (airSensor.getAutoSelfCalibration()) {
+  //  Serial.println ("True");
+  //}
+  //else {
+  //  Serial.println ("False");
+  //}
   
   // Timestamp for calibrating start time
   int calibrating_start = millis();
 
-  // Set 2 seconds between measurements
+  // Set 2 seconds between measurements, required at least 2 minutes prior to calibration
   airSensor.setMeasurementInterval(2);
 
   // Star measuring
@@ -950,17 +977,43 @@ void Calibrate_SCD30() {
 
   }
   
-  // Send forced calibration command setting 400ppm as zero reference value
-  airSensor.setForcedRecalibrationFactor(400);
+  // Send forced calibration command setting 500ppm as zero reference value
+  //airSensor.setForcedRecalibrationFactor(500);
 
   delay(2000);
   
-  // Restore 15 seconds between measurements
-  airSensor.setMeasurementInterval(2);
+  // Restore 30 seconds between measurements
+  airSensor.setMeasurementInterval(30);
 
   // Print info
   Serial.println ("MHZ14A CO2 sensor calibrated");
 
+}
+
+void SCD30DeviceInfo()
+{
+  uint8_t val[2];
+  char buf[(SCD30_SERIAL_NUM_WORDS * 2) +1];
+
+  // Read SCD30 serial number as printed on the device
+  // buffer MUST be at least 33 digits (32 serial + 0x0)
+  if (airSensor.getSerialNumber(buf))
+  {
+   Serial.print(F("SCD30 serial number : "));
+   Serial.println(buf);
+  }
+
+  // read Firmware level
+  if ( airSensor.getFirmwareLevel(val) ) {
+    Serial.print("SCD30 Firmware level: Major: ");
+    Serial.print(val[0]);
+
+    Serial.print("\t, Minor: ");
+    Serial.println(val[1]);
+  }
+  else {
+    Serial.println("Could not obtain firmware level");
+  }
 }
 
 // Evaluate CO2 value versus warning and alarm threasholds and process CO2 alarm information

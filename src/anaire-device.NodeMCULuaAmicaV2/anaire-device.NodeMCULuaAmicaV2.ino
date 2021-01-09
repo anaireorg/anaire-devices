@@ -28,7 +28,6 @@
 //   Arduino Client for MQTT - for MQTT communications https://pubsubclient.knolleary.net/
 //   ArduinoJson https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
 //   esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
-//   //SparkFun_SCD30_Arduino_Library - for Sensirion SCD30 CO2, humidity and temperature sensor https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library
 //   paulvha SCD30 library https://github.com/paulvha/scd30 - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
 //   ESP_EEPROM - to save in EEPROM config values https://github.com/jwrw/ESP_EEPROM
 //   WifiManager kentaylor - to create a captive portal to configure wifi https://github.com/kentaylor/WiFiManager
@@ -59,7 +58,7 @@
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
 // - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
 
-String sw_version = "v1.20210108.abremelaflordelis";
+String sw_version = "v1.20210109.nieve";
 
 // CLOUD CONFIGURATION: remote app url
 // CHANGE HERE if connecting to a different Anaire Cloud App
@@ -108,7 +107,6 @@ const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
 int wifi_status = WL_IDLE_STATUS;
 WiFiServer wifi_server(80); // to check if it is alive
 String wifi_ssid = WiFi.SSID();                  // your network SSID (name)
-//String wifi_password = "mel0nc0njam0n";       // your network password (use for WPA, or use as key for WEP)
 
 // Double reset for wifi configuration
 #include <ESP8266WebServer.h>
@@ -165,22 +163,21 @@ PubSubClient mqttClient(wifi_client);
 
 //#include "SparkFun_SCD30_Arduino_Library.h"
 #include "paulvha_SCD30.h"
-SCD30 airSensor;
 #define SCD30_SCK_GPIO 14 // signal GPIO14 (D5)
 #define SCD30_SDA_GPIO 12 // signal GPIO12 (D6)
-unsigned long SCD30_WARMING_TIME = 60000;          // SCD30 CO2 sensor warming time: 60 seconds
-//const unsigned long SCD30_SERIAL_TIMEOUT = 5000; // SCD30 CO2 serial start timeout: 5 seconds
-unsigned long SCD30_CALIBRATION_TIME = 180000;     // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
-uint16_t SCD30_MEASUREMENT_INTERVAL = 30;     // 30 seconds
-uint16_t SCD30_FORCED_CALIBRATION = 500;      // SCD30 cero reference in a clean environment - Recommended 400 to 500 ppm
-uint16_t SCD30_TEMPERATURE_OFFSET = 0;        // SCD30 TEMPERATURE OFFSET: 0ºC
-uint16_t SCD30_ALTITUDE_COMPENSATION = 650;   // Set to 650meters, Madrid (Spain) mean altitude
+SCD30 airSensor;
+unsigned long SCD30_WARMING_TIME = 120000;            // SCD30 CO2 sensor warming time: 120 seconds
+unsigned long SCD30_CALIBRATION_TIME = 300000;        // SCD30 CO2 CALIBRATION TIME: 5 min = 300000 ms
+uint16_t SCD30_MEASUREMENT_INTERVAL = 30;             // 30 seconds
+uint16_t SCD30_FORCED_CALIBRATION = 450;              // SCD30 cero reference in a clean environment - Recommended 400 to 500 ppm
+uint16_t SCD30_TEMPERATURE_OFFSET = 0;                // SCD30 TEMPERATURE OFFSET: 0ºC
+uint16_t SCD30_ALTITUDE_COMPENSATION = 0;             // Set to 650meters, Madrid (Spain) mean altitude
 
 // MHZ14A CO2 sensor: software serial port
+#include "SoftwareSerial.h"
 const unsigned long MHZ14A_WARMING_TIME = 180000;      // MHZ14A CO2 sensor warming time: 3 minutes = 180000 ms
 const unsigned long MHZ14A_SERIAL_TIMEOUT = 5000;      // MHZ14A CO2 serial start timeout: 5 seconds = 5000 ms
 const unsigned long MHZ14A_CALIBRATION_TIME = 1200000; // MHZ14A CO2 CALIBRATION TIME: 20 min = 1200000 ms
-#include "SoftwareSerial.h"
 #define swSerialRX_gpio 13
 #define swSerialTX_gpio 15
 SoftwareSerial swSerial(swSerialRX_gpio, swSerialTX_gpio, false);
@@ -211,8 +208,8 @@ int push_button_gpio = 0; // Flash button
 // Status info
 // First builtin LED, used to provide CO2 visual status info, as the buzzer produces sound info on the same pin on nodemcu v1.0 board
 int co2_builtin_LED = 16;     // GPIO16 (D0), closer to the usb port, on the NodeMCU PCB
-// Second builtin LED on  used to provide device status info
-//int status_builtin_LED = 2;   // GPIO2 (D4), on the ESP-12 module’s PCB -> Not used since OLED display is also using that pin
+// Second builtin LED on  used to provide CO2 status info when sound alarm is deactivated
+int status_builtin_LED = 2;   // GPIO2 (D4), on the ESP-12 module’s PCB
 int alarm_ack = false;        // to indicate if push button has been pushed to ack the alarm and switch off the buzzer
 
 // CO2 sensors
@@ -233,7 +230,7 @@ boolean err_oled = false;
 
 #include <Ticker.h>  //Ticker Library
 Ticker blinker_co2_builtin_LED;    // to blink co2_builtin_LED and buzzer
-//Ticker blinker_status_builtin_LED;  // to blink status_builtin_LED
+Ticker blinker_status_builtin_LED;  // to blink status_builtin_LED
 
 // flag to update OLED display from main loop instead of button ISR
 boolean update_OLED_Status_flag = false;
@@ -658,10 +655,11 @@ void Setup_sensors() {
   // Try Sensirion SCD-30 first
 
   // Init I2C bus for OLED display
-  Wire.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
+  //Wire.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
 
   // Init I2C bus for SCD30
-  SCD30WIRE.begin();
+  //SCD30WIRE.begin();
+  SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
   
   //if (airSensor.begin(Wire) == true) {
   if (airSensor.begin(SCD30WIRE) == true) {
@@ -674,7 +672,10 @@ void Setup_sensors() {
     SCD30DeviceInfo();
 
     // Set AutoSelfCalibration
-    airSensor.setAutoSelfCalibration(true);
+    //airSensor.setAutoSelfCalibration(true);
+
+    // Disable AutoSelfCalibration
+    airSensor.setAutoSelfCalibration(false);
 
     // Set SCD30 (change in global variables at the start of SCD section in the initial section of this program)
     SCD30_Do_Measurement_interval();
@@ -883,8 +884,9 @@ void Read_SCD30()
   // Timestamp for serial up start time
   //int serial_up_start = millis();
 
-  Wire.begin(12, 14);
-
+  //Wire.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
+  SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
+  
   if (airSensor.dataAvailable())
   {
     CO2ppm_value = airSensor.getCO2();
@@ -897,10 +899,13 @@ void Read_SCD30()
     Serial.print(" temp(C): ");
     Serial.print(temperature, 1);
 
-    Serial.print(" humidity( % ) : ");
+    Serial.print(" humidity(%): ");
     Serial.print(humidity, 1);
 
     Serial.println();
+  }
+  else {
+    Serial.println("SCD30 No data available");
   }
 
 }
@@ -1128,7 +1133,7 @@ void Evaluate_CO2_Value() {
     co2_device_status = ok; // update co2 status
     blinker_co2_builtin_LED.detach(); // stop co2_builtin_LED and buzzer blinking
     digitalWrite(co2_builtin_LED, LOW); // update co2_builtin_LED_gpio1 (always on) buzzer (off) status
-    //blinker_status_builtin_LED.detach(); // stop blinkg status_builtin_LED_gpio16 to indicate reset to init state
+    blinker_status_builtin_LED.detach(); // stop blinkg status_builtin_LED_gpio16
     alarm_ack = false; // Init alarm ack status
   }
 
@@ -1137,6 +1142,7 @@ void Evaluate_CO2_Value() {
     co2_device_status = warning; // update device status
     if (!alarm_ack) { // flash button hasn't been pressed
       blinker_co2_builtin_LED.attach_ms(WARNING_BLINK_PERIOD, changeState_co2_builtin_LED); // warning blink of light and sound
+      blinker_status_builtin_LED.attach_ms(WARNING_BLINK_PERIOD, changeState_status_builtin_LED); // warning blink of light on status LED
     }
   }
 
@@ -1145,6 +1151,7 @@ void Evaluate_CO2_Value() {
     co2_device_status = alarm; // update device status
     if (!alarm_ack) { // flash button hasn't been pressed
       blinker_co2_builtin_LED.attach_ms(ALARM_BLINK_PERIOD, changeState_co2_builtin_LED); // warning blink of light and sound
+      blinker_status_builtin_LED.attach_ms(ALARM_BLINK_PERIOD, changeState_status_builtin_LED); // warning blink of light on status LED
     }
   }
 
@@ -1341,9 +1348,9 @@ void changeState_co2_builtin_LED() {
 }
 
 // To blink on status_builtin_LED
-//void changeState_status_builtin_LED() {
-//  digitalWrite(status_builtin_LED, !(digitalRead(status_builtin_LED)));  //Invert Current State of LED status_builtin_LED
-//}
+void changeState_status_builtin_LED() {
+  digitalWrite(status_builtin_LED, !(digitalRead(status_builtin_LED)));  //Invert Current State of LED status_builtin_LED
+}
 
 // Update CO2 info on OLED display
 void update_OLED_CO2() {
@@ -1352,10 +1359,16 @@ void update_OLED_CO2() {
   display.init();
   display.flipScreenVertically();
   display.clear();
+  
+  // display CO2 measurement
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setFont(ArialMT_Plain_24);
+  display.drawString(4, 4, String(CO2ppm_value) + "ppm");
+  
+  /*
+  // display CO2 measurement on first line
   display.setTextAlignment(TEXT_ALIGN_LEFT);
   display.setFont(ArialMT_Plain_16);
-
-  // display CO2 measurement on first line
   display.drawString(0, 0, String(CO2ppm_value) + "ppm " + String(int(temperature)) + "º " + String(int(humidity)) + "%");
 
   // if there is an error display it on third line
@@ -1384,7 +1397,8 @@ void update_OLED_CO2() {
         break;
     }
   }
-
+  */
+  
   display.display(); // update OLED display
 
 }
@@ -1400,7 +1414,7 @@ void update_OLED_Status() {
   display.setFont(ArialMT_Plain_10);
 
   // display device id on first line
-  display.drawString(0, 0, String(anaire_device_id));
+  display.drawString(0, 0, "ID " + String(anaire_device_id));
 
   // display IP address on second line
   String ipaddress = WiFi.localIP().toString();
@@ -1421,7 +1435,8 @@ void update_OLED_Status() {
   }
 
   else {
-    display.drawString(0, 20, "device ok");
+    //display.drawString(0, 20, "device ok");
+    display.drawString(0, 20, sw_version);
   }
 
   display.display(); // update OLED display
@@ -1435,6 +1450,7 @@ void Read_EEPROM () {
   EEPROM.begin(sizeof(MyEEPROMStruct));
 
   /*
+    // Wipe EEPROM
     boolean result = EEPROM.wipe();
     if (result) {
     Serial.println("All EEPROM data wiped");
@@ -1494,33 +1510,21 @@ void Print_Config() {
   Serial.println(sw_version);
   Serial.print("anaire_device_name: ");
   Serial.println(anaire_device_name);
-  //Serial.println(eepromConfig.anaire_device_name);
   Serial.print("CO2ppm_warning_threshold: ");
   Serial.println(CO2ppm_warning_threshold);
-  //Serial.println(eepromConfig.CO2ppm_warning_threshold);
   Serial.print("CO2ppm_alarm_threshold: ");
   Serial.println(CO2ppm_alarm_threshold);
-  //Serial.println(eepromConfig.CO2ppm_alarm_threshold);
   Serial.print("wifi_ssid: ");
   Serial.println(wifi_ssid);
-  //Serial.println(eepromConfig.wifi_ssid);
-  //Serial.print("wifi_password: ");
-  //Serial.println(wifi_password);
-  //Serial.println(eepromConfig.wifi_password);
   Serial.print("cloud_server_address: ");
   Serial.println(cloud_server_address);
-  //Serial.println(eepromConfig.cloud_server_address);
   Serial.print("cloud_app_port: ");
   Serial.println(cloud_app_port);
-  //Serial.println(eepromConfig.cloud_app_port);
   Serial.print("local_alarm: ");
-  //Serial.println(local_alarm);
   Serial.println(eepromConfig.local_alarm);
   Serial.print("update_latest: ");
-  //Serial.println(update_latest);
   Serial.println(eepromConfig.update_latest);
   Serial.println("#######################################");
-
 }
 
 void firmware_update() {
@@ -1534,11 +1538,8 @@ void firmware_update() {
   BearSSL::WiFiClientSecure UpdateClient;
   UpdateClient.setInsecure();
 
-  //t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
+  // Run http update
   t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
-
-  // Or:
-  //t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "github.com", 443, "anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
 
   switch (ret) {
     case HTTP_UPDATE_FAILED:

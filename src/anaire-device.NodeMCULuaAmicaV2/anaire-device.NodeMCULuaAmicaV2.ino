@@ -58,7 +58,7 @@
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
 // - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
 
-String sw_version = "v1.20210109.nieve";
+String sw_version = "v1.20210109d.silenciosa";
 
 // CLOUD CONFIGURATION: remote app url
 // CHANGE HERE if connecting to a different Anaire Cloud App
@@ -139,8 +139,6 @@ SSD1306Wire display(0x3c, OLED_SDA_GPIO, OLED_SCK_GPIO, GEOMETRY_128_32);  // AD
 
 // MQTT
 #include <PubSubClient.h>
-//const char mqtt_send_topic[]  = "measurement";
-//const char mqtt_receive_topic[]  = "config";
 char mqtt_message[256];
 String mqtt_send_topic = "measurement";
 String mqtt_receive_topic = "config/" + anaire_device_id;  // config messages will be received in config/id
@@ -151,27 +149,17 @@ PubSubClient mqttClient(wifi_client);
 #include <ArduinoJson.h>
 
 // Sensirion SCD CO2, temperature and humidity sensor
-//////////////////////////////////////////////////////////////////////////
-// set SCD30 driver debug level (only NEEDED case of errors)            //
-// Requires serial monitor (remove DTR-jumper before starting monitor)  //
-// 0 : no messages                                                      //
-// 1 : request sending and receiving                                    //
-// 2 : request sending and receiving + show protocol errors             //
-//////////////////////////////////////////////////////////////////////////
-#define scd_debug 0
 #define SCD30WIRE Wire
-
-//#include "SparkFun_SCD30_Arduino_Library.h"
 #include "paulvha_SCD30.h"
 #define SCD30_SCK_GPIO 14 // signal GPIO14 (D5)
 #define SCD30_SDA_GPIO 12 // signal GPIO12 (D6)
 SCD30 airSensor;
-unsigned long SCD30_WARMING_TIME = 120000;            // SCD30 CO2 sensor warming time: 120 seconds
-unsigned long SCD30_CALIBRATION_TIME = 300000;        // SCD30 CO2 CALIBRATION TIME: 5 min = 300000 ms
-uint16_t SCD30_MEASUREMENT_INTERVAL = 30;             // 30 seconds
+unsigned long SCD30_WARMING_TIME = 60000;             // SCD30 CO2 sensor warming time: 60 seconds
+unsigned long SCD30_CALIBRATION_TIME = 180000;        // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
+uint16_t SCD30_MEASUREMENT_INTERVAL = 30;             // 30 seconds between measurements
 uint16_t SCD30_FORCED_CALIBRATION = 450;              // SCD30 cero reference in a clean environment - Recommended 400 to 500 ppm
-uint16_t SCD30_TEMPERATURE_OFFSET = 0;                // SCD30 TEMPERATURE OFFSET: 0ºC
-uint16_t SCD30_ALTITUDE_COMPENSATION = 0;             // Set to 650meters, Madrid (Spain) mean altitude
+uint16_t SCD30_TEMPERATURE_OFFSET = 0;                // SCD30 TEMPERATURE OFFSET: 5ºC - That is because of the proximity of temp sensor to NodeMCU board
+uint16_t SCD30_ALTITUDE_COMPENSATION = 650;           // Set to 650 meters, Madrid (Spain) mean altitude
 
 // MHZ14A CO2 sensor: software serial port
 #include "SoftwareSerial.h"
@@ -313,7 +301,7 @@ void setup() {
     //sets timeout in seconds until configuration portal gets turned off.
     //If not specified device will remain in configuration mode until
     //switched off via webserver or device is restarted.
-    //wifiManager.setConfigPortalTimeout(600);
+    wifiManager.setConfigPortalTimeout(600);
 
     //it starts an access point
     //and goes into a blocking loop awaiting configuration
@@ -654,14 +642,9 @@ void Setup_sensors() {
 
   // Try Sensirion SCD-30 first
 
-  // Init I2C bus for OLED display
-  //Wire.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
-
   // Init I2C bus for SCD30
-  //SCD30WIRE.begin();
   SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
   
-  //if (airSensor.begin(Wire) == true) {
   if (airSensor.begin(SCD30WIRE) == true) {
 
     Serial.println("Air sensor Sensirion SCD30 detected.");
@@ -881,10 +864,6 @@ void Calibrate_MHZ14A() {
 void Read_SCD30()
 {
 
-  // Timestamp for serial up start time
-  //int serial_up_start = millis();
-
-  //Wire.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
   SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
   
   if (airSensor.dataAvailable())
@@ -922,7 +901,7 @@ void Calibrate_SCD30() {
   int calibrating_start = millis();
 
   // Set 2 seconds between measurements, required at least 2 minutes prior to calibration
-  airSensor.setMeasurementInterval(2);
+  //airSensor.setMeasurementInterval(2);
   
   // Wait for calibrating time while reading values at maximum speed
   int counter = SCD30_CALIBRATION_TIME / 1000;
@@ -947,10 +926,10 @@ void Calibrate_SCD30() {
   delay(2000);
   
   // Restore Measurement Interval
-  SCD30_Do_Measurement_interval();
+  //SCD30_Do_Measurement_interval();
 
   // Print info
-  Serial.println ("MHZ14A CO2 sensor calibrated");
+  Serial.println ("SCD30 sensor calibrated");
 
 }
 

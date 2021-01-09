@@ -58,7 +58,7 @@
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
 // - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
 
-String sw_version = "v1.20210109e.licenciosa";
+String sw_version = "v1.20210109f.sigilosa";
 
 // CLOUD CONFIGURATION: remote app url
 // CHANGE HERE if connecting to a different Anaire Cloud App
@@ -156,9 +156,9 @@ PubSubClient mqttClient(wifi_client);
 SCD30 airSensor;
 unsigned long SCD30_WARMING_TIME = 60000;             // SCD30 CO2 sensor warming time: 60 seconds
 unsigned long SCD30_CALIBRATION_TIME = 180000;        // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
-bool SCD30_AutoSelfCalibration = false;               // SCD30 auto self calibration disabled
+bool SCD30_AutoSelfCalibration = true;                // SCD30 auto self calibration enabled
 uint16_t SCD30_MEASUREMENT_INTERVAL = 30;             // 30 seconds between measurements
-uint16_t SCD30_FORCED_CALIBRATION = 450;              // SCD30 cero reference in a clean environment - Recommended 400 to 500 ppm
+uint16_t SCD30_FORCED_CALIBRATION = 400;              // SCD30 cero reference in a clean environment - Recommended 400
 uint16_t SCD30_TEMPERATURE_OFFSET = 0;                // SCD30 TEMPERATURE OFFSET: 5ºC - That is because of the proximity of temp sensor to NodeMCU board
 uint16_t SCD30_ALTITUDE_COMPENSATION = 650;           // Set to 650 meters, Madrid (Spain) mean altitude
 
@@ -623,6 +623,7 @@ void Check_WiFi_Server() {
                 break;
             }
 
+            client.println("<br>");
             client.println("<br>");
 
             // the content of the HTTP response follows the header:

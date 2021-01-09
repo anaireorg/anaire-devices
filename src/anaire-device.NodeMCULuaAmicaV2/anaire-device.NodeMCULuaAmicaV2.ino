@@ -58,7 +58,7 @@
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
 // - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
 
-String sw_version = "v1.20210109d.silenciosa";
+String sw_version = "v1.20210109e.licenciosa";
 
 // CLOUD CONFIGURATION: remote app url
 // CHANGE HERE if connecting to a different Anaire Cloud App
@@ -156,6 +156,7 @@ PubSubClient mqttClient(wifi_client);
 SCD30 airSensor;
 unsigned long SCD30_WARMING_TIME = 60000;             // SCD30 CO2 sensor warming time: 60 seconds
 unsigned long SCD30_CALIBRATION_TIME = 180000;        // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
+bool SCD30_AutoSelfCalibration = false;               // SCD30 auto self calibration disabled
 uint16_t SCD30_MEASUREMENT_INTERVAL = 30;             // 30 seconds between measurements
 uint16_t SCD30_FORCED_CALIBRATION = 450;              // SCD30 cero reference in a clean environment - Recommended 400 to 500 ppm
 uint16_t SCD30_TEMPERATURE_OFFSET = 0;                // SCD30 TEMPERATURE OFFSET: 5ºC - That is because of the proximity of temp sensor to NodeMCU board
@@ -564,6 +565,9 @@ void Check_WiFi_Server() {
             client.print("Anaire Device ID: ");
             client.print(anaire_device_id);
             client.println("<br>");
+            client.print("SW version: ");
+            client.print(sw_version);
+            client.println("<br>");
             client.print("CO2 PPM: ");
             client.print(CO2ppm_value);
             client.println("<br>");
@@ -578,6 +582,33 @@ void Check_WiFi_Server() {
             client.println("<br>");
             client.print("CO2ppm_warning_threshold: ");
             client.print(CO2ppm_warning_threshold);
+            client.println("<br>");
+            if (co2_sensor == scd30){
+              client.print("CO2 Sensor: Sensirion SCD30");
+              client.println("<br>");
+              uint16_t val;
+              airSensor.getMeasurementInterval(&val);
+              client.print("SCD30 Measurement Interval: ");
+              client.print(val);
+              client.println("<br>");
+              airSensor.getForceRecalibration(&val);
+              client.print("SCD30 Force Recalibration: ");
+              client.print(val);
+              client.println("<br>");
+              airSensor.getTemperatureOffset(&val);
+              client.print("SCD30 Temperature Offset: ");
+              client.print(val);
+              client.println("<br>");
+              airSensor.getAltitudeCompensation(&val);
+              client.print("SCD30 AltitudeCompensation: ");
+              client.print(val);
+              client.println("<br>");
+            }
+            else {
+              client.print("CO2 Sensor: Winsen MH-Z14A");
+              client.println("<br>");
+            }
+
             client.println("<br>");
             client.print("STATUS: ");
             switch (co2_device_status) {
@@ -595,7 +626,7 @@ void Check_WiFi_Server() {
             client.println("<br>");
 
             // the content of the HTTP response follows the header:
-            client.print("Click <a href=\"/H\">here</a> to calibrate the device. Locate the device on open air.<br>");
+            client.print("Click <a href=\"/H\">here</a> to calibrate the device.<br>");
             //client.print("Click <a href=\"/L\">here</a> turn the LED on pin 6 off<br>");
 
             client.println("<br>");
@@ -654,14 +685,9 @@ void Setup_sensors() {
     // display device info
     SCD30DeviceInfo();
 
-    // Set AutoSelfCalibration
-    //airSensor.setAutoSelfCalibration(true);
-
-    // Disable AutoSelfCalibration
-    airSensor.setAutoSelfCalibration(false);
-
     // Set SCD30 (change in global variables at the start of SCD section in the initial section of this program)
-    SCD30_Do_Measurement_interval();
+    SCD30_Do_AutoSelfCalibration();
+    SCD30_Do_Measurement_Interval();
     SCD30_Do_Temperature_Offset();
     SCD30_Do_Altitude_Compensation();
       
@@ -933,6 +959,41 @@ void Calibrate_SCD30() {
 
 }
 
+void SCD30_Do_AutoSelfCalibration()
+{
+
+  airSensor.setAutoSelfCalibration(SCD30_AutoSelfCalibration);
+  
+  /* Commented until getAutoSelfCalibration is implemented
+  uint16_t val;
+  if (airSensor.getAutoSelfCalibration(&val)) {
+    
+    Serial.print("\nReading SCD30 AutoSelfCalibration before change: ");
+    Serial.println(val);
+
+    Serial.print("Setting new SCD30 AutoSelfCalibration to: ");
+    Serial.println(SCD30_AutoSelfCalibration);
+
+    if (airSensor.setAutoSelfCalibration(SCD30_AutoSelfCalibration)) {
+
+        if (airSensor.getTAutoSelfCalibration(&val)) {
+          Serial.print("Reading SCD30 AutoSelfCalibration after change: ");
+          Serial.println(val);
+        }
+        else {
+          Serial.println("Could not obtain SCD30 AutoSelfCalibration");
+        }
+    }
+    else {
+      Serial.println("Could not set new SCD30 AutoSelfCalibration");
+    }
+  }
+  else {
+    Serial.println("Could not obtain AutoSelfCalibration");
+  }
+  */
+}
+
 void SCD30_Do_Temperature_Offset()
 {
   uint16_t val;
@@ -964,7 +1025,7 @@ void SCD30_Do_Temperature_Offset()
   }
 }
 
-void SCD30_Do_Measurement_interval()
+void SCD30_Do_Measurement_Interval()
 {
   uint16_t val;
 
@@ -1400,20 +1461,20 @@ void update_OLED_Status() {
   display.drawStringMaxWidth(0, 10, 128, ipaddress);
 
   // if there is an error display it on third line
+  if (err_dht) {
+    display.drawString(0, 20, "err dht");
+  }
+  if (err_mqtt) {
+    display.drawString(0, 20, "err mqtt");
+  }
   if (err_wifi) {
     display.drawString(0, 20, "err wifi");
   }
-  else if (err_mqtt) {
-    display.drawString(0, 20, "err mqtt");
-  }
-  else if (err_co2) {
+  if (err_co2) {
     display.drawString(0, 20, "err co2");
   }
-  else if (err_dht) {
-    display.drawString(0, 20, "err dht");
-  }
-
-  else {
+  
+  if ((!err_dht) && (!err_mqtt) && (!err_wifi) && (!err_co2))  {
     //display.drawString(0, 20, "device ok");
     display.drawString(0, 20, sw_version);
   }

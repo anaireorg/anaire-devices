@@ -241,10 +241,12 @@ https://www.arduino.cc/en/software
     * WifiManager kentaylor https://github.com/kentaylor/WiFiManager (gestión de la conexión WiFi)
     * Double Reset detector https://github.com/datacute/DoubleResetDetector (detector de doble pulsación del botón reset para reinicio en el portal cautivo y poder configurar la WiFi y otros parámetros)
   
-8. Instalar la siguiente librería desde un archivo .zip:
-    * paulvha SCD30 library https://github.com/paulvha/scd30 (gestión del sensor de CO2, temperatura y humedad Sensirion SCD30)
+  8. Instalar la siguiente librería desde un archivo .zip:
+    * paulvha SCD30 library https://github.com/paulvha/scd30 (gestión del sensor de CO2, temperatura y humedad Sensirion SCD30)  
       Hay que descargar el archivo .zip desde https://github.com/paulvha/scd30/archive/master.zip  
-      Luego se instala desde el IDE de Arduino, usando la opción *Programa -> Incluir Librería -> Añadir Biblioteca .zip* y seleccionar el archivo descargado 
+      Luego se instala desde el IDE de Arduino, usando la opción *Programa -> Incluir Librería -> Añadir Biblioteca .zip* y seleccionar el archivo descargado  
+
+Nótese que como el programa es compatible con ambos sensores, SCD30 y MHZ14A, **hay que instalar todas las librerías enumeradas**, incluso en el caso de que sólo se planee utilizar un solo tipo de sensor.
 
 <a name="4.2"></a>
 ## 4.2 Software del Medidor de CO2 de ANAIRE

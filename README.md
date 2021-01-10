@@ -230,7 +230,7 @@ https://www.arduino.cc/en/software
 
  6. Tras la instalación seleccionar en *Herramientas -> Placa* la opción *NodeMCU 1.0*, para de esta forma trabajar con esa tarjetas
 
- 7. Instalar las siguientes Librerías, utilizando la opción *Herramientas -> Administrar Bibliotecas* del IDE de Arduino. Cuidado: se ha observado que puede fallar si se instalan directamente los archivos zip de las librerías y se descomprimen en el PC local. **Se recomienda encarecidamente instalar estas las librerías desde el IDE de Arduino, ya que se han observado comportamientos incorrectos al instalar las librerías por otros procedimientos, menos la librería **  
+ 7. Instalar las siguientes Librerías, utilizando la opción *Herramientas -> Administrar Bibliotecas* del IDE de Arduino. Cuidado: se ha observado que puede fallar si se instalan directamente los archivos zip de las librerías y se descomprimen en el PC local. **Se recomienda encarecidamente instalar estas las librerías desde el IDE de Arduino, ya que se han observado comportamientos incorrectos al instalar estas librerías por otros procedimientos**  
  
     * WiFiEsp https://github.com/bportaluri/WiFiEsp (uso de WiFi con ESP8266)
     * Arduino Client for MQTT https://pubsubclient.knolleary.net/ (cliente MQTT para comunicación con la nube)

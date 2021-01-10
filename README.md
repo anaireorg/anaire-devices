@@ -230,24 +230,26 @@ https://www.arduino.cc/en/software
 
  6. Tras la instalación seleccionar en *Herramientas -> Placa* la opción *NodeMCU 1.0*, para de esta forma trabajar con esa tarjetas
 
- 7. Instalar las siguientes Librerías, utilizando la opción *Herramientas -> Administrar Bibliotecas* del IDE de Arduino. Cuidado: se ha observado que puede fallar si se instalan directamente los archivos zip de las librerías y se descomprimen en el PC local. **Se recomienda encarecidamente instalar las librerías desde el IDE de Arduino, ya que se han observado comportamientos incorrectos al instalar las librerías por otros procedimientos**.
+ 7. Instalar las siguientes Librerías, utilizando la opción *Herramientas -> Administrar Bibliotecas* del IDE de Arduino. Cuidado: se ha observado que puede fallar si se instalan directamente los archivos zip de las librerías y se descomprimen en el PC local. **Se recomienda encarecidamente instalar estas las librerías desde el IDE de Arduino, ya que se han observado comportamientos incorrectos al instalar las librerías por otros procedimientos, menos la librería **.
     * WiFiEsp https://github.com/bportaluri/WiFiEsp (uso de WiFi con ESP8266)
     * Arduino Client for MQTT https://pubsubclient.knolleary.net/ (cliente MQTT para comunicación con la nube)
     * ArduinoJson https://arduinojson.org/?utm_source=meta&utm_medium=library.properties (para procesar mensajes MQTT)
     * esp8266-oled-ssd1306 https://github.com/ThingPulse/esp8266-oled-ssd1306 (gestión del display OLED)
-    * SparkFun_SCD30_Arduino_Library https://github.com/sparkfun/SparkFun_SCD30_Arduino_Library (gestión del sensor de CO2, temperatura y humedad Sensirion SCD30)
     * DHTesp https://github.com/beegee-tokyo/DHTesp (gestión del sensor de temperatura y humedad DHT11)
     * EspSoftwareSerial https://github.com/plerup/espsoftwareserial/ (comunicación serie con el sensor de CO2 MH-Z14A)
     * ESP_EEPROM https://github.com/jwrw/ESP_EEPROM (almacenamiento de parámetros persistentes en la memoria flash de la NodeMCU)
     * WifiManager kentaylor https://github.com/kentaylor/WiFiManager (gestión de la conexión WiFi)
     * Double Reset detector https://github.com/datacute/DoubleResetDetector (detector de doble pulsación del botón reset para reinicio en el portal cautivo y poder configurar la WiFi y otros parámetros)
+  
+8. Instalar la siguiente librería desde un archivo .zip:
+    * paulvha SCD30 library https://github.com/paulvha/scd30 (gestión del sensor de CO2, temperatura y humedad Sensirion SCD30)
+      Hay que descargar el archivo .zip desde https://github.com/paulvha/scd30/archive/master.zip  
+      Luego se instala desde el IDE de Arduino, usando la opción *Programa -> Incluir Librería -> Añadir Biblioteca .zip* y seleccionar el archivo descargado 
 
 <a name="4.2"></a>
 ## 4.2 Software del Medidor de CO2 de ANAIRE
 El programa (software) está disponible en su última versión en el siguiente enlace de este repositorio:  
 https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino  
-
-Haga click en el enlace para abrirlo desde el IDE de Arduino.
   
 <a name="5"></a>
 # 5. Fabricación
@@ -294,7 +296,7 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
 ### Montaje final  
 Montaje sobre breadboard: 
   
-En este caso es relevante destacar que tras soldar los cuatro pines en el SCD30, utilizando éstos se puede pinchar el componente directamente en la placa de prototipado, alineado correctamente con los pines de la NodeMCU para que se verifique el cableado deseado, ahorrando así cuatro cables y facilitando el engarce mecánico del conjunto de una forma sencilla y muy efectiva.  
+En este caso es relevante destacar que tras soldar los cuatro pines en el SCD30, utilizando éstos se puede pinchar el componente directamente en la placa de prototipado, alineado correctamente con los pines de la NodeMCU para que se verifique el cableado deseado, ahorrando así cuatro cables y facilitando el engarce mecánico del conjunto de una forma sencilla y muy efectiva. 
   
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire30ppm.jpg" width="60%" height="60%" />
@@ -303,7 +305,9 @@ En este caso es relevante destacar que tras soldar los cuatro pines en el SCD30,
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire30ppm.jpg" width="60%" height="60%" />
 </p>  
-
+  
+Este montaje es muy sencillo de rrealizar, pero hay que tener en cuenta que la proximidad entre el sensor SCD30 y el microcontrolador en la placa NodeMCU puede producir que haya alteración de las medidas realizadas, especialmente las de temperatura y humedad, así que se recomienda utilizar el montaje en caja 3D AnaireBox, descrito a continuación:
+  
 Montaje en caja AnaireBox:  
 
 <p align="center">
@@ -397,8 +401,14 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
   * Si se vuelve a presional el botón de Flash, se reactivará el aviso de alarma local. Es decir, el botón de Flash permite conmutar entre avisar o no de forma local cuando los valores de CO2 superen los umbrales estabilizaciónecidos
   * Cuando la medida de CO2 sea inferior al umbral de aviso, el dispositivo reseteará el estado de la señal local de alarma, de forma que automáticamente volverá a dar indicaciones locales de alarma si se vuelven a superar los umbrales de aviso o de alarma en el futuro, sin necesidad de reactivar la alarma local
 * Si hay algún error, la última línea del display mostrará el error, en lugar de dar una indicación del estado de CO2. El dispositivo está diseñado para recuperarse automáticamente de los errores cuando la causa que los provoca se ha resuelto, sin que el usuario tenga que intervenir.
-* Si se conecta con un dispositivo a la misma red WiFi a la que esta conectado el medidor, accediendo a la dirección IP del medidor se pueden ver las últimas medidas realizadas y los umbrales de aviso y alarma CO2 definidos.
-* En la misma dirección IP del medidor se puede también hacer click en un enlace que realiza la calibración del medidor de CO2. Debe disponer el medidor en un entorno ventilado, preferiblemente al aire libre, y esperar el tiempo indicado por la cuenta atrás en el display una vez iniciado el proceso desde un navegador.
+* Si se conecta con un dispositivo a la misma red WiFi a la que esta conectado el medidor, accediendo a la dirección IP del medidor se puede ver información del medidor:  
+  * El ID del medidor
+  * La versión de software
+  * El sensor de CO2 que se emplea en el medidor, indicando las características de configuración aplicadas (sólo en el caso del SCD39)
+  * Las últimas medidas realizadas de CO2, temperatura y humedad
+  * Los umbrales de aviso y alarma CO2 configurados (pueden ser modificados desde la aplicación de Anaire en la nube, una vez conectado)
+  * Se puede también realizar la calibración del medidor de CO2, haciendo clic en la opción habilitada para ello. Debe disponer el medidor en un entorno ventilado, preferiblemente al aire libre, pero a cubierto de corrientes de aire y evitando la exposición al sol. y esperar el tiempo indicado por la cuenta atrás en el display una vez iniciado el proceso desde un navegador
+    * La calibración del sensor SCD30 tarda 3 minutos; en el caso del MH-Z14A hay que esperar 20 minutos para que termine la calibración
 * Acceso por internet a las medidas:
   * Si se han dejado los valores por defecto de la aplicación en la nube, se puede acceder a los valores medidos por el dispositivo en los siguientes enlaces:
     * Valores actuales en modo kiosko (sustituir [ID_del_sensor] por el ID del medidor, y [Nombre_que_se_desea_visualizar] por el nombre deseado):  

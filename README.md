@@ -240,8 +240,8 @@ https://www.arduino.cc/en/software
     * ESP_EEPROM https://github.com/jwrw/ESP_EEPROM (almacenamiento de parámetros persistentes en la memoria flash de la NodeMCU)
     * WifiManager kentaylor https://github.com/kentaylor/WiFiManager (gestión de la conexión WiFi)
     * Double Reset detector https://github.com/datacute/DoubleResetDetector (detector de doble pulsación del botón reset para reinicio en el portal cautivo y poder configurar la WiFi y otros parámetros)
-  
-  8. Instalar la siguiente librería desde un archivo .zip:  
+
+ 8. Instalar la siguiente librería desde un archivo .zip:  
     * paulvha SCD30 library https://github.com/paulvha/scd30 (gestión del sensor de CO2, temperatura y humedad Sensirion SCD30)  
       Hay que descargar el archivo .zip desde https://github.com/paulvha/scd30/archive/master.zip  
       Luego se instala desde el IDE de Arduino, usando la opción *Programa -> Incluir Librería -> Añadir Biblioteca .zip* y seleccionar el archivo descargado  

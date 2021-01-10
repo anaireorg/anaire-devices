@@ -58,7 +58,7 @@
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
 // - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
 
-String sw_version = "v1.20210109f.sigilosa";
+String sw_version = "v1.20210110.claridade";
 
 // CLOUD CONFIGURATION: remote app url
 // CHANGE HERE if connecting to a different Anaire Cloud App
@@ -587,6 +587,7 @@ void Check_WiFi_Server() {
               client.print("CO2 Sensor: Sensirion SCD30");
               client.println("<br>");
               uint16_t val;
+              SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
               airSensor.getMeasurementInterval(&val);
               client.print("SCD30 Measurement Interval: ");
               client.print(val);

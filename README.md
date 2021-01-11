@@ -242,7 +242,7 @@ https://www.arduino.cc/en/software
     * Double Reset detector by Stephen Denne https://github.com/datacute/DoubleResetDetector -> Detección de doble pulsación del botón reset para reinicio en el portal cautivo y poder configurar la WiFi y otros parámetros
 
  8. Instalar la siguiente librería desde un archivo .zip:  
-    * paulvha SCD30 library https://github.com/paulvha/scd30 (gestión del sensor de CO2, temperatura y humedad Sensirion SCD30)  
+    * paulvha SCD30 library https://github.com/paulvha/scd30 -> Gestión del sensor de CO2, temperatura y humedad Sensirion SCD30  
       Hay que descargar el archivo .zip desde https://github.com/paulvha/scd30/archive/master.zip  
       Luego se instala desde el IDE de Arduino, usando la opción *Programa -> Incluir Librería -> Añadir Biblioteca .zip* y seleccionar el archivo descargado  
 

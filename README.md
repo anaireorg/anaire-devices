@@ -232,15 +232,14 @@ https://www.arduino.cc/en/software
 
  7. Instalar las siguientes Librerías, utilizando la opción *Herramientas -> Administrar Bibliotecas* del IDE de Arduino. Cuidado: se ha observado que puede fallar si se instalan directamente los archivos zip de las librerías y se descomprimen en el PC local. **Se recomienda encarecidamente instalar estas las librerías desde el IDE de Arduino, ya que se han observado comportamientos incorrectos al instalar estas librerías por otros procedimientos**  
  
-    * WiFiEsp https://github.com/bportaluri/WiFiEsp (uso de WiFi con ESP8266)
-    * Arduino Client for MQTT https://pubsubclient.knolleary.net/ (cliente MQTT para comunicación con la nube)
-    * ArduinoJson https://arduinojson.org/?utm_source=meta&utm_medium=library.properties (para procesar mensajes MQTT)
-    * esp8266-oled-ssd1306 https://github.com/ThingPulse/esp8266-oled-ssd1306 (gestión del display OLED)
-    * DHTesp https://github.com/beegee-tokyo/DHTesp (gestión del sensor de temperatura y humedad DHT11)
-    * EspSoftwareSerial https://github.com/plerup/espsoftwareserial/ (comunicación serie con el sensor de CO2 MH-Z14A)
-    * ESP_EEPROM https://github.com/jwrw/ESP_EEPROM (almacenamiento de parámetros persistentes en la memoria flash de la NodeMCU)
-    * WifiManager kentaylor https://github.com/kentaylor/WiFiManager (gestión de la conexión WiFi)
-    * Double Reset detector https://github.com/datacute/DoubleResetDetector (detector de doble pulsación del botón reset para reinicio en el portal cautivo y poder configurar la WiFi y otros parámetros)
+    * WiFiEsp by bportaluri https://github.com/bportaluri/WiFiEsp -> Uso de WiFi con ESP8266
+    * Pubsubclient by Nick O'Leary https://pubsubclient.knolleary.net/ -> Cliente MQTT para comunicación con la nube
+    * ArduinoJson by Benoit Blanchon https://arduinojson.org/?utm_source=meta&utm_medium=library.properties -> Proceso de mensajes MQTT
+    * esp8266-oled-ssd1306 by ThingPulse, Fabrice Weinberg https://github.com/ThingPulse/esp8266-oled-ssd1306 -> Manejo del display OLED
+    * DHTesp by beegee_tokyo https://github.com/beegee-tokyo/DHTesp -> Sensor de temperatura y humedad DHT11
+    * ESP_EEPROM by j-watson https://github.com/jwrw/ESP_EEPROM -> Almacenamiento de parámetros persistentes en la memoria flash de la NodeMCU
+    * WifiManager by tzapu,tablatronix https://github.com/tzapu/WiFiManager -> Portal para gestión de la conexión WiFi
+    * Double Reset detector by Stephen Denne https://github.com/datacute/DoubleResetDetector -> Detección de doble pulsación del botón reset para reinicio en el portal cautivo y poder configurar la WiFi y otros parámetros
 
  8. Instalar la siguiente librería desde un archivo .zip:  
     * paulvha SCD30 library https://github.com/paulvha/scd30 (gestión del sensor de CO2, temperatura y humedad Sensirion SCD30)  

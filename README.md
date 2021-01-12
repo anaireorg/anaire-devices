@@ -249,7 +249,7 @@ Nótese que como el programa es compatible con ambos sensores, SCD30 y MHZ14A, *
 <a name="4.2"></a>
 ## 4.2 Software del Medidor de CO2 de ANAIRE
 El programa (software) está disponible en su última versión en el siguiente enlace de este repositorio:  
-https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino  
+https://github.com/anaireorg/anaire-devices/raw/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino 
   
 <a name="5"></a>
 # 5. Fabricación

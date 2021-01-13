@@ -213,6 +213,7 @@ El dispositivo se programa exactamente igual que una tarjeta arduino, utilizando
 <a name="4.1"></a>
 ## 4.1 Preparación del entorno
 Todo el procedimiento está descrito a continuación, pero adicionalmente, en este vídeo se puede seguir todo el proceso paso a paso tanto para la peroaración del entorno como para la carga del sotware.
+
 [![Preparación del entorno y carga del software para Anaire30ppm y Anaire50ppm](http://img.youtube.com/vi/vtSQFcMiu44/0.jpg)](http://www.youtube.com/watch?v=vtSQFcMiu44 "Preparación del entorno y carga del software para Anaire30ppm y Anaire50ppm")
 
 Hay que instalar el IDE de Arduino y descargar las librerías que se han empleado en el desarrollo del programa de los medidores de Anaire, siguiendo los siguientes pasos:
@@ -327,6 +328,7 @@ Montaje en caja AnaireBox:
 <a name="5.2"></a>
 ## 5.2 Anaire50ppm
 En estos vídeos está el procedimiento completo para el montaje sobre breadboard y sobre caja impresa en 3D
+
 [![Montaje de Anaire50ppm Breadboard](http://img.youtube.com/vi/2Ig6p8EvkTE/0.jpg)](http://www.youtube.com/watch?v=2Ig6p8EvkTE "Montaje de Anaire50ppm Breadboard")
 [![Montaje Anaire50ppm Box](http://img.youtube.com/vi/ppoKypWyIAc/0.jpg)](http://www.youtube.com/watch?v=ppoKypWyIAc "Montaje Anaire50ppm Box")
 

@@ -631,7 +631,7 @@ void Check_WiFi_Server() {
               client.print("Temperature Cal: ");
               client.println(myMHZ19.getTempAdjustment());
               client.println("<br>");
-              client.print("ABC Status: "); myMHZ19.getABC() ? Serial.println("ON") :  Serial.println("OFF");
+              client.print("ABC Status: "); myMHZ19.getABC() ? client.println("ON") :  client.println("OFF");
               client.println("<br>");
               
             }

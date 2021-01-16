@@ -58,7 +58,7 @@
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
 // - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
 
-String sw_version = "v1.20210116.ArtEnsembleOfChicago";  // 
+String sw_version = "v1.20210116.MingusVol1";  // 
 
 // CLOUD CONFIGURATION: remote app url
 // CHANGE HERE if connecting to a different Anaire Cloud App
@@ -161,7 +161,7 @@ bool SCD30_AutoSelfCalibration = false;                       // SCD30 auto self
 uint16_t SCD30_MEASUREMENT_INTERVAL = control_loop_duration;  // time between measurements
 uint16_t SCD30_FORCED_CALIBRATION = 500;                      // SCD30 cero reference in a clean environment - Recommended 400
 uint16_t SCD30_TEMPERATURE_OFFSET = 0;                        // SCD30 TEMPERATURE OFFSET: 5ºC
-uint16_t SCD30_ALTITUDE_COMPENSATION = 650;                   // Set to 650 meters, Madrid (Spain) mean altitude
+uint16_t SCD30_ALTITUDE_COMPENSATION = 0;                   // Set to 650 meters, Madrid (Spain) mean altitude
 //#define SCD30_SERIAL_NUM_WORDS 3                    // added August 2020
 // The longer serial number is 16 words / 32 bytes (means 48 bytes with CRC).
 // Most I2C buffers are by default 32. Hence the length is kept to the

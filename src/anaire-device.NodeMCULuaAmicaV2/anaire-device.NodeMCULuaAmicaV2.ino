@@ -159,8 +159,8 @@ unsigned long SCD30_WARMING_TIME = 10000;                     // SCD30 CO2 senso
 unsigned long SCD30_CALIBRATION_TIME = 180000;                // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
 bool SCD30_AutoSelfCalibration = false;                       // SCD30 auto self calibration disabled
 uint16_t SCD30_MEASUREMENT_INTERVAL = control_loop_duration;  // time between measurements
-uint16_t SCD30_FORCED_CALIBRATION = 400;                      // SCD30 cero reference in a clean environment - Recommended 400
-uint16_t SCD30_TEMPERATURE_OFFSET = 0;                        // SCD30 TEMPERATURE OFFSET: 5ºC - That is because of the proximity of temp sensor to NodeMCU board
+uint16_t SCD30_FORCED_CALIBRATION = 500;                      // SCD30 cero reference in a clean environment - Recommended 400
+uint16_t SCD30_TEMPERATURE_OFFSET = 0;                        // SCD30 TEMPERATURE OFFSET: 5ºC
 uint16_t SCD30_ALTITUDE_COMPENSATION = 650;                   // Set to 650 meters, Madrid (Spain) mean altitude
 //#define SCD30_SERIAL_NUM_WORDS 3                    // added August 2020
 // The longer serial number is 16 words / 32 bytes (means 48 bytes with CRC).

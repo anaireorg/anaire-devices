@@ -58,7 +58,7 @@
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
 // - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
 
-String sw_version = "v1.20210116.adinadainadé";  // 
+String sw_version = "v1.20210116.ArtEnsembleOfChicago";  // 
 
 // CLOUD CONFIGURATION: remote app url
 // CHANGE HERE if connecting to a different Anaire Cloud App
@@ -155,9 +155,9 @@ PubSubClient mqttClient(wifi_client);
 #define SCD30_SCK_GPIO 14 // signal GPIO14 (D5)
 #define SCD30_SDA_GPIO 12 // signal GPIO12 (D6)
 SCD30 airSensor;
-unsigned long SCD30_WARMING_TIME = 60000;                     // SCD30 CO2 sensor warming time: 60 seconds
+unsigned long SCD30_WARMING_TIME = 10000;                     // SCD30 CO2 sensor warming time: 10 seconds
 unsigned long SCD30_CALIBRATION_TIME = 180000;                // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
-//bool SCD30_AutoSelfCalibration = false;                       // SCD30 auto self calibration disabled
+bool SCD30_AutoSelfCalibration = false;                       // SCD30 auto self calibration disabled
 uint16_t SCD30_MEASUREMENT_INTERVAL = control_loop_duration;  // time between measurements
 uint16_t SCD30_FORCED_CALIBRATION = 400;                      // SCD30 cero reference in a clean environment - Recommended 400
 uint16_t SCD30_TEMPERATURE_OFFSET = 0;                        // SCD30 TEMPERATURE OFFSET: 5ºC - That is because of the proximity of temp sensor to NodeMCU board
@@ -1029,7 +1029,7 @@ void Calibrate_SCD30() {
 void SCD30_Do_AutoSelfCalibration()
 {
 
-  //airSensor.setAutoSelfCalibration(SCD30_AutoSelfCalibration);
+  airSensor.setAutoSelfCalibration(SCD30_AutoSelfCalibration);
   Serial.print("Reading SCD30 AutoSelfCalibration: ");
   Serial.println(airSensor.getAutoSelfCalibration());
 

@@ -87,7 +87,7 @@ struct MyEEPROMStruct {
 } eepromConfig;
 
 // Control Loop: time between measurements
-unsigned int control_loop_duration = 5000;  // 5 seconds
+unsigned int control_loop_duration = 2000;  // 2 seconds
 unsigned long control_loop_start;           // holds a timestamp for each control loop start
 unsigned long lastReconnectAttempt = 0;     // MQTT reconnections
 
@@ -778,6 +778,10 @@ void Setup_sensors() {
 
       Serial.println("CO2 sensor MH-Z14A/MH-Z19x detected.");
 
+      // Disable ABC
+      myMHZ19.autoCalibration(false);     // make sure auto calibration is off
+      Serial.print("ABC Status: "); myMHZ19.getABC() ? Serial.println("ON") :  Serial.println("OFF");  // now print it's status
+    
       char myVersion[4];          
       myMHZ19.getVersion(myVersion);
 
@@ -903,10 +907,10 @@ void Read_MHZ14A() {
 void Calibrate_MHZ14A() {
 
   // Print info
-  Serial.println ("Calibrating MHZ14A CO2 sensor...");
+  Serial.println ("Calibrating Winsen MHZ14A/MHZ19x CO2 sensor...");
 
   // Write calibration command
-  mySerial.write(calibration_command, 9);
+  //mySerial.write(calibration_command, 9);
 
   // Waits for 3 seconds for the command to take effect
   delay(3000);
@@ -914,7 +918,7 @@ void Calibrate_MHZ14A() {
   // Timestamp for calibrating start time
   int calibrating_start = millis();
 
-  // Wait for calibrating time
+  // Wait for calibrating time to stabalise...
   int counter = MHZ14A_CALIBRATION_TIME / 1000;
   while ((millis() - calibrating_start) < MHZ14A_CALIBRATION_TIME) {
     display.init();
@@ -931,6 +935,9 @@ void Calibrate_MHZ14A() {
     counter = counter - 1;
   }
 
+  // Take a reading which be used as the zero point for 400 ppm 
+  myMHZ19.calibrate();    
+  
   // Print info
   Serial.println ("MHZ14A CO2 sensor calibrated");
 

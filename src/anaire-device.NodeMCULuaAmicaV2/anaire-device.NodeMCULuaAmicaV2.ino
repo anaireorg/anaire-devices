@@ -150,17 +150,23 @@ PubSubClient mqttClient(wifi_client);
 
 // Sensirion SCD CO2, temperature and humidity sensor
 #define SCD30WIRE Wire
-#include "paulvha_SCD30.h"
+//#include "paulvha_SCD30.h"
+#include "SparkFun_SCD30_Arduino_Library.h"                   //Click here to get the library: http://librarymanager/All#SparkFun_SCD30
 #define SCD30_SCK_GPIO 14 // signal GPIO14 (D5)
 #define SCD30_SDA_GPIO 12 // signal GPIO12 (D6)
 SCD30 airSensor;
-unsigned long SCD30_WARMING_TIME = 60000;             // SCD30 CO2 sensor warming time: 60 seconds
-unsigned long SCD30_CALIBRATION_TIME = 180000;        // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
-bool SCD30_AutoSelfCalibration = true;                // SCD30 auto self calibration enabled
-uint16_t SCD30_MEASUREMENT_INTERVAL = 30;             // 30 seconds between measurements
-uint16_t SCD30_FORCED_CALIBRATION = 400;              // SCD30 cero reference in a clean environment - Recommended 400
-uint16_t SCD30_TEMPERATURE_OFFSET = 0;                // SCD30 TEMPERATURE OFFSET: 5ºC - That is because of the proximity of temp sensor to NodeMCU board
-uint16_t SCD30_ALTITUDE_COMPENSATION = 650;           // Set to 650 meters, Madrid (Spain) mean altitude
+unsigned long SCD30_WARMING_TIME = 60000;                     // SCD30 CO2 sensor warming time: 60 seconds
+unsigned long SCD30_CALIBRATION_TIME = 180000;                // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
+//bool SCD30_AutoSelfCalibration = false;                       // SCD30 auto self calibration disabled
+uint16_t SCD30_MEASUREMENT_INTERVAL = control_loop_duration;  // time between measurements
+uint16_t SCD30_FORCED_CALIBRATION = 400;                      // SCD30 cero reference in a clean environment - Recommended 400
+uint16_t SCD30_TEMPERATURE_OFFSET = 0;                        // SCD30 TEMPERATURE OFFSET: 5ºC - That is because of the proximity of temp sensor to NodeMCU board
+uint16_t SCD30_ALTITUDE_COMPENSATION = 650;                   // Set to 650 meters, Madrid (Spain) mean altitude
+#define SCD30_SERIAL_NUM_WORDS 3                    // added August 2020
+// The longer serial number is 16 words / 32 bytes (means 48 bytes with CRC).
+// Most I2C buffers are by default 32. Hence the length is kept to the
+// 3 words = first 6 (equal to what is printed on the case).
+// The additional information is for Senserion internal only.
 
 // MHZ14A CO2 sensor: software serial port
 #include "SoftwareSerial.h"                            // Remove if using HardwareSerial or non-uno compatabile device
@@ -592,22 +598,26 @@ void Check_WiFi_Server() {
               client.println("<br>");
               uint16_t val;
               SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
-              airSensor.getMeasurementInterval(&val);
-              client.print("SCD30 Measurement Interval: ");
-              client.print(val);
+              //airSensor.getMeasurementInterval(&val);
+              //client.print("SCD30 Measurement Interval: ");
+              //client.print(val);
+              //client.println("<br>");
+              //airSensor.getAutoSelfCalibration();
+              client.print("SCD30 AutoselfCalibration: ");
+              client.print(airSensor.getAutoSelfCalibration());
               client.println("<br>");
-              airSensor.getForceRecalibration(&val);
-              client.print("SCD30 Force Recalibration: ");
-              client.print(val);
-              client.println("<br>");
-              airSensor.getTemperatureOffset(&val);
-              client.print("SCD30 Temperature Offset: ");
-              client.print(val);
-              client.println("<br>");
-              airSensor.getAltitudeCompensation(&val);
-              client.print("SCD30 AltitudeCompensation: ");
-              client.print(val);
-              client.println("<br>");
+              //airSensor.getForceRecalibration(&val);
+              //client.print("SCD30 Force Recalibration: ");
+              //client.print(val);
+              //client.println("<br>");
+              //airSensor.getTemperatureOffset(&val);
+              //client.print("SCD30 Temperature Offset: ");
+              //client.print(val);
+              //client.println("<br>");
+              //airSensor.getAltitudeCompensation(&val);
+              //client.print("SCD30 AltitudeCompensation: ");
+              //client.print(val);
+              //client.println("<br>");
             }
             else {
               client.print("CO2 Sensor: Winsen MH-Z14A/Z19x");
@@ -1019,12 +1029,16 @@ void Calibrate_SCD30() {
 void SCD30_Do_AutoSelfCalibration()
 {
 
-  airSensor.setAutoSelfCalibration(SCD30_AutoSelfCalibration);
-  
-  /* Commented until getAutoSelfCalibration is implemented
+  //airSensor.setAutoSelfCalibration(SCD30_AutoSelfCalibration);
+  Serial.print("Reading SCD30 AutoSelfCalibration: ");
+  Serial.println(airSensor.getAutoSelfCalibration());
+
+  /*
+  //Commented until getAutoSelfCalibration is implemented
   uint16_t val;
-  if (airSensor.getAutoSelfCalibration(&val)) {
-    
+  //if (airSensor.getAutoSelfCalibration(&val)) {
+  if (airSensor.getAutoSelfCalibration()) {
+  
     Serial.print("\nReading SCD30 AutoSelfCalibration before change: ");
     Serial.println(val);
 
@@ -1033,7 +1047,7 @@ void SCD30_Do_AutoSelfCalibration()
 
     if (airSensor.setAutoSelfCalibration(SCD30_AutoSelfCalibration)) {
 
-        if (airSensor.getTAutoSelfCalibration(&val)) {
+        if (airSensor.getAutoSelfCalibration(&val)) {
           Serial.print("Reading SCD30 AutoSelfCalibration after change: ");
           Serial.println(val);
         }
@@ -1055,6 +1069,9 @@ void SCD30_Do_Temperature_Offset()
 {
   uint16_t val;
 
+  airSensor.setTemperatureOffset(SCD30_TEMPERATURE_OFFSET);
+  
+  /*
   if (airSensor.getTemperatureOffset(&val)) {
     
     Serial.print("\nReading SCD30 Temperature Offset before change: ");
@@ -1080,15 +1097,18 @@ void SCD30_Do_Temperature_Offset()
   else {
     Serial.println("Could not obtain Temperature Offset");
   }
+
+  */
+  
 }
 
 void SCD30_Do_Measurement_Interval()
 {
   uint16_t val;
 
-  if ( airSensor.getMeasurementInterval(&val) ) {
-    Serial.print("\nReading SCD30 Measurement Interval before change: ");
-    Serial.println(val);
+//  if ( airSensor.getMeasurementInterval(&val) ) {
+//    Serial.print("\nReading SCD30 Measurement Interval before change: ");
+//    Serial.println(val);
 
     Serial.print("Setting SCD30 new Measurement Interval to: ");
     Serial.println(SCD30_MEASUREMENT_INTERVAL);
@@ -1097,6 +1117,7 @@ void SCD30_Do_Measurement_Interval()
       Serial.print("Reset SCD30 Measurement Interval to: ");
       Serial.println(SCD30_MEASUREMENT_INTERVAL);
 
+      /*
       if ( airSensor.getMeasurementInterval(&val) ) {
         Serial.print("Reading SCD30 Measurement Interval after change: ");
         Serial.println(val);       
@@ -1104,23 +1125,26 @@ void SCD30_Do_Measurement_Interval()
       else {
         Serial.println("Could not obtain SCD30 Measurement Interval");
       }
-      
+      */
     }
     else {
       Serial.print("Could not reset SCD30 Measurement Interval to ");
       Serial.println(SCD30_MEASUREMENT_INTERVAL);
     }    
     
-  }
-  else {
-    Serial.println("Could not obtain SCD30 Measurement Interval");
-  }
+//  }
+//  else {
+//    Serial.println("Could not obtain SCD30 Measurement Interval");
+//  }
 }
 
 void SCD30_Do_Forced_Calibration_Factor()
 {
   uint16_t val;
 
+//  airSensor.setForceRecalibration(SCD30_FORCED_CALIBRATION);
+  
+/*
   if ( airSensor.getForceRecalibration(&val) ) {
     Serial.print("\nReading SCD30 Forced Calibration Factor before change: ");
     Serial.println(val);
@@ -1130,6 +1154,7 @@ void SCD30_Do_Forced_Calibration_Factor()
 
     if (airSensor.setForceRecalibration(SCD30_FORCED_CALIBRATION)) {
 
+        
         if (airSensor.getForceRecalibration(&val)) {
 
           Serial.print("Reading SCD30 Forced Calibration Factor after change: ");
@@ -1146,6 +1171,8 @@ void SCD30_Do_Forced_Calibration_Factor()
   else {
     Serial.println("Could not obtain SCD30 Forced Calibration Factor");
   }
+
+*/
 }
 
 void SCD30_Do_Altitude_Compensation()
@@ -1164,7 +1191,9 @@ void SCD30_Do_Altitude_Compensation()
    *
    *    Setting altitude is disregarded when an ambient pressure is given to the sensor
    */ 
-     
+
+  airSensor.setAltitudeCompensation(SCD30_ALTITUDE_COMPENSATION);
+  /*
   if ( airSensor.getAltitudeCompensation(&val) ) {
     Serial.print("\nReading SCD30 Altitude Compensation before change: ");
     Serial.println(val);
@@ -1189,6 +1218,7 @@ void SCD30_Do_Altitude_Compensation()
   else {
     Serial.println("Could not obtain SCD30 Altitude Compensation");
   }
+  */
 }
 
 void SCD30DeviceInfo()
@@ -1198,6 +1228,8 @@ void SCD30DeviceInfo()
 
   // Read SCD30 serial number as printed on the device
   // buffer MUST be at least 33 digits (32 serial + 0x0)
+
+  /*
   if (airSensor.getSerialNumber(buf))
   {
    Serial.print(F("SCD30 serial number: "));
@@ -1215,6 +1247,7 @@ void SCD30DeviceInfo()
   else {
     Serial.println("Could not obtain firmware level");
   }
+  */
 }
 
 // Evaluate CO2 value versus warning and alarm threasholds and process CO2 alarm information

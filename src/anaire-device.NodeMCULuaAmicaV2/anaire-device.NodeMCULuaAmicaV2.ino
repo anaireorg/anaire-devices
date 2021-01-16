@@ -24,7 +24,7 @@
 // Install the following libraries in Arduino IDE:
 //   WiFiEsp for WiFi https://github.com/bportaluri/WiFiEsp
 //   DHTesp - to manage DHT11 or DHT22 temperature and humidity sensors https://github.com/beegee-tokyo/DHTesp
-//   EspSoftwareSerial - to manage sw serial port to communicate with CO2 sensor https://github.com/plerup/espsoftwareserial/
+//   MHZ-Z19 Library from WifWaf https://github.com/WifWaf/MH-Z19 Library - to manage Winsen CO2 sensors - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
 //   Arduino Client for MQTT - for MQTT communications https://pubsubclient.knolleary.net/
 //   ArduinoJson https://arduinojson.org/?utm_source=meta&utm_medium=library.properties
 //   esp8266-oled-ssd1306 for oled display https://github.com/ThingPulse/esp8266-oled-ssd1306
@@ -58,7 +58,7 @@
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
 // - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
 
-String sw_version = "v1.20210110.claridade";
+String sw_version = "v1.20210116.adinadainadé";  // 
 
 // CLOUD CONFIGURATION: remote app url
 // CHANGE HERE if connecting to a different Anaire Cloud App
@@ -87,9 +87,9 @@ struct MyEEPROMStruct {
 } eepromConfig;
 
 // Control Loop: time between measurements
-const int CONTROL_LOOP_DURATION = 30000; // 30 seconds
-unsigned long control_loop_start; // holds a timestamp for each control loop start
-unsigned long lastReconnectAttempt = 0; // MQTT reconnections
+unsigned int control_loop_duration = 5000;  // 5 seconds
+unsigned long control_loop_start;           // holds a timestamp for each control loop start
+unsigned long lastReconnectAttempt = 0;     // MQTT reconnections
 
 // CO2 Blinking period, used to reflect CO2 status on builtin led and buzzer
 const int WARNING_BLINK_PERIOD = 1000; // 1 second
@@ -163,13 +163,17 @@ uint16_t SCD30_TEMPERATURE_OFFSET = 0;                // SCD30 TEMPERATURE OFFSE
 uint16_t SCD30_ALTITUDE_COMPENSATION = 650;           // Set to 650 meters, Madrid (Spain) mean altitude
 
 // MHZ14A CO2 sensor: software serial port
-#include "SoftwareSerial.h"
+#include "SoftwareSerial.h"                            // Remove if using HardwareSerial or non-uno compatabile device
+#include "MHZ19.h"                                     // https://github.com/WifWaf/MH-Z19 Library
+MHZ19 myMHZ19;
+#define MHZ_BAUDRATE 9600                              // Native to the sensor (do not change)
 const unsigned long MHZ14A_WARMING_TIME = 180000;      // MHZ14A CO2 sensor warming time: 3 minutes = 180000 ms
 const unsigned long MHZ14A_SERIAL_TIMEOUT = 5000;      // MHZ14A CO2 serial start timeout: 5 seconds = 5000 ms
 const unsigned long MHZ14A_CALIBRATION_TIME = 1200000; // MHZ14A CO2 CALIBRATION TIME: 20 min = 1200000 ms
 #define swSerialRX_gpio 13
 #define swSerialTX_gpio 15
-SoftwareSerial swSerial(swSerialRX_gpio, swSerialTX_gpio, false);
+//SoftwareSerial swSerial(swSerialRX_gpio, swSerialTX_gpio, false);
+SoftwareSerial mySerial(swSerialRX_gpio, swSerialTX_gpio);
 byte measurement_command[9] = {0xFF, 0x01, 0x86, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79};  // Command to get measurements from MHZ14A CO2 sensor
 byte calibration_command[9] = {0xFF, 0x01, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x78};  // Command to calibrate MHZ14A CO2 sensor
 char response_CO2[9]; // holds the received data from MHZ14A CO2 sensor
@@ -380,7 +384,7 @@ void loop() {
   }
 
   // Complete time up to ControlLoopTimerDuration
-  while ((millis() - control_loop_start) < CONTROL_LOOP_DURATION)
+  while ((millis() - control_loop_start) < control_loop_duration)
   {
     // Process wifi server requests
     Check_WiFi_Server();
@@ -606,12 +610,34 @@ void Check_WiFi_Server() {
               client.println("<br>");
             }
             else {
-              client.print("CO2 Sensor: Winsen MH-Z14A");
+              client.print("CO2 Sensor: Winsen MH-Z14A/Z19x");
               client.println("<br>");
+              char myVersion[4];          
+              myMHZ19.getVersion(myVersion);
+              client.print("\nFirmware Version: ");
+              for(byte i = 0; i < 4; i++)
+              {
+                client.print(myVersion[i]);
+                if(i == 1)
+                  client.print(".");    
+              }
+              client.println("<br>");
+              client.print("Range: ");
+              client.println(myMHZ19.getRange());   
+              client.println("<br>");
+              client.print("Background CO2: ");
+              client.println(myMHZ19.getBackgroundCO2());
+              client.println("<br>");
+              client.print("Temperature Cal: ");
+              client.println(myMHZ19.getTempAdjustment());
+              client.println("<br>");
+              client.print("ABC Status: "); myMHZ19.getABC() ? Serial.println("ON") :  Serial.println("OFF");
+              client.println("<br>");
+              
             }
-
             client.println("<br>");
-            client.print("STATUS: ");
+            client.println("<br>");
+            client.print("### CO2 STATUS: ");
             switch (co2_device_status) {
               case ok:
                 client.print("OK");
@@ -623,7 +649,6 @@ void Check_WiFi_Server() {
                 client.print("ALARM");
                 break;
             }
-
             client.println("<br>");
             client.println("<br>");
 
@@ -727,14 +752,17 @@ void Setup_sensors() {
   else {
 
     // Initialize serial port to communicate with MHZ14A CO2 sensor. This is a software serial port
-    swSerial.begin(9600, SWSERIAL_8N1, swSerialRX_gpio, swSerialTX_gpio, false, 128);
+    //swSerial.begin(9600, SWSERIAL_8N1, swSerialRX_gpio, swSerialTX_gpio, false, 128);
     //Serial.println("swSerial Txd is on pin: " + String(swSerialTX_gpio));
     //Serial.println("swSerial Rxd is on pin: " + String(swSerialRX_gpio));
+
+    mySerial.begin(MHZ_BAUDRATE);                           // Uno example: Begin Stream with MHZ19 baudrate  
+    myMHZ19.begin(mySerial);                                // *Important, Pass your Stream reference here
 
     // Timestamp for serial up start time
     int serial_up_start = millis();
 
-    while (((!swSerial) && ((millis() - serial_up_start) < MHZ14A_SERIAL_TIMEOUT))) {
+    while (((!mySerial) && ((millis() - serial_up_start) < MHZ14A_SERIAL_TIMEOUT))) {
       Serial.println("Attempting to open serial port 1 to communicate to MHZ14A CO2 sensor");
       delay(1000); // wait 1 seconds for connection
     }
@@ -748,7 +776,27 @@ void Setup_sensors() {
 
     else {
 
-      Serial.println("CO2 sensor MH-Z14A detected.");
+      Serial.println("CO2 sensor MH-Z14A/MH-Z19x detected.");
+
+      char myVersion[4];          
+      myMHZ19.getVersion(myVersion);
+
+      Serial.print("\nFirmware Version: ");
+      for(byte i = 0; i < 4; i++)
+      {
+        Serial.print(myVersion[i]);
+        if(i == 1)
+          Serial.print(".");    
+      }
+
+      Serial.print("Range: ");
+      Serial.println(myMHZ19.getRange());   
+      Serial.print("Background CO2: ");
+      Serial.println(myMHZ19.getBackgroundCO2());
+      Serial.print("Temperature Cal: ");
+      Serial.println(myMHZ19.getTempAdjustment());
+      Serial.print("ABC Status: "); myMHZ19.getABC() ? Serial.println("ON") :  Serial.println("OFF");
+   
       err_co2 = false;
       co2_sensor = mhz14a;
 
@@ -815,29 +863,29 @@ void Read_MHZ14A() {
   int serial_up_start = millis();
 
   // clears out any garbage in the RX buffer
-  while (((swSerial.available()) && ((millis() - serial_up_start) < MHZ14A_SERIAL_TIMEOUT))) {
-    int garbage = swSerial.read();
+  while (((mySerial.available()) && ((millis() - serial_up_start) < MHZ14A_SERIAL_TIMEOUT))) {
+    int garbage = mySerial.read();
     delay(100);
-    Serial.println ("Cleaning swSerial data...");
+    Serial.println ("Cleaning mySerial data...");
   }
 
   // Send out read command to the sensor - 9 bytes
-  swSerial.write(measurement_command, 9);
+  mySerial.write(measurement_command, 9);
 
   // pauses the sketch and waits for the TX buffer to send all its data to the sensor
-  swSerial.flush();
+  mySerial.flush();
 
   // Timestamp for serial up start time
   serial_up_start = millis();
 
   // pauses the sketch and waits for the sensor response
-  if (((!swSerial.available()) && ((millis() - serial_up_start) < MHZ14A_SERIAL_TIMEOUT))) {
-    Serial.println ("Waiting for swSerial data...");
+  if (((!mySerial.available()) && ((millis() - serial_up_start) < MHZ14A_SERIAL_TIMEOUT))) {
+    Serial.println ("Waiting for mySerial data...");
     delay(1000);
   }
 
   // once data is available, it reads it to a variable 9 bytes
-  swSerial.readBytes(response_CO2, 9);
+  mySerial.readBytes(response_CO2, 9);
 
   // calculates CO2ppm value
   response_CO2_high = (int)response_CO2[2];
@@ -858,7 +906,7 @@ void Calibrate_MHZ14A() {
   Serial.println ("Calibrating MHZ14A CO2 sensor...");
 
   // Write calibration command
-  swSerial.write(calibration_command, 9);
+  mySerial.write(calibration_command, 9);
 
   // Waits for 3 seconds for the command to take effect
   delay(3000);
@@ -1354,7 +1402,7 @@ ICACHE_RAM_ATTR void push_button_handler() {
     Serial.println ("FLASH Push button interrupt - alarm_ack ON");
 
     // Switch off the buzzer and co2_builtin_LED, as in normal status
-    blinker_co2_builtin_LED.detach(); //Use attach_ms if you need time in ms CONTROL_LOOP_DURATION
+    blinker_co2_builtin_LED.detach(); //Use attach_ms if you need time in ms 
     digitalWrite(co2_builtin_LED, LOW);
 
     // Switch on blinking status_builtin_LED to reflect special mode, using WARNING_BLINK_PERIOD

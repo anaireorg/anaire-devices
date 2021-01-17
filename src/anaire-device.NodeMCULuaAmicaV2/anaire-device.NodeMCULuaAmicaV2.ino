@@ -58,7 +58,7 @@
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
 // - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
 
-String sw_version = "v1.20210117.EllingtonVol1";  // 
+String sw_version = "v1.20210117.EllingtonVol3";  // 
 
 // CLOUD CONFIGURATION: remote app url
 // CHANGE HERE if connecting to a different Anaire Cloud App
@@ -159,7 +159,7 @@ unsigned long SCD30_WARMING_TIME = 10000;                         // SCD30 CO2 s
 unsigned long SCD30_CALIBRATION_TIME = 180000;                    // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
 bool SCD30_AutoSelfCalibration = false;                           // SCD30 auto self calibration disabled
 uint16_t SCD30_MEASUREMENT_INTERVAL = control_loop_duration/1000; // time between measurements
-uint16_t SCD30_FORCED_CALIBRATION = 400;                          // SCD30 cero reference in a clean environment - Recommended 400
+uint16_t SCD30_FORCED_CALIBRATION = 410;                          // SCD30 cero reference in a clean environment - Recommended 400
 uint16_t SCD30_TEMPERATURE_OFFSET = 0;                            // SCD30 TEMPERATURE OFFSET: 5ºC
 uint16_t SCD30_ALTITUDE_COMPENSATION = 0;                         // Set to 650 meters, Madrid (Spain) mean altitude
 //#define SCD30_SERIAL_NUM_WORDS 3                    // added August 2020
@@ -957,6 +957,7 @@ void Calibrate_MHZ14A() {
 void Read_SCD30()
 {
 
+  // Init I2C bus for SCD30
   SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
   
   if (airSensor.dataAvailable())
@@ -989,6 +990,9 @@ void Calibrate_SCD30() {
   // Print info
   Serial.println ();
   Serial.println ("Calibrating SCD30 sensor...");
+
+  // Init I2C bus for SCD30
+  SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
   
   // Timestamp for calibrating start time
   int calibrating_start = millis();
@@ -1030,12 +1034,13 @@ void SCD30_Do_AutoSelfCalibration()
 {
 
   airSensor.setAutoSelfCalibration(SCD30_AutoSelfCalibration);
-  //Serial.print("Reading SCD30 AutoSelfCalibration: ");
-  //Serial.println(airSensor.getAutoSelfCalibration());
-  
+
   /*
   //Commented until getAutoSelfCalibration is implemented
   uint16_t val;
+  
+  // Init I2C bus for SCD30
+  SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
   
   //if (airSensor.getAutoSelfCalibration(&val)) {
   if (airSensor.getAutoSelfCalibration()) {
@@ -1069,6 +1074,9 @@ void SCD30_Do_Temperature_Offset()
 {
   uint16_t val;
 
+  // Init I2C bus for SCD30
+  SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
+  
   if (airSensor.getTemperatureOffset(&val)) {
     
     Serial.print("\nReading SCD30 Temperature Offset before change: ");
@@ -1100,19 +1108,22 @@ void SCD30_Do_Temperature_Offset()
 void SCD30_Do_Measurement_Interval()
 {
 
-  airSensor.setMeasurementInterval(SCD30_MEASUREMENT_INTERVAL);
+  //airSensor.setMeasurementInterval(SCD30_MEASUREMENT_INTERVAL);
 
-  /*
   uint16_t val;
-  if ( airSensor.getMeasurementInterval(&val) ) {
+  
+  // Init I2C bus for SCD30
+  SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
+  
+  if (airSensor.getMeasurementInterval(&val)) {
     Serial.print("\nReading SCD30 Measurement Interval before change: ");
     Serial.println(val);
 
     Serial.print("Setting SCD30 new Measurement Interval to: ");
     Serial.println(SCD30_MEASUREMENT_INTERVAL);
 
-    if ( airSensor.setMeasurementInterval(SCD30_MEASUREMENT_INTERVAL) ) {
-      Serial.print("Reset SCD30 Measurement Interval to: ");
+    if (airSensor.setMeasurementInterval(SCD30_MEASUREMENT_INTERVAL)) {
+      Serial.print("Change SCD30 Measurement Interval to: ");
       Serial.println(SCD30_MEASUREMENT_INTERVAL);
 
       if ( airSensor.getMeasurementInterval(&val) ) {
@@ -1125,7 +1136,7 @@ void SCD30_Do_Measurement_Interval()
       
     }
     else {
-      Serial.print("Could not reset SCD30 Measurement Interval to ");
+      Serial.print("Could not change SCD30 Measurement Interval to ");
       Serial.println(SCD30_MEASUREMENT_INTERVAL);
     }    
     
@@ -1133,16 +1144,19 @@ void SCD30_Do_Measurement_Interval()
   else {
     Serial.println("Could not obtain SCD30 Measurement Interval");
   }
-  */
+  
 }
 
 void SCD30_Do_Forced_Calibration_Factor()
 {
 
-  airSensor.setForceRecalibration(SCD30_FORCED_CALIBRATION);
+  //airSensor.setForceRecalibration(SCD30_FORCED_CALIBRATION);
   
-  /*
   uint16_t val;
+ 
+  // Init I2C bus for SCD30
+  SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
+  
   if ( airSensor.getForceRecalibration(&val) ) {
     Serial.print("\nReading SCD30 Forced Calibration Factor before change: ");
     Serial.println(val);
@@ -1167,13 +1181,12 @@ void SCD30_Do_Forced_Calibration_Factor()
   else {
     Serial.println("Could not obtain SCD30 Forced Calibration Factor");
   }
-  */
+  
 }
 
 void SCD30_Do_Altitude_Compensation()
 {
-  uint16_t val;
-
+  
   /* paulvha : you can set EITHER the Altitude compensation of the pressure.
    * Setting both does not make sense as both overrule each other, but it is included for demonstration
    *
@@ -1186,7 +1199,12 @@ void SCD30_Do_Altitude_Compensation()
    *
    *    Setting altitude is disregarded when an ambient pressure is given to the sensor
    */ 
- 
+
+  uint16_t val;
+
+  // Init I2C bus for SCD30
+  SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
+  
   if ( airSensor.getAltitudeCompensation(&val) ) {
     Serial.print("\nReading SCD30 Altitude Compensation before change: ");
     Serial.println(val);
@@ -1222,6 +1240,8 @@ void SCD30DeviceInfo()
   // Read SCD30 serial number as printed on the device
   // buffer MUST be at least 33 digits (32 serial + 0x0)
 
+  // Init I2C bus for SCD30
+  SCD30WIRE.begin(SCD30_SDA_GPIO, SCD30_SCK_GPIO);
   
   if (airSensor.getSerialNumber(buf))
   {

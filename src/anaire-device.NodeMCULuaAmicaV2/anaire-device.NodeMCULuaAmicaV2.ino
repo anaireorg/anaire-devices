@@ -58,7 +58,7 @@
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
 // - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
 
-String sw_version = "v1.20210116.MingusVol1";  // 
+String sw_version = "v1.20210117.EllingtonVol1";  // 
 
 // CLOUD CONFIGURATION: remote app url
 // CHANGE HERE if connecting to a different Anaire Cloud App
@@ -87,7 +87,7 @@ struct MyEEPROMStruct {
 } eepromConfig;
 
 // Control Loop: time between measurements
-unsigned int control_loop_duration = 2000;  // 2 seconds
+unsigned int control_loop_duration = 5000;  // 5 seconds
 unsigned long control_loop_start;           // holds a timestamp for each control loop start
 unsigned long lastReconnectAttempt = 0;     // MQTT reconnections
 
@@ -155,13 +155,13 @@ PubSubClient mqttClient(wifi_client);
 #define SCD30_SCK_GPIO 14 // signal GPIO14 (D5)
 #define SCD30_SDA_GPIO 12 // signal GPIO12 (D6)
 SCD30 airSensor;
-unsigned long SCD30_WARMING_TIME = 10000;                     // SCD30 CO2 sensor warming time: 10 seconds
-unsigned long SCD30_CALIBRATION_TIME = 180000;                // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
-bool SCD30_AutoSelfCalibration = false;                       // SCD30 auto self calibration disabled
-uint16_t SCD30_MEASUREMENT_INTERVAL = control_loop_duration;  // time between measurements
-uint16_t SCD30_FORCED_CALIBRATION = 500;                      // SCD30 cero reference in a clean environment - Recommended 400
-uint16_t SCD30_TEMPERATURE_OFFSET = 0;                        // SCD30 TEMPERATURE OFFSET: 5ºC
-uint16_t SCD30_ALTITUDE_COMPENSATION = 0;                   // Set to 650 meters, Madrid (Spain) mean altitude
+unsigned long SCD30_WARMING_TIME = 10000;                         // SCD30 CO2 sensor warming time: 10 seconds
+unsigned long SCD30_CALIBRATION_TIME = 180000;                    // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
+bool SCD30_AutoSelfCalibration = false;                           // SCD30 auto self calibration disabled
+uint16_t SCD30_MEASUREMENT_INTERVAL = control_loop_duration/1000; // time between measurements
+uint16_t SCD30_FORCED_CALIBRATION = 400;                          // SCD30 cero reference in a clean environment - Recommended 400
+uint16_t SCD30_TEMPERATURE_OFFSET = 0;                            // SCD30 TEMPERATURE OFFSET: 5ºC
+uint16_t SCD30_ALTITUDE_COMPENSATION = 0;                         // Set to 650 meters, Madrid (Spain) mean altitude
 //#define SCD30_SERIAL_NUM_WORDS 3                    // added August 2020
 // The longer serial number is 16 words / 32 bytes (means 48 bytes with CRC).
 // Most I2C buffers are by default 32. Hence the length is kept to the
@@ -994,7 +994,7 @@ void Calibrate_SCD30() {
   int calibrating_start = millis();
 
   // Set 2 seconds between measurements, required at least 2 minutes prior to calibration
-  //airSensor.setMeasurementInterval(2);
+  airSensor.setMeasurementInterval(2);
   
   // Wait for calibrating time while reading values at maximum speed
   int counter = SCD30_CALIBRATION_TIME / 1000;
@@ -1019,7 +1019,7 @@ void Calibrate_SCD30() {
   delay(2000);
   
   // Restore Measurement Interval
-  //SCD30_Do_Measurement_interval();
+  SCD30_Do_Measurement_Interval();
 
   // Print info
   Serial.println ("SCD30 sensor calibrated");
@@ -1099,8 +1099,11 @@ void SCD30_Do_Temperature_Offset()
 
 void SCD30_Do_Measurement_Interval()
 {
-  uint16_t val;
 
+  airSensor.setMeasurementInterval(SCD30_MEASUREMENT_INTERVAL);
+
+  /*
+  uint16_t val;
   if ( airSensor.getMeasurementInterval(&val) ) {
     Serial.print("\nReading SCD30 Measurement Interval before change: ");
     Serial.println(val);
@@ -1130,12 +1133,16 @@ void SCD30_Do_Measurement_Interval()
   else {
     Serial.println("Could not obtain SCD30 Measurement Interval");
   }
+  */
 }
 
 void SCD30_Do_Forced_Calibration_Factor()
 {
-  uint16_t val;
 
+  airSensor.setForceRecalibration(SCD30_FORCED_CALIBRATION);
+  
+  /*
+  uint16_t val;
   if ( airSensor.getForceRecalibration(&val) ) {
     Serial.print("\nReading SCD30 Forced Calibration Factor before change: ");
     Serial.println(val);
@@ -1160,7 +1167,7 @@ void SCD30_Do_Forced_Calibration_Factor()
   else {
     Serial.println("Could not obtain SCD30 Forced Calibration Factor");
   }
-
+  */
 }
 
 void SCD30_Do_Altitude_Compensation()

@@ -34,7 +34,7 @@
 //   Double Reset detector by Stephen Denne https://github.com/datacute/DoubleResetDetector
 
 //   MHZ-Z19 Library from WifWaf https://github.com/WifWaf/MH-Z19 Library - to manage Winsen CO2 sensors - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
-//   Modified paulvha SCD30 library https://github.com/paulvha/scd30 - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
+//   Modified paulvha SCD30 library, get it from anaire github on  - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
 
 // Design leads: revisaaaaaaaaareeee
 
@@ -2017,7 +2017,7 @@ void firmware_update() {
 
   switch (ret) {
     case HTTP_UPDATE_FAILED:
-      Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+      Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
       break;
 
     case HTTP_UPDATE_NO_UPDATES:

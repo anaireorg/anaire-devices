@@ -34,36 +34,32 @@
 //   Double Reset detector by Stephen Denne https://github.com/datacute/DoubleResetDetector
 
 //   MHZ-Z19 Library from WifWaf https://github.com/WifWaf/MH-Z19 Library - to manage Winsen CO2 sensors - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
-//   Modified paulvha SCD30 library, get it from anaire github on  - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
+//   Modified paulvha SCD30 library, get it from anaire github on https://github.com/anaireorg/anaire-devices/blob/main/src/scd30-master.zip - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
 
-// Design leads: revisaaaaaaaaareeee
+// Design leads: 
 
-// - The ID and IP address are shown on OLED display during boot and after pressing the Flash button
-// - Pressing the reset button (left of usb connector when facing it) twice in less than 10 seconds restarts the device in a captive web configuration portal, useful to configure local wifi settings
+// - The ID (last 3 fields from MAC address) and IP address are shown on OLED display during boot and after pressing the Flash button
+// - Pressing the reset button ("R") twice in less than 10 seconds restarts the device in a captive web configuration portal, useful to configure local wifi settings and MQTT endpoint
 // - All other local config parameters (like name, thresholds, local alarm, etc.) are configured via the cloud app, after connecting
-// - Pressing Flash button (right of the USB connector while facing it) toggles between activating/deactivating local alarms (visual and sound)
-//   * Stops local alerting (both sound and blinking) until pressed again or until CO2 level decays below the warning threshold, deactivating therefore local alerting and reseting the local alerting system
-//   * It also shows device ID and IP address after being pressed until a new CO2 measurement is displayed
+// - Pressing Alarm button ("A") toggles between activating/deactivating local sound alarm alarms, and also show device information on the display
+//   * Stops local sound alerting until pressed again or until CO2 level decays below the warning threshold, deactivating therefore local alerting and reseting the local alerting system
+//   * It also shows device ID and IP address after being pressed during 3 seconds
+// - Pressing Alarm button ("A") during more than 10s activates forced calibration
 // - Firmware update with latest fimrware available though cloud app
 //   * Always using latest firmware on https://github.com/anaireorg/anaire-devices/blob/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin
-// - Built in LED in GPIO16-D0 (the one that blinks near the nodemcu usb connector) is also connected to the external buzzer
-//   * When CO2 Status is "ok" (below warning threshold) LED keeps ON and buzzer is off
-//   * When CO2 Status is "warning" builtin LED and external buzzer alternate at a slow pace (WARNING_BLINK_PERIOD)
-//   * When CO2 Status is "alarm" builtin LED and external buzzer alternate at fast pace (ALARM_BLINK_PERIOD)
-//   This GPIO16 is also used when downloading SW to the nodemcu board: the external buzzer sounds while downloading to the board
-// - SSD1306 OLED display is connected on GPIO4(D2) and GPIO2 (D4)
+// - Built in LED in GPIO16-D0 (the one that blinks near the nodemcu usb connector):
+//   * When CO2 Status is "ok" (below warning threshold) LED and buzzer are off (normal status)
+//   * When CO2 Status is "warning" builtin LED and external buzzer alternate blink at a slow pace (WARNING_BLINK_PERIOD)
+//   * When CO2 Status is "alarm" builtin LED and external buzzer alternate blink at fast pace (ALARM_BLINK_PERIOD)
 // - Two options for sensors:
 //   * Either Sensirion SCD30 for CO2, temperature and humidity
-//     * connected on pins 3V3, GND, GPIO14(D5) and GPIO12(D6), all consecutive on the NodeMCU LUA Amica V2 right hand side and coincident on the first 4 pins on SCD30
-//   * Or MH-Z14A for CO2, and DHT11 for temnperature and humidity
-//     * MHZ-14A CO2 sensor is connected through a software serial port using GPIO13(D7) and GPIO15(D8)
-//     * DHT11 humidity and temperature sensor ins connected on GPIO 5 (D1)
+//   * Or MH-Z14A for CO2, and DHT11 for temperature and humidity
 // - The device is designed to work only with the CO2 sensor, so buzzer, DHT11 humidity and temperature sensor, and OLED display are optional
-// - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures
-// - The web server is activated, therefore entering the IP on a browser allows to see the device measurements and thresholds.
+// - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures. Local measurements will always be shown in the local display
+// - The web server is activated, therefore entering the IP on a browser allows to see device specific details and measurements; device forced calibration is also available through the web server
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v2.20210202.delaniene"; 
+String sw_version = "v2.20210202.delaniene"; // Ven mi amor en la tarde del Aniene y siéntate conmigo a ver el viento (R. Alberti) ///////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen

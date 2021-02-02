@@ -49,7 +49,7 @@ Toda la información se publica en formato "open source", tanto diseño hardware
 <a name="2"></a>
 # 2. Características
 
-**Versión actual: 31.01 birlibirloque (enero de 2021)**
+**Versión actual: 20200202.delaniene (Febrero de 2021)**
 
 * Medición de CO2 mediante sensores NDIR de alta precisión
   * Adicionalmente se realizan de forma simultánea mediciones de temperatura y de humedad
@@ -238,13 +238,13 @@ https://www.arduino.cc/en/software
 
  <a name="4.2"></a>
 ## 4.2 Software del Medidor de CO2 de ANAIRE
-###Instalación con binario (más fácil)
+### Instalación con binario (más fácil)
 Mediante un código mínimo sin dependecias en otras librerías podemos hacer que el dispositivo descargue automáticamente el último binario disponible en el repositorio. Este código está disponible en https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/AnaireUpdate/AnaireUpdate.ino
 
 
 Será necesario editar las constantes APSSID y APPSK para dar las credenciales de la wifi. Pulsando el botón "Subir"/"Upload" se compilará y cargará este código en la tarjeta. Al ejecutarse descargará el último binario de Anaire y se reiniciará, arrancando con la última versión estable de nuestro software y la wifi ya configurada.
 
-###Instalación de fuente
+### Instalación de fuente
 El programa (software) está disponible en su última versión en el siguiente enlace de este repositorio:  
 https://github.com/anaireorg/anaire-devices/raw/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino. Es necesario satisfacer todas las dependencias de librerías que se enumeran en los comentarios al comienzo del código.
 
@@ -349,7 +349,6 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
 ### Montaje final  
 ***Montaje sobre breadboard:***
 
-
 Si ya tenías el dispositivo montado con el cableado antiguo, debes tener en cuenta que en el montaje actual los pines D5 y D6 se usan para proporcionar las senales de reloj y datos  al display. Adicionalmente la señal para el zumbador ahora está en D2.
 
 
@@ -362,7 +361,6 @@ El siguiente vídeo muestra el montaje completo teniendo en cuenta el nuevo cabl
 
 [![Montaje de Anaire50ppm Breadboard](http://img.youtube.com/vi/tY8MLtDSswg/0.jpg)](https://youtu.be/tY8MLtDSswg)
 
-
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire50ppm.jpg" width="60%" height="60%" />
 </p>  
@@ -373,7 +371,6 @@ Montaje sobre breadboard en caja Anaire50ppm:
 </p>
 
 ***Montaje en caja AnaireBox:***
-
 
 Si ya tenías el dispositivo montado con el cableado antiguo, debes tener en cuenta que en el montaje actual los pines D5 y D6 se usan para proporcionar las senales de reloj y datos  al display. Adicionalmente la señal para el zumbador ahora está en D2.
 
@@ -386,7 +383,6 @@ El siguiente vídeo muestra los cambios que hay que ejecutar si ya se tenía el 
 El siguiente vídeo muestra el montaje completo teniendo en cuenta el nuevo cableado.
 
 [![Montaje de Anaire50ppm Box](http://img.youtube.com/vi/fMnoskmz7p4/0.jpg)](https://youtu.be/fMnoskmz7p4)
-
 
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire50ppmBox.jpg" width="50%" height="50%" />
@@ -454,12 +450,12 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
 * Acceso por internet a las medidas:
   * Si se han dejado los valores por defecto de la aplicación en la nube, se puede acceder a los valores medidos por el dispositivo en los siguientes enlaces:
     * Valores actuales en modo kiosko (sustituir [ID_del_sensor] por el ID del medidor, y [Nombre_que_se_desea_visualizar] por el nombre deseado):  
-    https://demo.anaire.org/sensor/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]
+    https://portal.anaire.org/sensor/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]
     <p align="center">
       <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="30%" height="30%" />
     </p>  
     * Valores actuales con acceso a histórico (sustituir [ID_del_sensor] por el ID del medidor, y [Nombre_que_se_desea_visualizar] por el nombre deseado):  
-    https://demo.anaire.org/detalle/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]  
+    https://portal.anaire.org/detalle/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]  
 
 <a name="7.1"></a>
 ## 7.1 Errores

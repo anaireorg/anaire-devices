@@ -337,7 +337,7 @@ El siguiente vídeo muestra el montaje completo teniendo en cuenta el nuevo cabl
 
 ### Esquema de conexiones  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/ANAIRE_30_ppm.png" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/ANAIRE_50_ppm.png" width="60%" height="60%" />
 </p>  
 
 ### Detalle del sensor MH-Z14A  

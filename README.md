@@ -49,7 +49,7 @@ Toda la información se publica en formato "open source", tanto diseño hardware
 <a name="2"></a>
 # 2. Características
 
-**Versión actual: 31.01 birlibirloque (enero de 2021)**
+**Versión actual: 20200202.delaniene (Febrero de 2021)**
 
 * Medición de CO2 mediante sensores NDIR de alta precisión
   * Adicionalmente se realizan de forma simultánea mediciones de temperatura y de humedad
@@ -238,13 +238,13 @@ https://www.arduino.cc/en/software
 
  <a name="4.2"></a>
 ## 4.2 Software del Medidor de CO2 de ANAIRE
-###Instalación con binario (más fácil)
-Mediante un código mínimo sin dependecias en otras librerías podemos hacer que el dispositivo descargue automáticamente el último binario disponible en el repositorio. Este código está disponible en https://github.com/anaireorg/anaire-devices/raw/main/AnaireUpdate/AnaireUpdate.ino
+### Instalación con binario (más fácil)
+Mediante un código mínimo sin dependecias en otras librerías podemos hacer que el dispositivo descargue automáticamente el último binario disponible en el repositorio. Este código está disponible en https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/AnaireUpdate/AnaireUpdate.ino
 
 
 Será necesario editar las constantes APSSID y APPSK para dar las credenciales de la wifi. Pulsando el botón "Subir"/"Upload" se compilará y cargará este código en la tarjeta. Al ejecutarse descargará el último binario de Anaire y se reiniciará, arrancando con la última versión estable de nuestro software y la wifi ya configurada.
 
-###Instalación de fuente
+### Instalación de fuente
 El programa (software) está disponible en su última versión en el siguiente enlace de este repositorio:  
 https://github.com/anaireorg/anaire-devices/raw/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino. Es necesario satisfacer todas las dependencias de librerías que se enumeran en los comentarios al comienzo del código.
 
@@ -295,21 +295,17 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
 </p>  
 
 ### Montaje final  
-Montaje sobre breadboard:
+***Montaje sobre breadboard:***
 
 
 Si ya tenías el dispositivo montado con el cableado antiguo, debes tener en cuenta que en el montaje actual los pines D5 y D6 se usan para proporcionar las senales de reloj y datos tanto al display como al SCD30. Adicionalmente la señal para el zumbador ahora está en D2.
 
 
 El siguiente vídeo muestra el montaje completo teniendo en cuenta el nuevo cableado.
+
 [![Montaje Anaire30ppm breadboard](http://img.youtube.com/vi/d87cvSwYpxk/0.jpg)](https://youtu.be/d87cvSwYpxk)
 
-
 En este caso es relevante destacar que tras soldar los cuatro pines en el SCD30, utilizando éstos se puede pinchar el componente directamente en la placa de prototipado, alineado correctamente con los pines de la NodeMCU para que se verifique el cableado deseado, ahorrando así cuatro cables y facilitando el engarce mecánico del conjunto de una forma sencilla y muy efectiva.
-
-<p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire30ppm.jpg" width="60%" height="60%" />
-</p>  
 
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire30ppm.jpg" width="60%" height="60%" />
@@ -317,13 +313,15 @@ En este caso es relevante destacar que tras soldar los cuatro pines en el SCD30,
 
 Este montaje es muy sencillo de rrealizar, pero hay que tener en cuenta que la proximidad entre el sensor SCD30 y el microcontrolador en la placa NodeMCU puede producir que haya alteración de las medidas realizadas, especialmente las de temperatura y humedad, así que se recomienda utilizar el montaje en caja 3D AnaireBox, descrito a continuación:
 
-Montaje en caja AnaireBox:  
+***Montaje en caja AnaireBox:***  
 
 Si ya tenías el dispositivo montado con el cableado antiguo, debes tener en cuenta que en el montaje actual los pines D5 y D6 se usan para proporcionar las senales de reloj y datos tanto al display como al SCD30. Adicionalmente la señal para el zumbador ahora está en D2.
 
 
 El siguiente vídeo muestra el montaje completo teniendo en cuenta el nuevo cableado.
+
 [![Montaje Anaire30ppm box](http://img.youtube.com/vi/VRJ4Hir3wzU/0.jpg)](https://youtu.be/VRJ4Hir3wzU)
+
 
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire30ppmBox.jpg" width="40%" height="40%" />
@@ -339,7 +337,7 @@ El siguiente vídeo muestra el montaje completo teniendo en cuenta el nuevo cabl
 
 ### Esquema de conexiones  
 <p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/ConexionesAnaire50ppm.png" width="60%" height="60%" />
+  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/ConexionesAnaire50ppm.jpg" width="60%" height="60%" />
 </p>  
 
 ### Detalle del sensor MH-Z14A  
@@ -349,46 +347,42 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
 </p>  
 
 ### Montaje final  
-Montaje sobre breadboard:  
-
+***Montaje sobre breadboard:***
 
 Si ya tenías el dispositivo montado con el cableado antiguo, debes tener en cuenta que en el montaje actual los pines D5 y D6 se usan para proporcionar las senales de reloj y datos  al display. Adicionalmente la señal para el zumbador ahora está en D2.
 
 
 El siguiente vídeo muestra los cambios que hay que ejecutar si ya se tenía el dispositivo montado con el esquema anterior.
+
 [![Cambio de cableado Anaire50ppm Breadboard](http://img.youtube.com/vi/HLhhD4nTN8M/0.jpg)](https://youtu.be/HLhhD4nTN8M)
 
 
 El siguiente vídeo muestra el montaje completo teniendo en cuenta el nuevo cableado.
+
 [![Montaje de Anaire50ppm Breadboard](http://img.youtube.com/vi/tY8MLtDSswg/0.jpg)](https://youtu.be/tY8MLtDSswg)
-
-
-<p align="center">
-  <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MontajeAnaire50ppm.jpg" width="50%" height="50%" />
-</p>  
 
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire50ppm.jpg" width="60%" height="60%" />
 </p>  
 
-Montaje sobre breadboard en caja AnaireBread:  
+Montaje sobre breadboard en caja Anaire50ppm:  
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire50ppmBreadBox.jpg" width="40%" height="40%" />
 </p>
 
-Montaje en caja AnaireBox:  
-
+***Montaje en caja AnaireBox:***
 
 Si ya tenías el dispositivo montado con el cableado antiguo, debes tener en cuenta que en el montaje actual los pines D5 y D6 se usan para proporcionar las senales de reloj y datos  al display. Adicionalmente la señal para el zumbador ahora está en D2.
 
 
 El siguiente vídeo muestra los cambios que hay que ejecutar si ya se tenía el dispositivo montado con el esquema anterior.
+
 [![Cambio de cableado Anaire50ppm Box](http://img.youtube.com/vi/Mp4hJcAS_nw/0.jpg)](https://youtu.be/Mp4hJcAS_nw)
 
 
 El siguiente vídeo muestra el montaje completo teniendo en cuenta el nuevo cableado.
-[![Montaje de Anaire50ppm Box](http://img.youtube.com/vi/fMnoskmz7p4/0.jpg)](https://youtu.be/fMnoskmz7p4)
 
+[![Montaje de Anaire50ppm Box](http://img.youtube.com/vi/fMnoskmz7p4/0.jpg)](https://youtu.be/fMnoskmz7p4)
 
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Anaire50ppmBox.jpg" width="50%" height="50%" />
@@ -400,7 +394,9 @@ El siguiente vídeo muestra el montaje completo teniendo en cuenta el nuevo cabl
 
 <a name="5.3"></a>
 ## 5.3 Carga del software
+
 [![Preparación del entorno y carga del software para Anaire30ppm y Anaire50ppm](http://img.youtube.com/vi/nSNwYwKNmuk/0.jpg)](https://youtu.be/nSNwYwKNmuk?t=260)
+
 
 Una vez completado el montaje de los componentes, hay que proceder a la descarga del software en la tarjeta de control NodeMCU. El software es el mismo, independientemente del modelo de medidor que se haya fabricado. Para ello realice los siguientes pasos:
 
@@ -454,12 +450,12 @@ Una vez completado el montaje de los componentes, hay que proceder a la descarga
 * Acceso por internet a las medidas:
   * Si se han dejado los valores por defecto de la aplicación en la nube, se puede acceder a los valores medidos por el dispositivo en los siguientes enlaces:
     * Valores actuales en modo kiosko (sustituir [ID_del_sensor] por el ID del medidor, y [Nombre_que_se_desea_visualizar] por el nombre deseado):  
-    https://demo.anaire.org/sensor/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]
+    https://portal.anaire.org/sensor/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]
     <p align="center">
       <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/MedidasModoKiosko.jpg" width="30%" height="30%" />
     </p>  
     * Valores actuales con acceso a histórico (sustituir [ID_del_sensor] por el ID del medidor, y [Nombre_que_se_desea_visualizar] por el nombre deseado):  
-    https://demo.anaire.org/detalle/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]  
+    https://portal.anaire.org/detalle/[ID_del_sensor]/[Nombre_que_se_desea_visualizar]  
 
 <a name="7.1"></a>
 ## 7.1 Errores

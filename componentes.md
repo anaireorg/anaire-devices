@@ -1,5 +1,5 @@
 # Lista en AliExpress
-Comprar los componentes en Aliexpress hace que el Anaire50ppm pueda construirse por sólo 20€. El inconveniente es que habrá que esperar varios días a que los componentes lleguen desde China. Cuidado: algunos productos pueden tener múltiples opciones al realizar la compra.  
+Al comprar los componentes en Aliexpress, el Anaire50ppm puede construirse por sólo 20€. El inconveniente es que habrá que esperar varios días a que los componentes lleguen desde China. Cuidado: algunos productos pueden tener múltiples opciones al realizar la compra.  
 
 ## Anaire50ppm en AliExpress:
  - [Sensor CO2 MH-Z14A](https://es.aliexpress.com/item/32663184156.html?spm=a2g0s.9042311.0.0.274263c0jDdpWO)
@@ -40,6 +40,6 @@ Comprar los componentes en Amazon encarece el dispositivo, pero se pueden tener 
 
 **Recomendación general:** Independientemente de si se compra a AliExpress o a Amazon, algún componente puede ser defectuoso. Es mejor, por tanto, comprar más unidades de las que realmente se necesitan, especialmente en el caso de AliExpress, pues el reemplazo tardaría más en llegar. Los sensores de CO2, que son la pieza más cara, son bastante fiables, así que no es tan necesario comprar unidades de más.
 
-**Es Necesario un cargador Micro-USB para alimentar el medidor** En las listas no se ha incluido un cargador micro-usb necesario para alimentar a los dispositivos. Hay muchas opciones, como por ejemplo https://www.amazon.es/gp/product/B00U88KSHO/ref=ppx_yo_dt_b_asin_title_o07_s00?ie=UTF8&psc=1
-En cualquier caso cualquier cargador de 5V y 1A al menos funcionará bien.
+**Es Necesario un cargador Micro-USB para alimentar el medidor** En las listas no se ha incluido un cargador micro-usb necesario para alimentar a los dispositivos ya que es bastante normal disponer de este tipo de cargadores. Hay muchas opciones, como por ejemplo https://www.amazon.es/gp/product/B00U88KSHO/ref=ppx_yo_dt_b_asin_title_o07_s00?ie=UTF8&psc=1
+En cualquier caso cualquier cargador Micro-USB de 5V y que proporcione al menos 1A debe valer sin problemas.
 

@@ -1,5 +1,5 @@
 # Lista en AliExpress
-Al comprar los componentes en Aliexpress, el Anaire50ppm puede construirse por sólo 20€. El inconveniente es que habrá que esperar varios días a que los componentes lleguen desde China. Cuidado: algunos productos pueden tener múltiples opciones al realizar la compra.  
+El medidor Anaire50ppm puede construirse por sólo 20€ si se compran los componentes en Aliexpress. El inconveniente es que habrá que esperar varios días a que los componentes lleguen desde China. Cuidado: algunos productos pueden tener múltiples opciones al realizar la compra.  
 
 ## Anaire50ppm en AliExpress:
  - [Sensor CO2 MH-Z14A](https://es.aliexpress.com/item/32663184156.html?spm=a2g0s.9042311.0.0.274263c0jDdpWO)

@@ -42,4 +42,3 @@ Comprar los componentes en Amazon encarece el dispositivo, pero se pueden tener 
 
 **Es necesario un cargador Micro-USB para alimentar el medidor.** En las listas no se ha incluido un cargador micro-usb necesario para alimentar a los dispositivos ya que es bastante normal disponer de este tipo de cargadores. Hay muchas opciones, como por ejemplo https://www.amazon.es/gp/product/B00U88KSHO/ref=ppx_yo_dt_b_asin_title_o07_s00?ie=UTF8&psc=1
 En cualquier caso cualquier cargador Micro-USB de 5V y que proporcione al menos 1A debe valer sin problemas.
-

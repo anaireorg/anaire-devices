@@ -1,9 +1,8 @@
 # Medidor ANAIRE: CO2 (NDIR), temperatura y humedad
-*anaireorg/anaire-devices is licensed under the GNU General Public License v3.0*
 
 *@Asociación Anaire www.anaire.org anaire@anaire.org*
 
-Fabricación de un medidor de CO2, temperatura y humedad, de mínimo coste y alta precisión, conectado por WiFi a una aplicación en la nube denominada Anaire Cloud App para mostrar los valores instantáneos y el histórico de mediciones de CO2, temperatura y humedad, facilitando así el análisis de la información de las medidas y su correlación con protocolos de ventilación anti COVID-19.
+Fabricación de medidores de CO2, temperatura y humedad, de bajo coste y alta precisión, conectados por WiFi a una aplicación en la nube denominada Anaire Cloud App para mostrar los valores instantáneos y el histórico de mediciones de CO2, temperatura y humedad, facilitando así el análisis de la información de las medidas y su correlación con protocolos de ventilación anti COVID-19.
 
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/AnaireBoxFrontal2.jpg" width="40%" height="40%" />
@@ -34,30 +33,37 @@ Fabricación de un medidor de CO2, temperatura y humedad, de mínimo coste y alt
 <a name="1"></a>
 # 1. Medición de CO2 con sensores NDIR y envío de las medidas a la nube para su monitorización contínua
 
-El concepto se muestra en la siguiente imagen. Se trata de un dispositivo basado en un microcontrolador ESP8266, al que se conectan sensores para la medida de CO2, temperatura y humedad. El dispositivo tiene un display para mostrar las medidas e indicaciones de estado, un LED y un zumbador para poder emitir alertas visuales y sonoras, y un botón para poder deshabilitar la alerta local. Dispone de conectividad WiFi para poder enviar las mediciones realizadas a una aplicación en la nube, Anaire Cloud (https://github.com/anaireorg/anaire-cloud), que permite agregar la información de múltiples dispositivos y acceder al histórico de medidas desde cualquier dispositivo vía Internet.  
+Se trata de un dispositivo basado en un microcontrolador ESP8266, al que se conectan sensores para la medida de CO2, temperatura y humedad. El dispositivo incorpora un display para mostrar localmente las medidas e indicaciones de estado, un LED y un zumbador para poder emitir alertas visuales y acústicas, y un botón para poder deshabilitar la alerta acústica. Dispone de conectividad WiFi para poder enviar las mediciones realizadas a una aplicación en la nube, Anaire Cloud (https://github.com/anaireorg/anaire-cloud), que permite agregar la información de múltiples dispositivos y acceder al histórico de medidas desde cualquier dispositivo vía Internet.  
 
 <p align="center">
   <img src="https://github.com/anaireorg/anaire-devices/blob/main/images/dispositivos/Dispositivo_ANAIRE.png" width="90%" height="90%"/>
 </p>
 
-En este repositorio se publica información completa para la fabricación del medidor de CO2 Anaire, desde el código fuente hasta las especificaciones de componentes, cableados y opciones de montaje tanto en placa de prototipado como utilizando cajas de impresión 3D para la disposición de los componentes. La intención es que cualquier persona pueda encontrar aquí la información necesaria y suficiente para montar su propio sensor de CO2, con o sin conexión a la nube, sin necesidad de grandes conocimientos técnicos, como ayuda para combatir la pandemia causada por la COVID-19, ayudando a preparar entornos más seguros, con mínimos niveles de CO2, que puedan ayudar a prevenir contagios en entornos cerrados.
+En este repositorio se publica información completa para la fabricación de los distintos modelos de medidor de CO2 Anaire, desde el código fuente hasta las especificaciones de componentes, cableados y opciones de montaje tanto en placa de prototipado como utilizando cajas de impresión 3D para la colocación de los componentes. La intención es que cualquier persona pueda encontrar aquí la información necesaria y suficiente para montar su propio sensor de CO2, con o sin conexión a la nube, sin necesidad de grandes conocimientos técnicos, como ayuda para combatir la pandemia causada por la COVID-19, ayudando a preparar entornos más seguros, con mínimos niveles de CO2, que contribuyan a prevenir contagios en entornos cerrados.
 
-Toda la información se publica en formato "open source", tanto diseño hardware como código software, con el ánimo de facilitar el uso y difusión de la tecnología todo lo posible. Con el mismo espíritu se tratan de resolver todas las incidencias reportadas en los repositorios de Anaire (*issues*).
+Toda la información se publica en formato "open source", tanto los diseños hardware como el software (código fuente), con el ánimo de facilitar el uso y difusión de la tecnología todo lo posible. Con el mismo espíritu se tratan de resolver todas las incidencias reportadas en todos los canales donde la asociación está presente:
+  
+Página web: www.anaire.org
+Correo electrónico: anaire@anaire.org
+Canal de Youtube: https://www.youtube.com/channel/UCOwQjsH4QQhcznWKxydhbZg
+Twitter: @Anaire_co2
+Instagram: anaire_co2
+Facebook: @anaireco2
 
 ---  
 
 <a name="2"></a>
 # 2. Características
 
-**Versión actual: 20200202.delaniene (Febrero de 2021)**
+**Versión actual: "2.20210221.TRBLNGS" // Trabalenguas pandémico en día casi palindrómico (21 de Febrero de 2021)**
 
-* Medición de CO2 mediante sensores NDIR de alta precisión
+* Medición de CO2 mediante sensores NDIR de alta precisión cada 5 segundos
   * Adicionalmente se realizan de forma simultánea mediciones de temperatura y de humedad
-  * Cada 30 segundos las medidas se vuelven a realizar, se actualizan en el display y se envían a la nube
+  * Cada 30 segundos las medidas se envían a la aplicación en la nube y pueden ser visualizadas en http://portal.anaire.org
 
-* Completamente opensource, tanto hardware como software. Toda la información, tanto sobre este dispositivo como sobre la aplicación en la nube con la que se comunica, está disponible en los repositorios de Anaire en github (https://github.com/anaireorg). Sin excepciones.  
+* Completamente open source, tanto hardware como software. Toda la información, tanto sobre este dispositivo como sobre la aplicación en la nube con la que se comunica, está disponible en los repositorios de Anaire en github (https://github.com/anaireorg). Sin excepciones.  
 
-* Alarma local, visual y sonora, cuando el nivel de CO2 sobrepara los umbrales de aviso (700 ppm por defecto) y alarma (1000 ppm por defecto)
+* Alarma local, visual y acústica, cuando el nivel de CO2 sobrepara los umbrales de aviso (700 ppm por defecto) y alarma (1000 ppm por defecto)
   * Esta alarma puede conmutarse localmente (encendido/apagado) mediante un botón en el dispositivo o desde la configuración del dispositivo en la nube.  
 
 * Conexión a una red WiFi para el envío de las medidas a una aplicación desplegada en la nube con objeto de obtener los siguientes beneficios adicionales:

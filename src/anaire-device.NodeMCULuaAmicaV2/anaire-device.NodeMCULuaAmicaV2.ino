@@ -58,9 +58,11 @@
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures. Local measurements will always be shown in the local display
 // - The web server is activated, therefore entering the IP on a browser allows to see device specific details and measurements; device forced calibration is also available through the web server
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v2.20210202.delaniene"; // Ven mi amor en la tarde del Aniene y siéntate conmigo a ver el viento (R. Alberti) ///////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+String sw_version = "2.20210221.TRBLNGS";   // Trabalenguas pandémico en día casi palindrómico
+// Range of Winsen MH-Z14A/MH-Z19c set up to 2000ppm as it is enough to secure environments against COVID and provides more accuracy
+// The CO2 measurement sent by MQTT every MQTT loop (30s) is calculated as the mean of the measured values during the measurement loop (5s)
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen
 // i.e: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
@@ -72,8 +74,8 @@ struct MyEEPROMStruct {
   char anaire_device_name[24] = "";                           // Device name; default to anaire_device_id
   uint16_t CO2ppm_warning_threshold = 700;                    // Warning threshold; default to 700ppm
   uint16_t CO2ppm_alarm_threshold = 1000;                     // Alarm threshold; default to 1000ppm
-  char MQTT_server[24] = "portal.anaire.org";                 // MQTT server url or public IP address. Default to Anaire Portal on portal.anaire.org
-  uint16_t MQTT_port = 30183;                                 // MQTT port; Default to Anaire Port on 30183
+  char MQTT_server[24] = "mqtt.anaire.org";                 // MQTT server url or public IP address. Default to Anaire Portal on portal.anaire.org
+  uint16_t MQTT_port = 80;                                 // MQTT port; Default to Anaire Port on 30183
   boolean sound_alarm = true;                                 // Global flag to control sound alarm; default to true
   boolean ABC = false;                                        // Automatic baseline Correction; default to false
   uint16_t FRC_value = 400;                                   // Forced ReCalibration value; default to 400ppm
@@ -96,7 +98,7 @@ unsigned long MQTT_loop_start;                    // holds a timestamp for each 
 unsigned long lastReconnectAttempt = 0;           // MQTT reconnections
 
 // Errors loop: time between error condition recovery
-unsigned int errors_loop_duration = 5000;         // 5 seconds
+unsigned int errors_loop_duration = 3000;         // 3 seconds
 unsigned long errors_loop_start;                  // holds a timestamp for each error loop start
 
 // flash button duration: time since flash button was pressed
@@ -119,12 +121,12 @@ extern "C" {
 }
 
 #include <ESP8266WiFiMulti.h>
-#include <ESP8266mDNS.h>                          // to be reached on anaire_device_id.local in the local network
+#include <ESP8266mDNS.h>                         // to be reached on anaire_device_id.local in the local network
 WiFiClient wifi_client;
-const int WIFI_CONNECT_TIMEOUT = 10000;           // 10 seconds
+const int WIFI_CONNECT_TIMEOUT = 3000;           // 3 seconds
 int wifi_status = WL_IDLE_STATUS;
-WiFiServer wifi_server(80);                       // to check if it is alive
-String wifi_ssid = WiFi.SSID();                   // your network SSID (name)
+WiFiServer wifi_server(80);                      // to check if it is alive
+String wifi_ssid = WiFi.SSID();                  // your network SSID (name)
 String wifi_password = WiFi.psk();               // your network psk password
 
 #include <ESP8266WebServer.h>
@@ -182,7 +184,7 @@ uint16_t SCD30_MEASUREMENT_INTERVAL = measurements_loop_duration / 1000; // time
 MHZ19 myMHZ19;
 #define MHZ_BAUDRATE 9600                              // Native to the sensor (do not change)
 const unsigned long MHZ14A_WARMING_TIME = 180000;      // MHZ14A CO2 sensor warming time: 3 minutes = 180000 ms
-const unsigned long MHZ14A_SERIAL_TIMEOUT = 5000;      // MHZ14A CO2 serial start timeout: 5 seconds = 5000 ms
+const unsigned long MHZ14A_SERIAL_TIMEOUT = 3000;      // MHZ14A CO2 serial start timeout: 3 seconds = 3000 ms
 const unsigned long MHZ14A_CALIBRATION_TIME = 1200000; // MHZ14A CO2 CALIBRATION TIME: 20 min = 1200000 ms
 #define swSerialRX_gpio 13
 #define swSerialTX_gpio 15
@@ -192,7 +194,10 @@ byte calibration_command[9] = {0xFF, 0x01, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0
 char response_CO2[9];   // holds the received data from MHZ14A CO2 sensor
 int response_CO2_high;  // holds upper byte
 int response_CO2_low;   // holds lower byte
-int CO2ppm_value = 0;   // CO2 ppm measured value
+
+int CO2ppm_value = 0;         // CO2 ppm measured value
+int CO2ppm_accumulated = 0;   // Accumulates co2 measurements for a MQTT period
+int CO2ppm_samples = 0;       // Counts de number of samples for a MQTT period
 
 // AZ-Delivery DHT11
 #include "DHTesp.h"
@@ -339,9 +344,9 @@ void setup() {
     WiFiManager wifiManager;
 
     // Captive portal parameters
-    WiFiManagerParameter custom_wifi_html("<p>Set MQTT WiFi credentials</p>"); // only custom html
-    WiFiManagerParameter custom_wifi_user("User", "WiFi user", eepromConfig.wifi_user, 24);
-    WiFiManagerParameter custom_wifi_password("Password", "WiFi Password", eepromConfig.wifi_password, 24);
+    WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise</p>"); // only custom html
+    WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user", eepromConfig.wifi_user, 24);
+    WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
     WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server</p>"); // only custom html
     WiFiManagerParameter custom_mqtt_server("Server", "MQTT server", eepromConfig.MQTT_server, 24);
     char port[6];itoa(eepromConfig.MQTT_port, port, 10);
@@ -415,7 +420,7 @@ void setup() {
     ESP.reset(); // This is a bit crude. For some unknown reason webserver can only be started once per boot up
 
     // so resetting the device allows to go back into config mode again when it reboots.
-    delay(3000);
+    delay(1000);
 
   }
 
@@ -429,8 +434,15 @@ void setup() {
     display.setFont(ArialMT_Plain_24);
     display.drawString(64, 4, "anaire.org");
     display.display();                      // update OLED display
-    delay(2000);                            // to show anaire.org
-
+    delay(1000);                            // to show anaire.org
+    display.clear();
+    display.setFont(ArialMT_Plain_16);
+    display.setTextAlignment(TEXT_ALIGN_LEFT);
+    display.drawString(0, 0, String(anaire_device_id));
+    display.drawString(0, 16, sw_version);
+    display.display(); // update OLED display
+    delay(1000);
+    
     // Attempt to connect to WiFi network:
     Connect_WiFi();
 
@@ -473,6 +485,10 @@ void loop() {
 
     // Evaluate CO2 value
     Evaluate_CO2_Value(); // this is to avoud to refresh the display with the las co2 measurement value
+
+    // Accumulates samples
+    CO2ppm_accumulated += CO2ppm_value;
+    CO2ppm_samples++;
    
   }
 
@@ -487,6 +503,10 @@ void loop() {
     if (!err_wifi) {
       Send_Message_Cloud_App_MQTT();
     }
+
+    // Reset samples
+    CO2ppm_accumulated = 0;
+    CO2ppm_samples = 0;
    
   }
   
@@ -837,7 +857,7 @@ void Check_WiFi_Server() {
               client.print("ABC Status: "); myMHZ19.getABC() ? client.println("ON") :  client.println("OFF");
               client.println("<br>");
               client.print("Temperature: ");
-              client.println(myMHZ19.getTemperature(true));   // force to get the value in float
+              client.println(myMHZ19.getTemperature(true,true));   // force to get the value in float
               client.println("<br>");
               client.print("CO2Raw: ");
               client.println(myMHZ19.getCO2Raw(true));   // force to get the value in float
@@ -1008,10 +1028,11 @@ void Setup_sensors() {
 
       // Disable ABC
       myMHZ19.autoCalibration(eepromConfig.ABC);     // make sure auto calibration is off
-      Serial.print("ABC Status: "); myMHZ19.getABC() ? Serial.println("ON") :  Serial.println("OFF");  // now print it's status
+      //Serial.print("ABC Status: "); myMHZ19.getABC() ? Serial.println("ON") :  Serial.println("OFF");  // now print it's status
 
       // Set range to 5000
-      myMHZ19.setRange(5000);
+      //myMHZ19.setRange(5000);
+      myMHZ19.setRange(2000);
 
       char myVersion[4];
       myMHZ19.getVersion(myVersion);
@@ -1032,6 +1053,9 @@ void Setup_sensors() {
       Serial.println(myMHZ19.getTempAdjustment());
       Serial.print("ABC Status: "); myMHZ19.getABC() ? Serial.println("ON") :  Serial.println("OFF");
 
+      // Filter incorrect values
+      myMHZ19.setFilter(true, true);
+      
       err_co2 = false;
       co2_sensor = MHZ14A;
 
@@ -1092,7 +1116,7 @@ void Read_Sensors() {
       Read_SCD30(); // Read co2, temperature and humidity
       break;
     case MHZ14A:
-      Read_MHZ14A(); // Read co2
+      Read_MHZ14A(); // Read co2 and temperature
       Read_DHT11();  // Read temperature and humidity
       break;
     case none:
@@ -1137,12 +1161,33 @@ void Read_MHZ14A() {
   //CO2ppm_value = (256 * response_CO2_high) + response_CO2_low;
 
   // WiWaf library
-  CO2ppm_value = myMHZ19.getCO2(); 
-  
+  CO2ppm_value = myMHZ19.getCO2(true); 
+
+  if(myMHZ19.errorCode != RESULT_OK)              // RESULT_OK is an alias for 1. Either can be used to confirm the response was OK.
+  {
+    //err_co2 = true;
+    Serial.println("Failed to receive CO2 value - Error");
+    Serial.print("Response Code: ");
+    Serial.println(myMHZ19.errorCode);          // Get the Error Code value
+  }  
+        
   // prints calculated CO2ppm value to serial monitor
-  Serial.print ("MHZ14A CO2ppm_value: ");
+  Serial.print ("MHZ14A/19c CO2ppm_value: ");
   Serial.println (CO2ppm_value);
 
+  // WiWaf library
+  //temperature = (float) myMHZ19.getTemperature(true, true)/10;
+  //if(myMHZ19.errorCode != RESULT_OK)              // RESULT_OK is an alias for 1. Either can be used to confirm the response was OK.
+  //{
+  //  Serial.println("Failed to receive temperature value - Error");
+  //  Serial.print("Response Code: ");
+  //  Serial.println(myMHZ19.errorCode);          // Get the Error Code value
+  //} 
+
+  // prints temperature value to serial monitor
+  //Serial.print ("MHZ14A/19c temperature: ");
+  //Serial.println (temperature);
+  
 }
 
 // Calibrate MHZ14A sensor
@@ -1565,7 +1610,7 @@ void Send_Message_Cloud_App_MQTT() {
   // Print info
   Serial.print("Sending MQTT message to the send topic: ");
   Serial.println(MQTT_send_topic);
-  sprintf(MQTT_message, "{id: %s,CO2: %d,humidity: %f,temperature: %f}", anaire_device_id.c_str(), CO2ppm_value, humidity, temperature);
+  sprintf(MQTT_message, "{id: %s,CO2: %d,humidity: %f,temperature: %f}", anaire_device_id.c_str(), (int) (CO2ppm_accumulated / CO2ppm_samples), humidity, temperature);
   Serial.print(MQTT_message);
   Serial.println();
 

@@ -1,6 +1,6 @@
 # Medidor ANAIRE: CO2 (NDIR), temperatura y humedad
 
-*@Asociación Anaire www.anaire.org anaire@anaire.org*
+*@Asociación Anaire www.anaire.org*
 
 Fabricación de medidores de CO2, temperatura y humedad, de bajo coste y alta precisión, conectados por WiFi a una aplicación en la nube denominada Anaire Cloud App para mostrar los valores instantáneos y el histórico de mediciones de CO2, temperatura y humedad, facilitando así el análisis de la información de las medidas y su correlación con protocolos de ventilación anti COVID-19.
 
@@ -43,12 +43,12 @@ En este repositorio se publica información completa para la fabricación de los
 
 Toda la información se publica en formato "open source", tanto los diseños hardware como el software (código fuente), con el ánimo de facilitar el uso y difusión de la tecnología todo lo posible. Con el mismo espíritu se tratan de resolver todas las incidencias reportadas en todos los canales donde la asociación está presente:
   
-Página web: www.anaire.org
-Correo electrónico: anaire@anaire.org
-Canal de Youtube: https://www.youtube.com/channel/UCOwQjsH4QQhcznWKxydhbZg
-Twitter: @Anaire_co2
-Instagram: anaire_co2
-Facebook: @anaireco2
+Página web: www.anaire.org  
+Correo electrónico: anaire@anaire.org  
+Canal de Youtube: https://www.youtube.com/channel/UCOwQjsH4QQhcznWKxydhbZg  
+Twitter: @Anaire_co2  
+Instagram: anaire_co2  
+Facebook: @anaireco2  
 
 ---  
 

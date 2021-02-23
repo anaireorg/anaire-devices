@@ -59,9 +59,10 @@
 // - The web server is activated, therefore entering the IP on a browser allows to see device specific details and measurements; device forced calibration is also available through the web server
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "2.20210221.TRBLNGS";   // Trabalenguas pandémico en día casi palindrómico
-// Range of Winsen MH-Z14A/MH-Z19c set up to 2000ppm as it is enough to secure environments against COVID and provides more accuracy
-// The CO2 measurement sent by MQTT every MQTT loop (30s) is calculated as the mean of the measured values during the measurement loop (5s)
+String sw_version = "v2.20210223.eolo";   
+// 20210223 Fixed MQTT error problem when Wifi didn't connect on the first try
+// 20210221 Range of Winsen MH-Z14A/MH-Z19c set up to 2000ppm as it is enough to secure environments against COVID and provides more accuracy
+// 20210221 The CO2 measurement sent by MQTT every MQTT loop (30s) is calculated as the mean of the measured values during the measurement loop (5s)
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen
@@ -123,7 +124,7 @@ extern "C" {
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266mDNS.h>                         // to be reached on anaire_device_id.local in the local network
 WiFiClient wifi_client;
-const int WIFI_CONNECT_TIMEOUT = 3000;           // 3 seconds
+const int WIFI_CONNECT_TIMEOUT = 5000;           // 5 seconds
 int wifi_status = WL_IDLE_STATUS;
 WiFiServer wifi_server(80);                      // to check if it is alive
 String wifi_ssid = WiFi.SSID();                  // your network SSID (name)
@@ -554,14 +555,15 @@ void loop() {
       Serial.println ("--- err_co2");
       Setup_sensors();  // Init co2 sensors
     }
-  
-    if (err_wifi) {
+
+    if ((err_wifi) || (WiFi.status() != WL_CONNECTED)) {
       Serial.println ("--- err_wifi");
+      err_wifi = true;
       Connect_WiFi();   // Attempt to connect to WiFi network:
     }
   
     //Reconnect MQTT if needed
-    if (!MQTT_client.connected()) {
+    if ((!MQTT_client.connected()) && (!err_wifi)) {
       Serial.println ("--- err_mqtt");
       err_MQTT = true;
     }
@@ -570,7 +572,8 @@ void loop() {
     if ((err_MQTT) && (!err_wifi)) {
       Serial.println ("--- MQTT reconnect");
       // Attempt to connect to MQTT broker
-      MQTTReconnect();
+      //MQTTReconnect();
+      Init_MQTT();
     }
   
     // if not there are not connectivity errors, receive MQTT messages
@@ -657,14 +660,10 @@ void Connect_WiFi() {
   // Status
   if (WiFi.status() != WL_CONNECTED) {
     err_wifi = true;
-    // Switch on blinking DEVICE_STATUS_BUILTIN_LED_GPIO to reflect the error, with ALARM_BLINK_PERIOD
-    //blinker_DEVICE_STATUS_BUILTIN_LED_GPIO.attach_ms(ALARM_BLINK_PERIOD, changeState_DEVICE_STATUS_BUILTIN_LED_GPIO);
   }
   else {
     err_wifi = false;
-    // Switch off blinking DEVICE_STATUS_BUILTIN_LED_GPIO
-    //blinker_DEVICE_STATUS_BUILTIN_LED_GPIO.detach();
-
+    
     wifi_server.begin(); // start the web server on port 80
     Serial.println("WiFi connected");
     Serial.print("IP address: ");
@@ -1557,13 +1556,13 @@ void Evaluate_CO2_Value() {
   // Print info on serial monitor
   switch (co2_device_status) {
     case ok:
-      Serial.println ("STATUS: OK");
+      Serial.println ("STATUS: CO2 OK");
       break;
     case warning:
-      Serial.println ("STATUS: WARNING");
+      Serial.println ("STATUS: CO2 WARNING");
       break;
     case alarm:
-      Serial.println ("STATUS: ALARM");
+      Serial.println ("STATUS: CO2 ALARM");
       break;
   }
 
@@ -1852,8 +1851,8 @@ ICACHE_RAM_ATTR void push_button_handler() {
   flash_button_press_start = millis();        // Save press button start time to keep a defined time the device info on screen, and launch calibration if after 3 seconds the button si still pressed (LOW)
   flash_button_pressed_flag = true;
   
-  Serial.print ("FLASH Push button start: ");
-  Serial.println (flash_button_press_start);
+  //Serial.print ("FLASH Push button start: ");
+  //Serial.println (flash_button_press_start);
   
   if (!alarm_ack) {
     Serial.println ("FLASH Push button interrupt - alarm_ack ON");

@@ -59,7 +59,8 @@
 // - The web server is activated, therefore entering the IP on a browser allows to see device specific details and measurements; device forced calibration is also available through the web server
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v2.20210223.eolo";   
+String sw_version = "v2.20210228.aliosha";   
+// 20210228 Fixed execution of individual MQTT commands; firmware updates work if Wifi connection is fast
 // 20210223 Fixed MQTT error problem when Wifi didn't connect on the first try
 // 20210221 Range of Winsen MH-Z14A/MH-Z19c set up to 2000ppm as it is enough to secure environments against COVID and provides more accuracy
 // 20210221 The CO2 measurement sent by MQTT every MQTT loop (30s) is calculated as the mean of the measured values during the measurement loop (5s)
@@ -1651,7 +1652,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   // TODO: check values received before assigning them
 
   // Update name
-  if (eepromConfig.anaire_device_name != jsonBuffer["name"]) {
+  if ((jsonBuffer["name"]) && (eepromConfig.anaire_device_name != jsonBuffer["name"])) {
     strncpy(eepromConfig.anaire_device_name, jsonBuffer["name"].as<const char*>(), sizeof(eepromConfig.anaire_device_name));
     eepromConfig.anaire_device_name[sizeof(eepromConfig.anaire_device_name) - 1] = '\0';
     write_eeprom = true;
@@ -1694,7 +1695,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   }
 
   // Check MQTT server
-  if (eepromConfig.MQTT_server != jsonBuffer["MQTT_server"]) {
+  if ((jsonBuffer["MQTT_server"]) && (eepromConfig.MQTT_server != jsonBuffer["MQTT_server"])) {
     strncpy(eepromConfig.MQTT_server, jsonBuffer["MQTT_server"], sizeof(eepromConfig.MQTT_server));
     eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
     write_eeprom = true;
@@ -1708,7 +1709,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   }
 
   // Check MQTT port
-  if (eepromConfig.MQTT_port != int(jsonBuffer["MQTT_port"])) {
+  if ((jsonBuffer["MQTT_port"]) && (eepromConfig.MQTT_port != int(jsonBuffer["MQTT_port"]))) {
     eepromConfig.MQTT_port = int(jsonBuffer["MQTT_port"]);
     //strncpy(eepromConfig.MQTT_port, jsonBuffer["MQTT_port"], sizeof(eepromConfig.MQTT_port));
     //eepromConfig.MQTT_port[sizeof(eepromConfig.MQTT_port) - 1] = '\0';
@@ -1749,7 +1750,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   }
 
   // If calibration has been enabled, justo do it
-  if (jsonBuffer["FRC"] == "ON") {
+  if ((jsonBuffer["FRC"]) && (jsonBuffer["FRC"] == "ON")) {
     if (co2_sensor == MHZ14A) {
       Calibrate_MHZ14A();
     }
@@ -1783,19 +1784,8 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     Serial.println("ABC: ON");
   }
 
-  // If factory reset has been enabled, just do it
-  if (jsonBuffer["factory_reset"] == "ON") {
-    Wipe_EEPROM ();   // Wipe EEPROM
-    ESP.reset();      // This is a bit crude. For some unknown reason webserver can only be started once per boot up
-  }
-
-  // If reboot, just do it, without cleaning the EEPROM
-  if (jsonBuffer["reboot"] == "ON") {
-    ESP.reset(); // This is a bit crude. For some unknown reason webserver can only be started once per boot up
-  }
-
-  // if update flag has been enabled, wipe EEPROM and update to latest bin
-  if (jsonBuffer["update"] == "ON") {
+    // if update flag has been enabled, wipe EEPROM and update to latest bin
+  if (((jsonBuffer["update"]) && (jsonBuffer["update"] == "ON"))) {
     //boolean result = EEPROM.wipe();
     //if (result) {
     //  Serial.println("All EEPROM data wiped");
@@ -1806,6 +1796,17 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     // update firmware to latest bin
     Serial.println("Update firmware to latest bin");
     firmware_update();
+  }
+
+  // If factory reset has been enabled, just do it
+  if ((jsonBuffer["factory_reset"]) && (jsonBuffer["factory_reset"] == "ON")) {
+    Wipe_EEPROM ();   // Wipe EEPROM
+    ESP.reset();      // This is a bit crude. For some unknown reason webserver can only be started once per boot up
+  }
+
+  // If reboot, just do it, without cleaning the EEPROM
+  if ((jsonBuffer["reboot"]) && (jsonBuffer["reboot"] == "ON")) {
+    ESP.reset(); // This is a bit crude. For some unknown reason webserver can only be started once per boot up
   }
 
   //print info

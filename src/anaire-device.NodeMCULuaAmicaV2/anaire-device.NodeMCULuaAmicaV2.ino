@@ -59,7 +59,7 @@
 // - The web server is activated, therefore entering the IP on a browser allows to see device specific details and measurements; device forced calibration is also available through the web server
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v2.20210228.aliosha";   
+String sw_version = "v2.20210228.ochoa";   
 // 20210228 Fixed execution of individual MQTT commands; firmware updates work if Wifi connection is fast
 // 20210223 Fixed MQTT error problem when Wifi didn't connect on the first try
 // 20210221 Range of Winsen MH-Z14A/MH-Z19c set up to 2000ppm as it is enough to secure environments against COVID and provides more accuracy
@@ -76,8 +76,8 @@ struct MyEEPROMStruct {
   char anaire_device_name[24] = "";                           // Device name; default to anaire_device_id
   uint16_t CO2ppm_warning_threshold = 700;                    // Warning threshold; default to 700ppm
   uint16_t CO2ppm_alarm_threshold = 1000;                     // Alarm threshold; default to 1000ppm
-  char MQTT_server[24] = "mqtt.anaire.org";                 // MQTT server url or public IP address. Default to Anaire Portal on portal.anaire.org
-  uint16_t MQTT_port = 80;                                 // MQTT port; Default to Anaire Port on 30183
+  char MQTT_server[24] = "mqtt.anaire.org";                   // MQTT server url or public IP address. Default to Anaire Portal on portal.anaire.org
+  uint16_t MQTT_port = 80;                                    // MQTT port; Default to Anaire Port on 30183
   boolean sound_alarm = true;                                 // Global flag to control sound alarm; default to true
   boolean ABC = false;                                        // Automatic baseline Correction; default to false
   uint16_t FRC_value = 400;                                   // Forced ReCalibration value; default to 400ppm

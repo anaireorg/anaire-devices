@@ -36,7 +36,7 @@
 //   MHZ-Z19 Library from WifWaf https://github.com/WifWaf/MH-Z19 Library - to manage Winsen CO2 sensors - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
 //   Modified paulvha SCD30 library, get it from anaire github on https://github.com/anaireorg/anaire-devices/blob/main/src/scd30-master.zip - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
 
-// Design leads: 
+// Design leads:
 
 // - The ID (last 3 fields from MAC address) and IP address are shown on OLED display during boot and after pressing the Flash button
 // - Pressing the reset button ("R") twice in less than 10 seconds restarts the device in a captive web configuration portal, useful to configure local wifi settings and MQTT endpoint
@@ -59,7 +59,7 @@
 // - The web server is activated, therefore entering the IP on a browser allows to see device specific details and measurements; device forced calibration is also available through the web server
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v2.20210228.ochoa";   
+String sw_version = "v2.20210228.ochoa";
 // 20210228 Fixed execution of individual MQTT commands; firmware updates work if Wifi connection is fast
 // 20210223 Fixed MQTT error problem when Wifi didn't connect on the first try
 // 20210221 Range of Winsen MH-Z14A/MH-Z19c set up to 2000ppm as it is enough to secure environments against COVID and provides more accuracy
@@ -265,6 +265,9 @@ boolean alarm_ack = false;
 // For remote firmware update
 BearSSL::WiFiClientSecure UpdateClient;
 
+// to knwo when there is an aupdating process in place
+boolean updating = false;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // SETUP
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -351,7 +354,7 @@ void setup() {
     WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
     WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server</p>"); // only custom html
     WiFiManagerParameter custom_mqtt_server("Server", "MQTT server", eepromConfig.MQTT_server, 24);
-    char port[6];itoa(eepromConfig.MQTT_port, port, 10);
+    char port[6]; itoa(eepromConfig.MQTT_port, port, 10);
     WiFiManagerParameter custom_mqtt_port("Port", "MQTT port", port, 6);
     //wifiManager.setSaveParamsCallback(saveParamCallback);
 
@@ -382,24 +385,24 @@ void setup() {
 
     // Save parameters to EEPROM only if any of them changed
     bool write_eeprom = false;
-    
+
     if (eepromConfig.wifi_user != custom_wifi_user.getValue()) {
       strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
-      eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] ='\0';
+      eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
       write_eeprom = true;
       Serial.print("WiFi user: ");
       Serial.println(eepromConfig.wifi_user);
     }
     if (eepromConfig.wifi_password != custom_wifi_password.getValue()) {
       strncpy(eepromConfig.wifi_password, custom_wifi_password.getValue(), sizeof(eepromConfig.wifi_password));
-      eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] ='\0';
+      eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
       write_eeprom = true;
       Serial.print("WiFi password: ");
       Serial.println(eepromConfig.wifi_password);
     }
     if (eepromConfig.MQTT_server != custom_mqtt_server.getValue()) {
       strncpy(eepromConfig.MQTT_server, custom_mqtt_server.getValue(), sizeof(eepromConfig.MQTT_server));
-      eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] ='\0';
+      eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
       write_eeprom = true;
       Serial.print("MQTT server: ");
       Serial.println(eepromConfig.MQTT_server);
@@ -413,7 +416,7 @@ void setup() {
       Serial.print("MQTT port: ");
       Serial.println(eepromConfig.MQTT_port);
     }
-    
+
     if (write_eeprom) {
       Write_EEPROM();
     }
@@ -444,7 +447,7 @@ void setup() {
     display.drawString(0, 16, sw_version);
     display.display(); // update OLED display
     delay(1000);
-    
+
     // Attempt to connect to WiFi network:
     Connect_WiFi();
 
@@ -473,119 +476,124 @@ void setup() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void loop() {
 
-  //Serial.println ("--- LOOP BEGIN ---");
+  // If a firmware update is in progress do not do anything else
+  if (!updating) {
 
-  // Measurement loop
-  if ((millis() - measurements_loop_start) >= measurements_loop_duration)
-  {
+    //Serial.println ("--- LOOP BEGIN ---");
 
-     // New timestamp for the loop start time
-    measurements_loop_start = millis();
+    // Measurement loop
+    if ((millis() - measurements_loop_start) >= measurements_loop_duration)
+    {
 
-    // Read sensors
-    Read_Sensors();
+      // New timestamp for the loop start time
+      measurements_loop_start = millis();
 
-    // Evaluate CO2 value
-    Evaluate_CO2_Value(); // this is to avoud to refresh the display with the las co2 measurement value
+      // Read sensors
+      Read_Sensors();
 
-    // Accumulates samples
-    CO2ppm_accumulated += CO2ppm_value;
-    CO2ppm_samples++;
-   
+      // Evaluate CO2 value
+      Evaluate_CO2_Value(); // this is to avoud to refresh the display with the las co2 measurement value
+
+      // Accumulates samples
+      CO2ppm_accumulated += CO2ppm_value;
+      CO2ppm_samples++;
+
+    }
+
+    // MQTT loop
+    if ((millis() - MQTT_loop_start) >= MQTT_loop_duration)
+    {
+
+      // New timestamp for the loop start time
+      MQTT_loop_start = millis();
+
+      // Message the MQTT broker in the cloud app to send the measured values
+      if (!err_wifi) {
+        Send_Message_Cloud_App_MQTT();
+      }
+
+      // Reset samples
+      CO2ppm_accumulated = 0;
+      CO2ppm_samples = 0;
+
+    }
+
+    // if FLASH button was pressed flag to updated OLED was set; the display cannot be updated from the ISR, but from main loop after this flag is set
+    if (((update_OLED_co2_flag) && ((millis() - flash_button_press_start)) > 3000)) { // do it only if button was pressed more than 3s ago
+      update_OLED_CO2();
+      update_OLED_co2_flag = false; // reset flag
+    }
+
+    // if FLASH button was pressed flag to updated OLED was set; the display cannot be updated from the ISR, but from main loop after this flag is set
+    if (update_OLED_status_flag) {
+      update_OLED_Status();
+      update_OLED_status_flag = false; // reset flag
+    }
+
+    // if the flash button was pressed more than 10 seconds ago and it is still low, launch calibration
+    if (digitalRead(FLASH_BUTTON_GPIO)) { // button not pressed
+      flash_button_pressed_flag = false; // reset flash button press start
+    }
+    else if ((millis() - flash_button_press_start) > 10000) {   // button is pressed since >10s
+      if (co2_sensor == MHZ14A) {
+        Calibrate_MHZ14A();
+      }
+      if (co2_sensor == SCD30) {
+        Calibrate_SCD30();
+      }
+    }
+
+    // Call the double reset detector loop method every so often,so that it can recognise when the timeout expires.
+    // You can also call drd.stop() when you wish to no longer consider the next reset as a double reset.
+    drd.loop();
+
+    // Process wifi server requests
+    Check_WiFi_Server();
+
+    // Errors loop
+    if ((millis() - errors_loop_start) >= errors_loop_duration)
+    {
+
+      // New timestamp for the loop start time
+      errors_loop_start = millis();
+
+      // Try to recover error conditions
+      if (err_co2) {
+        Serial.println ("--- err_co2");
+        Setup_sensors();  // Init co2 sensors
+      }
+
+      if ((err_wifi) || (WiFi.status() != WL_CONNECTED)) {
+        Serial.println ("--- err_wifi");
+        err_wifi = true;
+        Connect_WiFi();   // Attempt to connect to WiFi network:
+      }
+
+      //Reconnect MQTT if needed
+      if ((!MQTT_client.connected()) && (!err_wifi)) {
+        Serial.println ("--- err_mqtt");
+        err_MQTT = true;
+      }
+
+      //Reconnect MQTT if needed
+      if ((err_MQTT) && (!err_wifi)) {
+        Serial.println ("--- MQTT reconnect");
+        // Attempt to connect to MQTT broker
+        //MQTTReconnect();
+        Init_MQTT();
+      }
+
+      // if not there are not connectivity errors, receive MQTT messages
+      if ((!err_MQTT) && (!err_wifi)) {
+        MQTT_client.loop();
+      }
+
+    }
+
+    //Serial.println("--- END LOOP");
+    //Serial.println();
+
   }
-
-  // MQTT loop
-  if ((millis() - MQTT_loop_start) >= MQTT_loop_duration)
-  {
-
-    // New timestamp for the loop start time
-    MQTT_loop_start = millis();
-
-    // Message the MQTT broker in the cloud app to send the measured values
-    if (!err_wifi) {
-      Send_Message_Cloud_App_MQTT();
-    }
-
-    // Reset samples
-    CO2ppm_accumulated = 0;
-    CO2ppm_samples = 0;
-   
-  }
-  
-  // if FLASH button was pressed flag to updated OLED was set; the display cannot be updated from the ISR, but from main loop after this flag is set
-  if (((update_OLED_co2_flag) && ((millis() - flash_button_press_start)) > 3000)) { // do it only if button was pressed more than 3s ago
-    update_OLED_CO2();
-    update_OLED_co2_flag = false; // reset flag
-  }
-
-  // if FLASH button was pressed flag to updated OLED was set; the display cannot be updated from the ISR, but from main loop after this flag is set
-  if (update_OLED_status_flag) {
-    update_OLED_Status();
-    update_OLED_status_flag = false; // reset flag
-  }
-
-  // if the flash button was pressed more than 10 seconds ago and it is still low, launch calibration
-  if (digitalRead(FLASH_BUTTON_GPIO)) { // button not pressed
-    flash_button_pressed_flag = false; // reset flash button press start
-  }
-  else if ((millis() - flash_button_press_start) > 10000) {   // button is pressed since >10s
-    if (co2_sensor == MHZ14A) {
-      Calibrate_MHZ14A();
-    }
-    if (co2_sensor == SCD30) {
-      Calibrate_SCD30();
-    }
-  }
-
-  // Call the double reset detector loop method every so often,so that it can recognise when the timeout expires.
-  // You can also call drd.stop() when you wish to no longer consider the next reset as a double reset.
-  drd.loop();
-
-  // Process wifi server requests
-  Check_WiFi_Server();
-  
-  // Errors loop
-  if ((millis() - errors_loop_start) >= errors_loop_duration)
-  {
-
-    // New timestamp for the loop start time
-    errors_loop_start = millis();
-
-    // Try to recover error conditions
-    if (err_co2) {
-      Serial.println ("--- err_co2");
-      Setup_sensors();  // Init co2 sensors
-    }
-
-    if ((err_wifi) || (WiFi.status() != WL_CONNECTED)) {
-      Serial.println ("--- err_wifi");
-      err_wifi = true;
-      Connect_WiFi();   // Attempt to connect to WiFi network:
-    }
-  
-    //Reconnect MQTT if needed
-    if ((!MQTT_client.connected()) && (!err_wifi)) {
-      Serial.println ("--- err_mqtt");
-      err_MQTT = true;
-    }
-  
-    //Reconnect MQTT if needed
-    if ((err_MQTT) && (!err_wifi)) {
-      Serial.println ("--- MQTT reconnect");
-      // Attempt to connect to MQTT broker
-      //MQTTReconnect();
-      Init_MQTT();
-    }
-  
-    // if not there are not connectivity errors, receive MQTT messages
-    if ((!err_MQTT) && (!err_wifi)) {
-      MQTT_client.loop();
-    }
-
-  }
-  
-  //Serial.println("--- END LOOP");
-  //Serial.println();
 
 }
 
@@ -601,32 +609,32 @@ void Connect_WiFi() {
 
   // Set wifi mode
   WiFi.mode(WIFI_STA);
-    
+
   // If there are not wifi user and wifi password defined, proceed to traight forward configuration
   if ((strlen(eepromConfig.wifi_user) == 0) && (strlen(eepromConfig.wifi_password) == 0)) {
-    
+
     //WiFi.begin(wifi_ssid, wifi_password);
     WiFi.begin();
-  
+
   }
 
   else {  // set up wpa2 enterprise
 
     Serial.print("Attempting to authenticate with WPA Enterprise ");
     Serial.print("User: ");
-    Serial.println(eepromConfig.wifi_user); 
+    Serial.println(eepromConfig.wifi_user);
     Serial.print("Password: ");
-    Serial.println(eepromConfig.wifi_password); 
-  
+    Serial.println(eepromConfig.wifi_password);
+
     // Setting ESP into STATION mode only (no AP mode or dual mode)
     wifi_set_opmode(STATION_MODE);
 
     struct station_config wifi_config;
-  
+
     memset(&wifi_config, 0, sizeof(wifi_config));
     strcpy((char*)wifi_config.ssid, wifi_ssid.c_str());
     strcpy((char*)wifi_config.password, wifi_password.c_str());
-  
+
     wifi_station_set_config(&wifi_config);
     //uint8_t target_esp_mac[6] = {0x24, 0x0a, 0xc4, 0x9a, 0x58, 0x28};
     //wifi_set_macaddr(STATION_IF,target_esp_mac);
@@ -644,11 +652,11 @@ void Connect_WiFi() {
     //wifi_station_set_enterprise_identity((uint8*)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
     wifi_station_set_enterprise_username((uint8*)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
     wifi_station_set_enterprise_password((uint8*)eepromConfig.wifi_password, strlen((char*)eepromConfig.wifi_password));
-  
+
     wifi_station_connect();
-  
+
   }
-  
+
   // Timestamp for connection timeout
   int wifi_timeout_start = millis();
 
@@ -664,7 +672,7 @@ void Connect_WiFi() {
   }
   else {
     err_wifi = false;
-    
+
     wifi_server.begin(); // start the web server on port 80
     Serial.println("WiFi connected");
     Serial.print("IP address: ");
@@ -673,7 +681,7 @@ void Connect_WiFi() {
     // Print your WiFi shield's MAC address:
     Serial.print("MAC Adress: ");
     Serial.println(WiFi.macAddress());
-  
+
     // Set mDNS to anaire_device_id.local
     if (!MDNS.begin(String(anaire_device_id))) {
       Serial.println("Error mDNS");
@@ -857,7 +865,7 @@ void Check_WiFi_Server() {
               client.print("ABC Status: "); myMHZ19.getABC() ? client.println("ON") :  client.println("OFF");
               client.println("<br>");
               client.print("Temperature: ");
-              client.println(myMHZ19.getTemperature(true,true));   // force to get the value in float
+              client.println(myMHZ19.getTemperature(true, true));  // force to get the value in float
               client.println("<br>");
               client.print("CO2Raw: ");
               client.println(myMHZ19.getCO2Raw(true));   // force to get the value in float
@@ -889,7 +897,7 @@ void Check_WiFi_Server() {
             client.println("<br>");
             client.println("------");
             client.println("<br>");
-            
+
             // the content of the HTTP response follows the header:
             client.print("Click <a href=\"/H\">here</a> to calibrate the device.<br>");
             //client.print("Click <a href=\"/L\">here</a> turn the LED on pin 6 off<br>");
@@ -1055,7 +1063,7 @@ void Setup_sensors() {
 
       // Filter incorrect values
       myMHZ19.setFilter(true, true);
-      
+
       err_co2 = false;
       co2_sensor = MHZ14A;
 
@@ -1161,16 +1169,16 @@ void Read_MHZ14A() {
   //CO2ppm_value = (256 * response_CO2_high) + response_CO2_low;
 
   // WiWaf library
-  CO2ppm_value = myMHZ19.getCO2(true); 
+  CO2ppm_value = myMHZ19.getCO2(true);
 
-  if(myMHZ19.errorCode != RESULT_OK)              // RESULT_OK is an alias for 1. Either can be used to confirm the response was OK.
+  if (myMHZ19.errorCode != RESULT_OK)             // RESULT_OK is an alias for 1. Either can be used to confirm the response was OK.
   {
     //err_co2 = true;
     Serial.println("Failed to receive CO2 value - Error");
     Serial.print("Response Code: ");
     Serial.println(myMHZ19.errorCode);          // Get the Error Code value
-  }  
-        
+  }
+
   // prints calculated CO2ppm value to serial monitor
   Serial.print ("MHZ14A/19c CO2ppm_value: ");
   Serial.println (CO2ppm_value);
@@ -1182,12 +1190,12 @@ void Read_MHZ14A() {
   //  Serial.println("Failed to receive temperature value - Error");
   //  Serial.print("Response Code: ");
   //  Serial.println(myMHZ19.errorCode);          // Get the Error Code value
-  //} 
+  //}
 
   // prints temperature value to serial monitor
   //Serial.print ("MHZ14A/19c temperature: ");
   //Serial.println (temperature);
-  
+
 }
 
 // Calibrate MHZ14A sensor
@@ -1204,8 +1212,8 @@ void Calibrate_MHZ14A() {
   int calibrating_start = millis();
 
   //display.init();
-  //display.flipScreenVertically(); 
-    
+  //display.flipScreenVertically();
+
   // Wait for calibrating time to stabalise...
   int counter = MHZ14A_CALIBRATION_TIME / 1000;
   while ((millis() - calibrating_start) < MHZ14A_CALIBRATION_TIME) {
@@ -1283,7 +1291,7 @@ void Calibrate_SCD30() {
 
   //display.init();
   //display.flipScreenVertically();
-    
+
   // Wait for calibrating time while reading values at maximum speed
   int counter = SCD30_CALIBRATION_TIME / 1000;
   while ((millis() - calibrating_start) < SCD30_CALIBRATION_TIME) {
@@ -1569,7 +1577,7 @@ void Evaluate_CO2_Value() {
 
   // Update display OLED with new values
   update_OLED_co2_flag = true;
-  
+
 }
 
 // Read temperature and humidity values from DHT11
@@ -1624,7 +1632,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
 
   //StaticJsonDocument<300> jsonBuffer;
   boolean write_eeprom = false;       // to track if writing the eeprom is required
-  
+
   memcpy(received_payload, payload, length);
 
   Serial.print("Message arrived: ");
@@ -1701,7 +1709,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     write_eeprom = true;
     Serial.print("MQTT Server: ");
     Serial.println(eepromConfig.MQTT_server);
-    
+
     //Attempt to connect to MQTT broker
     if (!err_wifi) {
       Init_MQTT();
@@ -1784,7 +1792,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     Serial.println("ABC: ON");
   }
 
-    // if update flag has been enabled, wipe EEPROM and update to latest bin
+  // if update flag has been enabled, wipe EEPROM and update to latest bin
   if (((jsonBuffer["update"]) && (jsonBuffer["update"] == "ON"))) {
     //boolean result = EEPROM.wipe();
     //if (result) {
@@ -1792,7 +1800,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     //} else {
     //  Serial.println("EEPROM data could not be wiped from flash store");
     //}
-    
+
     // update firmware to latest bin
     Serial.println("Update firmware to latest bin");
     firmware_update();
@@ -1817,7 +1825,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   if (write_eeprom) {
     Write_EEPROM();
   }
-  
+
 }
 
 // MQTT reconnect function
@@ -1848,13 +1856,13 @@ void MQTTReconnect() {
 // ISR to respond to button pressing to toggle local alarm reporting through builtin LED and buzzer
 // Enters each time the button is pressed
 ICACHE_RAM_ATTR void push_button_handler() {
-  
+
   flash_button_press_start = millis();        // Save press button start time to keep a defined time the device info on screen, and launch calibration if after 3 seconds the button si still pressed (LOW)
   flash_button_pressed_flag = true;
-  
+
   //Serial.print ("FLASH Push button start: ");
   //Serial.println (flash_button_press_start);
-  
+
   if (!alarm_ack) {
     Serial.println ("FLASH Push button interrupt - alarm_ack ON");
     // Switch off the buzzer to stop the sound alarm
@@ -1862,14 +1870,14 @@ ICACHE_RAM_ATTR void push_button_handler() {
     digitalWrite(BUZZER_GPIO, LOW);
     alarm_ack = true; // alarm has been ack
   }
-  
+
   else {
     Serial.println ("FLASH Push button interrupt - alarm_ack OFF");
     alarm_ack = false; // alarm has been reset
     // Evaluate last CO2 measurement and update buzzer accordingly
     Evaluate_CO2_Value();
   }
-  
+
   // Set flag to print device info in OLED display from the control loop
   update_OLED_status_flag = true;
 
@@ -1955,14 +1963,14 @@ void Read_EEPROM () {
 
   // Wipe EEPROM
   /*
-  boolean result = EEPROM.wipe();
-  if (result) {
+    boolean result = EEPROM.wipe();
+    if (result) {
     Serial.println("All EEPROM data wiped");
-  } else {
+    } else {
     Serial.println("EEPROM data could not be wiped from flash store");
-  }
+    }
   */
-  
+
   // Check if the EEPROM contains valid data from another run
   // If so, overwrite the 'default' values set up in our struct
   if (EEPROM.percentUsed() >= 0) {
@@ -2045,14 +2053,14 @@ void Print_Config() {
 void firmware_update() {
 
   Serial.println("### FIRMWARE UPGRADE ###");
-  
+
   // Add optional callback notifiers
   ESPhttpUpdate.onStart(update_started);
   ESPhttpUpdate.onEnd(update_finished);
   ESPhttpUpdate.onProgress(update_progress);
-  ESPhttpUpdate.onError(update_error);  
+  ESPhttpUpdate.onError(update_error);
   UpdateClient.setInsecure();
-  
+
   // Run http update
   t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
 
@@ -2069,15 +2077,17 @@ void firmware_update() {
       Serial.println("HTTP_UPDATE_OK");
       break;
   }
- 
+
 }
 
 void update_started() {
   Serial.println("CALLBACK:  HTTP update process started");
+  updating = true;
 }
 
 void update_finished() {
   Serial.println("CALLBACK:  HTTP update process finished");
+  updating = false;
 }
 
 void update_progress(int cur, int total) {
@@ -2086,4 +2096,5 @@ void update_progress(int cur, int total) {
 
 void update_error(int err) {
   Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
+  updating = false;
 }

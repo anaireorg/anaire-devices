@@ -59,7 +59,8 @@
 // - The web server is activated, therefore entering the IP on a browser allows to see device specific details and measurements; device forced calibration is also available through the web server
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v2.20210228.ochoa";
+String sw_version = "v2.20210304.Brasil";
+// 20210304 Troubleshooting remote updates after enabling serial debug; display modified to show ppm in 16p before ppm value on 24p font
 // 20210228 Fixed execution of individual MQTT commands; firmware updates work if Wifi connection is fast
 // 20210223 Fixed MQTT error problem when Wifi didn't connect on the first try
 // 20210221 Range of Winsen MH-Z14A/MH-Z19c set up to 2000ppm as it is enough to secure environments against COVID and provides more accuracy
@@ -280,6 +281,9 @@ void setup() {
     delay(1000); // wait 1 seconds for connection
   }
 
+  // Enable debug
+  Serial.setDebugOutput(true);
+  
   // print info
   Serial.println();
   Serial.println();
@@ -1904,9 +1908,13 @@ void update_OLED_CO2() {
 
   // display CO2 measurement
   display.setTextAlignment(TEXT_ALIGN_LEFT);
+  //display.setFont(ArialMT_Plain_24);
+  //display.drawString(0, 4, String(CO2ppm_value) + "ppm");
+  display.setFont(ArialMT_Plain_16);
+  display.drawString(0, 8, "ppm");
   display.setFont(ArialMT_Plain_24);
-  display.drawString(0, 4, String(CO2ppm_value) + "ppm");
-
+  display.drawString(36, 4, String(CO2ppm_value));
+  
   // And temperature and humidity
   display.setTextAlignment(TEXT_ALIGN_RIGHT);
   display.setFont(ArialMT_Plain_16);

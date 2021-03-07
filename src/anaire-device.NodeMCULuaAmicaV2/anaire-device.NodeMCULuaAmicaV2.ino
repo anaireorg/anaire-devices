@@ -59,7 +59,7 @@
 // - The web server is activated, therefore entering the IP on a browser allows to see device specific details and measurements; device forced calibration is also available through the web server
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v2.20210304.Brasil";
+String sw_version = "v2.20210307.Deo";
 // 20210304 Troubleshooting remote updates after enabling serial debug; display modified to show ppm in 16p before ppm value on 24p font
 // 20210228 Fixed execution of individual MQTT commands; firmware updates work if Wifi connection is fast
 // 20210223 Fixed MQTT error problem when Wifi didn't connect on the first try
@@ -263,10 +263,7 @@ boolean flash_button_pressed_flag = false;
 // to indicate if push button has been pushed to ack the alarm and switch off the buzzer
 boolean alarm_ack = false;
 
-// For remote firmware update
-BearSSL::WiFiClientSecure UpdateClient;
-
-// to knwo when there is an aupdating process in place
+// to know when there is an updating process in place
 boolean updating = false;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1652,17 +1649,6 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     return;
   }
 
-  //JsonObject obj = jsonBuffer.as<JsonObject>();
-  //Serial.println(jsonBuffer["warning"]);
-  //Serial.println(jsonBuffer["caution"]);
-  //Serial.println(jsonBuffer["alarm"]);
-  //Serial.println(jsonBuffer["name"]);
-  //Serial.println(jsonBuffer["update"]);
-  //Serial.println(jsonBuffer);
-
-  // Process received message and fill the values on the eeprom config struct
-  // TODO: check values received before assigning them
-
   // Update name
   if ((jsonBuffer["name"]) && (eepromConfig.anaire_device_name != jsonBuffer["name"])) {
     strncpy(eepromConfig.anaire_device_name, jsonBuffer["name"].as<const char*>(), sizeof(eepromConfig.anaire_device_name));
@@ -1913,7 +1899,10 @@ void update_OLED_CO2() {
   display.setFont(ArialMT_Plain_16);
   display.drawString(0, 8, "ppm");
   display.setFont(ArialMT_Plain_24);
-  display.drawString(36, 4, String(CO2ppm_value));
+  //display.setTextAlignment(TEXT_ALIGN_LEFT);
+  display.setTextAlignment(TEXT_ALIGN_CENTER);
+  //display.drawString(36, 4, String(CO2ppm_value));
+  display.drawString(64, 4, String(CO2ppm_value));
   
   // And temperature and humidity
   display.setTextAlignment(TEXT_ALIGN_RIGHT);
@@ -2060,6 +2049,10 @@ void Print_Config() {
 
 void firmware_update() {
 
+  // For remote firmware update
+  BearSSL::WiFiClientSecure UpdateClient;
+  int freeheap = ESP.getFreeHeap();
+  
   Serial.println("### FIRMWARE UPGRADE ###");
 
   // Add optional callback notifiers
@@ -2068,6 +2061,22 @@ void firmware_update() {
   ESPhttpUpdate.onProgress(update_progress);
   ESPhttpUpdate.onError(update_error);
   UpdateClient.setInsecure();
+
+  // Try to set a smaller buffer size for BearSSL update
+  bool mfln = UpdateClient.probeMaxFragmentLength("raw.githubusercontent.com", 443, 512);
+  Serial.printf("\nConnecting to https://raw.githubusercontent.com\n");
+  Serial.printf("MFLN supported: %s\n", mfln ? "yes" : "no");
+  if (mfln) {
+    UpdateClient.setBufferSizes(512, 512);
+  }
+  UpdateClient.connect("raw.githubusercontent.com", 443);
+  if (UpdateClient.connected()) {
+    Serial.printf("MFLN status: %s\n", UpdateClient.getMFLNStatus() ? "true" : "false");
+    Serial.printf("Memory used: %d\n", freeheap - ESP.getFreeHeap());
+    freeheap -= ESP.getFreeHeap();
+  } else {
+    Serial.printf("Unable to connect\n");
+  }
 
   // Run http update
   t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
@@ -2095,6 +2104,7 @@ void update_started() {
 
 void update_finished() {
   Serial.println("CALLBACK:  HTTP update process finished");
+  Serial.println("### FIRMWARE UPGRADE COMPLETED - REBOOT ###");
   updating = false;
 }
 

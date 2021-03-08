@@ -60,6 +60,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 String sw_version = "v2.20210307.Deo";
+// 20210307 Fixed remoted updates by reducing BearSSL buffer size
 // 20210304 Troubleshooting remote updates after enabling serial debug; display modified to show ppm in 16p before ppm value on 24p font
 // 20210228 Fixed execution of individual MQTT commands; firmware updates work if Wifi connection is fast
 // 20210223 Fixed MQTT error problem when Wifi didn't connect on the first try

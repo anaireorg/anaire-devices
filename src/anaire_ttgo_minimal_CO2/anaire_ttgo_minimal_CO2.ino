@@ -1,11 +1,16 @@
 // Anaire Minimal CO2, temperature and humidity measurement device www.anaire.org
-// Based on https://developer.sensirion.com/tutorials/create-your-own-co2-monitor/
-// TTGO T-Display board and Sensirion SCD30 CO2, temp and humidity sensor
-// Top button click: toggles buzzer sound
-// Top button double click: performs SCD30 forced calibration
-// Top button triple click: enables self calibration
-// Bottom button click: sleep; click again the button to wake up
-// Bottom button double click: restart device
+//   Parts: TTGO T-Display board, Sensirion SCD30 CO2 temp and humidity sensor, AZ delivery active buzzer, 3D Box designed by Anaire
+
+// SW Setup:
+//   Setup the Arduino IDE for the ESP32 platform: https://github.com/espressif/arduino-esp32
+//   Install the following libraries from Arduino IDE Tools -> Library manager:  Adafruit SCD30, Sensirion GadgetBle Lib
+
+// Buttons design:
+//   Top button click: toggles buzzer sound; enabled by default
+//   Top button double click: performs SCD30 forced calibration
+//   Top button triple click: enables self calibration
+//   Bottom button click: sleep; click again the button to wake up
+//   Bottom button double click: restart device
 
 // TTGO ESP32 board
 #include "esp_timer.h"
@@ -35,14 +40,12 @@ Button2 button_top(BUTTON_TOP);
 Button2 button_bottom(BUTTON_BOTTOM);
 
 // Sensirion SCD30 CO2, temperature and humidity sensor
-// Install Adafruit_SCD30 library from Tools -> Library Manager
 #include <Adafruit_SCD30.h>
 Adafruit_SCD30 scd30;
 #define SCD30_SDA_pin 26  // Define the SDA pin used for the SCD30
 #define SCD30_SCL_pin 27  // Define the SCL pin used for the SCD30
 
 // Bluetooth in TTGO T-Display
-// Install XXX Library
 #include "Sensirion_GadgetBle_Lib.h"  // to connect to Sensirion MyAmbience Android App available on Google Play
 GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
 
@@ -74,8 +77,15 @@ void button_init()
     // Top button double click; SCD30 forced recalibration
     button_top.setDoubleClickHandler([](Button2 & b) {
       Serial.println("Top button double click: SCD30 calibration");
-      if (!scd30.forceRecalibrationWithReference(400)){
-        Serial.println("Failed to force recalibration at 400ppm");
+      tft.fillScreen(TFT_WHITE);
+      tft.setTextColor(TFT_BLUE, TFT_WHITE);
+      tft.setTextDatum(6); // bottom left
+      tft.setTextSize(1);
+      tft.setFreeFont(FF90);
+      tft.drawString("FORCED CALIBRATION", 10, 125);
+      delay(2000);
+      if (!scd30.forceRecalibrationWithReference(420)){
+        Serial.println("Failed to force recalibration at 420 ppm");
       }
       else {
         Serial.print("Forced recalibration performed at ");
@@ -87,12 +97,19 @@ void button_init()
       } else {
         Serial.println("Self calibration disabled");
       }
-
+      delay(1000);
     });
 
     // Top button triple click; SCD30 forced recalibration
     button_top.setTripleClickHandler([](Button2 & b) {
       Serial.println("Top button triple click: enable SCD30 self calibration");
+      tft.fillScreen(TFT_WHITE);
+      tft.setTextColor(TFT_BLUE, TFT_WHITE);
+      tft.setTextDatum(6); // bottom left
+      tft.setTextSize(1);
+      tft.setFreeFont(FF90);
+      tft.drawString("AUTO CALIBRATION", 10, 125);
+      delay(2000);
       if (!scd30.selfCalibrationEnabled(true)){
         Serial.println("Failed to enable self calibration");
       }
@@ -101,7 +118,7 @@ void button_init()
       } else {
         Serial.println("Self calibration disabled");
       }
-
+      delay(1000);    
     });
     
     // Bottom button click: sleep
@@ -114,7 +131,6 @@ void button_init()
       tft.drawString("Press bottom button to wake up",  tft.width() / 2, tft.height() / 2 );
       espDelay(6000);
       digitalWrite(TFT_BL, !r);
-
       tft.writecommand(TFT_DISPOFF);
       tft.writecommand(TFT_SLPIN);
       //After using light sleep, you need to disable timer wake, because here use external IO port to wake up
@@ -186,9 +202,6 @@ void displayCo2(uint16_t co2, float temp, float hum) {
   tft.setFreeFont(FF90);
   tft.drawString("ppm", 230, 90);
 
-  tft.setTextSize(1);
-  tft.setFreeFont(FF90);
-
   // Draw temperature
   tft.setTextDatum(6); // bottom left
   tft.drawString(String(temp), 10, 125);
@@ -225,18 +238,6 @@ void setup() {
     Serial.println("SCD30 Found!");
   }
   
-  /*** Enable or disable automatic self calibration (ASC).
-   * Parameter stored in non-volatile memory of SCD30.
-   * Enabling self calibration will override any previously set
-   * forced calibration value.
-   * ASC needs continuous operation with at least 1 hour
-   * 400ppm CO2 concentration daily.
-   */
-  //if (!scd30.selfCalibrationEnabled(true)){
-  //   Serial.println("Failed to enable or disable self calibration");
-     //while(1) { delay(10); }
-  //}
-  
   if (scd30.selfCalibrationEnabled()) {
     Serial.println("Self calibration enabled");
   } else {
@@ -259,15 +260,11 @@ void setup() {
 
 void loop() {
   
-  //float result[3] = {0};
-
   if (esp_timer_get_time() - lastMmntTime >= startCheckingAfterUs) {
 
-    //if (scd30.isAvailable()) {   
     if (scd30.dataReady()) {
       
       // Read SCD30
-      //scd30.getCarbonDioxideConcentration(result);
       if (!scd30.read()){ 
         Serial.println("Error reading sensor data"); 
         return; 

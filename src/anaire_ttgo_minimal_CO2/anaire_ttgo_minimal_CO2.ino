@@ -29,6 +29,9 @@ TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup
 #include "Sensirion_GadgetBle_Lib.h"  // to connect to Sensirion MyAmbience Android App available on Google Play
 GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
 
+// AZ-Delivery Active Buzzer
+#define BUZZER_GPIO 12 // signal GPIO12 (pin TOUCH5/ADC15/GPIO12 on TTGO)
+
 // control loop timing
 static int64_t lastMmntTime = 0;
 static int startCheckingAfterUs = 1900000;
@@ -54,12 +57,19 @@ void displayCo2(uint16_t co2, float temp, float hum) {
   if (co2 >= 1000 ) {
     tft.fillScreen(TFT_RED);
     tft.setTextColor(TFT_WHITE, TFT_RED);
+    digitalWrite(BUZZER_GPIO, HIGH);
+    delay(1000);
+    digitalWrite(BUZZER_GPIO, LOW);
   } else if (co2 >= 700 ) {
     tft.fillScreen(TFT_YELLOW);
     tft.setTextColor(TFT_RED, TFT_YELLOW);
+    digitalWrite(BUZZER_GPIO, HIGH);
+    delay(100);
+    digitalWrite(BUZZER_GPIO, LOW);
   } else {
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
+    digitalWrite(BUZZER_GPIO, LOW);
   }
 
   // Draw CO2 number
@@ -108,10 +118,14 @@ void setup() {
   scd30.initialize();
   scd30.setAutoSelfCalibration(true);
 
+  // Initialize BUZZER to OFF
+  pinMode(BUZZER_GPIO, OUTPUT);
+  digitalWrite(BUZZER_GPIO, LOW);
+  
   // Display init and splash screen
   displayInit();
   displaySplashScreen();
-  delay(2000); // Enjoy the splash screen for 2 seconds
+  delay(1000); // Enjoy the splash screen for 1 second
   
 }
 
@@ -159,6 +173,6 @@ void loop() {
   }
 
   gadgetBle.handleEvents();
-  delay(3); // repeat each 3 seconds
+  delay(5000); // repeat each 5 seconds
   
 }

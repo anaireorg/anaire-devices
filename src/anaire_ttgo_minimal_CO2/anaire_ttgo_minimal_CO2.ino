@@ -1,6 +1,8 @@
 // Anaire Minimal CO2, temperature and humidity measurement device www.anaire.org
 // Based on https://developer.sensirion.com/tutorials/create-your-own-co2-monitor/
 // TTGO T-Display board and Sensirion SCD30 CO2, temp and humidity sensor
+// Top button click: toggles buzzer sound
+// Bottom button click: sleep; click again the button to wake up
 
 // TTGO ESP32 board
 #include "esp_timer.h"
@@ -20,6 +22,13 @@
 #include "anaire_ttgo_splash.h" // Anaire splash screen
 TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup.h
 
+// Buttons: Top and bottom considered when USB connector is positioned on the right of the board
+#include "Button2.h"
+#define BUTTON_TOP 35
+#define BUTTON_BOTTOM  0
+Button2 button_top(BUTTON_TOP);
+Button2 button_bottom(BUTTON_BOTTOM);
+
 // Sensirion SCD30 CO2, temperature and humidity sensor
 // Download the SeeedStudio SCD30 Arduino driver here:
 //  => https://github.com/Seeed-Studio/Seeed_SCD30/releases/latest
@@ -31,10 +40,58 @@ GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
 
 // AZ-Delivery Active Buzzer
 #define BUZZER_GPIO 12 // signal GPIO12 (pin TOUCH5/ADC15/GPIO12 on TTGO)
+bool sound = true;
 
 // control loop timing
 static int64_t lastMmntTime = 0;
-static int startCheckingAfterUs = 1900000;
+static int startCheckingAfterUs = 5000000; // 5s
+
+//! Long time delay, it is recommended to use shallow sleep, which can effectively reduce the current consumption
+void espDelay(int ms)
+{
+    esp_sleep_enable_timer_wakeup(ms * 1000);
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+    esp_light_sleep_start();
+}
+
+void button_init()
+{
+    // Top button click: toggles sound
+    button_top.setClickHandler([](Button2 & b) {
+        Serial.println("Top button click: toggle sound");
+        if (sound) {sound = false;}
+        else {sound = true;}
+    });
+    
+    // Bottom button click: sleep
+    button_bottom.setClickHandler([](Button2 & b) {
+        Serial.println("=> Bottom button click: sleep");
+        int r = digitalRead(TFT_BL);
+        tft.fillScreen(TFT_BLACK);
+        tft.setTextColor(TFT_GREEN, TFT_BLACK);
+        tft.setTextDatum(MC_DATUM);
+        tft.drawString("Press bottom button to wake up",  tft.width() / 2, tft.height() / 2 );
+        espDelay(6000);
+        digitalWrite(TFT_BL, !r);
+
+        tft.writecommand(TFT_DISPOFF);
+        tft.writecommand(TFT_SLPIN);
+        //After using light sleep, you need to disable timer wake, because here use external IO port to wake up
+        esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+        // esp_sleep_enable_ext1_wakeup(GPIO_SEL_0, ESP_EXT1_WAKEUP_ALL_LOW);
+        // set bottom button for wake up
+        esp_sleep_enable_ext0_wakeup(GPIO_NUM_0, 0);
+        delay(200);
+        esp_deep_sleep_start();
+    });
+    
+}
+
+void button_loop()
+{
+    button_top.loop();
+    button_bottom.loop();
+}
 
 void displayInit() {
   tft.init();
@@ -57,13 +114,13 @@ void displayCo2(uint16_t co2, float temp, float hum) {
   if (co2 >= 1000 ) {
     tft.fillScreen(TFT_RED);
     tft.setTextColor(TFT_WHITE, TFT_RED);
-    digitalWrite(BUZZER_GPIO, HIGH);
+    if (sound) {digitalWrite(BUZZER_GPIO, HIGH);}
     delay(1000);
     digitalWrite(BUZZER_GPIO, LOW);
   } else if (co2 >= 700 ) {
     tft.fillScreen(TFT_YELLOW);
     tft.setTextColor(TFT_RED, TFT_YELLOW);
-    digitalWrite(BUZZER_GPIO, HIGH);
+    if (sound) {digitalWrite(BUZZER_GPIO, HIGH);}
     delay(100);
     digitalWrite(BUZZER_GPIO, LOW);
   } else {
@@ -121,11 +178,14 @@ void setup() {
   // Initialize BUZZER to OFF
   pinMode(BUZZER_GPIO, OUTPUT);
   digitalWrite(BUZZER_GPIO, LOW);
+
+  // Initialize buttons
+  button_init();
   
   // Display init and splash screen
   displayInit();
   displaySplashScreen();
-  delay(1000); // Enjoy the splash screen for 1 second
+  delay(3000); // Enjoy the splash screen for 3 seconds
   
 }
 
@@ -171,8 +231,8 @@ void loop() {
     lastMmntTime = esp_timer_get_time();
   
   }
-
+    
   gadgetBle.handleEvents();
-  delay(5000); // repeat each 5 seconds
+  button_loop();
   
 }

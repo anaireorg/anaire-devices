@@ -3,7 +3,10 @@
 
 // SW Setup:
 //   Setup the Arduino IDE for the ESP32 platform: https://github.com/espressif/arduino-esp32
-//   Install the following libraries from Arduino IDE Tools -> Library manager:  Adafruit SCD30, Sensirion GadgetBle Lib
+//   Setup the required libraries:
+//   - The Sensirion Gadget BLE Arduino Library (https://github.com/Sensirion/Sensirion_GadgetBle_Arduino_Library/releases). 
+//     Download latest zip. In the Arduino IDE, select Sketch -> include Library -> Add .zip Library and select the downloaded .zip file.
+//   - Install the following library from Arduino IDE, select Tools -> Library manager. Search for Adafruit SCD30
 
 // Buttons design:
 //   Top button click: toggles buzzer sound; enabled by default

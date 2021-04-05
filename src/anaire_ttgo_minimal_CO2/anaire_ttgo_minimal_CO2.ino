@@ -4,9 +4,11 @@
 // SW Setup:
 //   Setup the Arduino IDE for the ESP32 platform: https://github.com/espressif/arduino-esp32
 //   Setup the required libraries:
+//   - TTGO T-Display's Git: Download the code as zip https://github.com/Xinyuan-LilyGO/TTGO-T-Display/archive/master.zip 
+//     Extract it and copy the Folder TFT_eSPI to your Arduino library path (usually <your user>/Documents/Arduino in Windows)
 //   - The Sensirion Gadget BLE Arduino Library (https://github.com/Sensirion/Sensirion_GadgetBle_Arduino_Library/releases). 
 //     Download latest zip. In the Arduino IDE, select Sketch -> include Library -> Add .zip Library and select the downloaded .zip file.
-//   - Install the following library from Arduino IDE, select Tools -> Library manager. Search for Adafruit SCD30
+//   - Install the following library from Arduino IDE, select Tools -> Library manager. Search for Adafruit SCD30 and install the library.
 
 // Buttons design:
 //   Top button click: toggles buzzer sound; enabled by default
@@ -19,13 +21,12 @@
 #include "esp_timer.h"
 #include <Wire.h>
 
-// Display
-// Go to TTGO T-Display's Github Repository
-// Download the code as zip, extract it and copy the Folder TFT_eSPI
-//  => https://github.com/Xinyuan-LilyGO/TTGO-T-Display/archive/master.zip
-// to your Arduino library path
+// Display and fonts
 #include <TFT_eSPI.h>
 #include <SPI.h>
+#include "SensirionSimple25pt7b.h"
+#include "ArchivoNarrow_Regular10pt7b.h"
+#include "ArchivoNarrow_Regular50pt7b.h"
 #define GFXFF 1
 #define FF99  &SensirionSimple25pt7b
 #define FF90  &ArchivoNarrow_Regular10pt7b
@@ -33,7 +34,7 @@
 TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup.h
 
 // Customized Anaire splash screen
-#include "anaire_ttgo_splash.h" 
+#include "anaire_ttgo_splash.h"
 
 // Buttons: Top and bottom considered when USB connector is positioned on the right of the board
 #include "Button2.h"

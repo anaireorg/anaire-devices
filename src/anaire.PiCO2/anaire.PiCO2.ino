@@ -17,6 +17,7 @@
 //       - Search for Adafruit SCD30 and install the library
 //       - Search for WifiManager by tzapu,tablatronix https://github.com/tzapu/WiFiManager and install the library
 //       - Search for PubSubClient by Nick O'Leary https://github.com/knolleary/pubsubclient and install the library
+//       - Search for ArduinoJson by Benoît Blanchon https://github.com/bblanchon/ArduinoJson and install the library
 //
 // Buttons design:
 //   Top button click: toggles buzzer sound; enabled by default
@@ -85,7 +86,7 @@ unsigned long MQTT_loop_start;                    // holds a timestamp for each 
 unsigned long lastReconnectAttempt = 0;           // MQTT reconnections
 
 // Errors loop: time between error condition recovery
-unsigned int errors_loop_duration = 3000;         // 3 seconds
+unsigned int errors_loop_duration = 60000;        // 60 seconds
 unsigned long errors_loop_start;                  // holds a timestamp for each error loop start
 
 // TTGO ESP32 board
@@ -105,7 +106,7 @@ unsigned long errors_loop_start;                  // holds a timestamp for each 
 TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup.h
 
 // Customized Anaire splash screen
-#include "anaire_ttgo_splash.h"
+//#include "anaire_ttgo_splash.h"
 
 // Buttons: Top and bottom considered when USB connector is positioned on the right of the board
 #include "Button2.h"
@@ -139,15 +140,16 @@ static int startCheckingAfterUs = 5000000; // 5s
 boolean alarm_ack = false;
 
 // WiFi
+#include <FS.h>
 #include "WiFi.h"
+#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "esp_wpa2.h" //wpa2 library for connections to Enterprise networks
 const int WIFI_CONNECT_TIMEOUT = 10000;           // 10 seconds
 int wifi_status = WL_IDLE_STATUS;
-WiFiServer wifi_server(80);                       // to check if it is alive
+WiFiServer wifi_server(80);                       
 WiFiClient wifi_client;
 #define EAP_IDENTITY eepromConfig.wifi_user       // if connecting from another corporation, use identity@organisation.domain in Eduroam 
 #define EAP_PASSWORD eepromConfig.wifi_password   // your Eduroam password
-#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 
 // MQTT
 #include <PubSubClient.h>
@@ -179,7 +181,7 @@ void setup() {
 
   // Initialize TTGO Display and show Anaire splash screen
   displayInit();
-  displaySplashScreen();
+  //displaySplashScreen();
   delay(1000); // Enjoy the splash screen for 1 second
 
   // init preferences to handle persitent config data
@@ -193,6 +195,7 @@ void setup() {
   MQTT_receive_topic = "config/" + anaire_device_id; // Config messages will be received in config/id
 
   // Read EEPROM config values
+  Wipe_EEPROM();
   Read_EEPROM();
   Print_Config();
 
@@ -306,7 +309,6 @@ void loop() {
       err_MQTT = true;
     }
     
-
     //Reconnect MQTT if needed
     if ((err_MQTT) && (!err_wifi)) {
       Serial.println ("--- MQTT reconnect");
@@ -354,7 +356,7 @@ void Connect_WiFi() { // Connect to WiFi
   // If there are not wifi user and wifi password defined, proceed to traight forward configuration
   if ((strlen(eepromConfig.wifi_user) == 0) && (strlen(eepromConfig.wifi_password) == 0)) {
     Serial.println("Attempting to authenticate with WPA2");
-    WiFi.begin();
+    WiFi.begin("anaire","mel0nc0njam0n");
   }
   else {  // set up wpa2 enterprise
     Serial.println("Attempting to authenticate with WPA2 Enterprise ");
@@ -367,7 +369,6 @@ void Connect_WiFi() { // Connect to WiFi
     esp_wifi_sta_wpa2_ent_set_password((uint8_t *)EAP_PASSWORD, strlen(EAP_PASSWORD)); //provide password
     esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT(); //set config settings to default
     esp_wifi_sta_wpa2_ent_enable(&config); //set config settings to enable function
-    //WiFi.begin("IntranetTelefonicaWiFi"); //connect to wifi
     WiFi.begin(); //connect to wifi
   }
 
@@ -953,6 +954,9 @@ void Do_Calibrate_Sensor() { // Calibrate CO2 sensor
       Serial.println(".");
       delay(500);
       counter = counter - 1;
+      // Process buttons events
+      button_top.loop();
+      button_bottom.loop();
     }
   
   }
@@ -1130,7 +1134,7 @@ void Do_Altitude_Compensation() { // Set CO2 sensor altitude compensation
   */
 }
 
-void CO2_DeviceInfo() { // Get CO2 sensor device info
+void Sensor_Info() { // Get CO2 sensor device info
   uint8_t val[2];
   //char buf[(SCD30_SERIAL_NUM_WORDS * 2) + 1];
 
@@ -1220,6 +1224,7 @@ void button_init() { // Manage TTGO T-Display board buttons
       sound = true;
       tft.drawString("CON sonido", 10, 120);
     }
+    eepromConfig.sound_alarm = sound;
 
   });
 
@@ -1278,7 +1283,7 @@ void button_init() { // Manage TTGO T-Display board buttons
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
     tft.setTextDatum(MC_DATUM);
     tft.drawString("Press bottom button to wake up",  tft.width() / 2, tft.height() / 2 );
-    espDelay(6000);
+    espDelay(3000);
     digitalWrite(TFT_BL, !r);
     tft.writecommand(TFT_DISPOFF);
     tft.writecommand(TFT_SLPIN);
@@ -1316,7 +1321,7 @@ void button_init() { // Manage TTGO T-Display board buttons
     //Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wifiManager;
     wifiManager.setDebugOutput(true);
-    wifiManager.setCountry("ES");
+    //wifiManager.setCountry("ES");
     wifiManager.disconnect();
     WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
@@ -1348,7 +1353,7 @@ void button_init() { // Manage TTGO T-Display board buttons
 
     //it starts an access point
     //and goes into a blocking loop awaiting configuration
-    wifiManager.resetSettings(); // reset previous configurations
+    //wifiManager.resetSettings(); // reset previous configurations
     bool res = wifiManager.startConfigPortal("AnaireWIFI");
     if (!res) {
       Serial.println("Not able to start captive portal");
@@ -1407,9 +1412,9 @@ void displayInit() { // TTGO T-Display init
   tft.setRotation(1);
 }
 
-void displaySplashScreen() { // Display Anaire splash screen
-  tft.pushImage(0, 0,  240, 135, anaire_ttgo_splash);
-}
+//void displaySplashScreen() { // Display Anaire splash screen
+//  tft.pushImage(0, 0,  240, 135, anaire_ttgo_splash);
+//}
 
 void displayCo2(uint16_t co2, float temp, float hum) { // Update display with CO2 measurements
 

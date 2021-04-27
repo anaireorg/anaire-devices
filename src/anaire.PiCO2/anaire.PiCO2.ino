@@ -14,10 +14,11 @@
 //   - The Sensirion Gadget BLE Arduino Library https://github.com/Sensirion/Sensirion_GadgetBle_Arduino_Library/releases
 //     Download latest zip. In the Arduino IDE, select Sketch -> include Library -> Add .zip Library and select the downloaded .zip file
 //   - Install the following libraries from Arduino IDE, select Tools -> Library manager.
-//       - Search for Adafruit SCD30 and install the library
+//       - Search for Adafruit SCD30 by Adafruit https://github.com/adafruit/Adafruit_SCD30 and install the library
 //       - Search for WifiManager by tzapu,tablatronix https://github.com/tzapu/WiFiManager and install the library
 //       - Search for PubSubClient by Nick O'Leary https://github.com/knolleary/pubsubclient and install the library
 //       - Search for ArduinoJson by Benoît Blanchon https://github.com/bblanchon/ArduinoJson and install the library
+//       - Search for Button2 by Lennart Hennings https://github.com/LennartHennigs/Button2 and install the library
 //
 // Buttons design:
 //   Top button click: toggles buzzer sound; enabled by default
@@ -96,17 +97,17 @@ unsigned long errors_loop_start;                  // holds a timestamp for each 
 // Display and fonts
 #include <TFT_eSPI.h>
 #include <SPI.h>
-#include "SensirionSimple25pt7b.h"
+//#include "SensirionSimple25pt7b.h"
 #include "ArchivoNarrow_Regular10pt7b.h"
 #include "ArchivoNarrow_Regular50pt7b.h"
 #define GFXFF 1
-#define FF99  &SensirionSimple25pt7b
+//#define FF99  &SensirionSimple25pt7b
 #define FF90  &ArchivoNarrow_Regular10pt7b
 #define FF95  &ArchivoNarrow_Regular50pt7b
 TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup.h
 
 // Customized Anaire splash screen
-//#include "anaire_ttgo_splash.h"
+#include "anaire_ttgo_splash.h"
 
 // Buttons: Top and bottom considered when USB connector is positioned on the right of the board
 #include "Button2.h"
@@ -118,11 +119,11 @@ Button2 button_bottom(BUTTON_BOTTOM);
 // Sensirion SCD30 CO2, temperature and humidity sensor
 #include <Adafruit_SCD30.h>
 Adafruit_SCD30 scd30;
-#define SCD30_SDA_pin 26  // Define the SDA pin used for the SCD30
-#define SCD30_SCL_pin 27  // Define the SCL pin used for the SCD30
-unsigned long SCD30_WARMING_TIME = 2000;                                // SCD30 CO2 sensor warming time
-unsigned long SCD30_CALIBRATION_TIME = 180000;                          // SCD30 CO2 CALIBRATION TIME: 3 min = 180000 ms
-uint16_t SCD30_MEASUREMENT_INTERVAL = measurements_loop_duration / 1000; // time between measurements
+#define SCD30_SDA_pin 26 // Define the SDA pin used for the SCD30
+#define SCD30_SCL_pin 27 // Define the SCL pin used for the SCD30
+unsigned long SCD30_WARMING_TIME = 1000; // SCD30 CO2 sensor warming time
+unsigned long SCD30_CALIBRATION_TIME = 60000; // SCD30 CO2 CALIBRATION TIME: 1 min = 60000 ms
+uint16_t SCD30_MEASUREMENT_INTERVAL = measurements_loop_duration/1000; // time between measurements
 
 // Bluetooth in TTGO T-Display
 #include "Sensirion_GadgetBle_Lib.h"  // to connect to Sensirion MyAmbience Android App available on Google Play
@@ -132,20 +133,17 @@ GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
 #define BUZZER_GPIO 12 // signal GPIO12 (pin TOUCH5/ADC15/GPIO12 on TTGO)
 bool sound = true;
 
-// control loop timing
-static int64_t lastMmntTime = 0;
-static int startCheckingAfterUs = 5000000; // 5s
-
 // to indicate if push button has been pushed to ack the alarm and switch off the buzzer
 boolean alarm_ack = false;
 
 // WiFi
-#include <FS.h>
-#include "WiFi.h"
+//#include <FS.h>
+//#include "WiFi.h"
+//#include "esp_wpa2.h" //wpa2 library for connections to Enterprise networks
+// Captive portal
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
-#include "esp_wpa2.h" //wpa2 library for connections to Enterprise networks
+bool StartCaptivePortal = false;
 const int WIFI_CONNECT_TIMEOUT = 10000;           // 10 seconds
-int wifi_status = WL_IDLE_STATUS;
 WiFiServer wifi_server(80);                       
 WiFiClient wifi_client;
 #define EAP_IDENTITY eepromConfig.wifi_user       // if connecting from another corporation, use identity@organisation.domain in Eduroam 
@@ -181,9 +179,9 @@ void setup() {
 
   // Initialize TTGO Display and show Anaire splash screen
   displayInit();
-  //displaySplashScreen();
+  displaySplashScreen();
   delay(1000); // Enjoy the splash screen for 1 second
-
+  
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
 
@@ -200,10 +198,10 @@ void setup() {
   Print_Config();
 
   // Initialize the GadgetBle Library for Bluetooth
-  gadgetBle.begin();
+  //gadgetBle.begin();
   Serial.print("Sensirion GadgetBle Lib initialized with deviceId = ");
   Serial.println(gadgetBle.getDeviceIdString());
-
+  
   // Initialize buzzer to OFF
   pinMode(BUZZER_GPIO, OUTPUT);
   digitalWrite(BUZZER_GPIO, LOW);
@@ -258,7 +256,7 @@ void loop() {
     displayCo2((uint16_t) round(scd30.CO2), scd30.temperature, scd30.relative_humidity);
 
     // Update bluetooth app with new values
-    Write_Bluetooth();
+    //Write_Bluetooth();
     
     // Accumulates samples
     CO2ppm_accumulated += CO2ppm_value;
@@ -300,7 +298,7 @@ void loop() {
     if ((err_wifi) || (WiFi.status() != WL_CONNECTED)) {
       Serial.println ("--- err_wifi");
       err_wifi = true;
-      Connect_WiFi();   // Attempt to connect to WiFi network:
+      //Connect_WiFi();   // Attempt to connect to WiFi network:
     }
 
     //Reconnect MQTT if needed
@@ -313,7 +311,7 @@ void loop() {
     if ((err_MQTT) && (!err_wifi)) {
       Serial.println ("--- MQTT reconnect");
       // Attempt to connect to MQTT broker
-      MQTTReconnect();
+      MQTT_Reconnect();
       Init_MQTT();
     }
 
@@ -327,15 +325,21 @@ void loop() {
   }
     
   // Process wifi server requests
-  Check_WiFi_Server();
+  //Check_WiFi_Server();
 
   // Process bluetooth events
-  gadgetBle.handleEvents();
+  //gadgetBle.handleEvents();
 
   // Process buttons events
   button_top.loop();
   button_bottom.loop();
 
+  // Start captive portal if flag was set
+  if (StartCaptivePortal) {
+    Start_Captive_Portal();
+    StartCaptivePortal = false;
+  }
+  
   //Serial.println("--- END LOOP");
   
 }
@@ -364,12 +368,14 @@ void Connect_WiFi() { // Connect to WiFi
     Serial.println(EAP_IDENTITY);
     Serial.print("Password: ");
     Serial.println(EAP_PASSWORD);
+    /*
     esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)EAP_IDENTITY, strlen(EAP_IDENTITY)); //provide identity
     esp_wifi_sta_wpa2_ent_set_username((uint8_t *)EAP_IDENTITY, strlen(EAP_IDENTITY)); //provide username --> identity and username is same
     esp_wifi_sta_wpa2_ent_set_password((uint8_t *)EAP_PASSWORD, strlen(EAP_PASSWORD)); //provide password
     esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT(); //set config settings to default
     esp_wifi_sta_wpa2_ent_enable(&config); //set config settings to enable function
     WiFi.begin(); //connect to wifi
+    */
   }
 
   // Timestamp for connection timeout
@@ -390,7 +396,7 @@ void Connect_WiFi() { // Connect to WiFi
     err_wifi = false;
     Serial.println(" WiFi connected");
     // start the web server on port 80
-    wifi_server.begin();
+    //wifi_server.begin();
   }
   Print_WiFi_Status();
 }
@@ -416,7 +422,6 @@ void Print_WiFi_Status() { // Print wifi status on serial monitor
   Serial.println(WiFi.SSID());
 
   // Print your WiFi shield's IP address:
-  //ip_address = WiFi.localIP();
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
 
@@ -425,7 +430,6 @@ void Print_WiFi_Status() { // Print wifi status on serial monitor
   Serial.println(WiFi.macAddress());
 
   // Print the received signal strength:
-  //wifi_rssi_dbm = WiFi.RSSI();
   Serial.print("signal strength (RSSI):");
   Serial.print(WiFi.RSSI());
   Serial.println(" dBm");
@@ -573,6 +577,98 @@ void Check_WiFi_Server() { // Wifi server
 
 }
 
+void Start_Captive_Portal() { // Run a captive portal to configure WiFi and MQTT
+
+    tft.fillScreen(TFT_WHITE);
+    tft.setTextColor(TFT_BLUE, TFT_WHITE);
+    tft.setTextDatum(6); // bottom left
+    tft.setTextSize(1);
+    tft.setFreeFont(FF90);
+    tft.drawString("CONFIG AnaireWiFi", 10, 125);
+    
+    //Local intialization. Once its business is done, there is no need to keep it around
+    WiFiManager wifiManager;
+    wifiManager.setDebugOutput(true);
+    //wifiManager.setCountry("ES");
+    wifiManager.disconnect();
+    WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
+
+    // Captive portal parameters
+    WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise</p>"); // only custom html
+    WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user", eepromConfig.wifi_user, 24);
+    WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
+    WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server</p>"); // only custom html
+    WiFiManagerParameter custom_mqtt_server("Server", "MQTT server", eepromConfig.MQTT_server, 24);
+    char port[6]; itoa(eepromConfig.MQTT_port, port, 10);
+    WiFiManagerParameter custom_mqtt_port("Port", "MQTT port", port, 6);
+
+    //wifiManager.setSaveParamsCallback(saveParamCallback);
+
+    // Add parameters
+    wifiManager.addParameter(&custom_wifi_html);
+    wifiManager.addParameter(&custom_wifi_user);
+    wifiManager.addParameter(&custom_wifi_password);
+    wifiManager.addParameter(&custom_mqtt_html);
+    wifiManager.addParameter(&custom_mqtt_server);
+    wifiManager.addParameter(&custom_mqtt_port);
+
+    //sets timeout in seconds until configuration portal gets turned off.
+    //If not specified device will remain in configuration mode until
+    //switched off via webserver or device is restarted.
+    wifiManager.setConfigPortalTimeout(60);
+
+    //it starts an access point
+    //and goes into a blocking loop awaiting configuration
+    //wifiManager.resetSettings(); // reset previous configurations
+    bool res = wifiManager.startConfigPortal("AnaireWiFi");
+    if (!res) {
+      Serial.println("Not able to start captive portal");
+    } else {
+      //if you get here you have connected to the WiFi
+      Serial.println("Captive portal operative");
+    }
+
+    // Save parameters to EEPROM only if any of them changed
+    bool write_eeprom = false;
+
+    if (eepromConfig.wifi_user != custom_wifi_user.getValue()) {
+      strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
+      eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
+      write_eeprom = true;
+      Serial.print("WiFi user: ");
+      Serial.println(eepromConfig.wifi_user);
+    }
+    if (eepromConfig.wifi_password != custom_wifi_password.getValue()) {
+      strncpy(eepromConfig.wifi_password, custom_wifi_password.getValue(), sizeof(eepromConfig.wifi_password));
+      eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
+      write_eeprom = true;
+      Serial.print("WiFi password: ");
+      Serial.println(eepromConfig.wifi_password);
+    }
+    if (eepromConfig.MQTT_server != custom_mqtt_server.getValue()) {
+      strncpy(eepromConfig.MQTT_server, custom_mqtt_server.getValue(), sizeof(eepromConfig.MQTT_server));
+      eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
+      write_eeprom = true;
+      Serial.print("MQTT server: ");
+      Serial.println(eepromConfig.MQTT_server);
+    }
+
+    if (eepromConfig.MQTT_port != atoi(custom_mqtt_port.getValue())) {
+      eepromConfig.MQTT_port = atoi(custom_mqtt_port.getValue());
+      write_eeprom = true;
+      Serial.print("MQTT port: ");
+      Serial.println(eepromConfig.MQTT_port);
+    }
+
+    if (write_eeprom) {
+      Write_EEPROM();
+    }
+
+    // Restart
+    ESP.restart(); 
+    
+}
+
 void Init_MQTT() { // MQTT Init function
   Serial.print("Attempting to connect to the MQTT broker ");
   Serial.print(eepromConfig.MQTT_server);
@@ -580,14 +676,14 @@ void Init_MQTT() { // MQTT Init function
   Serial.println(eepromConfig.MQTT_port);
 
   // Attempt to connect to MQTT broker
-  //MQTT_client.setBufferSize(512); // to receive messages up to 512 bytes length (default is 256)
+  MQTT_client.setBufferSize(512); // to receive messages up to 512 bytes length (default is 256)
   MQTT_client.setServer(eepromConfig.MQTT_server, eepromConfig.MQTT_port);
   MQTT_client.setCallback(Receive_Message_Cloud_App_MQTT);
   MQTT_client.connect(anaire_device_id.c_str());
 
   if (!MQTT_client.connected()) {
     err_MQTT = true;
-    MQTTReconnect();
+    MQTT_Reconnect();
   }
   else {
     err_MQTT = false;
@@ -600,7 +696,7 @@ void Init_MQTT() { // MQTT Init function
 
 }
 
-void MQTTReconnect() { // MQTT reconnect function
+void MQTT_Reconnect() { // MQTT reconnect function
   //Try to reconnect only if it has been more than 5 sec since last attemp
   unsigned long now = millis();
   if (now - lastReconnectAttempt > 5000) {
@@ -1278,13 +1374,13 @@ void button_init() { // Manage TTGO T-Display board buttons
   // Bottom button click: sleep
   button_bottom.setClickHandler([](Button2 & b) {
     Serial.println("Bottom button click: sleep");
-    int r = digitalRead(TFT_BL);
+    //int r = digitalRead(TFT_BL);
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
     tft.setTextDatum(MC_DATUM);
     tft.drawString("Press bottom button to wake up",  tft.width() / 2, tft.height() / 2 );
     espDelay(3000);
-    digitalWrite(TFT_BL, !r);
+    //digitalWrite(TFT_BL, !r);
     tft.writecommand(TFT_DISPOFF);
     tft.writecommand(TFT_SLPIN);
     //After using light sleep, you need to disable timer wake, because here use external IO port to wake up
@@ -1311,98 +1407,7 @@ void button_init() { // Manage TTGO T-Display board buttons
   // Bottom button triple click: launch captive portal to configure WiFi and MQTT
   button_bottom.setTripleClickHandler([](Button2 & b) {
     Serial.println("Bottom button triple click: captive portal");
-    tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_BLUE, TFT_WHITE);
-    tft.setTextDatum(6); // bottom left
-    tft.setTextSize(1);
-    tft.setFreeFont(FF90);
-    tft.drawString("CONFIG AnaireWiFi", 10, 125);
-
-    //Local intialization. Once its business is done, there is no need to keep it around
-    WiFiManager wifiManager;
-    wifiManager.setDebugOutput(true);
-    //wifiManager.setCountry("ES");
-    wifiManager.disconnect();
-    WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
-
-    /*
-      // Captive portal parameters
-      WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise</p>"); // only custom html
-      WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user", eepromConfig.wifi_user, 24);
-      WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
-      WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server</p>"); // only custom html
-      WiFiManagerParameter custom_mqtt_server("Server", "MQTT server", eepromConfig.MQTT_server, 24);
-      char port[6]; itoa(eepromConfig.MQTT_port, port, 10);
-      WiFiManagerParameter custom_mqtt_port("Port", "MQTT port", port, 6);
-
-      //wifiManager.setSaveParamsCallback(saveParamCallback);
-
-      // Add parameters
-      wifiManager.addParameter(&custom_wifi_html);
-      wifiManager.addParameter(&custom_wifi_user);
-      wifiManager.addParameter(&custom_wifi_password);
-      wifiManager.addParameter(&custom_mqtt_html);
-      wifiManager.addParameter(&custom_mqtt_server);
-      wifiManager.addParameter(&custom_mqtt_port);
-    */
-
-    //sets timeout in seconds until configuration portal gets turned off.
-    //If not specified device will remain in configuration mode until
-    //switched off via webserver or device is restarted.
-    wifiManager.setConfigPortalTimeout(600);
-
-    //it starts an access point
-    //and goes into a blocking loop awaiting configuration
-    //wifiManager.resetSettings(); // reset previous configurations
-    bool res = wifiManager.startConfigPortal("AnaireWIFI");
-    if (!res) {
-      Serial.println("Not able to start captive portal");
-    } else {
-      //if you get here you have connected to the WiFi
-      Serial.println("Captive portal operative");
-    }
-
-    /*
-      // Save parameters to EEPROM only if any of them changed
-      bool write_eeprom = false;
-
-      if (eepromConfig.wifi_user != custom_wifi_user.getValue()) {
-      strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
-      eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
-      write_eeprom = true;
-      Serial.print("WiFi user: ");
-      Serial.println(eepromConfig.wifi_user);
-      }
-      if (eepromConfig.wifi_password != custom_wifi_password.getValue()) {
-      strncpy(eepromConfig.wifi_password, custom_wifi_password.getValue(), sizeof(eepromConfig.wifi_password));
-      eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
-      write_eeprom = true;
-      Serial.print("WiFi password: ");
-      Serial.println(eepromConfig.wifi_password);
-      }
-      if (eepromConfig.MQTT_server != custom_mqtt_server.getValue()) {
-      strncpy(eepromConfig.MQTT_server, custom_mqtt_server.getValue(), sizeof(eepromConfig.MQTT_server));
-      eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
-      write_eeprom = true;
-      Serial.print("MQTT server: ");
-      Serial.println(eepromConfig.MQTT_server);
-      }
-
-      if (eepromConfig.MQTT_port != atoi(custom_mqtt_port.getValue())) {
-      eepromConfig.MQTT_port = atoi(custom_mqtt_port.getValue());
-      write_eeprom = true;
-      Serial.print("MQTT port: ");
-      Serial.println(eepromConfig.MQTT_port);
-      }
-
-      if (write_eeprom) {
-      Write_EEPROM();
-      }
-    */
-
-    // Restart
-    //ESP.restart();
-
+    StartCaptivePortal = true;
   });
 
 }
@@ -1412,9 +1417,9 @@ void displayInit() { // TTGO T-Display init
   tft.setRotation(1);
 }
 
-//void displaySplashScreen() { // Display Anaire splash screen
+void displaySplashScreen() { // Display Anaire splash screen
 //  tft.pushImage(0, 0,  240, 135, anaire_ttgo_splash);
-//}
+}
 
 void displayCo2(uint16_t co2, float temp, float hum) { // Update display with CO2 measurements
 
@@ -1501,7 +1506,6 @@ void Read_EEPROM() { // Read Anaire device persistent info
     anaire_device_id.toCharArray(eepromConfig.anaire_device_name, sizeof(eepromConfig.anaire_device_name)); // Initialize anaire_device_name with anaire_device_id
     Serial.println("No EEPROM data - using default config values");
   }
-
 }
 
 void Write_EEPROM() { // Write Anaire device persistent info

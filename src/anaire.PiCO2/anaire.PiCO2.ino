@@ -29,7 +29,7 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210425.Samba";
+String sw_version = "v3.20210430.kuti";
 // v3.20210425.Samba - First fully functional Anaire device on TTGo T-Display board, connected to Anaire Cloud App
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -38,7 +38,7 @@ String anaire_device_id;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct {
-  char anaire_device_name[24] = "";                           // Device name; default to anaire_device_id
+  char anaire_device_name[24];                                // Device name; default to anaire_device_id
   uint16_t CO2ppm_warning_threshold = 700;                    // Warning threshold; default to 700ppm
   uint16_t CO2ppm_alarm_threshold = 1000;                     // Alarm threshold; default to 1000ppm
   char MQTT_server[24] = "mqtt.anaire.org";                   // MQTT server url or public IP address. Default to Anaire Portal on portal.anaire.org
@@ -48,8 +48,8 @@ struct MyConfigStruct {
   uint16_t FRC_value = 420;                                   // Forced ReCalibration value; default to 420ppm
   uint16_t temperature_offset = 0;                            // temperature offset for SCD30 CO2 measurements
   uint16_t altitude_compensation = 0;                         // altitude compensation for SCD30 CO2 measurements
-  char wifi_user[24] = "";                                    // WiFi user to be used on WPA Enterprise. Default to null (not used)
-  char wifi_password[24] = "";                                // WiFi password to be used on WPA Enterprise. Default to null (not used)
+  char wifi_user[24];                                         // WiFi user to be used on WPA Enterprise. Default to null (not used)
+  char wifi_password[24];                                     // WiFi password to be used on WPA Enterprise. Default to null (not used)
 } eepromConfig;
 
 // to store data on nvs partition
@@ -126,8 +126,9 @@ unsigned long SCD30_CALIBRATION_TIME = 60000; // SCD30 CO2 CALIBRATION TIME: 1 m
 uint16_t SCD30_MEASUREMENT_INTERVAL = measurements_loop_duration/1000; // time between measurements
 
 // Bluetooth in TTGO T-Display
-#include "Sensirion_GadgetBle_Lib.h"  // to connect to Sensirion MyAmbience Android App available on Google Play
-GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
+//#include "Sensirion_GadgetBle_Lib.h"  // to connect to Sensirion MyAmbience Android App available on Google Play
+//GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
+//bool bluetooth_active = false;
 
 // AZ-Delivery Active Buzzer
 #define BUZZER_GPIO 12 // signal GPIO12 (pin TOUCH5/ADC15/GPIO12 on TTGO)
@@ -139,15 +140,12 @@ boolean alarm_ack = false;
 // WiFi
 //#include <FS.h>
 //#include "WiFi.h"
-//#include "esp_wpa2.h" //wpa2 library for connections to Enterprise networks
-// Captive portal
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
+#include "esp_wpa2.h" //wpa2 library for connections to Enterprise networks
 bool StartCaptivePortal = false;
 const int WIFI_CONNECT_TIMEOUT = 10000;           // 10 seconds
 WiFiServer wifi_server(80);                       
 WiFiClient wifi_client;
-#define EAP_IDENTITY eepromConfig.wifi_user       // if connecting from another corporation, use identity@organisation.domain in Eduroam 
-#define EAP_PASSWORD eepromConfig.wifi_password   // your Eduroam password
 
 // MQTT
 #include <PubSubClient.h>
@@ -193,14 +191,16 @@ void setup() {
   MQTT_receive_topic = "config/" + anaire_device_id; // Config messages will be received in config/id
 
   // Read EEPROM config values
-  Wipe_EEPROM();
-  Read_EEPROM();
+  //Wipe_EEPROM();
+  //Read_EEPROM();
   Print_Config();
 
   // Initialize the GadgetBle Library for Bluetooth
-  //gadgetBle.begin();
-  Serial.print("Sensirion GadgetBle Lib initialized with deviceId = ");
-  Serial.println(gadgetBle.getDeviceIdString());
+  //if (bluetooth_active) {
+  //  gadgetBle.begin();
+  //  Serial.print("Sensirion GadgetBle Lib initialized with deviceId = ");
+  //  Serial.println(gadgetBle.getDeviceIdString());
+  //}
   
   // Initialize buzzer to OFF
   pinMode(BUZZER_GPIO, OUTPUT);
@@ -256,7 +256,9 @@ void loop() {
     displayCo2((uint16_t) round(scd30.CO2), scd30.temperature, scd30.relative_humidity);
 
     // Update bluetooth app with new values
-    //Write_Bluetooth();
+    //if (bluetooth_active) {
+    //  Write_Bluetooth();
+    //}
     
     // Accumulates samples
     CO2ppm_accumulated += CO2ppm_value;
@@ -325,11 +327,13 @@ void loop() {
   }
     
   // Process wifi server requests
-  //Check_WiFi_Server();
+  Check_WiFi_Server();
 
   // Process bluetooth events
-  //gadgetBle.handleEvents();
-
+  //if (bluetooth_active) {
+  //  gadgetBle.handleEvents();
+  //}
+  
   // Process buttons events
   button_top.loop();
   button_bottom.loop();
@@ -354,30 +358,30 @@ void Connect_WiFi() { // Connect to WiFi
   Serial.print("Attempting to connect to WiFi network ");
   Serial.println(WiFi.SSID());
    
-  // Set wifi mode
-  WiFi.mode(WIFI_STA);
+  WiFi.disconnect(true); //disconnect form wifi to set new wifi connection
+  WiFi.mode(WIFI_STA); //init wifi mode
 
   // If there are not wifi user and wifi password defined, proceed to traight forward configuration
   if ((strlen(eepromConfig.wifi_user) == 0) && (strlen(eepromConfig.wifi_password) == 0)) {
     Serial.println("Attempting to authenticate with WPA2");
-    WiFi.begin("anaire","mel0nc0njam0n");
   }
   else {  // set up wpa2 enterprise
     Serial.println("Attempting to authenticate with WPA2 Enterprise ");
     Serial.print("User: ");
-    Serial.println(EAP_IDENTITY);
+    Serial.println(eepromConfig.wifi_user);
     Serial.print("Password: ");
-    Serial.println(EAP_PASSWORD);
-    /*
-    esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)EAP_IDENTITY, strlen(EAP_IDENTITY)); //provide identity
-    esp_wifi_sta_wpa2_ent_set_username((uint8_t *)EAP_IDENTITY, strlen(EAP_IDENTITY)); //provide username --> identity and username is same
-    esp_wifi_sta_wpa2_ent_set_password((uint8_t *)EAP_PASSWORD, strlen(EAP_PASSWORD)); //provide password
+    Serial.println(eepromConfig.wifi_password);
+    esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user)); //provide identity
+    esp_wifi_sta_wpa2_ent_set_username((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user)); //provide username --> identity and username is same
+    esp_wifi_sta_wpa2_ent_set_password((uint8_t *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password)); //provide password
     esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT(); //set config settings to default
-    esp_wifi_sta_wpa2_ent_enable(&config); //set config settings to enable function
-    WiFi.begin(); //connect to wifi
-    */
+    esp_wifi_sta_wpa2_ent_enable(&config); //set config settings to enable function 
   }
 
+  // Connect to wifi
+  //WiFi.begin("IntranetTelefonicaWiFi"); 
+  WiFi.begin();
+  
   // Timestamp for connection timeout
   int wifi_timeout_start = millis();
 
@@ -396,14 +400,12 @@ void Connect_WiFi() { // Connect to WiFi
     err_wifi = false;
     Serial.println(" WiFi connected");
     // start the web server on port 80
-    //wifi_server.begin();
+    wifi_server.begin();
   }
   Print_WiFi_Status();
 }
 
 void Print_WiFi_Status() { // Print wifi status on serial monitor
-
-
   // Get current status
   //  WL_CONNECTED: assigned when connected to a WiFi network;
   //  WL_NO_SHIELD: assigned when no WiFi shield is present;
@@ -1009,12 +1011,14 @@ void Evaluate_CO2_Value() { // Evaluate measured CO2 value ragainst warning and 
 
 }
 
+/*
 void Write_Bluetooth() { // Write measurements to bluetooth
     gadgetBle.writeCO2(CO2ppm_value);
     gadgetBle.writeTemperature(temperature);
     gadgetBle.writeHumidity(humidity);
     gadgetBle.commit();
 }
+*/
 
 void Do_Calibrate_Sensor() { // Calibrate CO2 sensor
 
@@ -1418,7 +1422,7 @@ void displayInit() { // TTGO T-Display init
 }
 
 void displaySplashScreen() { // Display Anaire splash screen
-//  tft.pushImage(0, 0,  240, 135, anaire_ttgo_splash);
+  tft.pushImage(0, 0,  240, 135, anaire_ttgo_splash);
 }
 
 void displayCo2(uint16_t co2, float temp, float hum) { // Update display with CO2 measurements
@@ -1436,7 +1440,7 @@ void displayCo2(uint16_t co2, float temp, float hum) { // Update display with CO
     if (sound) {
       digitalWrite(BUZZER_GPIO, HIGH);
     }
-    delay(1000);
+    delay(250);
     digitalWrite(BUZZER_GPIO, LOW);
   } else if (co2 >= 700 ) {
     tft.fillScreen(TFT_YELLOW);
@@ -1444,7 +1448,7 @@ void displayCo2(uint16_t co2, float temp, float hum) { // Update display with CO
     if (sound) {
       digitalWrite(BUZZER_GPIO, HIGH);
     }
-    delay(100);
+    delay(50);
     digitalWrite(BUZZER_GPIO, LOW);
   } else {
     tft.fillScreen(TFT_BLACK);
@@ -1473,9 +1477,11 @@ void displayCo2(uint16_t co2, float temp, float hum) { // Update display with CO
   tft.drawString("%", 130, 125);
 
   // Draw bluetooth device id
-  tft.setTextDatum(8); // bottom right
-  tft.drawString(gadgetBle.getDeviceIdString(), 230, 125);
-
+  //if (bluetooth_active) {
+  //  tft.setTextDatum(8); // bottom right
+  //  tft.drawString(gadgetBle.getDeviceIdString(), 230, 125);
+  //}
+  
   // Revert datum setting
   tft.setTextDatum(defaultDatum);
 

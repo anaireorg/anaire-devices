@@ -21,7 +21,7 @@
 //       - Search for Button2 by Lennart Hennings https://github.com/LennartHennigs/Button2 and install the library
 //
 // Buttons design:
-//   Top button click: toggles buzzer sound; enabled by default
+//   Top button click: toggles buzzer acoustic_alarm; enabled by default
 //   Top button double click: performs SCD30 forced calibration
 //   Top button triple click: enables self calibration
 //   Bottom button click: sleep; click again the button to wake up
@@ -29,8 +29,10 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210430.kuti";
-// v3.20210425.Samba - First fully functional Anaire device on TTGo T-Display board, connected to Anaire Cloud App
+String sw_version = "v3.20210502.Madrid";
+// v3.20210502.Madrid - Lots of additions: SCD30 full support, coherent display messages, complete buttons support, etc.
+// v3.20210430.Kuti - Bluetooth commented out for later to get captive portal fully functional
+// v3.2021025.Samba - First fully functional Anaire device on TTGo T-Display board, connected to Anaire Cloud App
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
@@ -43,9 +45,9 @@ struct MyConfigStruct {
   uint16_t CO2ppm_alarm_threshold = 1000;                     // Alarm threshold; default to 1000ppm
   char MQTT_server[24] = "mqtt.anaire.org";                   // MQTT server url or public IP address. Default to Anaire Portal on portal.anaire.org
   uint16_t MQTT_port = 80;                                    // MQTT port; Default to Anaire Port on 30183
-  boolean sound_alarm = true;                                 // Global flag to control sound alarm; default to true
-  boolean ABC = false;                                        // Automatic Baseline Correction of CO2 sensor; default to false
-  uint16_t FRC_value = 420;                                   // Forced ReCalibration value; default to 420ppm
+  boolean acoustic_alarm = true;                              // Global flag to control acoustic alarm; default to true
+  boolean self_calibration = false;                           // Automatic Baseline Correction of CO2 sensor; default to false
+  uint16_t forced_recalibration_reference = 420;              // Forced Recalibration value; default to 420ppm
   uint16_t temperature_offset = 0;                            // temperature offset for SCD30 CO2 measurements
   uint16_t altitude_compensation = 0;                         // altitude compensation for SCD30 CO2 measurements
   char wifi_user[24];                                         // WiFi user to be used on WPA Enterprise. Default to null (not used)
@@ -132,14 +134,9 @@ uint16_t SCD30_MEASUREMENT_INTERVAL = measurements_loop_duration/1000; // time b
 
 // AZ-Delivery Active Buzzer
 #define BUZZER_GPIO 12 // signal GPIO12 (pin TOUCH5/ADC15/GPIO12 on TTGO)
-bool sound = true;
-
-// to indicate if push button has been pushed to ack the alarm and switch off the buzzer
-boolean alarm_ack = false;
 
 // WiFi
-//#include <FS.h>
-//#include "WiFi.h"
+//#include <WiFi.h>
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "esp_wpa2.h" //wpa2 library for connections to Enterprise networks
 bool StartCaptivePortal = false;
@@ -178,7 +175,6 @@ void setup() {
   // Initialize TTGO Display and show Anaire splash screen
   displayInit();
   displaySplashScreen();
-  delay(1000); // Enjoy the splash screen for 1 second
   
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
@@ -192,7 +188,7 @@ void setup() {
 
   // Read EEPROM config values
   //Wipe_EEPROM();
-  //Read_EEPROM();
+  Read_EEPROM();
   Print_Config();
 
   // Initialize the GadgetBle Library for Bluetooth
@@ -225,6 +221,7 @@ void setup() {
   MQTT_loop_start = millis();
   errors_loop_start = millis();
 
+  Serial.println("### ANAIRE PiCO2 DEVICE SETUP FINISHED ###\n");
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -249,21 +246,24 @@ void loop() {
     // Read sensors
     Read_Sensor();
 
-    // Evaluate CO2 value
-    Evaluate_CO2_Value();
-
-    // Update display with new values
-    displayCo2((uint16_t) round(scd30.CO2), scd30.temperature, scd30.relative_humidity);
-
-    // Update bluetooth app with new values
-    //if (bluetooth_active) {
-    //  Write_Bluetooth();
-    //}
+    if (CO2ppm_value > 0) {
     
-    // Accumulates samples
-    CO2ppm_accumulated += CO2ppm_value;
-    CO2ppm_samples++;
+      // Evaluate CO2 value
+      Evaluate_CO2_Value();
+  
+      // Update display with new values
+      displayCo2((uint16_t) round(scd30.CO2), scd30.temperature, scd30.relative_humidity);
+  
+      // Update bluetooth app with new values
+      //if (bluetooth_active) {
+      //  Write_Bluetooth();
+      //}
+      
+      // Accumulates samples
+      CO2ppm_accumulated += CO2ppm_value;
+      CO2ppm_samples++;
 
+    }
   }
 
   // MQTT loop
@@ -300,6 +300,7 @@ void loop() {
     if ((err_wifi) || (WiFi.status() != WL_CONNECTED)) {
       Serial.println ("--- err_wifi");
       err_wifi = true;
+      WiFi.reconnect();
       //Connect_WiFi();   // Attempt to connect to WiFi network:
     }
 
@@ -339,34 +340,36 @@ void loop() {
   button_bottom.loop();
 
   // Start captive portal if flag was set
-  if (StartCaptivePortal) {
-    Start_Captive_Portal();
-    StartCaptivePortal = false;
-  }
+  //if (StartCaptivePortal) {
+  //  Start_Captive_Portal();
+  //  StartCaptivePortal = false;
+  //}
   
   //Serial.println("--- END LOOP");
   
 }
-
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 void Connect_WiFi() { // Connect to WiFi
-
-  Serial.print("Attempting to connect to WiFi network ");
-  Serial.println(WiFi.SSID());
-   
+     
   WiFi.disconnect(true); //disconnect form wifi to set new wifi connection
   WiFi.mode(WIFI_STA); //init wifi mode
+  WiFi.onEvent(WiFiEvent);
 
+  wifi_config_t conf;
+  esp_wifi_get_config(WIFI_IF_STA, &conf); // Get WiFi configuration
+  Serial.print("Attempting to connect to WiFi network: ");
+  Serial.println(String(reinterpret_cast<const char*>(conf.sta.ssid))); // WiFi.SSID() is not filled up until the connection is established 
+  
   // If there are not wifi user and wifi password defined, proceed to traight forward configuration
   if ((strlen(eepromConfig.wifi_user) == 0) && (strlen(eepromConfig.wifi_password) == 0)) {
-    Serial.println("Attempting to authenticate with WPA2");
+    Serial.println("Attempting to authenticate...");
   }
   else {  // set up wpa2 enterprise
-    Serial.println("Attempting to authenticate with WPA2 Enterprise ");
+    Serial.println("Attempting to authenticate using WPA2 Enterprise...");
     Serial.print("User: ");
     Serial.println(eepromConfig.wifi_user);
     Serial.print("Password: ");
@@ -379,7 +382,6 @@ void Connect_WiFi() { // Connect to WiFi
   }
 
   // Connect to wifi
-  //WiFi.begin("IntranetTelefonicaWiFi"); 
   WiFi.begin();
   
   // Timestamp for connection timeout
@@ -388,17 +390,17 @@ void Connect_WiFi() { // Connect to WiFi
   // Wait for warming time while blinking blue led
   while ((WiFi.status() != WL_CONNECTED) && ((millis() - wifi_timeout_start) < WIFI_CONNECT_TIMEOUT)) {
     delay(500); // wait 0.5 seconds for connection
-    Serial.print(".");
+    Serial.println(".");
   }
 
   // Status
   if (WiFi.status() != WL_CONNECTED) {
     err_wifi = true;
-    Serial.println(" WiFi not connected");
+    Serial.println("WiFi not connected");
   }
   else {
     err_wifi = false;
-    Serial.println(" WiFi connected");
+    Serial.println("WiFi connected");
     // start the web server on port 80
     wifi_server.begin();
   }
@@ -406,6 +408,7 @@ void Connect_WiFi() { // Connect to WiFi
 }
 
 void Print_WiFi_Status() { // Print wifi status on serial monitor
+  
   // Get current status
   //  WL_CONNECTED: assigned when connected to a WiFi network;
   //  WL_NO_SHIELD: assigned when no WiFi shield is present;
@@ -417,8 +420,36 @@ void Print_WiFi_Status() { // Print wifi status on serial monitor
   //  WL_DISCONNECTED: assigned when disconnected from a network;
 
   Serial.print("wifi_status: ");
-  Serial.println(WiFi.status());
-
+  switch (WiFi.status()) {
+    case WL_CONNECTED: 
+      Serial.println("WiFi connected");
+      break;
+    case WL_NO_SHIELD:
+      Serial.println("No WiFi HW detected");
+      break;
+    case WL_IDLE_STATUS:
+      Serial.println("Attempting...");
+      break;
+    case WL_NO_SSID_AVAIL:
+      Serial.println("No SSID available");
+      break;
+    case WL_SCAN_COMPLETED:
+      Serial.println("Networks scan completed");
+      break;
+    case WL_CONNECT_FAILED:
+      Serial.println("Connect failed");
+      break;
+    case WL_CONNECTION_LOST:
+      Serial.println("Connection lost");
+      break;
+    case WL_DISCONNECTED:
+      Serial.println("Disconnected");
+      break;
+    default: 
+      Serial.println("Unknown status");
+      break;
+  }
+    
   // Print the SSID of the network you're attached to:
   Serial.print("SSID: ");
   Serial.println(WiFi.SSID());
@@ -430,12 +461,124 @@ void Print_WiFi_Status() { // Print wifi status on serial monitor
   // Print your WiFi shield's MAC address:
   Serial.print("MAC Adress: ");
   Serial.println(WiFi.macAddress());
-
+  
   // Print the received signal strength:
-  Serial.print("signal strength (RSSI):");
+  Serial.print("Signal strength (RSSI):");
   Serial.print(WiFi.RSSI());
   Serial.println(" dBm");
 
+  /*
+  // Print authentication used:
+  Serial.print("Encryption type: ");
+  switch (WiFi.encryptionType()) {
+    case WIFI_AUTH_OPEN: 
+      Serial.println("Open WiFi");
+      break;
+    case WIFI_AUTH_WEP:
+      Serial.println("WEP");
+      break;
+    case WIFI_AUTH_WPA_PSK:
+      Serial.println("WPA-PSK");
+      break;
+    case WIFI_AUTH_WPA2_PSK:
+      Serial.println("WPA2-PSK");
+      break;
+    case WIFI_AUTH_WPA_WPA2_PSK:
+      Serial.println("WPA-WPA2-PSK");
+      break;
+    case WIFI_AUTH_WPA2_ENTERPRISE:
+      Serial.println("WPA2-Enterprise");
+      break;
+    default: 
+      Serial.println("Unknown encryption type");
+      break;
+  }
+  */
+  
+}
+
+void WiFiEvent(WiFiEvent_t event) {
+    Serial.printf("[WiFi-event] event: %d - ", event);
+
+    switch (event) {
+        case SYSTEM_EVENT_WIFI_READY: 
+            Serial.println("WiFi interface ready");
+            break;
+        case SYSTEM_EVENT_SCAN_DONE:
+            Serial.println("Completed scan for access points");
+            break;
+        case SYSTEM_EVENT_STA_START:
+            Serial.println("WiFi client started");
+            break;
+        case SYSTEM_EVENT_STA_STOP:
+            Serial.println("WiFi clients stopped");
+            break;
+        case SYSTEM_EVENT_STA_CONNECTED:
+            Serial.println("Connected to access point");
+            break;
+        case SYSTEM_EVENT_STA_DISCONNECTED:
+            Serial.println("Disconnected from WiFi access point");
+            break;
+        case SYSTEM_EVENT_STA_AUTHMODE_CHANGE:
+            Serial.println("Authentication mode of access point has changed");
+            break;
+        case SYSTEM_EVENT_STA_GOT_IP:
+            Serial.print("Obtained IP address: ");
+            Serial.println(WiFi.localIP());
+            break;
+        case SYSTEM_EVENT_STA_LOST_IP:
+            Serial.println("Lost IP address and IP address is reset to 0");
+            break;
+        case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
+            Serial.println("WiFi Protected Setup (WPS): succeeded in enrollee mode");
+            break;
+        case SYSTEM_EVENT_STA_WPS_ER_FAILED:
+            Serial.println("WiFi Protected Setup (WPS): failed in enrollee mode");
+            break;
+        case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT:
+            Serial.println("WiFi Protected Setup (WPS): timeout in enrollee mode");
+            break;
+        case SYSTEM_EVENT_STA_WPS_ER_PIN:
+            Serial.println("WiFi Protected Setup (WPS): pin code in enrollee mode");
+            break;
+        case SYSTEM_EVENT_AP_START:
+            Serial.println("WiFi access point started");
+            break;
+        case SYSTEM_EVENT_AP_STOP:
+            Serial.println("WiFi access point  stopped");
+            break;
+        case SYSTEM_EVENT_AP_STACONNECTED:
+            Serial.println("Client connected");
+            break;
+        case SYSTEM_EVENT_AP_STADISCONNECTED:
+            Serial.println("Client disconnected");
+            break;
+        case SYSTEM_EVENT_AP_STAIPASSIGNED:
+            Serial.println("Assigned IP address to client");
+            break;
+        case SYSTEM_EVENT_AP_PROBEREQRECVED:
+            Serial.println("Received probe request");
+            break;
+        case SYSTEM_EVENT_GOT_IP6:
+            Serial.println("IPv6 is preferred");
+            break;
+        case SYSTEM_EVENT_ETH_START:
+            Serial.println("Ethernet started");
+            break;
+        case SYSTEM_EVENT_ETH_STOP:
+            Serial.println("Ethernet stopped");
+            break;
+        case SYSTEM_EVENT_ETH_CONNECTED:
+            Serial.println("Ethernet connected");
+            break;
+        case SYSTEM_EVENT_ETH_DISCONNECTED:
+            Serial.println("Ethernet disconnected");
+            break;
+        case SYSTEM_EVENT_ETH_GOT_IP:
+            Serial.println("Obtained IP address");
+            break;
+        default: break;
+    }
 }
 
 void Check_WiFi_Server() { // Wifi server
@@ -491,8 +634,8 @@ void Check_WiFi_Server() { // Wifi server
             client.print("MQTT Port: ");
             client.print(eepromConfig.MQTT_port);
             client.println("<br>");
-            client.print("Sound alarm: ");
-            client.print(eepromConfig.sound_alarm);
+            client.print("Acoustic alarm: ");
+            client.print(eepromConfig.acoustic_alarm);
             client.println("<br>");
             client.println("------");
             client.println("<br>");
@@ -580,13 +723,6 @@ void Check_WiFi_Server() { // Wifi server
 }
 
 void Start_Captive_Portal() { // Run a captive portal to configure WiFi and MQTT
-
-    tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_BLUE, TFT_WHITE);
-    tft.setTextDatum(6); // bottom left
-    tft.setTextSize(1);
-    tft.setFreeFont(FF90);
-    tft.drawString("CONFIG AnaireWiFi", 10, 125);
     
     //Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wifiManager;
@@ -777,19 +913,17 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     Serial.println(eepromConfig.CO2ppm_alarm_threshold);
   }
 
-  // Update sound alarm
-  if ((jsonBuffer["alarm"]) && ((eepromConfig.sound_alarm) && (jsonBuffer["alarm"] == "OFF"))) {
-    eepromConfig.sound_alarm = false;
-    sound = false;
+  // Update acoustic alarm
+  if ((jsonBuffer["alarm"]) && ((eepromConfig.acoustic_alarm) && (jsonBuffer["alarm"] == "OFF"))) {
+    eepromConfig.acoustic_alarm = false;
     write_eeprom = true;
-    Serial.println("Alarm sound value: OFF");
+    Serial.println("Acoustic alarm value: OFF");
   }
 
-  if ((jsonBuffer["alarm"]) && ((!eepromConfig.sound_alarm) && (jsonBuffer["alarm"] == "ON"))) {
-    eepromConfig.sound_alarm = true;
-    sound = true;
+  if ((jsonBuffer["alarm"]) && ((!eepromConfig.acoustic_alarm) && (jsonBuffer["alarm"] == "ON"))) {
+    eepromConfig.acoustic_alarm = true;
     write_eeprom = true;
-    Serial.println("Alarm sound value: ON");
+    Serial.println("Acoustic alarm value: ON");
   }
 
   // Check MQTT server
@@ -821,8 +955,8 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   }
 
   // Check FRC value
-  if ((jsonBuffer["FRC_value"]) && (eepromConfig.FRC_value != (uint16_t)jsonBuffer["FRC_value"])) {
-    eepromConfig.FRC_value = (uint16_t)jsonBuffer["FRC_value"];
+  if ((jsonBuffer["FRC_value"]) && (eepromConfig.forced_recalibration_reference != (uint16_t)jsonBuffer["FRC_value"])) {
+    eepromConfig.forced_recalibration_reference = (uint16_t)jsonBuffer["FRC_value"];
   }
 
   // Check temperature offset
@@ -857,27 +991,27 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     */
   }
 
-  // Update ABC Automatic Baseline Calibration
-  if ((jsonBuffer["ABC"]) && ((eepromConfig.ABC) && (jsonBuffer["ABC"] == "OFF"))) {
-    eepromConfig.ABC = false;
+  // Update self calibration
+  if ((jsonBuffer["ABC"]) && ((eepromConfig.self_calibration) && (jsonBuffer["ABC"] == "OFF"))) {
+    eepromConfig.self_calibration = false;
     write_eeprom = true;
     /*
     if (co2_sensor == scd30_sensor) {
       //SCD30_Do_AutoSelfCalibration();
     }
     */
-    Serial.println("ABC: OFF");
+    Serial.println("self_calibration: OFF");
   }
 
-  if ((jsonBuffer["ABC"]) && ((!eepromConfig.ABC) && (jsonBuffer["ABC"] == "ON"))) {
-    eepromConfig.ABC = true;
+  if ((jsonBuffer["ABC"]) && ((!eepromConfig.self_calibration) && (jsonBuffer["ABC"] == "ON"))) {
+    eepromConfig.self_calibration = true;
     write_eeprom = true;
     /*
     if (co2_sensor == scd30_sensor) {
       //SCD30_Do_AutoSelfCalibration();
     }
     */
-    Serial.println("ABC: ON");
+    Serial.println("self_calibration: ON");
   }
 
   // if update flag has been enabled, wipe EEPROM and update to latest bin
@@ -915,26 +1049,26 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   }
 }
 
-void Setup_Sensor() { // Identify and initialize CO2, temperature and humidity sensors
+void Setup_Sensor() { // Identify and initialize CO2, temperature and humidity sensor
 
-  // Initialize Sensirion SCD30 driver
+  // Try Sensirion SCD30
   Wire.begin(SCD30_SDA_pin, SCD30_SCL_pin);
   if (!scd30.begin()) {
-    Serial.println("Failed to find SCD30 chip");
+    Serial.println("Failed to find Sensirion SCD30 CO2 sensor");
   }
   else {
-    Serial.println("SCD30 Found!");
     co2_sensor = scd30_sensor;
+    Serial.println("Sensirion SCD30 CO2 sensor found!");
   }
 
-  // if SCD30 is identified, get actual status
-  if (co2_sensor == scd30_sensor) {
-    if (scd30.selfCalibrationEnabled()) {
-      Serial.println("Self calibration enabled");
-    } else {
-      Serial.println("Self calibration disabled");
-    }
-  }
+  // If there is any other CO2 sensor insert code from here 
+  // to here
+  
+  // Set up the detected sensor with configuration values from eeprom struct
+  Set_Measurement_Interval();
+  Set_AutoSelfCalibration();
+  Set_Temperature_Offset();
+  Set_Altitude_Compensation();
 
 }
 
@@ -961,8 +1095,9 @@ void Read_Sensor() { // Read CO2, temperature and humidity values
     }
   } // End SCD30 sensor
 
+  // If there is any other CO2 sensor insert code from here 
+  
   if (!err_sensor) {
-    
     // Provide the sensor values for Tools -> Serial Monitor or Serial Plotter
     Serial.print("CO2[ppm]:");
     Serial.print(CO2ppm_value);
@@ -975,25 +1110,21 @@ void Read_Sensor() { // Read CO2, temperature and humidity values
   }
 }
 
-void Evaluate_CO2_Value() { // Evaluate measured CO2 value ragainst warning and alarm thresholds
+void Evaluate_CO2_Value() { // Evaluate measured CO2 value against warning and alarm thresholds
 
-  // Recovering to "ok" status stops any warning or alarm warnings and quits special mode (after pressing flash button), therefore after passing by "ok" status
-  // the device is "reset" and when entering warning or alarm state the device will report localy again by blinking o2_builtin_led_gpio16 led and the buzzer,
-  // and pushing the flash button will be required if the user wants to stop light and sound alerting
-
+  // Status: ok
   if (CO2ppm_value < eepromConfig.CO2ppm_warning_threshold) {
-    co2_device_status = co2_ok; // Update co2 status
-    alarm_ack = false; // Init alarm ack status
+    co2_device_status = co2_ok; // Update CO2 status
   }
 
   // Status: warning
   else if ((CO2ppm_value >= eepromConfig.CO2ppm_warning_threshold) && (CO2ppm_value < eepromConfig.CO2ppm_alarm_threshold)) {
-    co2_device_status = co2_warning; // update device status
+    co2_device_status = co2_warning; // update CO2 status
   }
 
   // Status: alarm
   else {
-    co2_device_status = co2_alarm; // update device status
+    co2_device_status = co2_alarm; // update CO2 status
   }
 
   // Print info on serial monitor
@@ -1011,230 +1142,209 @@ void Evaluate_CO2_Value() { // Evaluate measured CO2 value ragainst warning and 
 
 }
 
-/*
-void Write_Bluetooth() { // Write measurements to bluetooth
-    gadgetBle.writeCO2(CO2ppm_value);
-    gadgetBle.writeTemperature(temperature);
-    gadgetBle.writeHumidity(humidity);
-    gadgetBle.commit();
+void Set_Measurement_Interval() { // Set CO2 sensor measurement interval
+
+  // if SCD30 is identified
+  if (co2_sensor == scd30_sensor) {
+    uint16_t val = scd30.getMeasurementInterval();
+    Serial.print("Reading SCD30 Measurement Interval before change: ");
+    Serial.println(val);
+    Serial.print("Setting new SCD30 Measurement Interval to: ");
+    Serial.println(SCD30_MEASUREMENT_INTERVAL);
+    if (scd30.setMeasurementInterval(SCD30_MEASUREMENT_INTERVAL)) {
+      delay(100);
+      val = scd30.getMeasurementInterval();
+      Serial.print("Reading SCD30 Measurement Interval after change: ");
+      Serial.println(val);
+    }
+    else {
+      Serial.println("Could not set SCD30 Measurement Interval");
+    }
+  }
+
+  // If there is any other CO2 sensor insert code from here 
+  
 }
-*/
 
 void Do_Calibrate_Sensor() { // Calibrate CO2 sensor
 
+  // Update Display
+  tft.fillScreen(TFT_WHITE);
+  tft.setTextColor(TFT_RED, TFT_WHITE);
+  tft.setTextSize(1);
+  tft.setFreeFont(FF90);
+  tft.setTextDatum(MC_DATUM);
+    
   // if SCD30 is identified
   if (co2_sensor == scd30_sensor) {
     
     // Print info
     Serial.println ("Calibrating SCD30 sensor...");
-  
+    
     // Timestamp for calibrating start time
     int calibrating_start = millis();
   
-    //display.init();
-    //display.flipScreenVertically();
-  
-    // Wait for calibrating time while reading values at maximum speed
+    // Wait for calibrating time before executing forced calibration command
     int counter = SCD30_CALIBRATION_TIME / 1000;
     while ((millis() - calibrating_start) < SCD30_CALIBRATION_TIME) {
-      /*
-      display.clear();
-      display.setFont(ArialMT_Plain_16);
-      display.setTextAlignment(TEXT_ALIGN_LEFT);
-      display.drawString(0, 0, "Calibrando");
-      display.drawString(0, 16, "SCD30 " + String(counter));
-      display.display(); // update OLED display
-      */
+
+      // update display
+      tft.fillScreen(TFT_WHITE);
+      tft.drawString("CALIBRANDO " + String(counter), tft.width()/2, tft.height()/2);
+      
       // if not there are not connectivity errors, receive MQTT messages, to be able to interrupt calibration process
       if ((!err_MQTT) && (!err_wifi)) {
         MQTT_client.loop();
       }
+      Serial.print(counter);
       Serial.print(".");
       delay(500);
       Serial.println(".");
       delay(500);
       counter = counter - 1;
+      
       // Process buttons events
-      button_top.loop();
-      button_bottom.loop();
+      //button_top.loop();
+      //button_bottom.loop();
     }
-  
-  }
-  
-}
-  
-void Do_Forced_Calibration_Value() { // Set Forced Calibration value as zero reference value
 
-  delay(1000);
-
-  // Print info
-  Serial.println ("SCD30 sensor calibrated");
-
-  // Device status LED OFF
-  //digitalWrite(DEVICE_STATUS_BUILTIN_LED_GPIO, HIGH);
-
-}
-
-void Do_AutoSelfCalibration() { // Set autocalibration in the CO2 sensor
-
-  /*
-  Serial.print("\nReading SCD30 AutoSelfCalibration before change: ");
-  Serial.println(airSensor.getAutoSelfCalibration());
-  Serial.print("Setting new SCD30 AutoSelfCalibration to: ");
-  Serial.println(eepromConfig.ABC);
-
-  if (airSensor.setAutoSelfCalibration(eepromConfig.ABC)) {
-    Serial.print("Reading SCD30 AutoSelfCalibration after change: ");
-    Serial.println(airSensor.getAutoSelfCalibration());
-  }
-  else {
-    Serial.println("Could not set new SCD30 AutoSelfCalibration");
-  }
-  */
-}
-
-void Do_Temperature_Offset() { // Set CO2 sensor temperature offset
-  uint16_t val;
-  /*
-  if (airSensor.getTemperatureOffset(&val)) {
-
-    Serial.print("\nReading SCD30 Temperature Offset before change: ");
-    Serial.println(val);
-
-    Serial.print("Setting new SCD30 Temperature Offset to: ");
-    Serial.println(eepromConfig.temperature_offset);
-
-    if ( airSensor.setTemperatureOffset(eepromConfig.temperature_offset) ) {
-
-      if ( airSensor.getTemperatureOffset(&val) ) {
-        Serial.print("Reading SCD30 Temperature Offset after making change: ");
-        Serial.println(val);
-      }
-      else {
-        Serial.println("Could not obtain SCD30 Temperature Offset");
-      }
+    // Perform forced recalibration
+    tft.fillScreen(TFT_WHITE);
+    if (scd30.forceRecalibrationWithReference(eepromConfig.forced_recalibration_reference)) {
+      Serial.print("Performed forced calibration at ");
+      Serial.print(eepromConfig.forced_recalibration_reference);
+      Serial.println(" ppm");
+      tft.drawString("CALIBRACIÓN COMPLETA", tft.width()/2, tft.height()/2);
     }
     else {
-      Serial.println("Could not set new SCD30 Temperature Offset");
+      Serial.println("Could not perform forced calibration");
+      tft.drawString("ERROR DE CALIBRACIÓN", tft.width()/2, tft.height()/2);
     }
+    
+    delay(2000); // keep the message on screen
+  
   }
-  else {
-    Serial.println("Could not obtain Temperature Offset");
-  }
-  */
+
+  // If there is any other CO2 sensor insert code from here 
+  
 }
+  
+void Set_Forced_Calibration_Value() { // Set Forced Calibration value as zero reference value
 
-void Do_Measurement_Interval() { // Set CO2 sensor measurement interval
-  uint16_t val;
-  /*
-  if (airSensor.getMeasurementInterval(&val)) {
-    Serial.print("\nReading SCD30 Measurement Interval before change: ");
+  // if SCD30 is identified
+  if (co2_sensor == scd30_sensor) {
+
+    // Adafruit SCD30 library does not have get/set functions for the Forced Calibration Reference, but
+    // bool forceRecalibrationWithReference(uint16_t reference);
+    // uint16_t getForcedCalibrationReference(void);
+    // Therefore the value cannot be set, and even the reading will be always 400, by the docs
+    // What we are doing in Anaire devices is to use eepromConfig.forced_recalibration_reference when performing a forced calibration in Do_calibrate_Sensor() function
+    /*
+    uint16_t val = scd30.getForcedCalibrationReference();
+    Serial.print("Reading SCD30 Forced Calibration Reference before change: ");
     Serial.println(val);
-
-    Serial.print("Setting SCD30 new Measurement Interval to: ");
-    Serial.println(SCD30_MEASUREMENT_INTERVAL);
-
-    if (airSensor.setMeasurementInterval(SCD30_MEASUREMENT_INTERVAL)) {
-      Serial.print("Change SCD30 Measurement Interval to: ");
-      Serial.println(SCD30_MEASUREMENT_INTERVAL);
-
-      if ( airSensor.getMeasurementInterval(&val) ) {
-        Serial.print("Reading SCD30 Measurement Interval after change: ");
-        Serial.println(val);
-      }
-      else {
-        Serial.println("Could not obtain SCD30 Measurement Interval");
-      }
-
-    }
-    else {
-      Serial.print("Could not change SCD30 Measurement Interval to ");
-      Serial.println(SCD30_MEASUREMENT_INTERVAL);
-    }
-
-  }
-  else {
-    Serial.println("Could not obtain SCD30 Measurement Interval");
-  }
-  */
-}
-
-void Do_Forced_Calibration_Factor() { // Set CO2 sensor forced calibration using the Forced Calibration value as zero reference
-  uint16_t val;
-  bool result;
-  /*
-  if (airSensor.getForceRecalibration(&val) ) {
-    Serial.print("\nReading SCD30 Forced Calibration Factor before change: ");
-    Serial.println(val);
-
-    Serial.print("Setting new SCD30 Forced Calibration Factor to: ");
-    Serial.println(eepromConfig.FRC_value);
-
-    result = airSensor.setForceRecalibration(eepromConfig.FRC_value);
-    Serial.print("\nResponse after sending FRC command: ");
-    Serial.println(result);
-    delay (1000);
-
-    if (airSensor.getForceRecalibration(&val)) {
-      Serial.print("Reading SCD30 Forced Calibration Factor after change: ");
+    Serial.print("Setting new SCD30 Forced Calibration Reference to: ");
+    Serial.println(eepromConfig.forced_recalibration_reference);
+    if (scd30.setForcedCalibrationReference(eepromConfig.forced_recalibration_reference)) {
+      delay(100);
+      val = scd30.getForcedCalibrationReference()();
+      Serial.print("Reading SCD30 Forced Calibration Reference after change: ");
       Serial.println(val);
     }
     else {
-      Serial.println("Could not obtain SCD30 forced calibration factor");
+      Serial.println("Could not set Forced Calibration Reference");
     }
+    */
+  }
 
-  }
-  else {
-    Serial.println("Could not obtain SCD30 Forced Calibration Factor");
-  }
-  */
+  // If there is any other CO2 sensor insert code from here 
+  
 }
 
-void Do_Altitude_Compensation() { // Set CO2 sensor altitude compensation
+void Set_AutoSelfCalibration() { // Set autocalibration in the CO2 sensor true or false
 
-  /* paulvha : you can set EITHER the Altitude compensation of the pressure.
-     Setting both does not make sense as both overrule each other, but it is included for demonstration
-
-     see Sensirion_CO2_Sensors_SCD30_Interface_Description.pdf
-
-        The CO2 measurement value can be compensated for ambient pressure by feeding the pressure value in mBar to the sensor.
-        Setting the ambient pressure will overwrite previous and future settings of altitude compensation. Setting the argument to zero
-        will deactivate the ambient pressure compensation. For setting a new ambient pressure when continuous measurement is running
-        the whole command has to be written to SCD30.
-
-        Setting altitude is disregarded when an ambient pressure is given to the sensor
-  */
-
-  uint16_t val;
-  /*
-  if ( airSensor.getAltitudeCompensation(&val) ) {
-    Serial.print("\nReading SCD30 Altitude Compensation before change: ");
+  // if SCD30 is identified
+  if (co2_sensor == scd30_sensor) {
+    bool val = scd30.selfCalibrationEnabled();
+    Serial.print("Reading SCD30 Self Calibration before change: ");
     Serial.println(val);
-
-    Serial.print("Setting new SCD30 Altitude Compensation to: ");
-    Serial.println(eepromConfig.altitude_compensation);
-
-    if (airSensor.setAltitudeCompensation(eepromConfig.altitude_compensation)) {
-
-      if (airSensor.getAltitudeCompensation(&val)) {
-        Serial.print("Reading SCD30 Altitude Compensation after change: ");
-        Serial.println(val);
-      }
-      else {
-        Serial.println("Could not obtain SCD30 Altitude Compensation");
-      }
+    Serial.print("Setting new SCD30 Self Calibration to: ");
+    Serial.println(eepromConfig.self_calibration);
+    if (scd30.selfCalibrationEnabled(eepromConfig.self_calibration)) {
+      delay(100);
+      val = scd30.selfCalibrationEnabled();
+      Serial.print("Reading SCD30 Self Calibration after change: ");
+      Serial.println(val);
     }
     else {
-      Serial.println("Could not set new SCD30 Altitude Compensation");
+      Serial.println("Could not set Self Calibration");
     }
   }
-  else {
-    Serial.println("Could not obtain SCD30 Altitude Compensation");
+
+  // If there is any other CO2 sensor insert code from here 
+  
+}
+
+void Set_Temperature_Offset() { // Set CO2 sensor temperature offset
+  
+  // if SCD30 is identified
+  if (co2_sensor == scd30_sensor) {   
+    uint16_t val = scd30.getTemperatureOffset();
+    Serial.print("Reading SCD30 Temperature Offset before change: ");
+    Serial.println(val);
+    Serial.print("Setting new SCD30 Temperature Offset to: ");
+    Serial.println(eepromConfig.temperature_offset);
+    if (scd30.setTemperatureOffset(eepromConfig.temperature_offset)) {
+      delay(100);
+      val = scd30.getTemperatureOffset();
+      Serial.print("Reading SCD30 Temperature Offset after change: ");
+      Serial.println(val);
+    }
+    else {
+      Serial.println("Could not set SCD30 Temperature Offset");
+    }
   }
-  */
+
+  // If there is any other CO2 sensor insert code from here 
+  
+}
+
+void Set_Altitude_Compensation() { // Set CO2 sensor altitude compensation
+
+  // if SCD30 is identified
+  if (co2_sensor == scd30_sensor) {
+    // paulvha : you can set EITHER the Altitude compensation of the pressure.
+    // Setting both does not make sense as both overrule each other, but it is included for demonstration
+    // see Sensirion_CO2_Sensors_SCD30_Interface_Description.pdf
+    //   The CO2 measurement value can be compensated for ambient pressure by feeding the pressure value in mBar to the sensor.
+    //   Setting the ambient pressure will overwrite previous and future settings of altitude compensation. Setting the argument to zero
+    //   will deactivate the ambient pressure compensation. For setting a new ambient pressure when continuous measurement is running
+    //   the whole command has to be written to SCD30.
+    //   Setting altitude is disregarded when an ambient pressure is given to the sensor
+    uint16_t val = scd30.getAltitudeOffset();
+    Serial.print("Reading SCD30 Altitude Compensation before change: ");
+    Serial.println(val);
+    Serial.print("Setting new SCD30 Altitude Compensation to: ");
+    Serial.println(eepromConfig.altitude_compensation);
+    if (scd30.setAltitudeOffset(eepromConfig.altitude_compensation)) {
+      delay(100);
+      val = scd30.getAltitudeOffset();
+      Serial.print("Reading SCD30 Altitude Compensation after change: ");
+      Serial.println(val);
+    }
+    else {
+      Serial.println("Could not set SCD30 altitude compensation");
+    }
+  }
+
+  // If there is any other CO2 sensor insert code from here 
+    
 }
 
 void Sensor_Info() { // Get CO2 sensor device info
+  
+  // if SCD30 is identified
+  if (co2_sensor == scd30_sensor) {
   uint8_t val[2];
   //char buf[(SCD30_SERIAL_NUM_WORDS * 2) + 1];
 
@@ -1259,6 +1369,7 @@ void Sensor_Info() { // Get CO2 sensor device info
     Serial.println("Could not obtain firmware level");
   }
   */
+  }
 }
 
 void Print_Config() { // print Anaire device settings
@@ -1270,12 +1381,6 @@ void Print_Config() { // print Anaire device settings
   Serial.println(eepromConfig.anaire_device_name);
   Serial.print("SW version: ");
   Serial.println(sw_version);
-  Serial.print("WiFi SSID: ");
-  Serial.println(WiFi.SSID());
-  Serial.print("WiFi user: ");
-  Serial.println(eepromConfig.wifi_user);
-  Serial.print("WiFi password: ");
-  Serial.println(eepromConfig.wifi_password);
   Serial.print("CO2ppm Warning threshold: ");
   Serial.println(eepromConfig.CO2ppm_warning_threshold);
   Serial.print("CO2ppm Alarm threshold: ");
@@ -1284,16 +1389,20 @@ void Print_Config() { // print Anaire device settings
   Serial.println(eepromConfig.MQTT_server);
   Serial.print("MQTT Port: ");
   Serial.println(eepromConfig.MQTT_port);
-  Serial.print("Sound Alarm: ");
-  Serial.println(eepromConfig.sound_alarm);
-  Serial.print("Automatic Baseline Correction: ");
-  Serial.println(eepromConfig.ABC);
-  Serial.print("Forced Recalibration Value: ");
-  Serial.println(eepromConfig.FRC_value);
+  Serial.print("Acoustic Alarm: ");
+  Serial.println(eepromConfig.acoustic_alarm);
+  Serial.print("Self Calibration: ");
+  Serial.println(eepromConfig.self_calibration);
+  Serial.print("Forced Recalibration Reference: ");
+  Serial.println(eepromConfig.forced_recalibration_reference);
   Serial.print("Temperature Offset: ");
   Serial.println(eepromConfig.temperature_offset);
   Serial.print("Altitude Compensation: ");
   Serial.println(eepromConfig.altitude_compensation);
+  Serial.print("WiFi user: ");
+  Serial.println(eepromConfig.wifi_user);
+  Serial.print("WiFi user's password: ");
+  Serial.println(eepromConfig.wifi_password);
   Serial.println("#######################################");
 
 }
@@ -1306,83 +1415,125 @@ void espDelay(int ms) {  //! Long time delay, it is recommended to use shallow s
 
 void button_init() { // Manage TTGO T-Display board buttons
 
-  // Top button click: show info and toggles sound
+  // BUTTONS SUMMARY:
+  
+  // Top button short click: show status info
+  // Top button long click: toggle acoustic alarm
+  // Top button double click: deactivate self calibration and perform sensor forced recalibration
+  // Top button triple click: activate sensor self calibration
+  
+  // Bottom button short click: show buttons info
+  // Bottom button long click: sleep
+  // Bottom button double click: restart
+  // Bottom button triple click: launch captive portal to configure WiFi and MQTT
+  
+  // Top button short click: show status info
   button_top.setClickHandler([](Button2 & b) {
-    Serial.println("Top button click: toggle sound");
+    Serial.println("Top button short click");
     tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_BLUE, TFT_WHITE);
+    tft.setTextColor(TFT_RED, TFT_WHITE);
     tft.setTextDatum(6); // bottom left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
-    tft.drawString(anaire_device_id, 10, 30);
-    tft.drawString(sw_version, 10, 50);
-    if (sound) {
-      sound = false;
-      tft.drawString("SIN sonido", 10, 120);
+    tft.drawString("ID " + anaire_device_id, 10, 20);
+    tft.drawString("SW " + sw_version, 10, 36);
+    tft.drawString("SSID " + String(WiFi.SSID()), 10, 52);
+    tft.drawString("IP " + WiFi.localIP().toString(), 10, 68);
+    tft.drawString("MAC " + String(WiFi.macAddress()), 10, 84);
+    tft.drawString("RSSI " + String(WiFi.RSSI()), 10, 100);
+    if (eepromConfig.acoustic_alarm) {
+      tft.drawString("ALARMA SI", 10, 116);
     }
     else {
-      sound = true;
-      tft.drawString("CON sonido", 10, 120);
+      tft.drawString("ALARMA NO", 10, 116);
     }
-    eepromConfig.sound_alarm = sound;
-
+    if (eepromConfig.self_calibration) {
+      tft.drawString("CALIBRACION AUTO", 10, 132);
+    }
+    else {
+      tft.drawString("CALIBRACION FORZADA", 10, 132);
+    }
+    delay(5000);
   });
 
-  // Top button double click: activate SCD30 forced recalibration
+  // Top button long click: toggle acoustic alarm
+  button_top.setLongClickDetectedHandler([](Button2 & b) {
+    Serial.println("Top button long click");
+    tft.fillScreen(TFT_WHITE);
+    tft.setTextColor(TFT_RED, TFT_WHITE);
+    tft.setTextSize(1);
+    tft.setFreeFont(FF90);
+    tft.setTextDatum(MC_DATUM);
+    if (eepromConfig.acoustic_alarm) {
+      eepromConfig.acoustic_alarm = false;
+      tft.drawString("SIN SONIDO", tft.width()/2, tft.height()/2);
+    }
+    else {
+      eepromConfig.acoustic_alarm = true;
+      tft.drawString("CON SONIDO", tft.width()/2, tft.height()/2);
+    }
+    Write_EEPROM();
+  });
+  
+  // Top button double click: deactivate self calibration and perform sensor forced recalibration
   button_top.setDoubleClickHandler([](Button2 & b) {
-    Serial.println("Top button double click: SCD30 calibration");
+    Serial.println("Top button double click");
+    eepromConfig.self_calibration = false;
     tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_BLUE, TFT_WHITE);
-    tft.setTextDatum(6); // bottom left
+    tft.setTextColor(TFT_RED, TFT_WHITE);
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
-    tft.drawString("FORCED CALIBRATION", 10, 125);
-    delay(5000);
-    if (!scd30.forceRecalibrationWithReference(420)) {
-      Serial.println("Failed to force recalibration at 420 ppm");
-    }
-    else {
-      Serial.print("Forced recalibration performed at ");
-      Serial.print(scd30.getForcedCalibrationReference());
-      Serial.println(" ppm");
-    }
-    if (scd30.selfCalibrationEnabled()) {
-      Serial.println("Self calibration enabled");
-    } else {
-      Serial.println("Self calibration disabled");
-    }
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString("SIN AUTOCALIBRACION", tft.width()/2, tft.height()/2);
     delay(1000);
+    Set_AutoSelfCalibration();
+    Do_Calibrate_Sensor();
+    Write_EEPROM();
   });
 
-  // Top button triple click: activate SCD30 ABC auto calibration
+  // Top button triple click: activate sensor self calibration
   button_top.setTripleClickHandler([](Button2 & b) {
-    Serial.println("Top button triple click: enable SCD30 self calibration");
+    Serial.println("Top button triple click");
+    eepromConfig.self_calibration = true;
     tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_BLUE, TFT_WHITE);
+    tft.setTextColor(TFT_RED, TFT_WHITE);
+    tft.setTextSize(1);
+    tft.setFreeFont(FF90);
+    //tft.setTextDatum(6); // bottom left
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString("CON AUTOCALIBRACION", tft.width()/2, tft.height()/2);
+    delay(1000);
+    Set_AutoSelfCalibration(); 
+    Write_EEPROM();
+  });
+
+  // Bottom button short click: show buttons info
+  button_bottom.setClickHandler([](Button2 & b) {
+    Serial.println("Bottom button short click");
+    tft.fillScreen(TFT_WHITE);
+    tft.setTextColor(TFT_RED, TFT_WHITE);
     tft.setTextDatum(6); // bottom left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
-    tft.drawString("AUTO CALIBRATION", 10, 125);
+    tft.drawString("Arriba Corto: Status", 10, 20);
+    tft.drawString("  Largo: Alarma", 10, 36);
+    tft.drawString("  Doble: Calibrar", 10, 52);
+    tft.drawString("  Triple: Autocalibración", 10, 68);
+    tft.drawString("Abajo Corto: Info", 10, 84);
+    tft.drawString("  Largo: Dormir/Despertar", 10, 100);
+    tft.drawString("  Doble: Reiniciar", 10, 116);
+    tft.drawString("  Triple: Config Portal", 10, 132);
     delay(5000);
-    if (!scd30.selfCalibrationEnabled(true)) {
-      Serial.println("Failed to enable self calibration");
-    }
-    if (scd30.selfCalibrationEnabled()) {
-      Serial.println("Self calibration enabled");
-    } else {
-      Serial.println("Self calibration disabled");
-    }
-    delay(1000);
   });
-
-  // Bottom button click: sleep
-  button_bottom.setClickHandler([](Button2 & b) {
-    Serial.println("Bottom button click: sleep");
+  
+  // Bottom button long click: sleep
+  button_bottom.setLongClickDetectedHandler([](Button2 & b) {
+    Serial.println("Bottom button long click");
     //int r = digitalRead(TFT_BL);
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString("Press bottom button to wake up",  tft.width() / 2, tft.height() / 2 );
+    tft.drawString(" Presione el boton para despertar",  tft.width()/2, tft.height()/2);
     espDelay(3000);
     //digitalWrite(TFT_BL, !r);
     tft.writecommand(TFT_DISPOFF);
@@ -1398,20 +1549,30 @@ void button_init() { // Manage TTGO T-Display board buttons
 
   // Bottom button double click: restart
   button_bottom.setDoubleClickHandler([](Button2 & b) {
-    Serial.println("Bottom button double click: restart");
+    Serial.println("Bottom button double click");
     tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_BLUE, TFT_WHITE);
-    tft.setTextDatum(6); // bottom left
+    tft.setTextColor(TFT_RED, TFT_WHITE);
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
-    tft.drawString("RESTART", 10, 125);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString("RESTART", tft.width()/2, tft.height()/2);
+    delay(1000);
     ESP.restart();
   });
 
   // Bottom button triple click: launch captive portal to configure WiFi and MQTT
   button_bottom.setTripleClickHandler([](Button2 & b) {
-    Serial.println("Bottom button triple click: captive portal");
-    StartCaptivePortal = true;
+    Serial.println("Bottom button triple click");
+    tft.fillScreen(TFT_WHITE);
+    tft.setTextColor(TFT_RED, TFT_WHITE);
+    tft.setTextSize(1);
+    tft.setFreeFont(FF90);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString("CONFIG AnaireWiFi", tft.width()/2, tft.height()/2);
+    //StartCaptivePortal = true;
+    wifi_server.stop();
+    Start_Captive_Portal();
+    wifi_server.begin();
   });
 
 }
@@ -1437,20 +1598,22 @@ void displayCo2(uint16_t co2, float temp, float hum) { // Update display with CO
   if (co2 >= 1000 ) {
     tft.fillScreen(TFT_RED);
     tft.setTextColor(TFT_WHITE, TFT_RED);
-    if (sound) {
+    if (eepromConfig.acoustic_alarm) {
       digitalWrite(BUZZER_GPIO, HIGH);
     }
     delay(250);
     digitalWrite(BUZZER_GPIO, LOW);
-  } else if (co2 >= 700 ) {
+  } 
+  else if (co2 >= 700 ) {
     tft.fillScreen(TFT_YELLOW);
     tft.setTextColor(TFT_RED, TFT_YELLOW);
-    if (sound) {
+    if (eepromConfig.acoustic_alarm) {
       digitalWrite(BUZZER_GPIO, HIGH);
     }
     delay(50);
     digitalWrite(BUZZER_GPIO, LOW);
-  } else {
+  } 
+  else {
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
     digitalWrite(BUZZER_GPIO, LOW);
@@ -1469,12 +1632,10 @@ void displayCo2(uint16_t co2, float temp, float hum) { // Update display with CO
 
   // Draw temperature
   tft.setTextDatum(6); // bottom left
-  tft.drawString(String(temp), 10, 125);
-  tft.drawString("C", 50, 125);
+  tft.drawString(String(temp,1)+"C", 20, 125);
 
   // Draw humidity
-  tft.drawString(String(hum), 90, 125);
-  tft.drawString("%", 130, 125);
+  tft.drawString(String(hum,1)+"%", 80, 125);
 
   // Draw bluetooth device id
   //if (bluetooth_active) {
@@ -1531,3 +1692,12 @@ void Wipe_EEPROM() { // Wipe Anaire device persistent info to reset config data
     Serial.println("EEPROM data could not be wiped from flash store");
   }
 }
+
+/*
+void Write_Bluetooth() { // Write measurements to bluetooth
+    gadgetBle.writeCO2(CO2ppm_value);
+    gadgetBle.writeTemperature(temperature);
+    gadgetBle.writeHumidity(humidity);
+    gadgetBle.commit();
+}
+*/

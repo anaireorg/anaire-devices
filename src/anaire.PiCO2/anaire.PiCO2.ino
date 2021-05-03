@@ -181,8 +181,8 @@ void setup() {
   Serial.println("### INIT ANAIRE PiCO2 DEVICE ###########################################");
 
   // Initialize TTGO Display and show Anaire splash screen
-  displayInit();
-  displaySplashScreen();
+  Display_Init();
+  Display_Splash_Screen();
   
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
@@ -211,7 +211,7 @@ void setup() {
   digitalWrite(BUZZER_GPIO, LOW);
 
   // Initialize TTGO board buttons
-  button_init();
+  Button_Init();
 
   // Attempt to connect to WiFi network:
   Connect_WiFi();
@@ -268,7 +268,7 @@ void loop() {
       Evaluate_CO2_Value();
   
       // Update display with new values
-      displayCo2((uint16_t) round(scd30.CO2), scd30.temperature, scd30.relative_humidity);
+      Update_Display((uint16_t) round(scd30.CO2), scd30.temperature, scd30.relative_humidity);
   
       // Update bluetooth app with new values
       //if (bluetooth_active) {
@@ -1018,7 +1018,7 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
 
     // Update firmware to latest bin
     Serial.println("Update firmware to latest bin");
-    firmware_update();
+    Firmware_Update();
   }
 
   // If factory reset has been enabled, just do it
@@ -1375,7 +1375,7 @@ void espDelay(int ms) {  //! Long time delay, it is recommended to use shallow s
   esp_light_sleep_start();
 }
 
-void button_init() { // Manage TTGO T-Display board buttons
+void Button_Init() { // Manage TTGO T-Display board buttons
 
   // BUTTONS SUMMARY:
   // Top button short click: show status info
@@ -1402,16 +1402,16 @@ void button_init() { // Manage TTGO T-Display board buttons
     tft.drawString("MAC " + String(WiFi.macAddress()), 10, 84);
     tft.drawString("RSSI " + String(WiFi.RSSI()), 10, 100);
     if (eepromConfig.acoustic_alarm) {
-      tft.drawString("ALARMA SI", 10, 116);
+      tft.drawString("ALARMA: SI", 10, 116);
     }
     else {
-      tft.drawString("ALARMA NO", 10, 116);
+      tft.drawString("ALARMA: NO", 10, 116);
     }
     if (eepromConfig.self_calibration) {
-      tft.drawString("CALIBRACION AUTO", 10, 132);
+      tft.drawString("CALIBRACION: AUTO", 10, 132);
     }
     else {
-      tft.drawString("CALIBRACION FORZADA", 10, 132);
+      tft.drawString("CALIBRACION: FORZADA", 10, 132);
     }
     delay(5000);
   });
@@ -1426,11 +1426,11 @@ void button_init() { // Manage TTGO T-Display board buttons
     tft.setTextDatum(MC_DATUM);
     if (eepromConfig.acoustic_alarm) {
       eepromConfig.acoustic_alarm = false;
-      tft.drawString("SIN SONIDO", tft.width()/2, tft.height()/2);
+      tft.drawString("ALARMA: NO", tft.width()/2, tft.height()/2);
     }
     else {
       eepromConfig.acoustic_alarm = true;
-      tft.drawString("CON SONIDO", tft.width()/2, tft.height()/2);
+      tft.drawString("ALARMA: SI", tft.width()/2, tft.height()/2);
     }
     Write_EEPROM();
   });
@@ -1444,7 +1444,7 @@ void button_init() { // Manage TTGO T-Display board buttons
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString("SIN AUTOCALIBRACION", tft.width()/2, tft.height()/2);
+    tft.drawString("CALIBRACION: FORZADA", tft.width()/2, tft.height()/2);
     delay(1000);
     Set_AutoSelfCalibration();
     Do_Calibrate_Sensor();
@@ -1460,7 +1460,7 @@ void button_init() { // Manage TTGO T-Display board buttons
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString("CON AUTOCALIBRACION", tft.width()/2, tft.height()/2);
+    tft.drawString("CALIBRACION: AUTO", tft.width()/2, tft.height()/2);
     delay(1000);
     Set_AutoSelfCalibration(); 
     Write_EEPROM();
@@ -1536,16 +1536,16 @@ void button_init() { // Manage TTGO T-Display board buttons
 
 }
 
-void displayInit() { // TTGO T-Display init
+void Display_Init() { // TTGO T-Display init
   tft.init();
   tft.setRotation(1);
 }
 
-void displaySplashScreen() { // Display Anaire splash screen
+void Display_Splash_Screen() { // Display Anaire splash screen
   tft.pushImage(0, 0,  240, 135, anaire_ttgo_splash);
 }
 
-void displayCo2(uint16_t co2, float temp, float hum) { // Update display with CO2 measurements
+void Update_Display(uint16_t co2, float temp, float hum) { // Update display with CO2 measurements
 
   if (co2 > 9999) {
     co2 = 9999;
@@ -1647,19 +1647,18 @@ void Wipe_EEPROM() { // Wipe Anaire device persistent info to reset config data
   }
 }
 
-void firmware_update() {
+void Firmware_Update() {
 
-  Serial.println("### FIRMWARE UPGRADE ###");
+  Serial.println("### FIRMWARE UPDATE ###");
 
   // For remote firmware update
   WiFiClientSecure UpdateClient;
-  //BearSSL::WiFiClientSecure UpdateClient;
-  //int freeheap = ESP.getFreeHeap();
+  UpdateClient.setInsecure();
 
   // Reading data over SSL may be slow, use an adequate timeout
-  UpdateClient.setTimeout(12000 / 1000); // timeout argument is defined in seconds for setTimeout
-
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://server/file.bin");
+  UpdateClient.setTimeout(12000/1000); // timeout argument is defined in seconds for setTimeout
+  
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://github.com/anaireorg/anaire-devices/blob/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
 
   switch (ret) {
       case HTTP_UPDATE_FAILED:
@@ -1674,71 +1673,8 @@ void firmware_update() {
         Serial.println("HTTP_UPDATE_OK");
         break;
     }
-    
-  /*
-  // Add optional callback notifiers
-  ESPhttpUpdate.onStart(update_started);
-  ESPhttpUpdate.onEnd(update_finished);
-  ESPhttpUpdate.onProgress(update_progress);
-  ESPhttpUpdate.onError(update_error);
-  UpdateClient.setInsecure();
 
-  // Try to set a smaller buffer size for BearSSL update
-  bool mfln = UpdateClient.probeMaxFragmentLength("raw.githubusercontent.com", 443, 512);
-  Serial.printf("\nConnecting to https://raw.githubusercontent.com\n");
-  Serial.printf("MFLN supported: %s\n", mfln ? "yes" : "no");
-  if (mfln) {
-    UpdateClient.setBufferSizes(512, 512);
-  }
-  UpdateClient.connect("raw.githubusercontent.com", 443);
-  if (UpdateClient.connected()) {
-    Serial.printf("MFLN status: %s\n", UpdateClient.getMFLNStatus() ? "true" : "false");
-    Serial.printf("Memory used: %d\n", freeheap - ESP.getFreeHeap());
-    freeheap -= ESP.getFreeHeap();
-  } else {
-    Serial.printf("Unable to connect\n");
-  }
-
-  // Run http update
-  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
-
-  switch (ret) {
-    case HTTP_UPDATE_FAILED:
-      Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
-      break;
-
-    case HTTP_UPDATE_NO_UPDATES:
-      Serial.println("HTTP_UPDATE_NO_UPDATES");
-      break;
-
-    case HTTP_UPDATE_OK:
-      Serial.println("HTTP_UPDATE_OK");
-      break;
-  }
-  */
 }
-
-/*
-void update_started() {
-  Serial.println("CALLBACK:  HTTP update process started");
-  updating = true;
-}
-
-void update_finished() {
-  Serial.println("CALLBACK:  HTTP update process finished");
-  Serial.println("### FIRMWARE UPGRADE COMPLETED - REBOOT ###");
-  updating = false;
-}
-
-void update_progress(int cur, int total) {
-  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
-}
-
-void update_error(int err) {
-  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
-  updating = false;
-}
-*/
 
 /*
 void Write_Bluetooth() { // Write measurements to bluetooth

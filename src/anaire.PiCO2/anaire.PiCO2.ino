@@ -29,8 +29,8 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210503.";
-// v3.20210503.Mingus -
+String sw_version = "v3.20210503.Mingus";
+// v3.20210503.Mingus - Lots of improvements, first fully functional version; MQTT commandes not yet tested
 // v3.20210502.Madrid - Lots of additions: SCD30 full support, coherent display messages, complete buttons support, etc.
 // v3.20210430.Kuti - Bluetooth commented out for later to get captive portal fully functional
 // v3.2021025.Samba - First fully functional Anaire device on TTGo T-Display board, connected to Anaire Cloud App
@@ -630,19 +630,25 @@ void Check_WiFi_Server() { // Wifi server
             client.print("Anaire Device name: ");
             client.print(eepromConfig.anaire_device_name);
             client.println("<br>");
+            client.print("SSID: ");
+            client.print(String(WiFi.SSID()));
+            client.println("<br>");
             client.print("IP Adress: ");
             client.print(WiFi.localIP());
             client.println("<br>");
             client.print("MAC Adress: ");
             client.print(WiFi.macAddress());
             client.println("<br>");
-            client.println("------");
+            client.print("RSSI: ");
+            client.print(WiFi.RSSI());
             client.println("<br>");
-            client.print("CO2ppm_alarm_threshold: ");
-            client.print(eepromConfig.CO2ppm_alarm_threshold);
+            client.println("------");
             client.println("<br>");
             client.print("CO2ppm_warning_threshold: ");
             client.print(eepromConfig.CO2ppm_warning_threshold);
+            client.println("<br>");
+            client.print("CO2ppm_alarm_threshold: ");
+            client.print(eepromConfig.CO2ppm_alarm_threshold);
             client.println("<br>");
             client.print("MQTT Server: ");
             client.print(eepromConfig.MQTT_server);
@@ -650,7 +656,7 @@ void Check_WiFi_Server() { // Wifi server
             client.print("MQTT Port: ");
             client.print(eepromConfig.MQTT_port);
             client.println("<br>");
-            client.print("Acoustic alarm: ");
+            client.print("Alarm: ");
             client.print(eepromConfig.acoustic_alarm);
             client.println("<br>");
             client.println("------");
@@ -658,25 +664,20 @@ void Check_WiFi_Server() { // Wifi server
             if (co2_sensor == scd30_sensor) {
               client.print("CO2 Sensor: Sensirion SCD30");
               client.println("<br>");
-              uint16_t val;
-              //scd30.getMeasurementInterval(&val);
               client.print("Measurement Interval: ");
-              client.print(val);
+              client.print(measurements_loop_duration/1000);
               client.println("<br>");
-              client.print("AutoselfCalibration: ");
-              //client.print(scd30.getAutoSelfCalibration());
+              client.print("Auto Calibration: ");
+              client.print(eepromConfig.self_calibration);
               client.println("<br>");
-              //scd30.getForceRecalibration(&val);
-              client.print("Force Recalibration: ");
-              client.print(val);
+              client.print("Forced Recalibration Reference: ");
+              client.print(eepromConfig.forced_recalibration_reference);
               client.println("<br>");
-              //scd30.getTemperatureOffset(&val);
               client.print("Temperature Offset: ");
-              client.print(val);
+              client.print(eepromConfig.temperature_offset);
               client.println("<br>");
-              //scd30.getAltitudeCompensation(&val);
-              client.print("AltitudeCompensation: ");
-              client.print(val);
+              client.print("Altitude Compensation: ");
+              client.print(eepromConfig.altitude_compensation);
               client.println("<br>");
             }
             client.println("------");
@@ -725,7 +726,7 @@ void Check_WiFi_Server() { // Wifi server
         // Check to see if the client request was "GET /H" to calibrate the sensor:
         if (currentLine.endsWith("GET /H")) {
           if (co2_sensor == scd30_sensor) {
-            //Calibrate_SCD30();
+            Do_Calibrate_Sensor();
           }
         }
       }

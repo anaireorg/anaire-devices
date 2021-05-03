@@ -29,7 +29,8 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210502.Madrid";
+String sw_version = "v3.20210503.";
+// v3.20210503.Mingus -
 // v3.20210502.Madrid - Lots of additions: SCD30 full support, coherent display messages, complete buttons support, etc.
 // v3.20210430.Kuti - Bluetooth commented out for later to get captive portal fully functional
 // v3.2021025.Samba - First fully functional Anaire device on TTGo T-Display board, connected to Anaire Cloud App
@@ -1416,12 +1417,10 @@ void espDelay(int ms) {  //! Long time delay, it is recommended to use shallow s
 void button_init() { // Manage TTGO T-Display board buttons
 
   // BUTTONS SUMMARY:
-  
   // Top button short click: show status info
   // Top button long click: toggle acoustic alarm
   // Top button double click: deactivate self calibration and perform sensor forced recalibration
   // Top button triple click: activate sensor self calibration
-  
   // Bottom button short click: show buttons info
   // Bottom button long click: sleep
   // Bottom button double click: restart
@@ -1620,22 +1619,20 @@ void displayCo2(uint16_t co2, float temp, float hum) { // Update display with CO
   }
 
   // Draw CO2 number
-  tft.setTextDatum(8); // bottom right
   tft.setTextSize(1);
   tft.setFreeFont(FF95);
-  tft.drawString(String(co2), 195, 105);
+  tft.drawString(String(co2), 60, 30);
 
   // Draw CO2 units
   tft.setTextSize(1);
   tft.setFreeFont(FF90);
-  tft.drawString("ppm", 230, 90);
+  tft.drawString("PPM", 200, 115);
 
   // Draw temperature
-  tft.setTextDatum(6); // bottom left
-  tft.drawString(String(temp,1)+"C", 20, 125);
+  tft.drawString(String(temp,1)+"C", 80, 115);
 
   // Draw humidity
-  tft.drawString(String(hum,1)+"%", 80, 125);
+  tft.drawString(String(hum,1)+"%", 140, 115);
 
   // Draw bluetooth device id
   //if (bluetooth_active) {

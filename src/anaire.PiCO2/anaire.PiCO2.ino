@@ -157,6 +157,13 @@ String MQTT_receive_topic;
 #include <ArduinoJson.h>
 StaticJsonDocument<384> jsonBuffer;
 
+// OTA Update
+#include <HTTPClient.h>
+#include <HTTPUpdate.h>
+
+// to know when there is an updating process in place
+boolean updating = false;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // SETUP
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -223,6 +230,14 @@ void setup() {
   errors_loop_start = millis();
 
   Serial.println("### ANAIRE PiCO2 DEVICE SETUP FINISHED ###\n");
+  tft.fillScreen(TFT_BLUE);
+  tft.setTextColor(TFT_WHITE, TFT_BLUE);
+  tft.setTextDatum(6); // bottom left
+  tft.setTextSize(1);
+  tft.setFreeFont(FF90);
+  tft.setTextDatum(MC_DATUM);
+  tft.drawString("ANAIRE PiCO2", tft.width()/2, tft.height()/2);
+  delay(1000);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -230,11 +245,11 @@ void setup() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void loop() {
 
-  /*
-    // If a firmware update is in progress do not do anything else
-    if (!updating) {
-  */
-
+  // If a firmware update is in progress do not do anything else
+  if (updating) {
+    return;
+  }
+  
   //Serial.println ("--- LOOP BEGIN ---");
 
   // Measurement loop
@@ -963,55 +978,32 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   // Check temperature offset
   if ((jsonBuffer["temperature_offset"]) && (eepromConfig.temperature_offset != (uint16_t)jsonBuffer["temperature_offset"])) {
     eepromConfig.temperature_offset = (uint16_t)jsonBuffer["temperature_offset"];
-    /*
-    if (co2_sensor == MHZ14A) {
-      //MHZ14A_Do_Temperature_Offset();
-    }
-    if (co2_sensor == SCD30) {
-      SCD30_Do_Temperature_Offset();
-    }
-    */
+    Set_Temperature_Offset();
   }
 
   // Check altitude_compensation
   if ((jsonBuffer["altitude_compensation"]) && (eepromConfig.altitude_compensation != (uint16_t)jsonBuffer["altitude_compensation"])) {
     eepromConfig.altitude_compensation = (uint16_t)jsonBuffer["altitude_compensation"];
-    /*
-    if (co2_sensor == scd30_sensor) {
-      //SCD30_Do_Altitude_Compensation();
-    }
-    */
+    Set_Altitude_Compensation();
   }
 
   // If calibration has been enabled, justo do it
   if ((jsonBuffer["FRC"]) && (jsonBuffer["FRC"] == "ON")) {
-    /*
-    if (co2_sensor == scd30_sensor) {
-      //Calibrate_SCD30();
-    }
-    */
+    Do_Calibrate_Sensor();
   }
 
   // Update self calibration
   if ((jsonBuffer["ABC"]) && ((eepromConfig.self_calibration) && (jsonBuffer["ABC"] == "OFF"))) {
     eepromConfig.self_calibration = false;
     write_eeprom = true;
-    /*
-    if (co2_sensor == scd30_sensor) {
-      //SCD30_Do_AutoSelfCalibration();
-    }
-    */
+    Set_AutoSelfCalibration();
     Serial.println("self_calibration: OFF");
   }
 
   if ((jsonBuffer["ABC"]) && ((!eepromConfig.self_calibration) && (jsonBuffer["ABC"] == "ON"))) {
     eepromConfig.self_calibration = true;
     write_eeprom = true;
-    /*
-    if (co2_sensor == scd30_sensor) {
-      //SCD30_Do_AutoSelfCalibration();
-    }
-    */
+    Set_AutoSelfCalibration();
     Serial.println("self_calibration: ON");
   }
 
@@ -1024,9 +1016,9 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     //  Serial.println("EEPROM data could not be wiped from flash store");
     //}
 
-    // update firmware to latest bin
+    // Update firmware to latest bin
     Serial.println("Update firmware to latest bin");
-    //firmware_update();
+    firmware_update();
   }
 
   // If factory reset has been enabled, just do it
@@ -1342,37 +1334,6 @@ void Set_Altitude_Compensation() { // Set CO2 sensor altitude compensation
     
 }
 
-void Sensor_Info() { // Get CO2 sensor device info
-  
-  // if SCD30 is identified
-  if (co2_sensor == scd30_sensor) {
-  uint8_t val[2];
-  //char buf[(SCD30_SERIAL_NUM_WORDS * 2) + 1];
-
-  // Read SCD30 serial number as printed on the device
-  // buffer MUST be at least 33 digits (32 serial + 0x0)
-  /*
-  if (airSensor.getSerialNumber(buf))
-  {
-    Serial.print(F("SCD30 serial number: "));
-    Serial.println(buf);
-  }
-
-  // read Firmware level
-  if ( airSensor.getFirmwareLevel(val) ) {
-    Serial.print("SCD30 Firmware level - Major: ");
-    Serial.print(val[0]);
-
-    Serial.print("\t, Minor: ");
-    Serial.println(val[1]);
-  }
-  else {
-    Serial.println("Could not obtain firmware level");
-  }
-  */
-  }
-}
-
 void Print_Config() { // print Anaire device settings
 
   Serial.println("#######################################");
@@ -1431,7 +1392,7 @@ void button_init() { // Manage TTGO T-Display board buttons
     Serial.println("Top button short click");
     tft.fillScreen(TFT_WHITE);
     tft.setTextColor(TFT_RED, TFT_WHITE);
-    tft.setTextDatum(6); // bottom left
+    tft.setTextDatum(TL_DATUM); // top left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
     tft.drawString("ID " + anaire_device_id, 10, 20);
@@ -1498,7 +1459,6 @@ void button_init() { // Manage TTGO T-Display board buttons
     tft.setTextColor(TFT_RED, TFT_WHITE);
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
-    //tft.setTextDatum(6); // bottom left
     tft.setTextDatum(MC_DATUM);
     tft.drawString("CON AUTOCALIBRACION", tft.width()/2, tft.height()/2);
     delay(1000);
@@ -1511,7 +1471,7 @@ void button_init() { // Manage TTGO T-Display board buttons
     Serial.println("Bottom button short click");
     tft.fillScreen(TFT_WHITE);
     tft.setTextColor(TFT_RED, TFT_WHITE);
-    tft.setTextDatum(6); // bottom left
+    tft.setTextDatum(TL_DATUM); // top left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
     tft.drawString("Arriba Corto: Status", 10, 20);
@@ -1554,7 +1514,7 @@ void button_init() { // Manage TTGO T-Display board buttons
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString("RESTART", tft.width()/2, tft.height()/2);
+    tft.drawString("REINICIO", tft.width()/2, tft.height()/2);
     delay(1000);
     ESP.restart();
   });
@@ -1591,8 +1551,8 @@ void displayCo2(uint16_t co2, float temp, float hum) { // Update display with CO
     co2 = 9999;
   }
 
-  uint8_t defaultDatum = tft.getTextDatum();
-
+  tft.setTextDatum(TL_DATUM); // top left
+  
   // Set screen and text colours based on CO2 value
   if (co2 >= 1000 ) {
     tft.fillScreen(TFT_RED);
@@ -1640,9 +1600,6 @@ void displayCo2(uint16_t co2, float temp, float hum) { // Update display with CO
   //  tft.drawString(gadgetBle.getDeviceIdString(), 230, 125);
   //}
   
-  // Revert datum setting
-  tft.setTextDatum(defaultDatum);
-
 }
 
 void Get_Anaire_DeviceId() { // Get TTGO T-Display info and fill up anaire_device_id with last 6 digits (in HEX) of WiFi mac address
@@ -1689,6 +1646,99 @@ void Wipe_EEPROM() { // Wipe Anaire device persistent info to reset config data
     Serial.println("EEPROM data could not be wiped from flash store");
   }
 }
+
+void firmware_update() {
+
+  Serial.println("### FIRMWARE UPGRADE ###");
+
+  // For remote firmware update
+  WiFiClientSecure UpdateClient;
+  //BearSSL::WiFiClientSecure UpdateClient;
+  //int freeheap = ESP.getFreeHeap();
+
+  // Reading data over SSL may be slow, use an adequate timeout
+  UpdateClient.setTimeout(12000 / 1000); // timeout argument is defined in seconds for setTimeout
+
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://server/file.bin");
+
+  switch (ret) {
+      case HTTP_UPDATE_FAILED:
+        Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+        break;
+
+      case HTTP_UPDATE_NO_UPDATES:
+        Serial.println("HTTP_UPDATE_NO_UPDATES");
+        break;
+
+      case HTTP_UPDATE_OK:
+        Serial.println("HTTP_UPDATE_OK");
+        break;
+    }
+    
+  /*
+  // Add optional callback notifiers
+  ESPhttpUpdate.onStart(update_started);
+  ESPhttpUpdate.onEnd(update_finished);
+  ESPhttpUpdate.onProgress(update_progress);
+  ESPhttpUpdate.onError(update_error);
+  UpdateClient.setInsecure();
+
+  // Try to set a smaller buffer size for BearSSL update
+  bool mfln = UpdateClient.probeMaxFragmentLength("raw.githubusercontent.com", 443, 512);
+  Serial.printf("\nConnecting to https://raw.githubusercontent.com\n");
+  Serial.printf("MFLN supported: %s\n", mfln ? "yes" : "no");
+  if (mfln) {
+    UpdateClient.setBufferSizes(512, 512);
+  }
+  UpdateClient.connect("raw.githubusercontent.com", 443);
+  if (UpdateClient.connected()) {
+    Serial.printf("MFLN status: %s\n", UpdateClient.getMFLNStatus() ? "true" : "false");
+    Serial.printf("Memory used: %d\n", freeheap - ESP.getFreeHeap());
+    freeheap -= ESP.getFreeHeap();
+  } else {
+    Serial.printf("Unable to connect\n");
+  }
+
+  // Run http update
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
+
+  switch (ret) {
+    case HTTP_UPDATE_FAILED:
+      Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+      break;
+
+    case HTTP_UPDATE_NO_UPDATES:
+      Serial.println("HTTP_UPDATE_NO_UPDATES");
+      break;
+
+    case HTTP_UPDATE_OK:
+      Serial.println("HTTP_UPDATE_OK");
+      break;
+  }
+  */
+}
+
+/*
+void update_started() {
+  Serial.println("CALLBACK:  HTTP update process started");
+  updating = true;
+}
+
+void update_finished() {
+  Serial.println("CALLBACK:  HTTP update process finished");
+  Serial.println("### FIRMWARE UPGRADE COMPLETED - REBOOT ###");
+  updating = false;
+}
+
+void update_progress(int cur, int total) {
+  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
+}
+
+void update_error(int err) {
+  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
+  updating = false;
+}
+*/
 
 /*
 void Write_Bluetooth() { // Write measurements to bluetooth

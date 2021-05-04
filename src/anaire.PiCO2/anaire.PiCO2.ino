@@ -140,7 +140,6 @@ uint16_t SCD30_MEASUREMENT_INTERVAL = measurements_loop_duration/1000; // time b
 //#include <WiFi.h>
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "esp_wpa2.h" //wpa2 library for connections to Enterprise networks
-bool StartCaptivePortal = false;
 const int WIFI_CONNECT_TIMEOUT = 10000;           // 10 seconds
 WiFiServer wifi_server(80);                       
 WiFiClient wifi_client;
@@ -162,7 +161,11 @@ StaticJsonDocument<384> jsonBuffer;
 #include <HTTPUpdate.h>
 
 // to know when there is an updating process in place
-boolean updating = false;
+bool updating = false;
+
+// To know when the device is in the following states
+bool InCaptivePortal = false;
+bool Calibrating = false;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // SETUP
@@ -740,6 +743,8 @@ void Check_WiFi_Server() { // Wifi server
 }
 
 void Start_Captive_Portal() { // Run a captive portal to configure WiFi and MQTT
+
+    InCaptivePortal = true;
     
     //Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wifiManager;
@@ -819,6 +824,8 @@ void Start_Captive_Portal() { // Run a captive portal to configure WiFi and MQTT
       Write_EEPROM();
     }
 
+    InCaptivePortal = false;
+    
     // Restart
     ESP.restart(); 
     
@@ -1162,6 +1169,8 @@ void Set_Measurement_Interval() { // Set CO2 sensor measurement interval
 
 void Do_Calibrate_Sensor() { // Calibrate CO2 sensor
 
+  Calibrating = true;
+  
   // Update Display
   tft.fillScreen(TFT_WHITE);
   tft.setTextColor(TFT_RED, TFT_WHITE);
@@ -1220,7 +1229,8 @@ void Do_Calibrate_Sensor() { // Calibrate CO2 sensor
   }
 
   // If there is any other CO2 sensor insert code from here 
-  
+
+  Calibrating = false;
 }
   
 void Set_Forced_Calibration_Value() { // Set Forced Calibration value as zero reference value
@@ -1387,6 +1397,14 @@ void Button_Init() { // Manage TTGO T-Display board buttons
   // Bottom button long click: sleep
   // Bottom button double click: restart
   // Bottom button triple click: launch captive portal to configure WiFi and MQTT
+
+  // Long clicks: keep pressing more than 1 second
+  button_top.setLongClickTime(1000);
+  button_bottom.setLongClickTime(1000);
+
+  // If any button is pressed run the following function. Used to interrupt calibration or captive portal and restart the device
+  button_top.setTapHandler(Interrupt_Restart);
+  button_bottom.setTapHandler(Interrupt_Restart);
   
   // Top button short click: show status info
   button_top.setClickHandler([](Button2 & b) {
@@ -1396,23 +1414,23 @@ void Button_Init() { // Manage TTGO T-Display board buttons
     tft.setTextDatum(TL_DATUM); // top left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
-    tft.drawString("ID " + anaire_device_id, 10, 20);
-    tft.drawString("SW " + sw_version, 10, 36);
-    tft.drawString("SSID " + String(WiFi.SSID()), 10, 52);
-    tft.drawString("IP " + WiFi.localIP().toString(), 10, 68);
-    tft.drawString("MAC " + String(WiFi.macAddress()), 10, 84);
-    tft.drawString("RSSI " + String(WiFi.RSSI()), 10, 100);
+    tft.drawString("ID " + anaire_device_id, 10, 5);
+    tft.drawString("SW " + sw_version, 10, 21);
+    tft.drawString("SSID " + String(WiFi.SSID()), 10, 37);
+    tft.drawString("IP " + WiFi.localIP().toString(), 10, 53);
+    tft.drawString("MAC " + String(WiFi.macAddress()), 10, 69);
+    tft.drawString("RSSI " + String(WiFi.RSSI()), 10, 85);
     if (eepromConfig.acoustic_alarm) {
-      tft.drawString("ALARMA: SI", 10, 116);
+      tft.drawString("ALARMA: SI", 10, 101);
     }
     else {
-      tft.drawString("ALARMA: NO", 10, 116);
+      tft.drawString("ALARMA: NO", 10, 101);
     }
     if (eepromConfig.self_calibration) {
-      tft.drawString("CALIBRACION: AUTO", 10, 132);
+      tft.drawString("CALIBRACION: AUTO", 10, 117);
     }
     else {
-      tft.drawString("CALIBRACION: FORZADA", 10, 132);
+      tft.drawString("CALIBRACION: FORZADA", 10, 117);
     }
     delay(5000);
   });
@@ -1475,14 +1493,14 @@ void Button_Init() { // Manage TTGO T-Display board buttons
     tft.setTextDatum(TL_DATUM); // top left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
-    tft.drawString("Arriba Corto: Status", 10, 20);
-    tft.drawString("  Largo: Alarma", 10, 36);
-    tft.drawString("  Doble: Calibrar", 10, 52);
-    tft.drawString("  Triple: Autocalibración", 10, 68);
-    tft.drawString("Abajo Corto: Info", 10, 84);
-    tft.drawString("  Largo: Dormir/Despertar", 10, 100);
-    tft.drawString("  Doble: Reiniciar", 10, 116);
-    tft.drawString("  Triple: Config Portal", 10, 132);
+    tft.drawString("Arriba Corto: Status", 10, 5);
+    tft.drawString("  Largo: Alarma", 10, 21);
+    tft.drawString("  Doble: Calibrar", 10, 37);
+    tft.drawString("  Triple: Autocalibración", 10, 53);
+    tft.drawString("Abajo Corto: Info", 10, 69);
+    tft.drawString("  Largo: Dormir/Despertar", 10, 85);
+    tft.drawString("  Doble: Reiniciar", 10, 101);
+    tft.drawString("  Triple: Config Portal", 10, 117);
     delay(5000);
   });
   
@@ -1529,12 +1547,18 @@ void Button_Init() { // Manage TTGO T-Display board buttons
     tft.setFreeFont(FF90);
     tft.setTextDatum(MC_DATUM);
     tft.drawString("CONFIG AnaireWiFi", tft.width()/2, tft.height()/2);
-    //StartCaptivePortal = true;
     wifi_server.stop();
     Start_Captive_Portal();
     wifi_server.begin();
   });
 
+}
+
+void Interrupt_Restart(Button2& btn) { // Restarts the device if any button is pressed while calibrating or in captive portal
+  Serial.println("Any button click");
+  if ((InCaptivePortal) || (Calibrating)) {
+     ESP.restart();
+  }
 }
 
 void Display_Init() { // TTGO T-Display init

@@ -29,7 +29,7 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210503.Mingus";
+String sw_version = "v3.20210504.Parker";
 // v3.20210503.Mingus - Lots of improvements, first fully functional version; MQTT commandes not yet tested
 // v3.20210502.Madrid - Lots of additions: SCD30 full support, coherent display messages, complete buttons support, etc.
 // v3.20210430.Kuti - Bluetooth commented out for later to get captive portal fully functional
@@ -775,7 +775,7 @@ void Start_Captive_Portal() { // Run a captive portal to configure WiFi and MQTT
     //sets timeout in seconds until configuration portal gets turned off.
     //If not specified device will remain in configuration mode until
     //switched off via webserver or device is restarted.
-    wifiManager.setConfigPortalTimeout(60);
+    wifiManager.setConfigPortalTimeout(120);
 
     //it starts an access point
     //and goes into a blocking loop awaiting configuration

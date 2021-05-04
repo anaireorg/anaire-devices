@@ -30,6 +30,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 String sw_version = "v3.20210504.Parker";
+// v3.20210504.Parker - Icons for battery, wifi and alarm
 // v3.20210503.Mingus - Lots of improvements, first fully functional version; MQTT commandes not yet tested
 // v3.20210502.Madrid - Lots of additions: SCD30 full support, coherent display messages, complete buttons support, etc.
 // v3.20210430.Kuti - Bluetooth commented out for later to get captive portal fully functional
@@ -108,6 +109,11 @@ unsigned long errors_loop_start;                  // holds a timestamp for each 
 #define FF90  &ArchivoNarrow_Regular10pt7b
 #define FF95  &ArchivoNarrow_Regular50pt7b
 TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup.h
+#define GREEN 0x07E0
+#define BLACK 0x0000
+#define RED 0xF800
+#define WHITE 0xFFFF
+#define YELLOW 0xFFE0
 
 // Customized Anaire splash screen
 #include "anaire_ttgo_splash.h"
@@ -118,6 +124,18 @@ TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup
 #define BUTTON_BOTTOM  0
 Button2 button_top(BUTTON_TOP);
 Button2 button_bottom(BUTTON_BOTTOM);
+
+// Define ADC PIN for battery voltage measurement
+#define ADC_PIN 34
+float battery_voltage;
+int vref = 1100;
+
+//Define voltage threshold
+#define USB_Voltage 4.5
+#define Voltage_Threshold_1 4.1
+#define Voltage_Threshold_2 4.0
+#define Voltage_Threshold_3 3.9
+#define Voltage_Threshold_4 3.8
 
 // Sensirion SCD30 CO2, temperature and humidity sensor
 #include <Adafruit_SCD30.h>
@@ -248,13 +266,16 @@ void setup() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void loop() {
 
+  //Serial.println ("--- LOOP BEGIN ---");
+  
   // If a firmware update is in progress do not do anything else
   if (updating) {
     return;
   }
   
-  //Serial.println ("--- LOOP BEGIN ---");
-
+  // Measure the battery voltage
+  battery_voltage = ((float)analogRead(ADC_PIN)/4095.0)*2.0*3.3*(vref/1000.0);
+    
   // Measurement loop
   if ((millis() - measurements_loop_start) >= measurements_loop_duration)
   {
@@ -266,12 +287,12 @@ void loop() {
     Read_Sensor();
 
     if (CO2ppm_value > 0) {
-    
+         
       // Evaluate CO2 value
       Evaluate_CO2_Value();
   
       // Update display with new values
-      Update_Display((uint16_t) round(scd30.CO2), scd30.temperature, scd30.relative_humidity);
+      Update_Display();
   
       // Update bluetooth app with new values
       //if (bluetooth_active) {
@@ -281,7 +302,6 @@ void loop() {
       // Accumulates samples
       CO2ppm_accumulated += CO2ppm_value;
       CO2ppm_samples++;
-
     }
   }
 
@@ -357,12 +377,6 @@ void loop() {
   // Process buttons events
   button_top.loop();
   button_bottom.loop();
-
-  // Start captive portal if flag was set
-  //if (StartCaptivePortal) {
-  //  Start_Captive_Portal();
-  //  StartCaptivePortal = false;
-  //}
   
   //Serial.println("--- END LOOP");
   
@@ -1570,25 +1584,21 @@ void Display_Splash_Screen() { // Display Anaire splash screen
   tft.pushImage(0, 0,  240, 135, anaire_ttgo_splash);
 }
 
-void Update_Display(uint16_t co2, float temp, float hum) { // Update display with CO2 measurements
-
-  if (co2 > 9999) {
-    co2 = 9999;
-  }
+void Update_Display() { // Update display
 
   tft.setTextDatum(TL_DATUM); // top left
   
   // Set screen and text colours based on CO2 value
-  if (co2 >= 1000 ) {
-    tft.fillScreen(TFT_RED);
-    tft.setTextColor(TFT_WHITE, TFT_RED);
-    if (eepromConfig.acoustic_alarm) {
-      digitalWrite(BUZZER_GPIO, HIGH);
-    }
-    delay(250);
+  if (co2_device_status == co2_ok) {
+    tft.fillScreen(TFT_BLACK);
+    tft.setTextColor(TFT_GREEN, TFT_BLACK);
     digitalWrite(BUZZER_GPIO, LOW);
-  } 
-  else if (co2 >= 700 ) {
+    displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
+    displayBuzzer(TFT_GREEN, eepromConfig.acoustic_alarm);
+    displayBatteryLevel(battery_voltage, TFT_GREEN);
+  }
+
+  else if (co2_device_status == co2_warning) {
     tft.fillScreen(TFT_YELLOW);
     tft.setTextColor(TFT_RED, TFT_YELLOW);
     if (eepromConfig.acoustic_alarm) {
@@ -1596,17 +1606,28 @@ void Update_Display(uint16_t co2, float temp, float hum) { // Update display wit
     }
     delay(50);
     digitalWrite(BUZZER_GPIO, LOW);
+    displayWifi(TFT_RED, TFT_YELLOW, (WiFi.status() == WL_CONNECTED));
+    displayBuzzer(TFT_RED, eepromConfig.acoustic_alarm);
+    displayBatteryLevel(battery_voltage, TFT_RED);
   } 
-  else {
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextColor(TFT_GREEN, TFT_BLACK);
+  
+  else if (co2_device_status == co2_alarm) {
+    tft.fillScreen(TFT_RED);
+    tft.setTextColor(TFT_WHITE, TFT_RED);
+    if (eepromConfig.acoustic_alarm) {
+      digitalWrite(BUZZER_GPIO, HIGH);
+    }
+    delay(250);
     digitalWrite(BUZZER_GPIO, LOW);
-  }
+    displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
+    displayBuzzer(TFT_WHITE, eepromConfig.acoustic_alarm);
+    displayBatteryLevel(battery_voltage, TFT_WHITE);
+  } 
 
   // Draw CO2 number
   tft.setTextSize(1);
   tft.setFreeFont(FF95);
-  tft.drawString(String(co2), 60, 30);
+  tft.drawString(String(round(CO2ppm_value),0), 60, 30);
 
   // Draw CO2 units
   tft.setTextSize(1);
@@ -1614,10 +1635,10 @@ void Update_Display(uint16_t co2, float temp, float hum) { // Update display wit
   tft.drawString("PPM", 200, 115);
 
   // Draw temperature
-  tft.drawString(String(temp,1)+"C", 80, 115);
+  tft.drawString(String(temperature,1)+"C", 80, 115);
 
   // Draw humidity
-  tft.drawString(String(hum,1)+"%", 140, 115);
+  tft.drawString(String(humidity,1)+"%", 140, 115);
 
   // Draw bluetooth device id
   //if (bluetooth_active) {
@@ -1686,6 +1707,7 @@ void Firmware_Update() {
   t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://github.com/anaireorg/anaire-devices/blob/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
 
   switch (ret) {
+    
       case HTTP_UPDATE_FAILED:
         Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
         break;
@@ -1699,6 +1721,73 @@ void Firmware_Update() {
         break;
     }
 
+}
+
+//Draw a battery showing the level of charge
+void displayBatteryLevel(float voltage, int colour) {
+
+   // If battery voltage is up 4.5 then external power supply is working and battery is charging
+  if (voltage > USB_Voltage) {
+    tft.drawRect(5, 110, 30, 18, colour);
+    tft.fillRect(35, 113, 5, 9, colour);
+    tft.fillRect(7, 112, 5, 14, colour);
+    //delay(2500);
+    tft.fillRect(14, 112, 5, 14, colour);
+    //delay(2500);
+    tft.fillRect(21, 112, 5, 14, colour);
+    //delay(2500);
+    tft.fillRect(28, 112, 5, 14, colour);
+  } 
+  else if (voltage >= Voltage_Threshold_1) {
+    tft.drawRect(5, 110, 30, 18, colour);
+    tft.fillRect(35, 113, 5, 9, colour);
+    tft.fillRect(7, 112, 5, 14, colour);
+    tft.fillRect(14, 112, 5, 14, colour);
+    tft.fillRect(21, 112, 5, 14, colour);
+    tft.fillRect(28, 112, 5, 14, colour);
+  } 
+  else if (voltage < Voltage_Threshold_1 && voltage > Voltage_Threshold_2) {
+    tft.drawRect(5, 110, 30, 18, colour);
+    tft.fillRect(35, 113, 5, 9, colour);
+    tft.fillRect(7, 112, 5, 14, colour);
+    tft.fillRect(14, 112, 5, 14, colour);
+    tft.fillRect(21, 112, 5, 14, colour);
+  } 
+  else if (voltage <= Voltage_Threshold_2 && voltage > Voltage_Threshold_3) {
+    tft.drawRect(5, 110, 30, 18, colour);
+    tft.fillRect(35, 113, 5, 9, colour);
+    tft.fillRect(7, 112, 5, 14, colour);
+    tft.fillRect(14, 112, 5, 14, colour);
+  } 
+  else if (voltage <= Voltage_Threshold_3) {
+    tft.drawRect(5, 110, 30, 18, colour);
+    tft.fillRect(35, 113, 5, 9, colour);
+    tft.fillRect(7, 112, 5, 14, colour);
+  }
+
+}
+
+//Draw WiFi icon
+void displayWifi(int colour_1, int colour_2, boolean activo) {
+  tft.drawCircle(20, 30, 14, colour_1);
+  tft.drawCircle(20, 30, 10, colour_1);
+  tft.fillCircle(20, 30, 6, colour_1);
+  tft.fillRect(6, 30, 30, 30, colour_2);
+  tft.fillRect(18, 30, 4, 8, colour_1);
+  if (!activo) {
+    tft.drawLine(6, 16, 34, 46, RED);
+    tft.drawLine(34, 16, 6, 46, RED); 
+  }
+}
+
+//Draw buzzer
+void displayBuzzer(int colour, boolean activo) {
+  tft.fillRect(14, 65, 4, 10, colour);
+  tft.fillTriangle(25, 60, 16, 70, 25, 80, colour);
+  if (!activo) {
+    tft.drawLine(10,90, 30, 55, RED);
+    tft.drawLine(30, 90, 10, 55, RED);
+  }
 }
 
 /*

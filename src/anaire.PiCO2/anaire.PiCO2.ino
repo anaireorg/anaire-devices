@@ -29,7 +29,8 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210504.Parker";
+String sw_version = "v3.20210505.Alain";
+// v3.20210504.Alain - OTA updates
 // v3.20210504.Parker - Icons for battery, wifi and alarm
 // v3.20210503.Mingus - Lots of improvements, first fully functional version; MQTT commandes not yet tested
 // v3.20210502.Madrid - Lots of additions: SCD30 full support, coherent display messages, complete buttons support, etc.
@@ -1702,14 +1703,25 @@ void Firmware_Update() {
   UpdateClient.setInsecure();
 
   // Reading data over SSL may be slow, use an adequate timeout
-  UpdateClient.setTimeout(12000/1000); // timeout argument is defined in seconds for setTimeout
-  
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://github.com/anaireorg/anaire-devices/blob/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+  UpdateClient.setTimeout(30); // timeout argument is defined in seconds for setTimeout
+
+  // Update display
+  tft.fillScreen(TFT_ORANGE);
+  tft.setTextColor(TFT_BLACK, TFT_ORANGE);
+  tft.setTextSize(1);
+  tft.setFreeFont(FF90);
+  tft.setTextDatum(MC_DATUM);
+  tft.drawString("ACTUALIZACION EN CURSO", tft.width()/2, tft.height()/2);
+    
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
 
   switch (ret) {
     
       case HTTP_UPDATE_FAILED:
         Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+        tft.fillScreen(TFT_ORANGE);
+        tft.drawString("ACTUALIZACION FALLIDA", tft.width()/2, tft.height()/2);
+        delay(1000);
         break;
 
       case HTTP_UPDATE_NO_UPDATES:
@@ -1718,6 +1730,9 @@ void Firmware_Update() {
 
       case HTTP_UPDATE_OK:
         Serial.println("HTTP_UPDATE_OK");
+        tft.fillScreen(TFT_ORANGE);
+        tft.drawString("ACTUALIZACION COMPLETA", tft.width()/2, tft.height()/2);
+        delay(1000);
         break;
     }
 

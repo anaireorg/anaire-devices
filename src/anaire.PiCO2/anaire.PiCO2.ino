@@ -1721,7 +1721,7 @@ void Firmware_Update() {
         Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
         tft.fillScreen(TFT_ORANGE);
         tft.drawString("ACTUALIZACION FALLIDA", tft.width()/2, tft.height()/2);
-        delay(1000);
+        delay(3000);
         break;
 
       case HTTP_UPDATE_NO_UPDATES:
@@ -1732,7 +1732,7 @@ void Firmware_Update() {
         Serial.println("HTTP_UPDATE_OK");
         tft.fillScreen(TFT_ORANGE);
         tft.drawString("ACTUALIZACION COMPLETA", tft.width()/2, tft.height()/2);
-        delay(1000);
+        delay(3000);
         break;
     }
 

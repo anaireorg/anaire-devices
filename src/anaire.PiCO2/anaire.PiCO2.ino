@@ -29,8 +29,9 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210506.Bona";
-// v3.20210506.Bona - Added VBat in the MQTT message
+String sw_version = "v3.20210506.AEOC";
+// v3.20210506.AEOC - CO2 measurements each 30s, MQTT sending each 60s. SCD30 is not reset anymore after a reading failure
+// v3.20210506.Bona - Added battery voltage measurement in the MQTT message
 // v3.20210504.Alain - OTA updates
 // v3.20210504.Parker - Icons for battery, wifi and alarm
 // v3.20210503.Mingus - Lots of improvements, first fully functional version; MQTT commandes not yet tested
@@ -84,11 +85,11 @@ boolean err_MQTT = false;
 boolean err_sensor = false;
 
 // Measurements loop: time between measurements
-unsigned int measurements_loop_duration = 5000;   // 5 seconds
+unsigned int measurements_loop_duration = 30000;  // 30 seconds
 unsigned long measurements_loop_start;            // holds a timestamp for each control loop start
 
 // MQTT loop: time between MQTT measurements sent to the cloud
-unsigned int MQTT_loop_duration = 30000;          // 30 seconds
+unsigned int MQTT_loop_duration = 60000;          // 60 seconds
 unsigned long MQTT_loop_start;                    // holds a timestamp for each cloud loop start
 unsigned long lastReconnectAttempt = 0;           // MQTT reconnections
 
@@ -305,6 +306,7 @@ void loop() {
       CO2ppm_accumulated += CO2ppm_value;
       CO2ppm_samples++;
     }
+    
   }
 
   // MQTT loop
@@ -335,7 +337,7 @@ void loop() {
     // Try to recover error conditions
     if (err_sensor) {
       Serial.println ("--- err_sensor");
-      Setup_Sensor();  // Init co2 sensors
+      //Setup_Sensor();  // Init co2 sensors
     }
 
     if ((err_wifi) || (WiFi.status() != WL_CONNECTED)) {

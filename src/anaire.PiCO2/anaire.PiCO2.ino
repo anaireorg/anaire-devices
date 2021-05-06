@@ -29,7 +29,7 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210506.EllaF";
+String sw_version = "v3.20210506.EllaFitz";
 // v3.20210506.AEOC - CO2 measurements each 30s, MQTT sending each 60s. SCD30 is not reset anymore after a reading failure
 // v3.20210506.Bona - Added battery voltage measurement in the MQTT message
 // v3.20210504.Alain - OTA updates
@@ -85,7 +85,7 @@ boolean err_MQTT = false;
 boolean err_sensor = false;
 
 // Measurements loop: time between measurements
-unsigned int measurements_loop_duration = 30000;  // 30 seconds
+unsigned int measurements_loop_duration = 15000;  // 15 seconds
 unsigned long measurements_loop_start;            // holds a timestamp for each control loop start
 
 // MQTT loop: time between MQTT measurements sent to the cloud
@@ -112,11 +112,6 @@ unsigned long errors_loop_start;                  // holds a timestamp for each 
 #define FF90  &ArchivoNarrow_Regular10pt7b
 #define FF95  &ArchivoNarrow_Regular50pt7b
 TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup.h
-//#define GREEN 0x07E0
-//#define BLACK 0x0000
-//#define RED 0xF800
-//#define WHITE 0xFFFF
-//#define YELLOW 0xFFE0
 
 // Customized Anaire splash screen
 #include "anaire_ttgo_splash.h"

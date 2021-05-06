@@ -29,7 +29,7 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210506.AEOC";
+String sw_version = "v3.20210506.Ella";
 // v3.20210506.AEOC - CO2 measurements each 30s, MQTT sending each 60s. SCD30 is not reset anymore after a reading failure
 // v3.20210506.Bona - Added battery voltage measurement in the MQTT message
 // v3.20210504.Alain - OTA updates
@@ -145,9 +145,7 @@ int vref = 1100;
 Adafruit_SCD30 scd30;
 #define SCD30_SDA_pin 26 // Define the SDA pin used for the SCD30
 #define SCD30_SCL_pin 27 // Define the SCL pin used for the SCD30
-unsigned long SCD30_WARMING_TIME = 1000; // SCD30 CO2 sensor warming time
 unsigned long SCD30_CALIBRATION_TIME = 60000; // SCD30 CO2 CALIBRATION TIME: 1 min = 60000 ms
-uint16_t SCD30_MEASUREMENT_INTERVAL = measurements_loop_duration/1000; // time between measurements
 
 // Bluetooth in TTGO T-Display
 //#include "Sensirion_GadgetBle_Lib.h"  // to connect to Sensirion MyAmbience Android App available on Google Play
@@ -262,6 +260,10 @@ void setup() {
   tft.setTextDatum(MC_DATUM);
   tft.drawString("ANAIRE PiCO2", tft.width()/2, tft.height()/2);
   delay(1000);
+
+  // Update display with new values
+  Update_Display();
+  
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -793,7 +795,7 @@ void Start_Captive_Portal() { // Run a captive portal to configure WiFi and MQTT
     //sets timeout in seconds until configuration portal gets turned off.
     //If not specified device will remain in configuration mode until
     //switched off via webserver or device is restarted.
-    wifiManager.setConfigPortalTimeout(120);
+    wifiManager.setConfigPortalTimeout(60);
 
     //it starts an access point
     //and goes into a blocking loop awaiting configuration
@@ -1119,8 +1121,8 @@ void Read_Sensor() { // Read CO2, temperature and humidity values
       }
     }
     else {
-      err_sensor = true;
-      Serial.println("Error SCD30");
+      //err_sensor = true;
+      //Serial.println("Error SCD30");
     }
   } // End SCD30 sensor
 
@@ -1179,9 +1181,9 @@ void Set_Measurement_Interval() { // Set CO2 sensor measurement interval
     Serial.print("Reading SCD30 Measurement Interval before change: ");
     Serial.println(val);
     Serial.print("Setting new SCD30 Measurement Interval to: ");
-    Serial.println(SCD30_MEASUREMENT_INTERVAL);
-    if (scd30.setMeasurementInterval(SCD30_MEASUREMENT_INTERVAL)) {
-      delay(100);
+    Serial.println((measurements_loop_duration/1000) - 1);
+    if (scd30.setMeasurementInterval((measurements_loop_duration/1000) - 1)) {
+      delay(500);
       val = scd30.getMeasurementInterval();
       Serial.print("Reading SCD30 Measurement Interval after change: ");
       Serial.println(val);
@@ -1303,7 +1305,7 @@ void Set_AutoSelfCalibration() { // Set autocalibration in the CO2 sensor true o
     Serial.print("Setting new SCD30 Self Calibration to: ");
     Serial.println(eepromConfig.self_calibration);
     if (scd30.selfCalibrationEnabled(eepromConfig.self_calibration)) {
-      delay(100);
+      delay(500);
       val = scd30.selfCalibrationEnabled();
       Serial.print("Reading SCD30 Self Calibration after change: ");
       Serial.println(val);
@@ -1327,7 +1329,7 @@ void Set_Temperature_Offset() { // Set CO2 sensor temperature offset
     Serial.print("Setting new SCD30 Temperature Offset to: ");
     Serial.println(eepromConfig.temperature_offset);
     if (scd30.setTemperatureOffset(eepromConfig.temperature_offset)) {
-      delay(100);
+      delay(500);
       val = scd30.getTemperatureOffset();
       Serial.print("Reading SCD30 Temperature Offset after change: ");
       Serial.println(val);
@@ -1359,7 +1361,7 @@ void Set_Altitude_Compensation() { // Set CO2 sensor altitude compensation
     Serial.print("Setting new SCD30 Altitude Compensation to: ");
     Serial.println(eepromConfig.altitude_compensation);
     if (scd30.setAltitudeOffset(eepromConfig.altitude_compensation)) {
-      delay(100);
+      delay(500);
       val = scd30.getAltitudeOffset();
       Serial.print("Reading SCD30 Altitude Compensation after change: ");
       Serial.println(val);

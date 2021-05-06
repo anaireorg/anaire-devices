@@ -29,7 +29,8 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210505.Alain";
+String sw_version = "v3.20210506.Bona";
+// v3.20210506.Bona - Added VBat in the MQTT message
 // v3.20210504.Alain - OTA updates
 // v3.20210504.Parker - Icons for battery, wifi and alarm
 // v3.20210503.Mingus - Lots of improvements, first fully functional version; MQTT commandes not yet tested
@@ -901,7 +902,7 @@ void Send_Message_Cloud_App_MQTT() {  // Send measurements to the cloud applicat
   // Print info
   Serial.print("Sending MQTT message to the send topic: ");
   Serial.println(MQTT_send_topic);
-  sprintf(MQTT_message, "{id: %s,CO2: %d,humidity: %f,temperature: %f}", anaire_device_id.c_str(), (int) (CO2ppm_accumulated / CO2ppm_samples), humidity, temperature);
+  sprintf(MQTT_message, "{id: %s,CO2: %d,humidity: %f,temperature: %f,VBat: %f}", anaire_device_id.c_str(), (int) (CO2ppm_accumulated / CO2ppm_samples), humidity, temperature, battery_voltage);
   Serial.print(MQTT_message);
   Serial.println();
 
@@ -929,49 +930,49 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   if ((jsonBuffer["name"]) && (eepromConfig.anaire_device_name != jsonBuffer["name"])) {
     strncpy(eepromConfig.anaire_device_name, jsonBuffer["name"].as<const char*>(), sizeof(eepromConfig.anaire_device_name));
     eepromConfig.anaire_device_name[sizeof(eepromConfig.anaire_device_name) - 1] = '\0';
-    write_eeprom = true;
     Serial.print("Anaire device name: ");
     Serial.println(eepromConfig.anaire_device_name);
+    write_eeprom = true;
   }
 
   // Update warning threshold
   if ((jsonBuffer["warning"]) && (eepromConfig.CO2ppm_warning_threshold != (int)jsonBuffer["warning"])) {
     eepromConfig.CO2ppm_warning_threshold = (int)jsonBuffer["warning"];
     Evaluate_CO2_Value();
-    write_eeprom = true;
     Serial.print("New warning threshold: ");
     Serial.println(eepromConfig.CO2ppm_warning_threshold);
+    write_eeprom = true;
   }
 
   // Update alarm threshold
   if ((jsonBuffer["caution"]) && (eepromConfig.CO2ppm_alarm_threshold != (int)jsonBuffer["caution"])) {
     eepromConfig.CO2ppm_alarm_threshold = (int)jsonBuffer["caution"];
     Evaluate_CO2_Value();
-    write_eeprom = true;
     Serial.print("New alarm threshold: ");
     Serial.println(eepromConfig.CO2ppm_alarm_threshold);
+    write_eeprom = true;
   }
 
   // Update acoustic alarm
   if ((jsonBuffer["alarm"]) && ((eepromConfig.acoustic_alarm) && (jsonBuffer["alarm"] == "OFF"))) {
     eepromConfig.acoustic_alarm = false;
-    write_eeprom = true;
     Serial.println("Acoustic alarm value: OFF");
+    write_eeprom = true;
   }
 
   if ((jsonBuffer["alarm"]) && ((!eepromConfig.acoustic_alarm) && (jsonBuffer["alarm"] == "ON"))) {
     eepromConfig.acoustic_alarm = true;
-    write_eeprom = true;
     Serial.println("Acoustic alarm value: ON");
+    write_eeprom = true;
   }
 
   // Check MQTT server
   if ((jsonBuffer["MQTT_server"]) && (eepromConfig.MQTT_server != jsonBuffer["MQTT_server"])) {
     strncpy(eepromConfig.MQTT_server, jsonBuffer["MQTT_server"], sizeof(eepromConfig.MQTT_server));
     eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
-    write_eeprom = true;
     Serial.print("MQTT Server: ");
     Serial.println(eepromConfig.MQTT_server);
+    write_eeprom = true;
 
     //Attempt to connect to MQTT broker
     if (!err_wifi) {
@@ -984,9 +985,10 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     eepromConfig.MQTT_port = int(jsonBuffer["MQTT_port"]);
     //strncpy(eepromConfig.MQTT_port, jsonBuffer["MQTT_port"], sizeof(eepromConfig.MQTT_port));
     //eepromConfig.MQTT_port[sizeof(eepromConfig.MQTT_port) - 1] = '\0';
-    write_eeprom = true;
     Serial.print("MQTT Port: ");
     Serial.println(eepromConfig.MQTT_port);
+    write_eeprom = true;
+    
     // Attempt to connect to MQTT broker
     if (!err_wifi) {
       Init_MQTT();
@@ -996,23 +998,27 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   // Check FRC value
   if ((jsonBuffer["FRC_value"]) && (eepromConfig.forced_recalibration_reference != (uint16_t)jsonBuffer["FRC_value"])) {
     eepromConfig.forced_recalibration_reference = (uint16_t)jsonBuffer["FRC_value"];
+    write_eeprom = true;
   }
 
   // Check temperature offset
   if ((jsonBuffer["temperature_offset"]) && (eepromConfig.temperature_offset != (uint16_t)jsonBuffer["temperature_offset"])) {
     eepromConfig.temperature_offset = (uint16_t)jsonBuffer["temperature_offset"];
     Set_Temperature_Offset();
+    write_eeprom = true;
   }
 
   // Check altitude_compensation
   if ((jsonBuffer["altitude_compensation"]) && (eepromConfig.altitude_compensation != (uint16_t)jsonBuffer["altitude_compensation"])) {
     eepromConfig.altitude_compensation = (uint16_t)jsonBuffer["altitude_compensation"];
     Set_Altitude_Compensation();
+    write_eeprom = true;
   }
 
   // If calibration has been enabled, justo do it
   if ((jsonBuffer["FRC"]) && (jsonBuffer["FRC"] == "ON")) {
     Do_Calibrate_Sensor();
+    //write_eeprom = true;
   }
 
   // Update self calibration
@@ -1021,28 +1027,17 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     write_eeprom = true;
     Set_AutoSelfCalibration();
     Serial.println("self_calibration: OFF");
+    write_eeprom = true;
   }
 
   if ((jsonBuffer["ABC"]) && ((!eepromConfig.self_calibration) && (jsonBuffer["ABC"] == "ON"))) {
     eepromConfig.self_calibration = true;
-    write_eeprom = true;
     Set_AutoSelfCalibration();
     Serial.println("self_calibration: ON");
+    write_eeprom = true;
   }
 
-  // if update flag has been enabled, wipe EEPROM and update to latest bin
-  if (((jsonBuffer["update"]) && (jsonBuffer["update"] == "ON"))) {
-    //boolean result = EEPROM.wipe();
-    //if (result) {
-    //  Serial.println("All EEPROM data wiped");
-    //} else {
-    //  Serial.println("EEPROM data could not be wiped from flash store");
-    //}
-
-    // Update firmware to latest bin
-    Serial.println("Update firmware to latest bin");
-    Firmware_Update();
-  }
+  
 
   // If factory reset has been enabled, just do it
   if ((jsonBuffer["factory_reset"]) && (jsonBuffer["factory_reset"] == "ON")) {
@@ -1059,10 +1054,26 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   Serial.println("MQTT update - message processed");
   Print_Config();
 
-  // save the new values
+  // save the new values if the flag was set
   if (write_eeprom) {
     Write_EEPROM();
   }
+
+  // if update flag has been enabled, update to latest bin
+  // It has to be the last option, to allow to save EEPROM if required
+  if (((jsonBuffer["update"]) && (jsonBuffer["update"] == "ON"))) {
+    //boolean result = EEPROM.wipe();
+    //if (result) {
+    //  Serial.println("All EEPROM data wiped");
+    //} else {
+    //  Serial.println("EEPROM data could not be wiped from flash store");
+    //}
+
+    // Update firmware to latest bin
+    Serial.println("Update firmware to latest bin");
+    Firmware_Update();
+  }
+  
 }
 
 void Setup_Sensor() { // Identify and initialize CO2, temperature and humidity sensor

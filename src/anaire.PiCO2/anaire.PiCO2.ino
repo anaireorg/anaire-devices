@@ -319,7 +319,7 @@ void loop() {
     MQTT_loop_start = millis();
 
     // Message the MQTT broker in the cloud app to send the measured values
-    if (!err_wifi) {
+    if ((!err_wifi) && (CO2ppm_samples > 0)) {
       Send_Message_Cloud_App_MQTT();
     }
 

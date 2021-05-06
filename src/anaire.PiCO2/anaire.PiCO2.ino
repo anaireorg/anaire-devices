@@ -1806,8 +1806,8 @@ void displayWifi(int colour_1, int colour_2, boolean active) {
   tft.fillRect(18, 30, 4, 8, colour_1);
   
   if (!active) { // draw an X over
-    tft.drawLine(6, 16, 34, 46, TFT_WHITE);
-    tft.drawLine(34, 16, 6, 46, TFT_WHITE); 
+    tft.drawLine(6, 16, 34, 46, colour_1);
+    tft.drawLine(34, 16, 6, 46, colour_1); 
   }
   
 }
@@ -1818,8 +1818,8 @@ void displayBuzzer(int colour, boolean active) {
   tft.fillTriangle(25, 60, 16, 70, 25, 80, colour);
   
   if (!active) { // draw an X over
-    tft.drawLine(10,90, 30, 55, TFT_WHITE);
-    tft.drawLine(30, 90, 10, 55, TFT_WHITE);
+    tft.drawLine(10,90, 30, 55, colour);
+    tft.drawLine(30, 90, 10, 55, colour);
   }
   
 }

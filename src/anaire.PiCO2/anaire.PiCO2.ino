@@ -29,7 +29,7 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210506.Ella";
+String sw_version = "v3.20210506.EllaF";
 // v3.20210506.AEOC - CO2 measurements each 30s, MQTT sending each 60s. SCD30 is not reset anymore after a reading failure
 // v3.20210506.Bona - Added battery voltage measurement in the MQTT message
 // v3.20210504.Alain - OTA updates
@@ -112,11 +112,11 @@ unsigned long errors_loop_start;                  // holds a timestamp for each 
 #define FF90  &ArchivoNarrow_Regular10pt7b
 #define FF95  &ArchivoNarrow_Regular50pt7b
 TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup.h
-#define GREEN 0x07E0
-#define BLACK 0x0000
-#define RED 0xF800
-#define WHITE 0xFFFF
-#define YELLOW 0xFFE0
+//#define GREEN 0x07E0
+//#define BLACK 0x0000
+//#define RED 0xF800
+//#define WHITE 0xFFFF
+//#define YELLOW 0xFFE0
 
 // Customized Anaire splash screen
 #include "anaire_ttgo_splash.h"
@@ -1798,26 +1798,30 @@ void displayBatteryLevel(float voltage, int colour) {
 }
 
 //Draw WiFi icon
-void displayWifi(int colour_1, int colour_2, boolean activo) {
+void displayWifi(int colour_1, int colour_2, boolean active) {
   tft.drawCircle(20, 30, 14, colour_1);
   tft.drawCircle(20, 30, 10, colour_1);
   tft.fillCircle(20, 30, 6, colour_1);
   tft.fillRect(6, 30, 30, 30, colour_2);
   tft.fillRect(18, 30, 4, 8, colour_1);
-  if (!activo) {
-    tft.drawLine(6, 16, 34, 46, RED);
-    tft.drawLine(34, 16, 6, 46, RED); 
+  
+  if (!active) { // draw an X over
+    tft.drawLine(6, 16, 34, 46, TFT_WHITE);
+    tft.drawLine(34, 16, 6, 46, TFT_WHITE); 
   }
+  
 }
 
 //Draw buzzer
-void displayBuzzer(int colour, boolean activo) {
+void displayBuzzer(int colour, boolean active) {
   tft.fillRect(14, 65, 4, 10, colour);
   tft.fillTriangle(25, 60, 16, 70, 25, 80, colour);
-  if (!activo) {
-    tft.drawLine(10,90, 30, 55, RED);
-    tft.drawLine(30, 90, 10, 55, RED);
+  
+  if (!active) { // draw an X over
+    tft.drawLine(10,90, 30, 55, TFT_WHITE);
+    tft.drawLine(30, 90, 10, 55, TFT_WHITE);
   }
+  
 }
 
 /*

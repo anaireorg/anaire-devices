@@ -30,7 +30,7 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 String sw_version = "v3.20210508.Lenora";
-// v3.20210508.Lenora - Temperature offset to 600 and altitude compensation to 600 by default
+// v3.20210508.Lenora - CO2 measurements each 10s; MQTT message each 60s; Temperature offset 600 (celsius hundredths) and altitude compensation to 600m by default
 // v3.20210506.EllaFitz - Bug fixes
 // v3.20210506.AEOC - CO2 measurements each 30s, MQTT sending each 60s. SCD30 is not reset anymore after a reading failure
 // v3.20210506.Bona - Added battery voltage measurement in the MQTT message
@@ -87,7 +87,7 @@ boolean err_MQTT = false;
 boolean err_sensor = false;
 
 // Measurements loop: time between measurements
-unsigned int measurements_loop_duration = 15000;  // 15 seconds
+unsigned int measurements_loop_duration = 10000;  // 10 seconds
 unsigned long measurements_loop_start;            // holds a timestamp for each control loop start
 
 // MQTT loop: time between MQTT measurements sent to the cloud
@@ -132,10 +132,10 @@ int vref = 1100;
 
 //Define voltage threshold
 #define USB_Voltage 4.5
-#define Voltage_Threshold_1 4.1
+#define Voltage_Threshold_1 4.2
 #define Voltage_Threshold_2 4.0
-#define Voltage_Threshold_3 3.9
-#define Voltage_Threshold_4 3.8
+#define Voltage_Threshold_3 3.8
+#define Voltage_Threshold_4 3.6
 
 // Sensirion SCD30 CO2, temperature and humidity sensor
 #include <Adafruit_SCD30.h>
@@ -276,7 +276,7 @@ void loop() {
   }
   
   // Measure the battery voltage
-  battery_voltage = ((float)analogRead(ADC_PIN)/4095.0)*2.0*3.3*(vref/1000.0);
+  //battery_voltage = ((float)analogRead(ADC_PIN)/4095.0)*2.0*3.3*(vref/1000.0);
     
   // Measurement loop
   if ((millis() - measurements_loop_start) >= measurements_loop_duration)
@@ -766,7 +766,7 @@ void Start_Captive_Portal() { // Run a captive portal to configure WiFi and MQTT
     //Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wifiManager;
     wifiManager.setDebugOutput(true);
-    //wifiManager.setCountry("ES");
+    //wifiManager.setCountry("ES"); // it is not recognizing the country...
     wifiManager.disconnect();
     WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
@@ -797,7 +797,8 @@ void Start_Captive_Portal() { // Run a captive portal to configure WiFi and MQTT
     //it starts an access point
     //and goes into a blocking loop awaiting configuration
     //wifiManager.resetSettings(); // reset previous configurations
-    bool res = wifiManager.startConfigPortal("AnaireWiFi");
+    String wifiAP = "AnaireWiFi_" + anaire_device_id;
+    bool res = wifiManager.startConfigPortal(wifiAP.c_str());
     if (!res) {
       Serial.println("Not able to start captive portal");
     } else {
@@ -1037,8 +1038,6 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     Serial.println("self_calibration: ON");
     write_eeprom = true;
   }
-
-  
 
   // If factory reset has been enabled, just do it
   if ((jsonBuffer["factory_reset"]) && (jsonBuffer["factory_reset"] == "ON")) {
@@ -1519,7 +1518,7 @@ void Button_Init() { // Manage TTGO T-Display board buttons
   button_bottom.setClickHandler([](Button2 & b) {
     Serial.println("Bottom button short click");
     tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_RED, TFT_WHITE);
+    tft.setTextColor(TFT_BLACK, TFT_WHITE);
     tft.setTextDatum(TL_DATUM); // top left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
@@ -1542,7 +1541,7 @@ void Button_Init() { // Manage TTGO T-Display board buttons
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString(" Presione el boton para despertar",  tft.width()/2, tft.height()/2);
+    tft.drawString(" boton inferior para despertar",  tft.width()/2, tft.height()/2);
     espDelay(3000);
     //digitalWrite(TFT_BL, !r);
     tft.writecommand(TFT_DISPOFF);
@@ -1577,7 +1576,8 @@ void Button_Init() { // Manage TTGO T-Display board buttons
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString("CONFIG AnaireWiFi", tft.width()/2, tft.height()/2);
+    String wifiAP = "AnaireWiFi_" + anaire_device_id;
+    tft.drawString(wifiAP, tft.width()/2, tft.height()/2);
     wifi_server.stop();
     Start_Captive_Portal();
     wifi_server.begin();
@@ -1612,7 +1612,7 @@ void Update_Display() { // Update display
     digitalWrite(BUZZER_GPIO, LOW);
     displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
     displayBuzzer(TFT_GREEN, eepromConfig.acoustic_alarm);
-    displayBatteryLevel(battery_voltage, TFT_GREEN);
+    displayBatteryLevel(TFT_GREEN);
   }
 
   else if (co2_device_status == co2_warning) {
@@ -1625,7 +1625,7 @@ void Update_Display() { // Update display
     digitalWrite(BUZZER_GPIO, LOW);
     displayWifi(TFT_RED, TFT_YELLOW, (WiFi.status() == WL_CONNECTED));
     displayBuzzer(TFT_RED, eepromConfig.acoustic_alarm);
-    displayBatteryLevel(battery_voltage, TFT_RED);
+    displayBatteryLevel(TFT_RED);
   } 
   
   else if (co2_device_status == co2_alarm) {
@@ -1638,7 +1638,7 @@ void Update_Display() { // Update display
     digitalWrite(BUZZER_GPIO, LOW);
     displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
     displayBuzzer(TFT_WHITE, eepromConfig.acoustic_alarm);
-    displayBatteryLevel(battery_voltage, TFT_WHITE);
+    displayBatteryLevel(TFT_WHITE);
   } 
 
   // Draw CO2 number
@@ -1755,12 +1755,19 @@ void Firmware_Update() {
 }
 
 //Draw a battery showing the level of charge
-void displayBatteryLevel(float voltage, int colour) {
+void displayBatteryLevel(int colour) {
 
-   // If battery voltage is up 4.5 then external power supply is working and battery is charging
-  if (voltage > USB_Voltage) {
+  // Measure the battery voltage
+  battery_voltage = ((float)analogRead(ADC_PIN)/4095.0)*2.0*3.3*(vref/1000.0);
+  
+  Serial.print("battery voltage: ");
+  Serial.println(battery_voltage);
+  
+  // If battery voltage is up 4.5 then external power supply is working and battery is charging
+  if (battery_voltage > USB_Voltage) {
     tft.drawRect(5, 110, 30, 18, colour);
-    tft.fillRect(35, 113, 5, 9, colour);
+    //tft.fillRect(35, 113, 5, 9, colour);
+    tft.fillRect(35, 114, 5, 9, colour);
     tft.fillRect(7, 112, 5, 14, colour);
     //delay(2500);
     tft.fillRect(14, 112, 5, 14, colour);
@@ -1769,7 +1776,7 @@ void displayBatteryLevel(float voltage, int colour) {
     //delay(2500);
     tft.fillRect(28, 112, 5, 14, colour);
   } 
-  else if (voltage >= Voltage_Threshold_1) {
+  else if (battery_voltage >= Voltage_Threshold_1) {
     tft.drawRect(5, 110, 30, 18, colour);
     tft.fillRect(35, 113, 5, 9, colour);
     tft.fillRect(7, 112, 5, 14, colour);
@@ -1777,23 +1784,31 @@ void displayBatteryLevel(float voltage, int colour) {
     tft.fillRect(21, 112, 5, 14, colour);
     tft.fillRect(28, 112, 5, 14, colour);
   } 
-  else if (voltage < Voltage_Threshold_1 && voltage > Voltage_Threshold_2) {
+  else if (battery_voltage >= Voltage_Threshold_2) {
     tft.drawRect(5, 110, 30, 18, colour);
     tft.fillRect(35, 113, 5, 9, colour);
     tft.fillRect(7, 112, 5, 14, colour);
     tft.fillRect(14, 112, 5, 14, colour);
     tft.fillRect(21, 112, 5, 14, colour);
   } 
-  else if (voltage <= Voltage_Threshold_2 && voltage > Voltage_Threshold_3) {
+  else if (battery_voltage >= Voltage_Threshold_3) {
     tft.drawRect(5, 110, 30, 18, colour);
     tft.fillRect(35, 113, 5, 9, colour);
     tft.fillRect(7, 112, 5, 14, colour);
     tft.fillRect(14, 112, 5, 14, colour);
   } 
-  else if (voltage <= Voltage_Threshold_3) {
+  else if (battery_voltage >= Voltage_Threshold_4) {
     tft.drawRect(5, 110, 30, 18, colour);
     tft.fillRect(35, 113, 5, 9, colour);
     tft.fillRect(7, 112, 5, 14, colour);
+  }
+  else {
+    tft.drawRect(5, 110, 30, 18, colour);
+    tft.fillRect(35, 113, 5, 9, colour);
+
+    // Measurements are not trustable with this battery level
+    Serial.println("Battery level too low");
+    
   }
 
 }
@@ -1804,7 +1819,8 @@ void displayWifi(int colour_1, int colour_2, boolean active) {
   tft.drawCircle(20, 30, 10, colour_1);
   tft.fillCircle(20, 30, 6, colour_1);
   tft.fillRect(6, 30, 30, 30, colour_2);
-  tft.fillRect(18, 30, 4, 8, colour_1);
+  //tft.fillRect(18, 30, 4, 8, colour_1);
+  tft.fillRect(19, 30, 4, 8, colour_1);
   
   if (!active) { // draw an X over
     tft.drawLine(6, 16, 34, 46, colour_1);
@@ -1815,11 +1831,12 @@ void displayWifi(int colour_1, int colour_2, boolean active) {
 
 //Draw buzzer
 void displayBuzzer(int colour, boolean active) {
-  tft.fillRect(14, 65, 4, 10, colour);
+  //tft.fillRect(14, 65, 4, 10, colour);
+  tft.fillRect(14, 66, 4, 11, colour);
   tft.fillTriangle(25, 60, 16, 70, 25, 80, colour);
   
   if (!active) { // draw an X over
-    tft.drawLine(10,90, 30, 55, colour);
+    tft.drawLine(10, 90, 30, 55, colour);
     tft.drawLine(30, 90, 10, 55, colour);
   }
   

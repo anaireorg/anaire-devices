@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Anaire PiCO2 - Open CO2, temperature and humidity measurement device
 // www.anaire.org
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -29,7 +29,9 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210506.EllaFitz";
+String sw_version = "v3.20210508.Lenora";
+// v3.20210508.Lenora - Temperature offset to 600 and altitude compensation to 600 by default
+// v3.20210506.EllaFitz - Bug fixes
 // v3.20210506.AEOC - CO2 measurements each 30s, MQTT sending each 60s. SCD30 is not reset anymore after a reading failure
 // v3.20210506.Bona - Added battery voltage measurement in the MQTT message
 // v3.20210504.Alain - OTA updates
@@ -53,8 +55,8 @@ struct MyConfigStruct {
   boolean acoustic_alarm = true;                              // Global flag to control acoustic alarm; default to true
   boolean self_calibration = false;                           // Automatic Baseline Correction of CO2 sensor; default to false
   uint16_t forced_recalibration_reference = 420;              // Forced Recalibration value; default to 420ppm
-  uint16_t temperature_offset = 0;                            // temperature offset for SCD30 CO2 measurements
-  uint16_t altitude_compensation = 0;                         // altitude compensation for SCD30 CO2 measurements
+  uint16_t temperature_offset = 600;                          // temperature offset for SCD30 CO2 measurements: 600 by default, because of the housing
+  uint16_t altitude_compensation = 600;                       // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
   char wifi_user[24];                                         // WiFi user to be used on WPA Enterprise. Default to null (not used)
   char wifi_password[24];                                     // WiFi password to be used on WPA Enterprise. Default to null (not used)
 } eepromConfig;
@@ -1458,6 +1460,7 @@ void Button_Init() { // Manage TTGO T-Display board buttons
       tft.drawString("CALIBRACION: FORZADA", 10, 117);
     }
     delay(5000);
+    Update_Display();
   });
 
   // Top button long click: toggle acoustic alarm
@@ -1477,6 +1480,7 @@ void Button_Init() { // Manage TTGO T-Display board buttons
       tft.drawString("ALARMA: SI", tft.width()/2, tft.height()/2);
     }
     Write_EEPROM();
+    Update_Display();
   });
   
   // Top button double click: deactivate self calibration and perform sensor forced recalibration
@@ -1508,6 +1512,7 @@ void Button_Init() { // Manage TTGO T-Display board buttons
     delay(1000);
     Set_AutoSelfCalibration(); 
     Write_EEPROM();
+    Update_Display();
   });
 
   // Bottom button short click: show buttons info
@@ -1527,6 +1532,7 @@ void Button_Init() { // Manage TTGO T-Display board buttons
     tft.drawString("  Doble: Reiniciar", 10, 101);
     tft.drawString("  Triple: Config Portal", 10, 117);
     delay(5000);
+    Update_Display();
   });
   
   // Bottom button long click: sleep

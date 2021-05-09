@@ -29,7 +29,8 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210508.Lenora";
+String sw_version = "v3.20210509.Anita";
+// v3.20210509.Anita - Minor fixes
 // v3.20210508.Lenora - CO2 measurements each 10s; MQTT message each 60s; Temperature offset 600 (celsius hundredths) and altitude compensation to 600m by default
 // v3.20210506.EllaFitz - Bug fixes
 // v3.20210506.AEOC - CO2 measurements each 30s, MQTT sending each 60s. SCD30 is not reset anymore after a reading failure
@@ -1039,9 +1040,13 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
     write_eeprom = true;
   }
 
+  //print info
+  Serial.println("MQTT update - message processed");
+  Print_Config();
+  
   // If factory reset has been enabled, just do it
   if ((jsonBuffer["factory_reset"]) && (jsonBuffer["factory_reset"] == "ON")) {
-    Wipe_EEPROM ();   // Wipe EEPROM
+    Wipe_EEPROM();   // Wipe EEPROM
     ESP.restart(); 
   }
 
@@ -1049,10 +1054,6 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
   if ((jsonBuffer["reboot"]) && (jsonBuffer["reboot"] == "ON")) {
     ESP.restart(); 
   }
-
-  //print info
-  Serial.println("MQTT update - message processed");
-  Print_Config();
 
   // save the new values if the flag was set
   if (write_eeprom) {
@@ -1480,6 +1481,7 @@ void Button_Init() { // Manage TTGO T-Display board buttons
     }
     Write_EEPROM();
     Update_Display();
+    delay(3000);
   });
   
   // Top button double click: deactivate self calibration and perform sensor forced recalibration

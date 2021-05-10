@@ -29,8 +29,9 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210509.Anita";
-// v3.20210509.Anita - Minor fixes
+String sw_version = "v3.20210510.Berenice";
+// v3.20210510.Berenice - Minor fixes: alarm on/off message after pressing top button
+// v3.20210509.Anita - Minor fixes (IES Ppe Felipe)
 // v3.20210508.Lenora - CO2 measurements each 10s; MQTT message each 60s; Temperature offset 600 (celsius hundredths) and altitude compensation to 600m by default
 // v3.20210506.EllaFitz - Bug fixes
 // v3.20210506.AEOC - CO2 measurements each 30s, MQTT sending each 60s. SCD30 is not reset anymore after a reading failure
@@ -1480,8 +1481,8 @@ void Button_Init() { // Manage TTGO T-Display board buttons
       tft.drawString("ALARMA: SI", tft.width()/2, tft.height()/2);
     }
     Write_EEPROM();
-    Update_Display();
     delay(3000);
+    Update_Display();
   });
   
   // Top button double click: deactivate self calibration and perform sensor forced recalibration

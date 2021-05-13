@@ -29,7 +29,8 @@
 //   Bottom button triple click: starts captive portal
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210510.Berenice";
+String sw_version = "v3.20210512.Canine";
+// v3.20210512.Canine - Minor fixes: WiFi error recovery corrected; restart and captive portal added to web server
 // v3.20210510.Berenice - Minor fixes: alarm on/off message after pressing top button
 // v3.20210509.Anita - Minor fixes (IES Ppe Felipe)
 // v3.20210508.Lenora - CO2 measurements each 10s; MQTT message each 60s; Temperature offset 600 (celsius hundredths) and altitude compensation to 600m by default
@@ -341,11 +342,14 @@ void loop() {
       //Setup_Sensor();  // Init co2 sensors
     }
 
-    if ((err_wifi) || (WiFi.status() != WL_CONNECTED)) {
+    if (WiFi.status() != WL_CONNECTED) {
       Serial.println ("--- err_wifi");
       err_wifi = true;
       WiFi.reconnect();
       //Connect_WiFi();   // Attempt to connect to WiFi network:
+    }
+    else {
+      err_wifi = false;
     }
 
     //Reconnect MQTT if needed
@@ -729,11 +733,25 @@ void Check_WiFi_Server() { // Wifi server
             client.println("------");
             client.println("<br>");
 
-            // the content of the HTTP response follows the header:
-            client.print("Click <a href=\"/H\">here</a> to calibrate the device.<br>");
+            // Calibration:
+            client.print("Click <a href=\"/1\">here</a> to calibrate the device.<br>");
             client.println("<br>");
+            // Activate autocalibration Calibration:
+            client.print("Click <a href=\"/2\">here</a> to activate auto calibration.<br>");
+            client.println("<br>");
+            // Captive portal:
+            client.print("Click <a href=\"/3\">here</a> to launch captive portal to set up WiFi and MQTT endpoint.<br>");
+            client.println("<br>");
+            // Suspend:
+            client.print("Click <a href=\"/4\">here</a> to suspend the device.<br>");
+            client.println("<br>");
+            // Restart:
+            client.print("Click <a href=\"/5\">here</a> to restart the device.<br>");
+            client.println("<br>");
+            
             // The HTTP response ends with another blank line:
             client.println();
+
             // break out of the while loop:
             break;
           }
@@ -745,12 +763,33 @@ void Check_WiFi_Server() { // Wifi server
           currentLine += c;      // add it to the end of the currentLine
         }
 
-        // Check to see if the client request was "GET /H" to calibrate the sensor:
-        if (currentLine.endsWith("GET /H")) {
-          if (co2_sensor == scd30_sensor) {
-            Do_Calibrate_Sensor();
-          }
+        // Check to see if the client request was "GET /1" to calibrate the sensor:
+        if (currentLine.endsWith("GET /1")) {
+          Do_Calibrate_Sensor();
         }
+
+        // Check to see if the client request was "GET /2" to activate autocalibration:
+        if (currentLine.endsWith("GET /2")) {
+          eepromConfig.self_calibration = true;
+          Set_AutoSelfCalibration();
+          Write_EEPROM();
+        }
+
+        // Check to see if the client request was "GET /3" to launch captive portal:
+        if (currentLine.endsWith("GET /3")) {
+          Start_Captive_Portal();
+        }
+
+        // Check to see if the client request was "GET /4" to suspend the device:
+        if (currentLine.endsWith("GET /4")) {
+          Suspend_Device();
+        }
+
+        // Check to see if the client request was "GET /5" to restart the device:
+        if (currentLine.endsWith("GET /5")) {
+          ESP.restart();
+        }
+        
       }
     }
 
@@ -764,6 +803,15 @@ void Check_WiFi_Server() { // Wifi server
 void Start_Captive_Portal() { // Run a captive portal to configure WiFi and MQTT
 
     InCaptivePortal = true;
+
+    tft.fillScreen(TFT_WHITE);
+    tft.setTextColor(TFT_RED, TFT_WHITE);
+    tft.setTextSize(1);
+    tft.setFreeFont(FF90);
+    tft.setTextDatum(MC_DATUM);
+    String wifiAP = "AnaireWiFi_" + anaire_device_id;
+    tft.drawString(wifiAP, tft.width()/2, tft.height()/2);
+    wifi_server.stop();
     
     //Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wifiManager;
@@ -799,7 +847,6 @@ void Start_Captive_Portal() { // Run a captive portal to configure WiFi and MQTT
     //it starts an access point
     //and goes into a blocking loop awaiting configuration
     //wifiManager.resetSettings(); // reset previous configurations
-    String wifiAP = "AnaireWiFi_" + anaire_device_id;
     bool res = wifiManager.startConfigPortal(wifiAP.c_str());
     if (!res) {
       Serial.println("Not able to start captive portal");
@@ -1540,22 +1587,7 @@ void Button_Init() { // Manage TTGO T-Display board buttons
   // Bottom button long click: sleep
   button_bottom.setLongClickDetectedHandler([](Button2 & b) {
     Serial.println("Bottom button long click");
-    //int r = digitalRead(TFT_BL);
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextColor(TFT_GREEN, TFT_BLACK);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString(" boton inferior para despertar",  tft.width()/2, tft.height()/2);
-    espDelay(3000);
-    //digitalWrite(TFT_BL, !r);
-    tft.writecommand(TFT_DISPOFF);
-    tft.writecommand(TFT_SLPIN);
-    //After using light sleep, you need to disable timer wake, because here use external IO port to wake up
-    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
-    // esp_sleep_enable_ext1_wakeup(GPIO_SEL_0, ESP_EXT1_WAKEUP_ALL_LOW);
-    // set bottom button for wake up
-    esp_sleep_enable_ext0_wakeup(GPIO_NUM_0, 0);
-    delay(200);
-    esp_deep_sleep_start();
+    Suspend_Device();
   });
 
   // Bottom button double click: restart
@@ -1573,17 +1605,7 @@ void Button_Init() { // Manage TTGO T-Display board buttons
 
   // Bottom button triple click: launch captive portal to configure WiFi and MQTT
   button_bottom.setTripleClickHandler([](Button2 & b) {
-    Serial.println("Bottom button triple click");
-    tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_RED, TFT_WHITE);
-    tft.setTextSize(1);
-    tft.setFreeFont(FF90);
-    tft.setTextDatum(MC_DATUM);
-    String wifiAP = "AnaireWiFi_" + anaire_device_id;
-    tft.drawString(wifiAP, tft.width()/2, tft.height()/2);
-    wifi_server.stop();
     Start_Captive_Portal();
-    wifi_server.begin();
   });
 
 }
@@ -1845,6 +1867,24 @@ void displayBuzzer(int colour, boolean active) {
   
 }
 
+void Suspend_Device() {
+  //int r = digitalRead(TFT_BL);
+  tft.fillScreen(TFT_BLACK);
+  tft.setTextColor(TFT_GREEN, TFT_BLACK);
+  tft.setTextDatum(MC_DATUM);
+  tft.drawString(" boton inferior para despertar",  tft.width()/2, tft.height()/2);
+  espDelay(3000);
+  //digitalWrite(TFT_BL, !r);
+  tft.writecommand(TFT_DISPOFF);
+  tft.writecommand(TFT_SLPIN);
+  //After using light sleep, you need to disable timer wake, because here use external IO port to wake up
+  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+  // esp_sleep_enable_ext1_wakeup(GPIO_SEL_0, ESP_EXT1_WAKEUP_ALL_LOW);
+  // set bottom button for wake up
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_0, 0);
+  delay(200);
+  esp_deep_sleep_start();
+}
 /*
 void Write_Bluetooth() { // Write measurements to bluetooth
     gadgetBle.writeCO2(CO2ppm_value);

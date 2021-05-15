@@ -1,9 +1,8 @@
  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Anaire PiCO2 - Open CO2, temperature and humidity measurement device
-// www.anaire.org
+// Anaire PiCO2 - Open CO2, temperature and humidity measurement device connected to Cloud Application www.anaire.org
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
-// Parts
+// HW Parts:
 //   TTGO T-Display board, Sensirion SCD30 CO2 temp and humidity sensor, AZ delivery active buzzer, 3D Box designed by Anaire, 3.7V lithium battery JST Connector 2Pin 1.25mm
 //
 // SW Setup:
@@ -21,15 +20,24 @@
 //       - Search for Button2 by Lennart Hennings https://github.com/LennartHennigs/Button2 and install the library
 //
 // Buttons design:
-//   Top button click: toggles buzzer acoustic_alarm; enabled by default
-//   Top button double click: performs SCD30 forced calibration
-//   Top button triple click: enables self calibration
-//   Bottom button click: sleep; click again the button to wake up
-//   Bottom button double click: restart device
-//   Bottom button triple click: starts captive portal
+//   - Top button short click: info about the device
+//   - Top button LONG click: toggles acoustic alarm; enabled by default
+//   - Top button double click: sleep; click a button to wake up
+//   - Top button triple click: starts captive portal 
+//   - Bottom button short click: buttons usage
+//   - Bottom button LONG click: performs CO2 sensor forced calibration 
+//   - Bottom button double click: restart device
+//   - Bottom button triple click: enables auto self calibration
+//
+// Most functions are available through buttons, the web server and the Anaire Cloud Application
+//   - WiFi configuration is only available through the captive portal. Portal can be launched from bottom button double click, or from the web server  
+//   - MQTT endpoint only available through captive portal and Anaire Cloud Application (after being initially connected)
+//   - Forced calibration reference value change only available through Anaire Cloud Application
+//   - Remote firmware upgrade only available through Anaire Cloud Application 
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210512.Canine";
+String sw_version = "v3.20210515.Kamasi";
+// v3.20210515.Kamasi - Changes in buttons functionality; web server completed; bluetooth enabled/disabled by a precompiler directive
 // v3.20210512.Canine - Minor fixes: WiFi error recovery corrected; restart and captive portal added to web server
 // v3.20210510.Berenice - Minor fixes: alarm on/off message after pressing top button
 // v3.20210509.Anita - Minor fixes (IES Ppe Felipe)
@@ -42,8 +50,10 @@ String sw_version = "v3.20210512.Canine";
 // v3.20210503.Mingus - Lots of improvements, first fully functional version; MQTT commandes not yet tested
 // v3.20210502.Madrid - Lots of additions: SCD30 full support, coherent display messages, complete buttons support, etc.
 // v3.20210430.Kuti - Bluetooth commented out for later to get captive portal fully functional
-// v3.2021025.Samba - First fully functional Anaire device on TTGo T-Display board, connected to Anaire Cloud App
+// v3.20210425.Samba - First fully functional Anaire PiCO2 device on TTGo T-Display board, connected to Anaire Cloud App
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#define BLUETOOTH false // Set to true in case bluetooth is required
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String anaire_device_id;
@@ -124,7 +134,7 @@ TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup
 // Buttons: Top and bottom considered when USB connector is positioned on the right of the board
 #include "Button2.h"
 #define BUTTON_TOP 35
-#define BUTTON_BOTTOM  0
+#define BUTTON_BOTTOM 0
 Button2 button_top(BUTTON_TOP);
 Button2 button_bottom(BUTTON_BOTTOM);
 
@@ -148,9 +158,11 @@ Adafruit_SCD30 scd30;
 unsigned long SCD30_CALIBRATION_TIME = 60000; // SCD30 CO2 CALIBRATION TIME: 1 min = 60000 ms
 
 // Bluetooth in TTGO T-Display
-//#include "Sensirion_GadgetBle_Lib.h"  // to connect to Sensirion MyAmbience Android App available on Google Play
-//GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
-//bool bluetooth_active = false;
+#if BLUETOOTH
+  #include "Sensirion_GadgetBle_Lib.h"  // to connect to Sensirion MyAmbience Android App available on Google Play
+  GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
+  bool bluetooth_active = false;
+#endif
 
 // AZ-Delivery Active Buzzer
 #define BUZZER_GPIO 12 // signal GPIO12 (pin TOUCH5/ADC15/GPIO12 on TTGO)
@@ -222,11 +234,11 @@ void setup() {
   Print_Config();
 
   // Initialize the GadgetBle Library for Bluetooth
-  //if (bluetooth_active) {
-  //  gadgetBle.begin();
-  //  Serial.print("Sensirion GadgetBle Lib initialized with deviceId = ");
-  //  Serial.println(gadgetBle.getDeviceIdString());
-  //}
+  #if BLUETOOTH
+    gadgetBle.begin();
+    Serial.print("Sensirion GadgetBle Lib initialized with deviceId = ");
+    Serial.println(gadgetBle.getDeviceIdString());
+  #endif
   
   // Initialize buzzer to OFF
   pinMode(BUZZER_GPIO, OUTPUT);
@@ -300,9 +312,9 @@ void loop() {
       Update_Display();
   
       // Update bluetooth app with new values
-      //if (bluetooth_active) {
-      //  Write_Bluetooth();
-      //}
+      #if BLUETOOTH
+        Write_Bluetooth();
+      #endif
       
       // Accumulates samples
       CO2ppm_accumulated += CO2ppm_value;
@@ -346,7 +358,6 @@ void loop() {
       Serial.println ("--- err_wifi");
       err_wifi = true;
       WiFi.reconnect();
-      //Connect_WiFi();   // Attempt to connect to WiFi network:
     }
     else {
       err_wifi = false;
@@ -379,9 +390,9 @@ void loop() {
   Check_WiFi_Server();
 
   // Process bluetooth events
-  //if (bluetooth_active) {
-  //  gadgetBle.handleEvents();
-  //}
+  #if BLUETOOTH
+    gadgetBle.handleEvents();
+  #endif
   
   // Process buttons events
   button_top.loop();
@@ -1463,25 +1474,25 @@ void espDelay(int ms) {  //! Long time delay, it is recommended to use shallow s
 
 void Button_Init() { // Manage TTGO T-Display board buttons
 
-  // BUTTONS SUMMARY:
-  // Top button short click: show status info
-  // Top button long click: toggle acoustic alarm
-  // Top button double click: deactivate self calibration and perform sensor forced recalibration
-  // Top button triple click: activate sensor self calibration
-  // Bottom button short click: show buttons info
-  // Bottom button long click: sleep
-  // Bottom button double click: restart
-  // Bottom button triple click: launch captive portal to configure WiFi and MQTT
+  // Buttons design:
+  //   - Top button short click: info about the device
+  //   - Top button long click: toggles acoustic alarm; enabled by default
+  //   - Top button double click: sleep; click a button to wake up
+  //   - Top button triple click: starts captive portal 
+  //   - Bottom button short click: buttons usage
+  //   - Bottom button long click: performs CO2 sensor forced calibration 
+  //   - Bottom button double click: restart device
+  //   - Bottom button triple click: enables auto self calibration
 
   // Long clicks: keep pressing more than 1 second
   button_top.setLongClickTime(1000);
   button_bottom.setLongClickTime(1000);
 
-  // If any button is pressed run the following function. Used to interrupt calibration or captive portal and restart the device
+  // If any button is pressed run the following function. Intended to interrupt calibration or captive portal and restart the device. Not yet implemented.
   button_top.setTapHandler(Interrupt_Restart);
   button_bottom.setTapHandler(Interrupt_Restart);
   
-  // Top button short click: show status info
+  // Top button short click: show info about the device
   button_top.setClickHandler([](Button2 & b) {
     Serial.println("Top button short click");
     tft.fillScreen(TFT_WHITE);
@@ -1507,7 +1518,7 @@ void Button_Init() { // Manage TTGO T-Display board buttons
     else {
       tft.drawString("CALIBRACION: FORZADA", 10, 117);
     }
-    delay(5000);
+    delay(5000); // keep the info in the display for 5s
     Update_Display();
   });
 
@@ -1528,40 +1539,20 @@ void Button_Init() { // Manage TTGO T-Display board buttons
       tft.drawString("ALARMA: SI", tft.width()/2, tft.height()/2);
     }
     Write_EEPROM();
-    delay(3000);
+    delay(5000); // keep the info in the display for 5s
     Update_Display();
   });
   
-  // Top button double click: deactivate self calibration and perform sensor forced recalibration
+  // Top button double click: sleep
   button_top.setDoubleClickHandler([](Button2 & b) {
     Serial.println("Top button double click");
-    eepromConfig.self_calibration = false;
-    tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_RED, TFT_WHITE);
-    tft.setTextSize(1);
-    tft.setFreeFont(FF90);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("CALIBRACION: FORZADA", tft.width()/2, tft.height()/2);
-    delay(1000);
-    Set_AutoSelfCalibration();
-    Do_Calibrate_Sensor();
-    Write_EEPROM();
+    Suspend_Device();
   });
 
-  // Top button triple click: activate sensor self calibration
+  // Top button triple click: launch captive portal to configure WiFi and MQTT sleep
   button_top.setTripleClickHandler([](Button2 & b) {
     Serial.println("Top button triple click");
-    eepromConfig.self_calibration = true;
-    tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_RED, TFT_WHITE);
-    tft.setTextSize(1);
-    tft.setFreeFont(FF90);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("CALIBRACION: AUTO", tft.width()/2, tft.height()/2);
-    delay(1000);
-    Set_AutoSelfCalibration(); 
-    Write_EEPROM();
-    Update_Display();
+    Start_Captive_Portal();
   });
 
   // Bottom button short click: show buttons info
@@ -1574,20 +1565,31 @@ void Button_Init() { // Manage TTGO T-Display board buttons
     tft.setFreeFont(FF90);
     tft.drawString("Arriba Corto: Status", 10, 5);
     tft.drawString("  Largo: Alarma", 10, 21);
-    tft.drawString("  Doble: Calibrar", 10, 37);
-    tft.drawString("  Triple: Autocalibración", 10, 53);
+    tft.drawString("  Doble: Dormir", 10, 37);
+    tft.drawString("  Triple: Config Portal", 10, 53);
     tft.drawString("Abajo Corto: Info", 10, 69);
-    tft.drawString("  Largo: Dormir/Despertar", 10, 85);
+    tft.drawString("  Largo: Calibrar", 10, 85);
     tft.drawString("  Doble: Reiniciar", 10, 101);
-    tft.drawString("  Triple: Config Portal", 10, 117);
+    tft.drawString("  Triple: Autocalibración", 10, 117);
     delay(5000);
     Update_Display();
   });
   
-  // Bottom button long click: sleep
+  // Bottom button long click: deactivate self calibration and perform sensor forced recalibration  
   button_bottom.setLongClickDetectedHandler([](Button2 & b) {
     Serial.println("Bottom button long click");
-    Suspend_Device();
+    eepromConfig.self_calibration = false;
+    tft.fillScreen(TFT_WHITE);
+    tft.setTextColor(TFT_RED, TFT_WHITE);
+    tft.setTextSize(1);
+    tft.setFreeFont(FF90);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString("CALIBRACION: FORZADA", tft.width()/2, tft.height()/2);
+    delay(1000);
+    Set_AutoSelfCalibration();
+    Do_Calibrate_Sensor();
+    Write_EEPROM();
+    
   });
 
   // Bottom button double click: restart
@@ -1603,9 +1605,20 @@ void Button_Init() { // Manage TTGO T-Display board buttons
     ESP.restart();
   });
 
-  // Bottom button triple click: launch captive portal to configure WiFi and MQTT
+  // Bottom button triple click: activate sensor self calibration 
   button_bottom.setTripleClickHandler([](Button2 & b) {
-    Start_Captive_Portal();
+    Serial.println("Bottom button triple click");
+    eepromConfig.self_calibration = true;
+    tft.fillScreen(TFT_WHITE);
+    tft.setTextColor(TFT_RED, TFT_WHITE);
+    tft.setTextSize(1);
+    tft.setFreeFont(FF90);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString("CALIBRACION: AUTO", tft.width()/2, tft.height()/2);
+    delay(1000);
+    Set_AutoSelfCalibration(); 
+    Write_EEPROM();
+    Update_Display();
   });
 
 }
@@ -1779,8 +1792,7 @@ void Firmware_Update() {
 
 }
 
-//Draw a battery showing the level of charge
-void displayBatteryLevel(int colour) {
+void displayBatteryLevel(int colour) { //Draw a battery showing the level of charge
 
   // Measure the battery voltage
   battery_voltage = ((float)analogRead(ADC_PIN)/4095.0)*2.0*3.3*(vref/1000.0);
@@ -1838,8 +1850,7 @@ void displayBatteryLevel(int colour) {
 
 }
 
-//Draw WiFi icon
-void displayWifi(int colour_1, int colour_2, boolean active) {
+void displayWifi(int colour_1, int colour_2, boolean active) { //Draw WiFi icon
   tft.drawCircle(20, 30, 14, colour_1);
   tft.drawCircle(20, 30, 10, colour_1);
   tft.fillCircle(20, 30, 6, colour_1);
@@ -1854,8 +1865,7 @@ void displayWifi(int colour_1, int colour_2, boolean active) {
   
 }
 
-//Draw buzzer
-void displayBuzzer(int colour, boolean active) {
+void displayBuzzer(int colour, boolean active) { //Draw buzzer status
   //tft.fillRect(14, 65, 4, 10, colour);
   tft.fillRect(14, 66, 4, 11, colour);
   tft.fillTriangle(25, 60, 16, 70, 25, 80, colour);
@@ -1872,24 +1882,29 @@ void Suspend_Device() {
   tft.fillScreen(TFT_BLACK);
   tft.setTextColor(TFT_GREEN, TFT_BLACK);
   tft.setTextDatum(MC_DATUM);
-  tft.drawString(" boton inferior para despertar",  tft.width()/2, tft.height()/2);
+  tft.drawString(" Presione un boton para despertar",  tft.width()/2, tft.height()/2);
   espDelay(3000);
   //digitalWrite(TFT_BL, !r);
   tft.writecommand(TFT_DISPOFF);
   tft.writecommand(TFT_SLPIN);
-  //After using light sleep, you need to disable timer wake, because here use external IO port to wake up
+  
+  // After using light sleep, you need to disable timer wake, because here use external IO port to wake up
   esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
   // esp_sleep_enable_ext1_wakeup(GPIO_SEL_0, ESP_EXT1_WAKEUP_ALL_LOW);
-  // set bottom button for wake up
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_0, 0);
+  
+  // set top button for wake up
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_35, 0); // Top button
+  //esp_sleep_enable_ext0_wakeup(GPIO_NUM_0, 0); // Bottom button
+  
   delay(200);
   esp_deep_sleep_start();
 }
-/*
-void Write_Bluetooth() { // Write measurements to bluetooth
+
+#if BLUETOOTH
+  void Write_Bluetooth() { // Write measurements to bluetooth
     gadgetBle.writeCO2(CO2ppm_value);
     gadgetBle.writeTemperature(temperature);
     gadgetBle.writeHumidity(humidity);
     gadgetBle.commit();
-}
-*/
+  }
+#endif

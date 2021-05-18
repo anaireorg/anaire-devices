@@ -13,7 +13,7 @@
 //
 // Parts - Sensors:
 //   Option 1, better measurements precission: Sensirion SCD30 for CO2, temperature and humidity https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-co2/
-//   Option 2, less cost: MHZ14A for CO2 http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf and AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
+//   Option 2, less cost: MHZ14A for CO2 http://www.winsen-sensor.com/d/files/infrared-gas-sensor/mh-z14a_co2-manual-v1_01.pdf and AZ-Delivery DHT family Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul / https://www.az-delivery.de/es/products/dht22-temperatursensor-modul
 //
 // Arduino IDE Setup:
 
@@ -53,8 +53,8 @@
 //   * When CO2 Status is "alarm" builtin LED and external buzzer alternate blink at fast pace (ALARM_BLINK_PERIOD)
 // - Two options for sensors:
 //   * Either Sensirion SCD30 for CO2, temperature and humidity
-//   * Or MH-Z14A for CO2, and DHT11 for temperature and humidity
-// - The device is designed to work only with the CO2 sensor, so buzzer, DHT11 humidity and temperature sensor, and OLED display are optional
+//   * Or MH-Z14A for CO2, and DHT11 or DHT22 for temperature and humidity
+// - The device is designed to work only with the CO2 sensor, so buzzer, DHT humidity and temperature sensor, and OLED display are optional
 // - The device is designed to recover from Wifi, MQTT or sensors reading temporal failures. Local measurements will always be shown in the local display
 // - The web server is activated, therefore entering the IP on a browser allows to see device specific details and measurements; device forced calibration is also available through the web server
 
@@ -203,7 +203,7 @@ int CO2ppm_value = 0;         // CO2 ppm measured value
 int CO2ppm_accumulated = 0;   // Accumulates co2 measurements for a MQTT period
 int CO2ppm_samples = 0;       // Counts de number of samples for a MQTT period
 
-// AZ-Delivery DHT11
+// AZ-Delivery DHT11/DHT22
 #include "DHTesp.h"
 #define DHT_GPIO 5      // signal GPIO5 (D1)
 
@@ -1109,9 +1109,11 @@ void Setup_sensors() {
       // Print info
       Serial.println ("MHZ14A CO2 sensor setup complete");
 
-      // Setup DHT11
-      dht.setup(DHT_GPIO, DHTesp::DHT11);
+      // Setup DHT sensor
+      dht.setup(DHT_GPIO, DHTesp::AUTO_DETECT);
 
+      Serial.println ("DHT sensor setup complete, model detected (1=DHT11, 2=DHT22): ");
+      Serial.println (dht.getModel());
     }
 
   }
@@ -1127,7 +1129,7 @@ void Read_Sensors() {
       break;
     case MHZ14A:
       Read_MHZ14A(); // Read co2 and temperature
-      Read_DHT11();  // Read temperature and humidity
+      Read_DHT();  // Read temperature and humidity
       break;
     case none:
       break;
@@ -1582,10 +1584,10 @@ void Evaluate_CO2_Value() {
 
 }
 
-// Read temperature and humidity values from DHT11
+// Read temperature and humidity values from DHT sensor
 // Reading temperature or humidity takes about 250 milliseconds!
 // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-void Read_DHT11() {
+void Read_DHT() {
 
   TempAndHumidity lastValues = dht.getTempAndHumidity();
 
@@ -1604,10 +1606,10 @@ void Read_DHT11() {
   }
   else {
     err_dht = false;
-    Serial.print("DHT11 Humidity: ");
+    Serial.print("DHT Humidity: ");
     Serial.print(humidity);
     Serial.print(" % \n");
-    Serial.print("DHT11 Temperature: ");
+    Serial.print("DHT Temperature: ");
     Serial.print(temperature);
     Serial.println("ºC");
   }

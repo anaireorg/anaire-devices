@@ -19,7 +19,7 @@
 ---
 <a name="id1"></a>
 
-##1. Hardware
+## 1. Hardware
 
 El medidor Anaire PiCO2 es un dispositivo basado en un microcontrolador ESP32 en una tarjeta de control [LILYGO® TTGO T-Display ESP32 WiFi And Bluetooth](https://github.com/Xinyuan-LilyGO/TTGO-T-Display), que proporciona también conectividad WiFi y Bluetooth, y permite su programación desde el IDE de Arduino. La tarjeta tiene integrado un display en color para mostrar las mediciones e indicaciones de estado. Adicionalmente el dispositivo equipa un zumbador para poder emitir alertas sonoras y una batería recargable para facilitar la movilidad.
 
@@ -76,7 +76,7 @@ A continuación se enumeran los elementos citados:
 
 <a name="id2"></a>
 
-##2. Software
+## 2. Software
 
 El dispositivo se programa exactamente igual que una tarjeta arduino, utilizando el [entorno de desarrollo de Arduino](https://www.arduino.cc/en/software).
 
@@ -88,7 +88,7 @@ Para cualquiera de las dos opciones será necesario instalar previamente en un o
 
 <a name="id3"></a>
 
-##3. Fabricación
+## 3. Fabricación
 
 El montaje que se propone pretende simplificar al máximo el proceso de fabricación, manteniendo las máximas prestaciones técnicas. Los componentes se encajan en la caja de impresión 3D, y las conexiones se realizan mediante cables Dupont hembra-hembra, minimizando así las necesidades de soldadura. Sólo será necesario soldar 4 pines en el sensor SCD30 y 7 pines en la tarjeta TTGO T-Display (en el caso de que no se haya comprado con los pines ya soldados)
 
@@ -197,7 +197,7 @@ El proceso puede durar varios minutos, dependiendo de la potencia de cálculo de
 
 <a name="id4"></a>
 
-##4. Configuración
+## 4. Configuración
 
 Para completar la configuración del dispositivo PiCO2 hay que conectarlo a una red WiFi y realizar la calibración de referencia.
 
@@ -224,7 +224,7 @@ Al término del proceso el dispositivo se reiniciará y volverá a tomar medidas
 
 <a name="id5"></a>
 
-##5. Uso
+## 5. Uso
 
 Para empezar a realizar medidas sólo tiene que alimentar el PiCO2 con un cable USB-C. Cuando la batería ya esté parcialmente cargada podrá incluso prescindir de la alimentación durante varias horas y llevarse el PiCO2 para realizar medidas itinerantes. Un icono con forma de pila en la parte inferior izquierda de la pantalla le mostrará la indicación del nivel de carga disponible.
 
@@ -296,7 +296,7 @@ También podemos configurar alarmas por correo electrónico, por Telegram, etc. 
 
 <a name="6"></a>
 
-##6. Diagnóstico
+## 6. Diagnóstico
 
 Conecte el dispositivo al PC utilizando un cable USB-C. Arranque el monitor serie del IDE de Arduino con la opción *Herramientas -> Monitor serie*. Se abrirá una nueva ventana en la que se imprimirán todos los mensajes emitidos por el dispositivo durante su funcionamiento, que ayudarán a diagnosticar los posibles problemas. Se recomienda reiniciar el dispositivo pulsando dos veces el botón inferior para forzar el reinicio y poder observar un ciclo completo de funcionamiento desde el inicio del dispositivo.
 

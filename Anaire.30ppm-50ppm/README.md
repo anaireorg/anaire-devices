@@ -395,4 +395,4 @@ El siguiente vídeo muestra de forma detallada el montaje completo con el sensor
   <img src="docs\Anaire50ppm.jpg" width="60%" height="60%" />
 </p>  
 
-De nuevo es deseable introducir en montaje en una casa que pueda proteger el prototipo de corrientes de aire o la exposición directa a fuentes intensas de luz, de forma que las medidas sean más estables.
+De nuevo es deseable introducir en montaje en una caja que pueda proteger el prototipo de corrientes de aire o la exposición directa a fuentes intensas de luz, de forma que las medidas sean más estables.

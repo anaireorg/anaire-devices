@@ -16,8 +16,9 @@
 [6. Diagnóstico](#id6)  
 
 ---
+<a name="id1"></a>
 
-##1. Hardware<a name="id1"></a>
+# 1. Hardware
 El medidor Anaire es un dispositivo basado en un microcontrolador ESP8266 dispuesto en una tarjeta de control [AZ Delivery NodeMCU LUA Amica V2](https://www.az-delivery.de/es/products/nodemcu?_pos=3&_sid=fd8b40ecd&_ss=r), que proporciona también conectividad WiFi, y permite su programación desde el IDE de Arduino. Para realizar las medidas se conectan sensores de CO2, temperatura y humedad. Adicionalmente se conectan un display para mostrar las mediciones e indicaciones de estado, y un zumbador para poder emitir alertas sonoras.
 
 Con objeto de simplificar la fabricación y no añadir más componentes aun proporcionando máxima funcionalidad, se utilizan los siguientes elementos ya disponibles en la tarjeta NodeMCU:
@@ -47,7 +48,7 @@ La alimentación del dispositivo se realiza directamente a través del puerto Mi
 
 A continuación se enumeran los elementos citados, incluyendo enlaces a su documentación.
 
-###1.1 Elementos comunes
+## 1.1 Elementos comunes
 * Tarjeta de control basada en microcontrolador ESP8266:  [AZDelivery NodeMCU LUA Amica V2](https://www.az-delivery.de/es/products/nodemcu?_pos=3&_sid=fd8b40ecd&_ss=r)  
 
 <p align="center">
@@ -83,7 +84,7 @@ A continuación se enumeran los elementos citados, incluyendo enlaces a su docum
 
 * Será necesario un cable válido para conectar desde un puerto USB del ordenador al puerto Micro USB de la tarjeta NodeMCU, para poder cargar el software del dispositivo. Este mismo cable puede ser utilizado para la alimentación eléctrica desde un ordenador, o desde un enchufe USB o incluso desde una batería portátil USB. También podría utilizarse, una vez cargado el software, un transformador de un antiguo teléfono móvil u otro tipo de dispositivo que tenga un conector Micro USB y proporcione al menos 1.000 miliamperios. Por ejemplo, [este cable](https://www.amazon.es/TM-Electron-CXU201020-Cable-Blanco/dp/B07BQD6P74/ref=sr_1_22?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=usb+micro+usb&qid=1609613811&sr=8-22), o [este alimentador](https://www.amazon.es/gp/product/B00U88KSHO/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&psc=1)
 
-###1.2 Sensores
+## 1.2 Sensores
 * Anaire30ppm: [*Sensirion SCD30*](https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-scd30/)
 <p align="center">
   <img src="docs\SCD30 transparente.png" width="40%" height="40%" />
@@ -101,7 +102,10 @@ A continuación se enumeran los elementos citados, incluyendo enlaces a su docum
 
 * Para la conexión de cualquiera de los dos sensores de CO2 es preciso conectar 4 pines y soldarlos en las posiciones indicadas en el proceso de fabricación. Se pueden comprar pines como [éstos](https://www.amazon.es/Pin-Header-Way-Straight-Pitch/dp/B00QXBRCKG/ref=sr_1_5?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=pin+header&qid=1609617099&s=electronics&sr=1-5), por ejemplo, y cortar trozos de 4 pines con un alicate de corte o unas tijeras.
 
-##2. Software<a name="id2"></a>
+<a name="id2"></a>
+
+# 2. Software
+
 El dispositivo se programa exactamente igual que una tarjeta arduino, utilizando el [entorno de desarrollo de Arduino](https://www.arduino.cc/en/software).
 
 Adicionalmente hay que instalar algunos componentes de software en el entorno de Arduino, principalmente diversas librerías. La descripción completa de la instalación del entorno de *software* se puede encontrar al inicio del archivo de código fuente del dispositivo medidor [NodeMCULuaAmicaV2.ino](anaire-device.NodeMCULuaAmicaV2\anaire-device.NodeMCULuaAmicaV2.ino).
@@ -114,7 +118,10 @@ A continuación se describe en detalle el procedimiento para poder preparar un e
 
 [![Preparación del entorno y carga del software para Anaire30ppm y Anaire50ppm](http://img.youtube.com/vi/nSNwYwKNmuk/0.jpg)](https://youtu.be/nSNwYwKNmuk)
 
-##3. Fabricación<a name="id3"></a>
+<a name="id3"></a>
+
+# 3. Fabricación
+
 Se han diseñado dos modelos de medidores basados en el *hardware* descrito: **Anaire30ppm**, con precisión de 30 ppm (sensor Sensirion SCD30) y **Anaire50ppm**, con precisión de 50 ppm (sensores Winsen MHZ14A y AZ Delivery DHT11). Ambos se pueden fabricar mediante la misma caja [AnaireBox](https://www.thingiverse.com/thing:4694633), utilizando una impresora 3D, para montar mecánicamente los componentes. La caja puede acoger cualquiera de las dos combinaciones de sensores anteriores ya que está diseñada para ser compatible con ambos.  para impresora 3D
 
 Las opciones de montaje que se proponen pretenden simplificar al máximo el proceso, manteniendo las máximas prestaciones técnicas. En cualquier caso se proporciona toda la información necesaria para que cualquiera pueda plantearse alternativas de fabricación, por ejemplo, mediante placas PCB y soldadura de los componentes. Para ello se publican en este mismo repositorio los archivos necesarios en formato de la aplicación [Fritzing](https://fritzing.org/) con la información detallada del cableado requerido, que pueden servir de punto de partida para el diseño de la placa PCB.  
@@ -124,20 +131,20 @@ Las opciones de montaje que se proponen pretenden simplificar al máximo el proc
   * [Archivo Fritzing para Anaire50ppm (Winsen MH-Z14A)](docs\Anaire30ppm_SCD30.fzz)
 
 <a name="3.1"></a>
-###3.1 Anaire30ppm
+## 3.1 Anaire30ppm
 
-####Esquema de conexiones  
+### Esquema de conexiones  
 <p align="center">
   <img src="docs\ANAIRE_30_ppm.png" width="80%" height="80%" />
 </p>  
 
-####Detalle del sensor SCD30  
+### Detalle del sensor SCD30  
 Hay que soldar 4 pines como se muestra en la siguiente imagen  
 <p align="center">
   <img src="docs\pines_soldados_SCD30.jpg" width="60%" height="60%" />
 </p>  
 
-####Montaje final  
+### Montaje final  
 
 El siguiente vídeo muestra de forma detallada el montaje completo del medidor Anaire 30ppm:
 
@@ -151,20 +158,20 @@ El siguiente vídeo muestra de forma detallada el montaje completo del medidor A
   <img src="docs\AnaireBoxFrontal2.jpg" width="40%" height="40%" />
 </p>  
 
-###3.2 Anaire50ppm
+## 3.2 Anaire50ppm
 
-####Esquema de conexiones  
+### Esquema de conexiones  
 <p align="center">
   <img src="docs\ANAIRE_50_ppm.png" width="60%" height="60%" />
 </p>  
 
-####Detalle del sensor MH-Z14A  
+### Detalle del sensor MH-Z14A  
 Hay que soldar 4 pines como se muestra en la siguiente imagen  
 <p align="center">
   <img src="docs\Pines_CO2_ANAIRE.png" width="80%" height="80%" />
 </p>  
 
-####Montaje final  
+### Montaje final  
 El siguiente vídeo muestra el montaje completo del medidor Anaire 50ppm en detalle:
 
 [![Montaje de Anaire50ppm Box](http://img.youtube.com/vi/fMnoskmz7p4/0.jpg)](https://youtu.be/fMnoskmz7p4)
@@ -178,14 +185,14 @@ Imágenes del montaje:
   <img src="docs\AnaireBoxFrontal.jpg" width="50%" height="50%" />
 </p>  
 
-###3.3 Carga del software
+## 3.3 Carga del software
 Una vez completado el montaje de los componentes, hay que proceder a la carga del software en la tarjeta de control NodeMCU. El software es el mismo, independientemente del modelo de medidor que se haya fabricado.
 
 Para la carga del software hay dos opciones: carga del binario compilado, o carga del código fuente desde el IDE de Arduino. Como ya se ha explicado anteriormente, si no se desea modificar el software se recomienda la primera opción, ya que es mucho más sencilla y rápida.
 
 En cualquiera de los dos casos es preciso instalar previamente en un ordenador con sistema operativo Windows 10 el [driver USB-UART](https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers) (conversión USB a puerto serie) para poder comunicarse con la tarjeta TTGO T-Display.
 
-##### Carga del binario compilado
+### Carga del binario compilado
 Estas instrucciones son únicamente válidas para ordenadores con el sistema operativo Windows 10.
 
 Asegure que se tiene en un directorio los siguientes archivos y carpetas, disponibles en la carpeta [anaire-device.NodeMCULuaAmicaV2](Anaire.30ppm-50ppm\anaire-device.NodeMCULuaAmicaV2):
@@ -218,7 +225,7 @@ Ejecute los siguientes pasos en esa carpeta:
   <img src="docs\Ejecución carga de binario.png" width="100%" height="100%" />
 </p>
 
-##### Carga desde el código fuente
+### Carga desde el código fuente
 
 1. Instale el [entorno de desarrollo de Arduino](https://www.arduino.cc/en/software).
 
@@ -241,14 +248,17 @@ El proceso puede durar varios minutos, dependiendo de la potencia de cálculo de
 En el siguiente vídeo puede verse el proceso completo al detalle:
 [![Preparación del entorno y carga del software para Anaire30ppm y Anaire50ppm](http://img.youtube.com/vi/nSNwYwKNmuk/0.jpg)](https://youtu.be/nSNwYwKNmuk?t=260)
 
-##4. Configuración<a name="id4"></a>
+<a name="id4"></a>
+
+# 4. Configuración
+
 El medidor tiene un identificador único (o ID) generado a partir de la dirección MAC de la interfaz WiFi de cada tarjeta NodeMCULuaAmicaV2. Este ID es un texto hexadecimal de 6 caracteres, utilizado para el acceso a las medidas en Internet y la integración del medidor en la aplicación en la nube de Anaire. No es preciso realizar ninguna configuración sobre este identificador, se realiza de forma automática.
 
 El ID del dispositivo se muestra durante el inicio y tras pulsar el botón de Flash (en la caja AnaireBox es el botón superior, con la letra *A*).
 
 Para completar la configuración del dispositivo Anaire 30/50ppm hay que conectarlo a una red WiFi y realizar la calibración de referencia.
 
-### Configuración de la conexión WiFi
+## Configuración de la conexión WiFi
 
 * Tras pulsar 2 veces consecutivas el botón de Reset (en la caja AnaireBox es el botón inferior, con la letra *R* o con la letra *B*), el dispositivo se reinicia en modo de configuración, creando una red WiFi y un portal cautivo para la configuración:
    * Se crea una red WiFi abierta con el nombre ESP_XXXXXX, donde XXXXXX es el identificador del dispositivo
@@ -258,7 +268,7 @@ Para completar la configuración del dispositivo Anaire 30/50ppm hay que conecta
      * Si todo ha ido correctamente el dispositivo se reiniciará con conexión a la nueva red WiFi
      * Si ha habido algún problema de conexión (por ejemplo, si se ha introducido una contraseña errónea), el dispositivo mostrará un mensaje de error WiFi en el display, y deberá repetir el procedimiento
 
-### Calibración de referencia
+## Calibración de referencia
 
 Sitúe el medidor Anaire 30/50ppm al aire libre, protegido del sol, de otras fuentes de luz intensas y de las corrientes de aire (por ejemplo, dentro de una caja de cartón en el alféizar de la ventana), y arranque el proceso de calibración mediante alguno de los siguientes métodos:
  - Presione el botón superior, etiquetado con la letra "A" durante más de 10 segundos, hasta que la pantalla muestre una cuenta atrás indicando el número de segundos restantes hasta que se complete la calibración.
@@ -269,7 +279,10 @@ Sitúe el medidor Anaire 30/50ppm al aire libre, protegido del sol, de otras fue
 
  Al término del proceso el dispositivo se reiniciará y volverá a tomar medidas, tomando como referencia el valor de 400 ppm (este valor se puede modificar desde la aplicación en la nube para el sensor scd30). El proceso no puede ser interrumpido, deberá esperar a su término en cualquier caso, o retirar la alimentación del Anaire 30/50ppm si desea interrumpirlo.
 
-##5. Uso<a name="id5"></a>
+<a name="id5"></a>
+
+# 5. Uso
+
 Para empezar a realizar medidas sólo tiene que alimentar el Anaire 30/50ppm con un cable MicroUSB.
 * Durante un segundo se muestra el texto *anaire.org* en el display
 * A continuación el ID y la versión de *software* durante otro segundo
@@ -284,25 +297,25 @@ Cuando la medida de CO2 sea inferior al umbral de aviso, el dispositivo resetear
 
 Si hay algún error, la última línea del display mostrará el error. El dispositivo está diseñado para recuperarse automáticamente de los errores cuando la causa que los provoca se ha resuelto, sin que el usuario tenga que intervenir.
 
-### Botones
+##  Botones
 El Anaire 30/50ppm tiene dos botones en la parte inferior derecha, el superior, etiquetado con la letra "A", y el inferior, etiquetado con la letra "R". Puede usar los botones para realizar las siguientes funciones:
 
-#### Botón superior "A"
+### Botón superior "A"
 - Pulsación corta - Conmuta el estado de la alarma acústica y muestra información del dispositivo: ID,  dirección IP y versión de *software*
 - Pulsación larga durante más de 10 segundos - Inicia el proceso de calibración forzada.
 
-#### Botón inferior "R"
+### Botón inferior "R"
 - Pulsación corta - Reinicia el Anaire 30/50ppm
 - Doble pulsación en menos de 10 segundos - Arranca el portal cautivo que permite configurar la conexión WiFi y la dirección del servidor MQTT de la aplicación Anaire en la nube a la que enviar las medidas
 
-### Servidor Web
+## Servidor Web
 Si se conecta con un dispositivo a la misma red WiFi a la que esta conectado el medidor PiCO2, accediendo a la dirección IP del medidor mediante un navegador se puede acceder al servidor web del Anaire 30/50ppm, pudiendo así acceder a información detallada del dispositivo, a las últimas medidas, e incluso pudiendo realizar diversas acciones de configuración, como se puede ver en la siguiente imagen:
 
 <p align="center">
   <img src="docs\Servidor Web.png" width="100%" height="100%" />
 </p>
 
-### Acceso por internet a las medidas:
+## Acceso por internet a las medidas:
 Si se ha conectado el Anaire 30/50ppm a una red WiFi con acceso a internet y se han dejado los valores por defecto de conexión a la aplicación en la nube, se puede acceder a los valores medidos por el dispositivo en los siguientes enlaces. Sustituya *ID_del_dispositivo* por el ID del PiCO2 en cuestión para acceder a las medidas:
 
 * Valores actuales en modo kiosko (modo muy práctico para visualizar las medidas en un teléfono móvil por ejemplo):  
@@ -337,7 +350,10 @@ Panel de evolución temporal:
 
 También podemos configurar alarmas por correo electrónico, por Telegram, etc. Póngase en contacto con nosotros si tiene necesidades de gestión de un conjunto de dispositivos para que podamos ayudarle a diseñar una solución a medida de su organización.
 
-##6. Diagnóstico<a name="id6"></a>
+<a name="id6"></a>
+
+# 6. Diagnóstico
+
 Conecte el dispositivo al PC utilizando un cable USB. Arranque el monitor serie del IDE de Arduino con la opción *Herramientas -> Monitor serie*. Se abrirá una nueva ventana en la que se imprimirán todos los mensajes emitidos por el dispositivo durante su funcionamiento, que ayudarán a diagnosticar los posibles problemas. Se recomienda presionar una vez el botón de *Reset* para reiniciar el dispositivo y poder observar un ciclo completo de funcionamiento desde el principio.
 
 Los siguientes errores se pueden mostrar en el display del medidor. Se indica su significado y cómo proceder para cada uno de ellos:
@@ -349,8 +365,9 @@ Los siguientes errores se pueden mostrar en el display del medidor. Se indica su
 
 ---
 
-##BONUS
-###Montaje sobre Breadboard
+# BONUS
+
+## Montaje sobre Breadboard
 
 El montaje sobre breadboard es algo que puede ser útil para proyectos educativos, o para desarrollo, o incluso en caso de no tener acceso a una impresora 3D.
 

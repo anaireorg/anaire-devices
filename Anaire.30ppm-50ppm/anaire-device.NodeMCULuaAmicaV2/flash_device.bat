@@ -1,0 +1,2 @@
+flash_device_tools\python3 flash_device_tools\upload.py --chip esp8266 --port COM3 --baud 115200 --before default_reset --after hard_reset write_flash 0x0 anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin
+pause

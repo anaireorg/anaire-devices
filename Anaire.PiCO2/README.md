@@ -17,8 +17,10 @@
 [5. Diagnóstico](#id6)  
 
 ---
+<a name="id1"></a>
 
-##1. Hardware<a name="id1"></a>
+##1. Hardware
+
 El medidor Anaire PiCO2 es un dispositivo basado en un microcontrolador ESP32 en una tarjeta de control [LILYGO® TTGO T-Display ESP32 WiFi And Bluetooth](https://github.com/Xinyuan-LilyGO/TTGO-T-Display), que proporciona también conectividad WiFi y Bluetooth, y permite su programación desde el IDE de Arduino. La tarjeta tiene integrado un display en color para mostrar las mediciones e indicaciones de estado. Adicionalmente el dispositivo equipa un zumbador para poder emitir alertas sonoras y una batería recargable para facilitar la movilidad.
 
 Para realizar las medidas se conecta un sensor de CO2 de tecnología NDIR, que adicionalmente realiza medidas de temperatura y humedad:  [*Sensirion SCD30*](https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-scd30/). El Sensirion SCD30 es un sensor de alta calidad y gran velocidad de reacción: tiene mayor precisión que la mayoría de los sensores de su mismo tipo, 30 ppm frente a los 50 ppm del Winsen MH-Z14A; incorpora sensor de temperatura y humedad, con lo que no hay que añadir un sensor adicional para medir temperatura y humedad, facilitando la fabricación, además de permitir mecanismos de compensación por altitud y temperatura; tiene un mecanismo de autocalibración más robusto, en el que se hace uso de las mediciones de los últimos 30 días, en lugar de las últimas 24 horas, como en el caso del MH-Z14A; su respuesta es también más rápida ante cambios atmosféricos (por ejemplo, al introducir ventilación en un espacio cerrado). Los inconvenientes del Sensirion SCD30 son que tiene un precio más elevado, que es más frágil durante su manipulación y que tiene menos opciones de compra y normalmente mayores plazos de entrega. Para comprar el Sensirion SCD30 hay que recurrir normalmente a plataformas especializadas en componentes electrónicos.
@@ -72,7 +74,10 @@ A continuación se enumeran los elementos citados:
 
 * Será necesario un cable válido para conectar desde un puerto USB del ordenador al puerto Micro USB-C de la tarjeta TTGO T-Display, para poder cargar el software del dispositivo. Este mismo cable puede ser utilizado para la alimentación eléctrica desde un ordenador, o desde un enchufe USB o incluso desde una batería portátil USB. También podría utilizarse, una vez cargado el software, cualquier otro tipo de dispositivo que tenga un conector USB-C y proporcione al menos 1.000 miliamperios. Por ejemplo, [este cable](https://www.amazon.es/dp/B01N4OKUB8/ref=sspa_dk_detail_0?psc=1&pd_rd_i=B01N4OKUB8&pd_rd_w=dwqWt&pf_rd_p=5f25be7b-80cd-4c25-8d91-1b1227f5fe0a&pd_rd_wg=YOc8a&pf_rd_r=65KA0NS0Q3TFHFFG71BT&pd_rd_r=1ea810dc-c0cf-4076-9c01-6a1168e0c782&spLa=ZW5jcnlwdGVkUXVhbGlmaWVyPUExWVdXWkI3STRMR0JPJmVuY3J5cHRlZElkPUEwNzg0ODEwMlRGUUNCTFU5VzREVSZlbmNyeXB0ZWRBZElkPUEwNzY1NTk5NkUyNFdHOUZWOTNRJndpZGdldE5hbWU9c3BfZGV0YWlsX3RoZW1hdGljJmFjdGlvbj1jbGlja1JlZGlyZWN0JmRvTm90TG9nQ2xpY2s9dHJ1ZQ==), o [este alimentador](https://www.amazon.es/UGREEN-Cargador-Delivery-Ultrarrapido-iPhone/dp/B07QRQTKCZ/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cargador+usb-c&qid=1621421985&s=electronics&sr=1-4)
 
-##2. Software<a name="id2"></a>
+<a name="id2"></a>
+
+##2. Software
+
 El dispositivo se programa exactamente igual que una tarjeta arduino, utilizando el [entorno de desarrollo de Arduino](https://www.arduino.cc/en/software).
 
 Adicionalmente hay que instalar algunos componentes de software en el entorno de Arduino, principalmente diversas librerías. La descripción completa de la instalación del entorno de *software* se puede encontrar al inicio del archivo de código fuente del dispositivo medidor [anaire.PiCO2.ino](anaire.PiCO2\anaire.PiCO2.ino).
@@ -81,7 +86,10 @@ En cualquier caso la instalación del entorno completo de desarrollo no será ne
 
 Para cualquiera de las dos opciones será necesario instalar previamente en un ordenador con sistema operativo Windows10 el [driver USB-UART](https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers) (conversión USB a puerto serie) para poder comunicarse con la tarjeta TTGO T-Display.
 
-##3. Fabricación<a name="id3"></a>
+<a name="id3"></a>
+
+##3. Fabricación
+
 El montaje que se propone pretende simplificar al máximo el proceso de fabricación, manteniendo las máximas prestaciones técnicas. Los componentes se encajan en la caja de impresión 3D, y las conexiones se realizan mediante cables Dupont hembra-hembra, minimizando así las necesidades de soldadura. Sólo será necesario soldar 4 pines en el sensor SCD30 y 7 pines en la tarjeta TTGO T-Display (en el caso de que no se haya comprado con los pines ya soldados)
 
 #### Esquema de conexiones  
@@ -187,7 +195,9 @@ Para ello realice los siguientes pasos:
 
 El proceso puede durar varios minutos, dependiendo de la potencia de cálculo del ordenador. Al término del proceso en el IDE de Arduino se mostrará un mensaje indicando que se ha escrito el 100% del programa en la tarjeta, y el dispositivo PiCO2 se reiniciará mostrando durante varios segundos la imagen de Anaire en la pantalla, para a continuación comenzar a mostrar medidas cada 10 segundos.
 
-##4. Configuración<a name="id4"></a>
+<a name="id4"></a>
+
+##4. Configuración
 
 Para completar la configuración del dispositivo PiCO2 hay que conectarlo a una red WiFi y realizar la calibración de referencia.
 
@@ -212,7 +222,10 @@ En cualquiera de los métodos anteriores la pantalla del PiCO2 se pondrá de col
 
 Al término del proceso el dispositivo se reiniciará y volverá a tomar medidas, tomando como referencia el valor de 420 ppm (este valor se puede modificar desde la aplicación en la nube). El proceso no puede ser interrumpido, deberá esperar a su término al cabo de 60 segundos en cualquier caso.
 
-##5. Uso<a name="id5"></a>
+<a name="id5"></a>
+
+##5. Uso
+
 Para empezar a realizar medidas sólo tiene que alimentar el PiCO2 con un cable USB-C. Cuando la batería ya esté parcialmente cargada podrá incluso prescindir de la alimentación durante varias horas y llevarse el PiCO2 para realizar medidas itinerantes. Un icono con forma de pila en la parte inferior izquierda de la pantalla le mostrará la indicación del nivel de carga disponible.
 
 En caso de que el valor medido de CO2 supere el umbral de aviso, el dispositivo empezará a emitir un pitido intermitente, y el fondo de la pantalla se mostrará de color amarillo. Si supera el valor del umbral de alarma, el pitido intermitente será más largo, y el fondo de la pantalla se mostrará de color rojo.
@@ -281,7 +294,9 @@ Panel de evolución temporal:
 
 También podemos configurar alarmas por correo electrónico, por Telegram, etc. Póngase en contacto con nosotros si tiene necesidades de gestión de un conjunto de dispositivos para que podamos ayudarle a diseñar una solución a medida de su organización.
 
-##6. Diagnóstico<a name="6"></a>
+<a name="6"></a>
+
+##6. Diagnóstico
 
 Conecte el dispositivo al PC utilizando un cable USB-C. Arranque el monitor serie del IDE de Arduino con la opción *Herramientas -> Monitor serie*. Se abrirá una nueva ventana en la que se imprimirán todos los mensajes emitidos por el dispositivo durante su funcionamiento, que ayudarán a diagnosticar los posibles problemas. Se recomienda reiniciar el dispositivo pulsando dos veces el botón inferior para forzar el reinicio y poder observar un ciclo completo de funcionamiento desde el inicio del dispositivo.
 

@@ -19,7 +19,7 @@
 ---
 <a name="id1"></a>
 
-## 1. Hardware
+# 1. Hardware
 
 El medidor Anaire PiCO2 es un dispositivo basado en un microcontrolador ESP32 en una tarjeta de control [LILYGO® TTGO T-Display ESP32 WiFi And Bluetooth](https://github.com/Xinyuan-LilyGO/TTGO-T-Display), que proporciona también conectividad WiFi y Bluetooth, y permite su programación desde el IDE de Arduino. La tarjeta tiene integrado un display en color para mostrar las mediciones e indicaciones de estado. Adicionalmente el dispositivo equipa un zumbador para poder emitir alertas sonoras y una batería recargable para facilitar la movilidad.
 
@@ -59,7 +59,6 @@ A continuación se enumeran los elementos citados:
   <img src="docs\Zumbador.png" width="30%" height="30%" />  
 </p>
 
-
 * [Batería Recargable de Litio con conector Micro JST 1.25 3.7V y al menos 1.100 mAh de capacidad](https://www.amazon.es/dp/B087LTZW61/ref=cm_sw_r_cp_awdb_imm_BPVY2QA8X3P5GB9NQ55C)
 
 <p align="center">
@@ -76,7 +75,7 @@ A continuación se enumeran los elementos citados:
 
 <a name="id2"></a>
 
-## 2. Software
+# 2. Software
 
 El dispositivo se programa exactamente igual que una tarjeta arduino, utilizando el [entorno de desarrollo de Arduino](https://www.arduino.cc/en/software).
 
@@ -88,22 +87,22 @@ Para cualquiera de las dos opciones será necesario instalar previamente en un o
 
 <a name="id3"></a>
 
-## 3. Fabricación
+# 3. Fabricación
 
 El montaje que se propone pretende simplificar al máximo el proceso de fabricación, manteniendo las máximas prestaciones técnicas. Los componentes se encajan en la caja de impresión 3D, y las conexiones se realizan mediante cables Dupont hembra-hembra, minimizando así las necesidades de soldadura. Sólo será necesario soldar 4 pines en el sensor SCD30 y 7 pines en la tarjeta TTGO T-Display (en el caso de que no se haya comprado con los pines ya soldados)
 
-#### Esquema de conexiones  
+## Esquema de conexiones  
 <p align="center">
   <img src="docs\PiCO2 Conexiones.png" width="60%" height="60%" />
 </p>  
 
-#### Detalle del sensor SCD30  
+## Detalle del sensor SCD30  
 Hay que soldar 4 pines como se muestra en la siguiente imagen  
 <p align="center">
   <img src="docs\pines_soldados_SCD30.jpg" width="60%" height="60%" />
 </p>  
 
-#### Montaje final  
+## Montaje final  
 
 Recomendamos que primero se conecten los componentes, se cargue el *software*, siguiendo las instrucciones del apartado siguiente, y se verifique así el funcionamiento del medidor.
 
@@ -129,14 +128,13 @@ El siguiente vídeo muestra de forma detallada el proceso montaje:
 
 [![Montaje Anaire PiCO2](http://img.youtube.com/vi/GUXPi4h12Kw/0.jpg)](https://youtu.be/GUXPi4h12Kw)
 
-
-#### Carga del software
+## Carga del software
 
 Para la carga del software hay dos opciones: carga del binario compilado, o carga desde el código fuente. Como ya se ha explicado anteriormente, si no se desea modificar el software se recomienda la primera opción, ya que es mucho más sencilla y rápida.
 
 En cualquiera de los dos casos es preciso instalar previamente en un ordenador con sistema operativo Windows 10 el [driver USB-UART](https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers) (conversión USB a puerto serie) para poder comunicarse con la tarjeta TTGO T-Display.
 
-##### Carga del binario compilado
+### Carga del binario compilado
 Estas instrucciones son únicamente válidas para ordenadores con el sistema operativo Windows 10.
 
 Asegure que se tiene en un directorio los siguientes archivos, disponibles en la carpeta [anaire.PiCO2](Anaire.PiCO2\anaire.PiCO2):
@@ -167,7 +165,7 @@ Ejecute los siguientes pasos en esa carpeta:
   <img src="docs\Ejecución carga de binario.png" width="100%" height="100%" />
 </p>
 
-##### Carga desde el código fuente
+### Carga desde el código fuente
 
 1. Instale el [entorno de desarrollo de Arduino](https://www.arduino.cc/en/software).
 
@@ -183,11 +181,10 @@ Para ello realice los siguientes pasos:
 6. Seleccione el esquema de particionado de la tarjeta tal como se muestra en la imagen a continuación:
 
 <p align="center">
-  <img src="docs\partition Scheme.png" width="100%" height="100%" />
+  <img src="docs\Partition Scheme.png" width="100%" height="100%" />
 </p>
 
 7. Presione el botón de carga, que se indica en el IDE con una flecha apuntando hacia la derecha, y espere a que se compile y se descargue el software en la tarjeta TTGO T-Display.
-
 
 <p align="center">
   <img src="docs\Descarga de SW desde el IDE de Arduino.png" width="100%" height="100%" />
@@ -197,11 +194,11 @@ El proceso puede durar varios minutos, dependiendo de la potencia de cálculo de
 
 <a name="id4"></a>
 
-## 4. Configuración
+# 4. Configuración
 
 Para completar la configuración del dispositivo PiCO2 hay que conectarlo a una red WiFi y realizar la calibración de referencia.
 
-### Configuración de la conexión WiFi
+## Configuración de la conexión WiFi
    * Pulse 3 veces consecutivas el botón superior para arrancar el portal cautivo, es decir, una red WiFi y un servidor web que le permiten modificar la configuración del PiCO2.
    * Se creará una red WiFi abierta con el nombre AnaireWiFi_XXXXXX, donde XXXXXX es el identificador del dispositivo. La pantalla mostrará sobre fondo naranja el nombre de la red WiFi creada.
    * Conecte a esa red con un PC, tablet o teléfono móvil
@@ -212,7 +209,7 @@ Para completar la configuración del dispositivo PiCO2 hay que conectarlo a una 
      * Si ha habido algún problema de conexión (por ejemplo, si se ha introducido una contraseña errónea), el dispositivo mostrará el icono de la red WiFi en la esquina superior izquierda del display tachado, y deberá repetir el procedimiento.
    * En el portal se puedan modificar otros parámetros de configuración, como un usuario y contraseña para redes WPA2-Enterprise, o la conexión a la aplicación en la nube (MQTT server y puerto).
 
-### Calibración de referencia
+## Calibración de referencia
 Sitúe el medidor PiCO2 al aire libre, protegido del sol, de otras fuentes de luz intensas y de las corrientes de aire (por ejemplo, dentro de una caja de cartón en el alféizar de la ventana), y arranque el proceso de calibración mediante alguno de los siguientes métodos:
 - Presione el botón inferior durante más de 1 segundo
 - Identifique la dirección IP del dispositivo pulsando brevemente el botón superior, e introduzca la dirección en un navegador de un dispositivo conectado a la misma red WiFi. En el servidor web haga click en el enlace que permite iniciar la calibración de referencia del dispositivo.
@@ -224,7 +221,7 @@ Al término del proceso el dispositivo se reiniciará y volverá a tomar medidas
 
 <a name="id5"></a>
 
-## 5. Uso
+# 5. Uso
 
 Para empezar a realizar medidas sólo tiene que alimentar el PiCO2 con un cable USB-C. Cuando la batería ya esté parcialmente cargada podrá incluso prescindir de la alimentación durante varias horas y llevarse el PiCO2 para realizar medidas itinerantes. Un icono con forma de pila en la parte inferior izquierda de la pantalla le mostrará la indicación del nivel de carga disponible.
 
@@ -236,22 +233,22 @@ Si se desea detener la alarma acústica presione durante más de un segundo el b
 
 El PiCO2 tiene un identificador único (ID) generado a partir de la dirección MAC de la interfaz WiFi de cada tarjeta TTGO T-Display. Este ID es un texto hexadecimal de 6 caracteres, utilizado para el acceso a las medidas en Internet y la integración del medidor en la aplicación en la nube de Anaire. No es preciso realizar ninguna configuración sobre este identificador, se genera de forma automática para cada tarjeta TTGO. Este ID se utiliza para identificar las medidas del dispositivo en la aplicación en la nube, así como para identificar la red WiFi que genera el propio PiCO2 cuando se arranca el modo de configuración.
 
-### Botones
+## Botones
 El PiCO2 tiene dos botones a la derecha de la pantalla, uno superior y otro inferior. Puede usar los botones para realizar las siguientes funciones:
 
-#### Botón superior
+### Botón superior
 - Pulsación corta - Muestra información del dispositivo: ID, versión de *software*, red WiFi, dirección IP, dirección MAC, potencia WiFi (RSSI), estado de la alarma acústica (SÍ/NO), estado de la calibración (forzada/auto)
 - Pulsación larga (durante más de 1 segundo) - Conmuta el estado de la alarma acústica
 - Doble pulsación - Duerme el dispositivo para ahorrar batería cuando no sea necesario utilizarlo; para despertarlo, vuelva a pulsar el botón superior
 - Triple pulsación - Arranca el portal cautivo que permite configurar la conexión WiFi y la dirección del servidor MQTT de la aplicación Anaire en la nube a la que enviar las medidas
 
-#### Botón inferior
+### Botón inferior
 - Pulsación corta - Muestra información del uso de los botones
 - Pulsación larga (más de 1 segundo) - Inicia el proceso de calibración forzada. Este proceso dura 60 segundos y no se puede interrumpir.
 - Doble pulsación -  Reinicia el PiCO2
 - Triple pulsación - Activa el mecanismo de autocalibración del PiCO2, dejando sin efecto la calibración de referencia que se haya podido realizar anteriormente.
 
-### Servidor Web
+## Servidor Web
 
 Si se conecta con un dispositivo a la misma red WiFi a la que esta conectado el medidor PiCO2, accediendo a la dirección IP del medidor mediante un navegador se puede acceder al servidor web del PiCO2, pudiendo así acceder a información detallada del dispositivo, a las últimas medidas, e incluso pudiendo realizar diversas acciones de configuración, como se puede ver en la siguiente imagen:
 
@@ -259,7 +256,7 @@ Si se conecta con un dispositivo a la misma red WiFi a la que esta conectado el 
   <img src="docs\Servidor Web.png" width="80%" height="80%" />
 </p>
 
-### Acceso por internet a las medidas:
+## Acceso por internet a las medidas
 Si se ha conectado el PiCO2 a una red WiFi con acceso a internet y se han dejado los valores por defecto de conexión a la aplicación en la nube, se puede acceder a los valores medidos por el dispositivo en los siguientes enlaces. Sustituya *ID_del_dispositivo* por el ID del PiCO2 en cuestión para acceder a las medidas:
 
 * Valores actuales en modo kiosko (modo muy práctico para visualizar las medidas en un teléfono móvil por ejemplo):  
@@ -296,7 +293,7 @@ También podemos configurar alarmas por correo electrónico, por Telegram, etc. 
 
 <a name="6"></a>
 
-## 6. Diagnóstico
+# 6. Diagnóstico
 
 Conecte el dispositivo al PC utilizando un cable USB-C. Arranque el monitor serie del IDE de Arduino con la opción *Herramientas -> Monitor serie*. Se abrirá una nueva ventana en la que se imprimirán todos los mensajes emitidos por el dispositivo durante su funcionamiento, que ayudarán a diagnosticar los posibles problemas. Se recomienda reiniciar el dispositivo pulsando dos veces el botón inferior para forzar el reinicio y poder observar un ciclo completo de funcionamiento desde el inicio del dispositivo.
 
@@ -306,9 +303,9 @@ En el lateral izquierdo de la pantalla del PiCO2 se muestran 3 iconos: un indica
 
 ---
 
-##BONUS
+# BONUS
 
-###Montaje sobre Breadboard (placa de prototipado)
+## Montaje sobre Breadboard (placa de prototipado)
 El montaje sobre breadboard es algo que puede ser útil para proyectos educativos, o para desarrollo, o incluso en caso de no tener acceso a una impresora 3D.
 
 Es extremadamente sencillo montar el PiCO2 sobre breadboard. El siguiente vídeo muestra el proceso en detalle para el Anaire 30ppm. Realice el mismo procedimiento, pero sustituyendo la tarjeta NodeMCU por la tarjeta TTGO T-Display, dejando de lado el display que se muestra en el vídeo (no es necesario ya que la TTGO incorpora su propia pantalla) y cargando el *software* como se ha indicado en el apartado de fabricación del PiCO2:

@@ -79,9 +79,9 @@ A continuación se enumeran los elementos citados:
 
 El dispositivo se programa exactamente igual que una tarjeta arduino, utilizando el [entorno de desarrollo de Arduino](https://www.arduino.cc/en/software).
 
-Adicionalmente hay que instalar algunos componentes de software en el entorno de Arduino, principalmente diversas librerías. La descripción completa de la instalación del entorno de *software* se puede encontrar al inicio del archivo de código fuente del dispositivo medidor [anaire.PiCO2.ino](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino).
+Adicionalmente hay que instalar algunos componentes de software en el entorno de Arduino, principalmente diversas librerías. La descripción completa de la instalación del entorno de *software* se puede encontrar al inicio del archivo de código fuente del dispositivo medidor [anaire.PiCO2.ino](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.30ppm-50ppm/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino).
 
-En cualquier caso la instalación del entorno completo de desarrollo no será necesaria si no se requiere hacer modificaciones en el software. Para la fabricación del dispositivo se proporciona un mecanismo sencillo basado en la carga del [binario ya compilado](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin) en la tarjeta TTGO T-Display, como se describe más adelante, en el apartado de fabricación.
+En cualquier caso la instalación del entorno completo de desarrollo no será necesaria si no se requiere hacer modificaciones en el software. Para la fabricación del dispositivo se proporciona un mecanismo sencillo basado en la carga del [binario ya compilado](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.30ppm-50ppm/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin) en la tarjeta TTGO T-Display, como se describe más adelante, en el apartado de fabricación.
 
 Para cualquiera de las dos opciones será necesario instalar previamente en un ordenador con sistema operativo Windows10 el [driver USB-UART](https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers) (conversión USB a puerto serie) para poder comunicarse con la tarjeta TTGO T-Display.
 

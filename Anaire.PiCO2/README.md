@@ -151,7 +151,7 @@ Ejecute los siguientes pasos en esa carpeta:
   <img src="docs\Identificación de puerto COM.png" width="80%" height="80%" />
 </p>
 
-2. Haga click derecho en el archivo [flash_device.bat](Anaire.PiCO2\flash_device.bat) y seleccione la opción de *editar*
+2. Haga click derecho en el archivo [flash_device.bat](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/flash_device.bat) y seleccione la opción de *editar*
 
 3. Donde pone *--port COMXX* sustituya el puerto COMXX para poner el que haya identificado previamente en el paso 1, seleccione *archivo->guardar* y cierre la ventana
 
@@ -159,7 +159,7 @@ Ejecute los siguientes pasos en esa carpeta:
   <img src="docs\Edición de puerto COM.png" width="100%" height="100%" />
 </p>
 
-4. Haga doble click en el archivo [flash_device.bat](Anaire.PiCO2\flash_device.bat). Al acabar la ejecución pedirá que se pulse cualquier tecla para cerrar la ventana. El medidor PiCO2 arrancará con la última versión de *software* disponible en el archivo [anaire.PiCO2.ino.esp32.bin](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin)
+4. Haga doble click en el archivo [flash_device.bat](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/flash_device.bat). Al acabar la ejecución pedirá que se pulse cualquier tecla para cerrar la ventana. El medidor PiCO2 arrancará con la última versión de *software* disponible en el archivo [anaire.PiCO2.ino.esp32.bin](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin)
 
 <p align="center">
   <img src="docs\Ejecución carga de binario.png" width="100%" height="100%" />

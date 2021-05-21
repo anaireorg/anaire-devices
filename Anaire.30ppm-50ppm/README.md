@@ -229,9 +229,9 @@ Ejecute los siguientes pasos en esa carpeta:
 
 1. Instale el [entorno de desarrollo de Arduino](https://www.arduino.cc/en/software).
 
-2. Instale los componentes de software requeridos en el entorno de Arduino, tal como se describe al inicio del archivo de código fuente del dispositivo medidor [anaire-device.NodeMCULuaAmicaV2.ino](anaire-device.NodeMCULuaAmicaV2\anaire-device.NodeMCULuaAmicaV2.ino).
+2. Instale los componentes de software requeridos en el entorno de Arduino, tal como se describe al inicio del archivo de código fuente del dispositivo medidor [anaire-device.NodeMCULuaAmicaV2.ino](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.30ppm-50ppm/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino).
 
-3. Cargue el programa [anaire-device.NodeMCULuaAmicaV2.ino](anaire-device.NodeMCULuaAmicaV2\anaire-device.NodeMCULuaAmicaV2.ino) en el IDE de Arduino utilizando la opción *Archivo->Abrir*
+3. Cargue el programa [anaire-device.NodeMCULuaAmicaV2.ino](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.30ppm-50ppm/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino) en el IDE de Arduino utilizando la opción *Archivo->Abrir*
 
 4. Conecte mediante un cable MicroUSB el Anaire 30/50ppm al ordenador
 

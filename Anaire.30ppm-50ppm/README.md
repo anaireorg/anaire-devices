@@ -126,9 +126,9 @@ Se han diseñado dos modelos de medidores basados en el *hardware* descrito: **A
 
 Las opciones de montaje que se proponen pretenden simplificar al máximo el proceso, manteniendo las máximas prestaciones técnicas. En cualquier caso se proporciona toda la información necesaria para que cualquiera pueda plantearse alternativas de fabricación, por ejemplo, mediante placas PCB y soldadura de los componentes. Para ello se publican en este mismo repositorio los archivos necesarios en formato de la aplicación [Fritzing](https://fritzing.org/) con la información detallada del cableado requerido, que pueden servir de punto de partida para el diseño de la placa PCB.  
 
-  * [Archivo Fritzing para Anaire30ppm (Sensirion SCD-30)](docs\Anaire30ppm_SCD30.fzz)
+  * [Archivo Fritzing para Anaire30ppm (Sensirion SCD-30)](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.30ppm-50ppm/docs/Anaire30ppm_SCD30.fzz)
 
-  * [Archivo Fritzing para Anaire50ppm (Winsen MH-Z14A)](docs\Anaire30ppm_SCD30.fzz)
+  * [Archivo Fritzing para Anaire50ppm (Winsen MH-Z14A)](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.30ppm-50ppm/docs/Anaire50ppm_MHZ14A.fzz)
 
 <a name="3.1"></a>
 ## 3.1 Anaire30ppm

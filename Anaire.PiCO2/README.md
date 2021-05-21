@@ -137,7 +137,7 @@ En cualquiera de los dos casos es preciso instalar previamente en un ordenador c
 ### Carga del binario compilado
 Estas instrucciones son únicamente válidas para ordenadores con el sistema operativo Windows 10.
 
-Asegure que se tiene en un directorio los siguientes archivos, disponibles en la carpeta [anaire.PiCO2](Anaire.PiCO2\anaire.PiCO2):
+Asegure que se tiene en un directorio los siguientes archivos, disponibles en la carpeta [anaire.PiCO2](https://github.com/anaireorg/anaire-devices/tree/main/Anaire.PiCO2):
   * anaire.PiCO2.ino.esp32.bin
   * boot_app0.bin
   * bootloader_qio_80m.bin

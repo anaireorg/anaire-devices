@@ -246,6 +246,7 @@ Ejecute los siguientes pasos en esa carpeta:
 El proceso puede durar varios minutos, dependiendo de la potencia de cálculo del ordenador. Al término del proceso en el IDE de Arduino se mostrará un mensaje indicando que se ha escrito el 100% del programa en la tarjeta, y el dispositivo PiCO2 se reiniciará mostrando durante varios segundos la imagen de Anaire en la pantalla, para a continuación comenzar a mostrar medidas cada 5 segundos.
 
 En el siguiente vídeo puede verse el proceso completo al detalle:
+
 [![Preparación del entorno y carga del software para Anaire30ppm y Anaire50ppm](http://img.youtube.com/vi/nSNwYwKNmuk/0.jpg)](https://youtu.be/nSNwYwKNmuk?t=260)
 
 <a name="id4"></a>

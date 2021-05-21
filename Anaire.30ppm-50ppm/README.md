@@ -211,7 +211,7 @@ Ejecute los siguientes pasos en esa carpeta:
   <img src="docs\Identificación de puerto COM.png" width="80%" height="80%" />
 </p>
 
-2. Haga click derecho en el archivo [flash_device.bat](Anaire.30ppm-50ppm\flash_device.bat) y seleccione la opción de *editar*
+2. Haga click derecho en el archivo [flash_device.bat](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.30ppm-50ppm/anaire-device.NodeMCULuaAmicaV2/flash_device.bat) y seleccione la opción de *editar*
 
 3. Donde pone *--port COMXX* sustituya el puerto COMXX para poner el que haya identificado previamente en el paso 1, seleccione *archivo->guardar* y cierre la ventana
 
@@ -219,7 +219,7 @@ Ejecute los siguientes pasos en esa carpeta:
   <img src="docs\Edición de puerto COM.png" width="100%" height="100%" />
 </p>
 
-4. Haga doble click en el archivo [flash_device.bat](Anaire.30ppm-50ppm\flash_device.bat). Al acabar la ejecución pedirá que se pulse cualquier tecla para cerrar la ventana. El medidor Anaire 30/50ppm arrancará con la última versión de *software* disponible en el archivo [anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin](anaire-device.NodeMCULuaAmicaV2\anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin)
+4. Haga doble click en el archivo [flash_device.bat](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.30ppm-50ppm/anaire-device.NodeMCULuaAmicaV2/flash_device.bat). Al acabar la ejecución pedirá que se pulse cualquier tecla para cerrar la ventana. El medidor Anaire 30/50ppm arrancará con la última versión de *software* disponible en el archivo [anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.30ppm-50ppm/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin)
 
 <p align="center">
   <img src="docs\Ejecución carga de binario.png" width="100%" height="100%" />

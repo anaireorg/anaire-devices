@@ -13,8 +13,8 @@
 [2. Software](#id2)  
 [3. Fabricación](#id3)  
 [4. Configuración](#id4)  
-[4. Uso](#id5)  
-[5. Diagnóstico](#id6)  
+[5. Uso](#id5)  
+[6. Diagnóstico](#id6)  
 
 ---
 <a name="id1"></a>
@@ -79,9 +79,9 @@ A continuación se enumeran los elementos citados:
 
 El dispositivo se programa exactamente igual que una tarjeta arduino, utilizando el [entorno de desarrollo de Arduino](https://www.arduino.cc/en/software).
 
-Adicionalmente hay que instalar algunos componentes de software en el entorno de Arduino, principalmente diversas librerías. La descripción completa de la instalación del entorno de *software* se puede encontrar al inicio del archivo de código fuente del dispositivo medidor [anaire.PiCO2.ino](anaire.PiCO2\anaire.PiCO2.ino).
+Adicionalmente hay que instalar algunos componentes de software en el entorno de Arduino, principalmente diversas librerías. La descripción completa de la instalación del entorno de *software* se puede encontrar al inicio del archivo de código fuente del dispositivo medidor [anaire.PiCO2.ino](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino).
 
-En cualquier caso la instalación del entorno completo de desarrollo no será necesaria si no se requiere hacer modificaciones en el software. Para la fabricación del dispositivo se proporciona un mecanismo sencillo basado en la carga del [binario ya compilado](anaire.PiCO2\anaire.PiCO2.ino.esp32.bin) en la tarjeta TTGO T-Display, como se describe más adelante, en el apartado de fabricación.
+En cualquier caso la instalación del entorno completo de desarrollo no será necesaria si no se requiere hacer modificaciones en el software. Para la fabricación del dispositivo se proporciona un mecanismo sencillo basado en la carga del [binario ya compilado](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin) en la tarjeta TTGO T-Display, como se describe más adelante, en el apartado de fabricación.
 
 Para cualquiera de las dos opciones será necesario instalar previamente en un ordenador con sistema operativo Windows10 el [driver USB-UART](https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers) (conversión USB a puerto serie) para poder comunicarse con la tarjeta TTGO T-Display.
 
@@ -159,7 +159,7 @@ Ejecute los siguientes pasos en esa carpeta:
   <img src="docs\Edición de puerto COM.png" width="100%" height="100%" />
 </p>
 
-4. Haga doble click en el archivo [flash_device.bat](Anaire.PiCO2\flash_device.bat). Al acabar la ejecución pedirá que se pulse cualquier tecla para cerrar la ventana. El medidor PiCO2 arrancará con la última versión de *software* disponible en el archivo [anaire.PiCO2.ino.esp32.bin](anaire.PiCO2\anaire.PiCO2.ino.esp32.bin)
+4. Haga doble click en el archivo [flash_device.bat](Anaire.PiCO2\flash_device.bat). Al acabar la ejecución pedirá que se pulse cualquier tecla para cerrar la ventana. El medidor PiCO2 arrancará con la última versión de *software* disponible en el archivo [anaire.PiCO2.ino.esp32.bin](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin)
 
 <p align="center">
   <img src="docs\Ejecución carga de binario.png" width="100%" height="100%" />
@@ -169,10 +169,10 @@ Ejecute los siguientes pasos en esa carpeta:
 
 1. Instale el [entorno de desarrollo de Arduino](https://www.arduino.cc/en/software).
 
-2. Instale los componentes de software requeridos en el entorno de Arduino, tal como se describe al inicio del archivo de código fuente del dispositivo medidor [anaire.PiCO2.ino](anaire.PiCO2\anaire.PiCO2.ino).
+2. Instale los componentes de software requeridos en el entorno de Arduino, tal como se describe al inicio del archivo de código fuente del dispositivo medidor [anaire.PiCO2.ino](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino).
 Para ello realice los siguientes pasos:
 
-3. Cargue el programa [anaire.PiCO2.ino](anaire.PiCO2\anaire.PiCO2.ino) en el IDE de Arduino utilizando la opción *Archivo->Abrir*
+3. Cargue el programa [anaire.PiCO2.ino](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino) en el IDE de Arduino utilizando la opción *Archivo->Abrir*
 
 4. Conecte mediante un cable USB-C el PiCO2 al ordenador
 

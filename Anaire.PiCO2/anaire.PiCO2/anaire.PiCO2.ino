@@ -1775,7 +1775,7 @@ void Firmware_Update() {
   tft.drawString("ACTUALIZACION EN CURSO", tft.width()/2, tft.height()/2);
     
   //t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
 
   switch (ret) {
     

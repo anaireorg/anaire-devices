@@ -195,7 +195,7 @@ En cualquiera de los dos casos es preciso instalar previamente en un ordenador c
 ### Carga del binario compilado
 Estas instrucciones son únicamente válidas para ordenadores con el sistema operativo Windows 10.
 
-Asegure que se tiene en un directorio los siguientes archivos y carpetas, disponibles en la carpeta [anaire-device.NodeMCULuaAmicaV2](Anaire.30ppm-50ppm\anaire-device.NodeMCULuaAmicaV2):
+Asegure que se tiene en un directorio los siguientes archivos y carpetas, disponibles en la carpeta [anaire-device.NodeMCULuaAmicaV2](https://github.com/anaireorg/anaire-devices/tree/main/Anaire.30ppm-50ppm/anaire-device.NodeMCULuaAmicaV2):
 
 Archivos:
   * flash_device.bat

@@ -76,10 +76,10 @@ A continuación se enumeran los elementos citados, incluyendo enlaces a su docum
   <img src="docs\AnaireBoxInterior.jpg" width="50%" height="50%" />
 </p>  
 
-* [Cables Dupont hembra-hembra de 10cm de longitud](https://www.amazon.es/SODIAL-Puente-Hembra-Soldadura-Flexible/dp/B00HUH9GOC/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cable+dupont+hembra+hembra&qid=1609613291&s=industrial&sr=1-4)
+* [Cables Dupont hembra-hembra de 10cm de longitud](https://es.aliexpress.com/item/32223527499.html?acnt=439-079-4345&aff_platform=aaf&ds_e_device=c&albcp=13172094689&ds_e_product_id=es32223527499&ds_url_v=2&ds_dest_url=https%3A%2F%2Fs.click.aliexpress.com%2Fdeep_link.htm%3Faff_short_key%3DUneMJZVf&ds_e_product_group_id=296904914040&pvid=eb11631d-971c-4829-b794-e9f23d8cb417&sk=UneMJZVf&scm=1007.23534.123999.0&ds_e_adid=522675293728&terminal_id=44af2aac40424e0b80b3a282ef6f308e&needSmbHouyi=false&albbt=Google_7_shopping&ds_e_product_channel=online&src=google&ds_e_product_country=ES&aff_fcid=cfebeae5e65a4635b7cc3e2f3b15027f-1621885142306-06674-UneMJZVf&gclid=Cj0KCQjwna2FBhDPARIsACAEc_X87Ff7qCzv9SHcW1JGMfc1Hfr8fuY_dryH4gYq7SQr2iEJrtdeEuwaAoGpEALw_wcB&albag=123014812712&aff_fsk=UneMJZVf&albch=shopping&ds_e_network=u&albagn=888888&ds_e_product_language=es&isSmbAutoCall=false&ds_e_product_merchant_id=107407105&aff_trace_key=cfebeae5e65a4635b7cc3e2f3b15027f-1621885142306-06674-UneMJZVf&rmsg=do_not_replacement&gclsrc=aw.ds)
 
 <p align="center">
-  <img src="docs\Cables Dupont.png" width="40%" height="40%" />
+  <img src="docs\Cables Dupont.png" width="80%" height="80%" />
 </p>
 
 * Será necesario un cable válido para conectar desde un puerto USB del ordenador al puerto Micro USB de la tarjeta NodeMCU, para poder cargar el software del dispositivo. Este mismo cable puede ser utilizado para la alimentación eléctrica desde un ordenador, o desde un enchufe USB o incluso desde una batería portátil USB. También podría utilizarse, una vez cargado el software, un transformador de un antiguo teléfono móvil u otro tipo de dispositivo que tenga un conector Micro USB y proporcione al menos 1.000 miliamperios. Por ejemplo, [este cable](https://www.amazon.es/TM-Electron-CXU201020-Cable-Blanco/dp/B07BQD6P74/ref=sr_1_22?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=usb+micro+usb&qid=1609613811&sr=8-22), o [este alimentador](https://www.amazon.es/gp/product/B00U88KSHO/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&psc=1)

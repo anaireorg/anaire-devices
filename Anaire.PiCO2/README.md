@@ -59,16 +59,16 @@ A continuación se enumeran los elementos citados:
   <img src="docs\Zumbador.png" width="30%" height="30%" />  
 </p>
 
-* [Batería Recargable de Litio con conector Micro JST 1.25 3.7V y al menos 1.100 mAh de capacidad](https://www.amazon.es/dp/B087LTZW61/ref=cm_sw_r_cp_awdb_imm_BPVY2QA8X3P5GB9NQ55C)
+* [Batería Recargable de Litio con conector Micro JST 1.25 3.7V y al menos 1.000 mAh de capacidad](https://www.amazon.es/dp/B087LTZW61/ref=cm_sw_r_cp_awdb_imm_BPVY2QA8X3P5GB9NQ55C)
 
 <p align="center">
   <img src="docs\Batería Recargable de Litio Micro JST 1.25 3.7V.png" width="40%" height="40%" />
 </p>
 
-* [Cables Dupont hembra-hembra de 10cm de longitud](https://www.amazon.es/SODIAL-Puente-Hembra-Soldadura-Flexible/dp/B00HUH9GOC/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cable+dupont+hembra+hembra&qid=1609613291&s=industrial&sr=1-4)
+* [Cables Dupont hembra-hembra de 10cm de longitud](https://es.aliexpress.com/item/32223527499.html?acnt=439-079-4345&aff_platform=aaf&ds_e_device=c&albcp=13172094689&ds_e_product_id=es32223527499&ds_url_v=2&ds_dest_url=https%3A%2F%2Fs.click.aliexpress.com%2Fdeep_link.htm%3Faff_short_key%3DUneMJZVf&ds_e_product_group_id=296904914040&pvid=eb11631d-971c-4829-b794-e9f23d8cb417&sk=UneMJZVf&scm=1007.23534.123999.0&ds_e_adid=522675293728&terminal_id=44af2aac40424e0b80b3a282ef6f308e&needSmbHouyi=false&albbt=Google_7_shopping&ds_e_product_channel=online&src=google&ds_e_product_country=ES&aff_fcid=cfebeae5e65a4635b7cc3e2f3b15027f-1621885142306-06674-UneMJZVf&gclid=Cj0KCQjwna2FBhDPARIsACAEc_X87Ff7qCzv9SHcW1JGMfc1Hfr8fuY_dryH4gYq7SQr2iEJrtdeEuwaAoGpEALw_wcB&albag=123014812712&aff_fsk=UneMJZVf&albch=shopping&ds_e_network=u&albagn=888888&ds_e_product_language=es&isSmbAutoCall=false&ds_e_product_merchant_id=107407105&aff_trace_key=cfebeae5e65a4635b7cc3e2f3b15027f-1621885142306-06674-UneMJZVf&rmsg=do_not_replacement&gclsrc=aw.ds)
 
 <p align="center">
-  <img src="docs\Cables Dupont.png" width="40%" height="40%" />
+  <img src="docs\Cables Dupont.png" width="80%" height="80%" />
 </p>
 
 * Será necesario un cable válido para conectar desde un puerto USB del ordenador al puerto Micro USB-C de la tarjeta TTGO T-Display, para poder cargar el software del dispositivo. Este mismo cable puede ser utilizado para la alimentación eléctrica desde un ordenador, o desde un enchufe USB o incluso desde una batería portátil USB. También podría utilizarse, una vez cargado el software, cualquier otro tipo de dispositivo que tenga un conector USB-C y proporcione al menos 1.000 miliamperios. Por ejemplo, [este cable](https://www.amazon.es/dp/B01N4OKUB8/ref=sspa_dk_detail_0?psc=1&pd_rd_i=B01N4OKUB8&pd_rd_w=dwqWt&pf_rd_p=5f25be7b-80cd-4c25-8d91-1b1227f5fe0a&pd_rd_wg=YOc8a&pf_rd_r=65KA0NS0Q3TFHFFG71BT&pd_rd_r=1ea810dc-c0cf-4076-9c01-6a1168e0c782&spLa=ZW5jcnlwdGVkUXVhbGlmaWVyPUExWVdXWkI3STRMR0JPJmVuY3J5cHRlZElkPUEwNzg0ODEwMlRGUUNCTFU5VzREVSZlbmNyeXB0ZWRBZElkPUEwNzY1NTk5NkUyNFdHOUZWOTNRJndpZGdldE5hbWU9c3BfZGV0YWlsX3RoZW1hdGljJmFjdGlvbj1jbGlja1JlZGlyZWN0JmRvTm90TG9nQ2xpY2s9dHJ1ZQ==), o [este alimentador](https://www.amazon.es/UGREEN-Cargador-Delivery-Ultrarrapido-iPhone/dp/B07QRQTKCZ/ref=sr_1_4?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=cargador+usb-c&qid=1621421985&s=electronics&sr=1-4)

@@ -13,6 +13,11 @@
 // SW Setup:
 //   Install the usb to uart driver from https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers
 //   Setup the Arduino IDE for the ESP32 platform: https://github.com/espressif/arduino-esp32
+//     Start Arduino and open Preferences window
+//     Enter https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_dev_index.json into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
+//     Open Boards Manager from Tools-> Board menu and find esp32 platform and install the latest version.
+//     Select "ESP32 Dev Module" board from Tools-> Board menu after installation
+//     Select Tools-> Partition Scheme-> Minimal SPIFFS (1.9MB APP with OTA/190KB SPIFFS) 
 //   Setup the required libraries:
 //   - TTGO T-Display's Git: Download the code as zip https://github.com/Xinyuan-LilyGO/TTGO-T-Display/archive/master.zip
 //     Extract it and copy the Folder TFT_eSPI to your Arduino library path (usually <your user>/Documents/Arduino in Windows)

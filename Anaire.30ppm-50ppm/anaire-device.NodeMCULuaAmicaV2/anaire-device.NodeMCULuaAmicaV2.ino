@@ -10,7 +10,7 @@
 //   3D printed Box designed by Anaire: https://www.thingiverse.com/thing:4694633
 //
 // HW Parts - Sensors:
-//   Anaire 30ppm, better measurements precission: Sensirion SCD30 for CO2, temperature and humidity https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-scd30/
+//   Anaire 30ppm, better measurements precision: Sensirion SCD30 for CO2, temperature and humidity https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-scd30/
 //   Anaire 50ppm, less cost: MHZ14A for CO2 https://www.winsen-sensor.com/sensors/co2-sensor/mh-z14a.html and AZ-Delivery DHT11 Temperature and humidity sensor - https://www.az-delivery.de/es/products/dht11-temperatursensor-modul
 //
 // SW Setup:

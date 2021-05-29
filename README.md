@@ -105,7 +105,7 @@ Recursos
 * [Transmisión de la COVID-19 por el aire (aerosoles). Por José Luis Jiménez.](https://www.youtube.com/watch?v=uI8ODCxrNMU&t=4s)
 * [José Luis Jiménez, El País: La covid se transmite a través de aerosoles: ya es el momento de actuar, tenemos suficientes pruebas](https://elpais.com/ciencia/2020-08-18/la-covid-se-transmite-a-traves-de-aerosoles-ya-es-el-momento-de-actuar-tenemos-suficientes-pruebas.html)
 * [Summary of the Evidence For and Against the Routes of Transmission of SARS-CoV-2](https://docs.google.com/presentation/d/11rY9tQtkFaV_M4N-hf5qp1_Xtuw8JYb4Qvv5e7BEmcc/edit#slide=id.g93f580524a_221_12)
-* [Aireamos](https://www.aireamos.org/)
+* [Aireamos: Guia sobre medidores de CO2 disponibles en España](https://docs.google.com/document/d/1oJPsWwjclz6jomAFE4RtfslRltF25k7E0ZcdZ78tScY/edit?usp=sharing)
 * [Así se ven los aerosoles en un ascensor, una tienda, una oficina y un bar: ¿cómo se transmite el coronavirus?](https://amp.rtve.es/noticias/20210312/coronavirus-aerosoles-imagenes/2081740.shtml)
 * [Daily global CO2](https://www.esrl.noaa.gov/gmd/ccgg/trends/gl_trend.html)
 * [IAQ Rating Index](http://www.iaquk.org.uk/ESW/Files/IAQ_Rating_Index.pdf)

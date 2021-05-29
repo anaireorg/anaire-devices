@@ -100,7 +100,7 @@ Facebook: @anaireco2
 
 Recursos
 ---------
-
+* [Ventilando](http://www.ventilando.org/)
 * [Guía para ventilación de las aulas del CSIC](https://digital.csic.es/handle/10261/221538)
 * [Transmisión de la COVID-19 por el aire (aerosoles). Por José Luis Jiménez.](https://www.youtube.com/watch?v=uI8ODCxrNMU&t=4s)
 * [José Luis Jiménez, El País: La covid se transmite a través de aerosoles: ya es el momento de actuar, tenemos suficientes pruebas](https://elpais.com/ciencia/2020-08-18/la-covid-se-transmite-a-traves-de-aerosoles-ya-es-el-momento-de-actuar-tenemos-suficientes-pruebas.html)

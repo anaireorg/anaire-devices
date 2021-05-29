@@ -45,7 +45,7 @@ Toda la información se publica en formato *open source*, tanto los diseños har
 
 Página web: www.anaire.org  
 Correo electrónico: anaire@anaire.org  
-Canal de Youtube: https://www.youtube.com/channel/UCOwQjsH4QQhcznWKxydhbZg  
+Canal de Youtube: https://www.youtube.com/c/AnaireCO2  
 Twitter: @Anaire_co2  
 Instagram: anaire_co2  
 Facebook: @anaireco2  

@@ -101,7 +101,7 @@ Facebook: @anaireco2
 Recursos
 ---------
 
-* [El País:_ Un salón, un bar y una clase: así contagia el coronavirus en el aire](https://elpais.com/ciencia/2020-10-24/un-salon-un-bar-y-una-clase-asi-contagia-el-coronavirus-en-el-aire.html)
+* [El País - Un salón, un bar y una clase: así contagia el coronavirus en el aire](https://elpais.com/ciencia/2020-10-24/un-salon-un-bar-y-una-clase-asi-contagia-el-coronavirus-en-el-aire.html)
 * [Ventilando](http://www.ventilando.org/)
 * [Guía para ventilación de las aulas del CSIC](https://digital.csic.es/handle/10261/221538)
 * [Transmisión de la COVID-19 por el aire (aerosoles). Por José Luis Jiménez.](https://www.youtube.com/watch?v=uI8ODCxrNMU&t=4s)

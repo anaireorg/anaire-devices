@@ -23,11 +23,11 @@
 
 El medidor Anaire PiCO2 es un dispositivo basado en un microcontrolador ESP32 en una tarjeta de control [LILYGO® TTGO T-Display ESP32 WiFi And Bluetooth](https://github.com/Xinyuan-LilyGO/TTGO-T-Display), que proporciona también conectividad WiFi y Bluetooth, y permite su programación desde el IDE de Arduino. La tarjeta tiene integrado un display en color para mostrar las mediciones e indicaciones de estado. Adicionalmente el dispositivo equipa un zumbador para poder emitir alertas sonoras y una batería recargable para facilitar la movilidad.
 
-Para realizar las medidas se conecta un sensor de CO2 de tecnología NDIR, que adicionalmente realiza medidas de temperatura y humedad:  [*Sensirion SCD30*](https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-scd30/). El Sensirion SCD30 es un sensor de alta calidad y gran velocidad de reacción: tiene mayor precisión que la mayoría de los sensores de su mismo tipo, 30 ppm frente a los 50 ppm del Winsen MH-Z14A; incorpora sensor de temperatura y humedad, con lo que no hay que añadir un sensor adicional para medir temperatura y humedad, facilitando la fabricación, además de permitir mecanismos de compensación por altitud y temperatura; tiene un mecanismo de autocalibración más robusto, en el que se hace uso de las mediciones de los últimos 30 días, en lugar de las últimas 24 horas, como en el caso del MH-Z14A; su respuesta es también más rápida ante cambios atmosféricos (por ejemplo, al introducir ventilación en un espacio cerrado). Los inconvenientes del Sensirion SCD30 son que tiene un precio más elevado, que es más frágil durante su manipulación y que tiene menos opciones de compra y normalmente mayores plazos de entrega. Para comprar el Sensirion SCD30 hay que recurrir normalmente a plataformas especializadas en componentes electrónicos.
+Para realizar las medidas se conecta un sensor de CO2 de tecnología NDIR, que adicionalmente realiza medidas de temperatura y humedad:  [*Sensirion SCD30*](https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-scd30/). El Sensirion SCD30 es un sensor de alta calidad y gran velocidad de reacción: tiene mayor precisión que la mayoría de los sensores de su mismo tipo, 30 ppm frente a los 50 ppm del Winsen MH-Z14A; incorpora sensor de temperatura y humedad, con lo que no hay que añadir un sensor adicional para medir temperatura y humedad, facilitando el montaje del medidor. Además de permitir mecanismos de compensación por altitud y temperatura; tiene un mecanismo de autocalibración más robusto, que hace uso de las mediciones de los últimos 30 días, en lugar de las últimas 24 horas, como en el caso del MH-Z14A. Su respuesta es también más rápida ante cambios atmosféricos (por ejemplo, al introducir ventilación en un espacio cerrado). Los inconvenientes del Sensirion SCD30 son que tiene un precio más elevado, que es más frágil durante su manipulación y que tiene menos opciones de compra y, normalmente, mayores plazos de entrega. Para comprar el Sensirion SCD30 hay que recurrir normalmente a plataformas especializadas en componentes electrónicos.
 
 La alimentación del dispositivo se realiza directamente a través del puerto USB-C de la tarjeta de control [LILYGO® TTGO T-Display ESP32 WiFi And Bluetooth](https://github.com/Xinyuan-LilyGO/TTGO-T-Display), el mismo que se utiliza para programarla y para comunicarse con ella. La batería incorporada se carga automáticamente cuando se conecta un cable USB-C alimentado. Se recomienda utilizar fuentes de alimentación (enchufes USB, puertos USB en ordenadores, etc.) que puedan proporcionar al menos 1.000 mA.   
 
-A continuación se enumeran los elementos citados:
+A continuación, se enumeran los elementos citados:
 
 * Tarjeta de control basada en microcontrolador ESP32 [LILYGO® TTGO T-Display ESP32 WiFi And Bluetooth](https://github.com/Xinyuan-LilyGO/TTGO-T-Display)  
 
@@ -35,13 +35,13 @@ A continuación se enumeran los elementos citados:
   <img src="docs\TTGO.png" width="35%" height="35%" />  
 </p>
 
-* Sensor de CO2, temperatura y humedad [*Sensirion SCD30*](https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-scd30/). Para la conexión del sensor de CO2 es preciso conectar 4 pines y soldarlos en las posiciones indicadas en el proceso de fabricación. Se pueden comprar pines como [éstos](https://www.amazon.es/Pin-Header-Way-Straight-Pitch/dp/B00QXBRCKG/ref=sr_1_5?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=pin+header&qid=1609617099&s=electronics&sr=1-5), por ejemplo, y cortar trozos de 4 pines con un alicate de corte o unas tijeras.
+* Sensor de CO2, temperatura y humedad [*Sensirion SCD30*](https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-scd30/). Para la conexión del sensor de CO2 es preciso conectar 4 pines y soldarlos en las posiciones indicadas en el proceso de fabricación. Se pueden comprar pines como [los que aparecen en este enlace](https://www.amazon.es/Pin-Header-Way-Straight-Pitch/dp/B00QXBRCKG/ref=sr_1_5?__mk_es_ES=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=pin+header&qid=1609617099&s=electronics&sr=1-5), por ejemplo, y cortar trozos de 4 pines con un alicate de corte o unas tijeras.
 
 <p align="center">
   <img src="docs\SCD30 transparente.png" width="40%" height="40%" />
 </p>  
 
-* Caja [AnaireBox](https://www.thingiverse.com/thing:4854504) para impresora 3D  
+* Caja -Anaire Box- para impresora 3D. Los ficheros para la impresión se pueden encontrar en [este enlace](https://www.thingiverse.com/thing:4854504).
 
 <p align="center">
   <img src="docs\Caja 3D 1.png" width="60%" height="60%" />
@@ -53,7 +53,7 @@ A continuación se enumeran los elementos citados:
   <img src="docs\Caja 3D 3.png" width="40%" height="40%" />
 </p>  
 
-* Zumbador [AZDelivery Active Buzzer](https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2)  
+* Zumbador [- AZDelivery Active Buzzer](https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2)  
 
 <p align="center">
   <img src="docs\Zumbador.png" width="30%" height="30%" />  
@@ -77,11 +77,13 @@ A continuación se enumeran los elementos citados:
 
 # 2. Software
 
-El dispositivo se programa exactamente igual que una tarjeta arduino, utilizando el [entorno de desarrollo de Arduino](https://www.arduino.cc/en/software).
+El software se puede cargar en el dispositivo de dos formas:
 
-Adicionalmente hay que instalar algunos componentes de software en el entorno de Arduino, principalmente diversas librerías. La descripción completa de la instalación del entorno de *software* se puede encontrar al inicio del archivo de código fuente del dispositivo medidor [anaire.PiCO2.ino](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino).
+- Utilizando el [entorno de desarrollo (IDE) de Arduino](https://www.arduino.cc/en/software), exactamente igual que una tarjeta arduino. Hay que instalar algunos componentes de software adicionales en el entorno de Arduino, principalmente diversas librerías. La descripción completa de la instalación del entorno de *software* se puede encontrar al inicio del archivo de código fuente del dispositivo medidor [anaire.PiCO2.ino](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino).
 
-En cualquier caso la instalación del entorno completo de desarrollo no será necesaria si no se requiere hacer modificaciones en el software. Para la fabricación del dispositivo se proporciona un mecanismo sencillo basado en la carga del [binario ya compilado](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin) en la tarjeta TTGO T-Display, como se describe más adelante, en el apartado de fabricación.
+- Mediante un mecanismo sencillo basado en la carga del binario ya compilado en la tarjeta TTGO T-Display, como se describe más adelante, en el apartado de fabricación.
+
+En cualquier caso, la instalación del entorno completo de desarrollo no será necesaria si no se requiere hacer modificaciones en el software. 
 
 Para cualquiera de las dos opciones será necesario instalar previamente en un ordenador con sistema operativo Windows10 el [driver USB-UART](https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers) (conversión USB a puerto serie) para poder comunicarse con la tarjeta TTGO T-Display.
 
@@ -89,9 +91,9 @@ Para cualquiera de las dos opciones será necesario instalar previamente en un o
 
 # 3. Fabricación
 
-El montaje que se propone pretende simplificar al máximo el proceso de fabricación, manteniendo las máximas prestaciones técnicas. Los componentes se encajan en la caja de impresión 3D, y las conexiones se realizan mediante cables Dupont hembra-hembra, minimizando así las necesidades de soldadura. Sólo será necesario soldar 4 pines en el sensor SCD30 y 7 pines en la tarjeta TTGO T-Display (en el caso de que no se haya comprado con los pines ya soldados)
+El montaje que se propone pretende simplificar al máximo el proceso de fabricación, manteniendo las máximas prestaciones técnicas. Los componentes se encajan en la caja de impresión 3D, y las conexiones se realizan mediante cables Dupont hembra-hembra, minimizando así las necesidades de soldadura. Sólo será necesario soldar 4 pines en el sensor SCD30 y 7 pines en la tarjeta TTGO T-Display (en el caso de que no se haya comprado con los pines ya soldados).
 
-## Esquema de conexiones  
+## Esquema de conexiones:  
 <p align="center">
   <img src="docs\PiCO2 Conexiones.png" width="60%" height="60%" />
 </p>  
@@ -106,6 +108,7 @@ Hay que soldar 4 pines como se muestra en la siguiente imagen
 
 Recomendamos que primero se conecten los componentes, se cargue el *software*, siguiendo las instrucciones del apartado siguiente, y se verifique así el funcionamiento del medidor.
 
+
 <p align="center">
   <img src="docs\Fabricación 2.jpg" width="60%" height="60%" />
 </p>  
@@ -113,11 +116,16 @@ Recomendamos que primero se conecten los componentes, se cargue el *software*, s
   <img src="docs\Fabricación 1.jpg" width="60%" height="60%" />
 </p>  
 
-A continuación se colocan los componentes mecánicamente en su posición dentro de la caja, y se vuelve a verificar el funcionamiento correcto.
+A continuación, se colocan los componentes mecánicamente en su posición dentro de la caja, y se vuelve a verificar el funcionamiento correcto.
+
+Para ello, primero se coloca la pieza cuadrada pequeña alrededor de la pantalla, como se muestra en la imagen:
 
 <p align="center">
   <img src="docs\Fabricación 3.jpg" width="60%" height="60%" />
 </p>
+
+Luego, se inserta la placa ajustando el conector para la alimentación y se encaja en la pestaña que hay en el lado opuesto. Se ajusta el zumbador en el hueco circular del lateral y, finalmente, se ajusta el sensor en las pestañas que hay debajo de donde va colocada la placa.
+
 <p align="center">
   <img src="docs\Fabricación 4.jpg" width="60%" height="60%" />
 </p>

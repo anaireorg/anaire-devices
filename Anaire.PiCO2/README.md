@@ -77,7 +77,7 @@ A continuación, se enumeran los elementos citados:
 
 # 2. Software
 
-El software se puede cargar en el dispositivo de dos formas:
+El software se puede cargar en el dispositivo de dos formas: 
 
 - Utilizando el [entorno de desarrollo (IDE) de Arduino](https://www.arduino.cc/en/software), exactamente igual que una tarjeta arduino. Hay que instalar algunos componentes de software adicionales en el entorno de Arduino, principalmente diversas librerías. La descripción completa de la instalación del entorno de *software* se puede encontrar al inicio del archivo de código fuente del dispositivo medidor [anaire.PiCO2.ino](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino).
 

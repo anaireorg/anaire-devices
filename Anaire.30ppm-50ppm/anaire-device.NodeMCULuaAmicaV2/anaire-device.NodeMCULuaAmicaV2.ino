@@ -30,7 +30,7 @@
 //   WifiManager by tzapu,tablatronix https://github.com/tzapu/WiFiManager
 //   Double Reset detector by Stephen Denne https://github.com/datacute/DoubleResetDetector
 //
-//   MHZ-Z19 Library from WifWaf https://github.com/WifWaf/MH-Z19 Library - to manage Winsen CO2 sensors - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
+//   MHZ-Z19 Library from WifWaf https://github.com/WifWaf/MH-Z19 Library - to manage Winsen CO2 sensors (tested with MHZ-14A and MHZ-19c) - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
 //   Modified paulvha SCD30 library, get it from anaire github on https://github.com/anaireorg/anaire-devices/blob/main/Anaire.30ppm-50ppm/docs/scd30-master.zip - INSTALL FROM ZIP FILE with Sketch-> Include Library-> Add .ZIP library
 //
 // Design:
@@ -52,8 +52,9 @@
 // - The web server is activated, therefore entering the IP on a browser allows to see device specific details and measurements; device forced calibration is also available through the web server
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v2.2021520.Malik";
-// v2.2021520.Malik Changes on code comments to be consistent with the launch of new Anaire PiCO2 device and documentation update on Guthub. First major upgrade.
+String sw_version = "v2.20210619.Naima";
+// v2.20210619.Naima homogeneizes treatment of MH-Z14A and MH-Z19c
+// v2.2021520.Malik changes on code comments to be consistent with the launch of new Anaire PiCO2 device and documentation update on Guthub. First major upgrade.
 // 20210307 Fixed remoted updates by reducing BearSSL buffer size
 // 20210304 Troubleshooting remote updates after enabling serial debug; display modified to show ppm in 16p before ppm value on 24p font
 // 20210228 Fixed execution of individual MQTT commands; firmware updates work if Wifi connection is fast

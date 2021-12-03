@@ -1,9 +1,10 @@
 # Dispositivos ANAIRE: medidores de CO2 (NDIR), temperatura y humedad
 
+**Enlace al medidor** [ *Anaire PiCO2*](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/README.md)
+
+
 ---
-**Medidor [ *Anaire PiCO2*](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/README.md)
----
----
+
 
 [**Anaire**](http://www.anaire.org) - Somos un equipo de ingenieros españoles con la vocación de difundir de forma gratuita el conocimiento tecnológico que permita facilitar al máximo la monitorización del CO2 y contribuir así a la protección frente al contagio de COVID-19.
 

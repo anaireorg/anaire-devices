@@ -1,7 +1,7 @@
 # Dispositivos ANAIRE: medidores de CO2 (NDIR), temperatura y humedad
 
 ---
-**Novedad (Mayo 2021):** Nuevo medidor [ *Anaire PiCO2*](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/README.md)
+**Medidor [ *Anaire PiCO2*](https://github.com/anaireorg/anaire-devices/blob/main/Anaire.PiCO2/README.md)
 ---
 ---
 

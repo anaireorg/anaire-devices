@@ -1,6 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Anaire 30/50ppm - Open CO2, temperature and humidity measurement device connected to the Anaire Cloud Application https://github.com/anaireorg/anaire-cloud
-// 20201109 anaire.org anaire@anaire.org
+// Init on 20201109 
+// @anaire.org anaire@anaire.org
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 // HW Parts - Common:
@@ -38,7 +39,7 @@
 // - Pressing the reset button ("R") twice in less than 10 seconds restarts the device in a captive web configuration portal, useful to configure local wifi settings and MQTT endpoint
 // - All other local config parameters (like name, thresholds, local alarm, etc.) are configured via the cloud app, after connecting
 // - Pressing Alarm button ("A") toggles between activating/deactivating local sound alarm alarms, and also show device information on the display
-//   * Stops local sound alerting until pressed again or until CO2 level decays below the warning threshold, deactivating therefore local alerting and reseting the local alerting system
+//   * Stops local sound alerting until pressed again
 //   * It also shows device ID and IP address after being pressed during 3 seconds
 // - Pressing Alarm button ("A") during more than 10 seconds activates forced calibration
 // - Firmware update with latest fimrware available though cloud app
@@ -52,7 +53,8 @@
 // - The web server is activated, therefore entering the IP on a browser allows to see device specific details and measurements; device forced calibration is also available through the web server
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v2.20210619.Naima";
+String sw_version = "v2.20220124.Ons";
+// v2.20220124.Ons sound gets permanently deactivated when the button is pushed; changes in web server.
 // v2.20210619.Naima homogeneizes treatment of MH-Z14A and MH-Z19c
 // v2.2021520.Malik changes on code comments to be consistent with the launch of new Anaire PiCO2 device and documentation update on Guthub. First major upgrade.
 // 20210307 Fixed remoted updates by reducing BearSSL buffer size
@@ -1516,13 +1518,13 @@ void Evaluate_CO2_Value() {
   // Status: ok
 
   // Recovering to "ok" status stops any warning or alarm warnings and quits special mode (after pressing flash button), therefore after passing by "ok" status
-  // the device is "reset" and when entering warning or alarm state the device will report localy again by blinking o2_builtin_led_gpio16 led and the buzzer,
-  // and pushing the flash button will be required if the user wanrts to stop lignt and sound alerting
+  // the device is "reset" and when entering warning or alarm state the device will report localy again by blinking o2_builtin_led_gpio16 led,
+  // and pushing the flash button will be required if the user wants to stop light and sound alerting
 
   if (CO2ppm_value < eepromConfig.CO2ppm_warning_threshold) {
 
     co2_device_status = ok;                             // update co2 status
-    alarm_ack = false;                                  // Init alarm ack status
+    //alarm_ack = false;                                  // Init alarm ack status
 
     blinker_CO2_STATUS_BUILTIN_LED_GPIO.detach();       // stop CO2_STATUS_BUILTIN_LED_GPIO blinking
     digitalWrite(CO2_STATUS_BUILTIN_LED_GPIO, HIGH);    // update CO2_STATUS_BUILTIN_LED_GPIO_gpio1 to OFF

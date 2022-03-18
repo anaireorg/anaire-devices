@@ -1,6 +1,11 @@
 #include <Arduino.h>
 #include "main.hpp"
 
+#include <anaire_ttgo_splash.h>
+#include <ArchivoNarrow_Regular10pt7b.h>
+#include <ArchivoNarrow_Regular50pt7b.h>
+#include <SensirionSimple25pt7b.h>
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Anaire PiCO2 - Open CO2, temperature and humidity measurement device connected to Cloud Application www.anaire.org
 // 202105 anaire.org anaire@anaire.org

@@ -1,8 +1,6 @@
 #include <Arduino.h>
 #include "main.hpp"
 
-#include <SensirionSimple25pt7b.h>
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Anaire PiCO2 - Open CO2, temperature and humidity measurement device connected to Cloud Application www.anaire.org
 // 202105 anaire.org anaire@anaire.org
@@ -136,7 +134,7 @@ unsigned long errors_loop_start;                  // holds a timestamp for each 
 // Display and fonts
 #include <TFT_eSPI.h>
 #include <SPI.h>
-//#include "SensirionSimple25pt7b.h"
+#include "SensirionSimple25pt7b.h"
 #include "ArchivoNarrow_Regular10pt7b.h"
 #include "ArchivoNarrow_Regular50pt7b.h"
 #define GFXFF 1

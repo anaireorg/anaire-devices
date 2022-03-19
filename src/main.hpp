@@ -37,7 +37,6 @@ void Set_Measurement_Interval();
 void displayBatteryLevel(int colour);
 void displayWifi(int colour_1, int colour_2, boolean active);
 void displayBuzzer(int colour, boolean active);
-//void Interrupt_Restart();
 void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int length);
 void (WiFiEvent_t event);
 

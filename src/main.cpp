@@ -1,9 +1,6 @@
 #include <Arduino.h>
 #include "main.hpp"
 
-#include <anaire_ttgo_splash.h>
-#include <ArchivoNarrow_Regular10pt7b.h>
-#include <ArchivoNarrow_Regular50pt7b.h>
 #include <SensirionSimple25pt7b.h>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1643,7 +1640,7 @@ void Button_Init() { // Manage TTGO T-Display board buttons
 
 }
 
-void Interrupt_Restart(Button2& btn) { // Restarts the device if any button is pressed while calibrating or in captive portal
+void Interrupt_Restart(Button2 &btn) { // Restarts the device if any button is pressed while calibrating or in captive portal
   Serial.println("Any button click");
   if ((InCaptivePortal) || (Calibrating)) {
      ESP.restart();

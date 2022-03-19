@@ -79,7 +79,7 @@ const uint8_t SensirionSimple25pt7bBitmaps[] PROGMEM = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00 };
 
-const GFXglyph SensirionSimple25pt7bGlyphs[] PROGMEM = {
+/*const GFXglyph SensirionSimple25pt7bGlyphs[] PROGMEM = {
   {     0,   1,   1,  32,    0,    0 },   // 0x20 ' '
   {     1,   1,   1,  25,    0,    0 },   // 0x21 '!'
   {     2,   1,   1,  25,    0,    0 },   // 0x22 '"'
@@ -182,3 +182,4 @@ const GFXfont SensirionSimple25pt7b PROGMEM = {
   0x20, 0x7E, 47 };
 
 // Approx. 1612 bytes
+*/

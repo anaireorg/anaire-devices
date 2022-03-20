@@ -1,6 +1,3 @@
-#include <Arduino.h>
-#include "main.hpp"
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Anaire PiCO2 - Open CO2, temperature and humidity measurement device connected to Cloud Application www.anaire.org
 // 202105 anaire.org anaire@anaire.org
@@ -50,24 +47,11 @@
 //   - Remote firmware upgrade only available through Anaire Cloud Application 
 //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-String sw_version = "v3.20210520.Malik";
-// v3.20210520.Malik - Changed voltage thresholds and binary remote upgrade, after changing github documentation and folders
-// v3.20210515.Kamasi - Changes in buttons functionality; web server completed; bluetooth enabled/disabled by a precompiler directive
-// v3.20210512.Canine - Minor fixes: WiFi error recovery corrected; restart and captive portal added to web server
-// v3.20210510.Berenice - Minor fixes: alarm on/off message after pressing top button
-// v3.20210509.Anita - Minor fixes (IES Ppe Felipe)
-// v3.20210508.Lenora - CO2 measurements each 10s; MQTT message each 60s; Temperature offset 600 (celsius hundredths) and altitude compensation to 600m by default
-// v3.20210506.EllaFitz - Bug fixes
-// v3.20210506.AEOC - CO2 measurements each 30s, MQTT sending each 60s. SCD30 is not reset anymore after a reading failure
-// v3.20210506.Bona - Added battery voltage measurement in the MQTT message
-// v3.20210504.Alain - OTA updates
-// v3.20210504.Parker - Icons for battery, wifi and alarm
-// v3.20210503.Mingus - Lots of improvements, first fully functional version; MQTT commandes not yet tested
-// v3.20210502.Madrid - Lots of additions: SCD30 full support, coherent display messages, complete buttons support, etc.
-// v3.20210430.Kuti - Bluetooth commented out for later to get captive portal fully functional
-// v3.20210425.Samba - First fully functional Anaire PiCO2 device on TTGo T-Display board, connected to Anaire Cloud App
+String sw_version = "v1.2";
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#include <Arduino.h>
+#include "main.hpp"
 #define BLUETOOTH false // Set to true in case bluetooth is desired
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
@@ -134,7 +118,7 @@ unsigned long errors_loop_start;                  // holds a timestamp for each 
 // Display and fonts
 #include <TFT_eSPI.h>
 #include <SPI.h>
-#include "SensirionSimple25pt7b.h"
+//#include "SensirionSimple25pt7b.h"
 #include "ArchivoNarrow_Regular10pt7b.h"
 #include "ArchivoNarrow_Regular50pt7b.h"
 #define GFXFF 1

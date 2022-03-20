@@ -1,51 +1,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Anaire PiCO2 - Open CO2, temperature and humidity measurement device connected to Cloud Application www.anaire.org
-// 202105 anaire.org anaire@anaire.org
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-// HW Parts:
-//   Control board: LILYGO® TTGO T-Display ESP32 WiFi And Bluetooth https://github.com/Xinyuan-LilyGO/TTGO-T-Display
-//   Sensirion SCD30 CO2 temp and humidity sensor https://www.sensirion.com/en/environmental-sensors/carbon-dioxide-sensors/carbon-dioxide-sensors-scd30/
-//   Buzzer: AZDelivery Active Buzzer - https://www.az-delivery.de/es/products/buzzer-modul-aktiv?_pos=2&_sid=39cea0af6&_ss=r
-//   3D Box designed by Anaire: https://www.thingiverse.com/thing:4854504
-//   3.7V lithium battery with JST Connector 2Pin 1.25mm, ex. https://www.amazon.es/dp/B087LTZW61/ref=cm_sw_r_cp_awdb_imm_BPVY2QA8X3P5GB9NQ55C
-//
-// SW Setup:
-//   Install the usb to uart driver from https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers
-//   Setup the Arduino IDE for the ESP32 platform: https://github.com/espressif/arduino-esp32
-//     Start Arduino and open Preferences window
-//     Enter https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_dev_index.json into Additional Board Manager URLs field. You can add multiple URLs, separating them with commas.
-//     Open Boards Manager from Tools-> Board menu and find esp32 platform and install the latest version.
-//     Select "ESP32 Dev Module" board from Tools-> Board menu after installation
-//     Select Tools-> Partition Scheme-> Minimal SPIFFS (1.9MB APP with OTA/190KB SPIFFS) 
-//   Setup the required libraries:
-//   - TTGO T-Display's Git: Download the code as zip https://github.com/Xinyuan-LilyGO/TTGO-T-Display/archive/master.zip
-//     Extract it and copy the Folder TFT_eSPI to your Arduino library path (usually <your user>/Documents/Arduino in Windows)
-//   - Install the following libraries from Arduino IDE, select Tools -> Library manager.
-//       - Search for Adafruit SCD30 by Adafruit https://github.com/adafruit/Adafruit_SCD30 and install the library
-//       - Search for WifiManager by tzapu,tablatronix https://github.com/tzapu/WiFiManager and install the library
-//       - Search for PubSubClient by Nick O'Leary https://github.com/knolleary/pubsubclient and install the library
-//       - Search for ArduinoJson by Benoît Blanchon https://github.com/bblanchon/ArduinoJson and install the library
-//       - Search for Button2 by Lennart Hennings https://github.com/LennartHennigs/Button2 and install the library
-//   - If you plan to activate bluetooth measurements, install the Sensirion Gadget BLE Arduino Library https://github.com/Sensirion/Sensirion_GadgetBle_Arduino_Library/releases
-//     Download latest zip. In the Arduino IDE, select Sketch -> include Library -> Add .zip Library and select the downloaded .zip file
-//
-// Buttons design:
-//   - Top button short click: info about the device
-//   - Top button LONG click: toggles acoustic alarm; enabled by default
-//   - Top button double click: sleep; click a button to wake up
-//   - Top button triple click: starts captive portal 
-//   - Bottom button short click: buttons usage
-//   - Bottom button LONG click: performs CO2 sensor forced calibration 
-//   - Bottom button double click: restart device
-//   - Bottom button triple click: enables auto self calibration
-//
-// Most functions are available through buttons, the web server and the Anaire Cloud Application
-//   - WiFi configuration is only available through the captive portal. Portal can be launched from bottom button double click, or from the web server  
-//   - MQTT endpoint only available through captive portal and Anaire Cloud Application (after being initially connected)
-//   - Forced calibration reference value change only available through Anaire Cloud Application
-//   - Remote firmware upgrade only available through Anaire Cloud Application 
-//
+// AireCiudadano medidor Fijo - Medidor de PM2.5 abierto, medición opcional de humedad y temperatura.
+// Más información en: aireciudadano.com
+// Esta versión es un fork del proyecto Anaire (https://www.anaire.org/) enfocado en la medición de CO2.
+// 20/03/2022 info@aireciudadano.com
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <Arduino.h>

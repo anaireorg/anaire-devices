@@ -111,7 +111,7 @@ int vref = 1100;
 Adafruit_SCD30 scd30;
 #define SCD30_SDA_pin 26 // Define the SDA pin used for the SCD30
 #define SCD30_SCL_pin 27 // Define the SCL pin used for the SCD30
-unsigned long SCD30_CALIBRATION_TIME = 60000; // SCD30 CO2 CALIBRATION TIME: 1 min = 60000 ms
+unsigned long SCD30_CALIBRATION_TIME = 10000; // SCD30 CO2 CALIBRATION TIME: 1 min = 60000 ms
 
 // Bluetooth in TTGO T-Display
 #if BLUETOOTH

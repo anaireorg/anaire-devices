@@ -10,7 +10,7 @@
 #define BLUETOOTH false // Set to true in case bluetooth is desired
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "v1.2";
+String sw_version = "v0.1";
 String anaire_device_id;
 
 

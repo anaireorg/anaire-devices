@@ -35,6 +35,10 @@ void Firmware_Update();
 void Set_Measurement_Interval();
 void Write_Bluetooth();
 
+void ErrtoMess(char *mess, uint8_t r);
+void Errorloop(char *mess, uint8_t r);
+void GetDeviceInfo();
+
 void displayBatteryLevel(int colour);
 void displayWifi(int colour_1, int colour_2, boolean active);
 void displayBuzzer(int colour, boolean active);

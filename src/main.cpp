@@ -108,10 +108,22 @@ int vref = 1100;
 
 // Sensirion SCD30 CO2, temperature and humidity sensor
 #include <Adafruit_SCD30.h>
+
 Adafruit_SCD30 scd30;
 #define SCD30_SDA_pin 26 // Define the SDA pin used for the SCD30
 #define SCD30_SCL_pin 27 // Define the SCL pin used for the SCD30
 unsigned long SCD30_CALIBRATION_TIME = 10000; // SCD30 CO2 CALIBRATION TIME: 1 min = 60000 ms
+
+#include <sps30.h>
+  SPS30 sps30;
+#define SP30_COMMS Wire
+#define DEBUG 2
+  
+#include <Adafruit_SHT31.h>
+  Adafruit_SHT31 sht31;
+
+#include <AM232X.h>
+  AM232X am2320;
 
 // Bluetooth in TTGO T-Display
 #if BLUETOOTH
@@ -1102,50 +1114,138 @@ void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int len
 void Setup_Sensor() { // Identify and initialize CO2, temperature and humidity sensor
 
   // Try Sensirion SCD30
+//  Wire.begin(SCD30_SDA_pin, SCD30_SCL_pin);
+//  if (!scd30.begin()) {
+//    Serial.println("Failed to find Sensirion SCD30 CO2 sensor");
+//  }
+//  else {
+//    co2_sensor = scd30_sensor;
+//    Serial.println("Sensirion SCD30 CO2 sensor found!");
+//  }
+
+  // If there is any other CO2 sensor insert code from here
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // set driver debug level
   Wire.begin(SCD30_SDA_pin, SCD30_SCL_pin);
-  if (!scd30.begin()) {
-    Serial.println("Failed to find Sensirion SCD30 CO2 sensor");
-  }
-  else {
-    co2_sensor = scd30_sensor;
-    Serial.println("Sensirion SCD30 CO2 sensor found!");
+  Serial.println(F("Trying to connect."));
+  sps30.EnableDebugging(DEBUG);
+
+  // Begin communication channel
+  SP30_COMMS.begin();
+
+  if (sps30.begin(&SP30_COMMS) == false) {
+    Errorloop((char *) "Could not set I2C communication channel.", 0);
   }
 
-  // If there is any other CO2 sensor insert code from here 
+  // check for SPS30 connection
+  if (! sps30.probe()) Errorloop((char *) "could not probe / connect with SPS30.", 0);
+  else  { Serial.println(F("Detected SPS30."));
+          co2_sensor = scd30_sensor;}
+
+  // read device info
+  GetDeviceInfo();
+
+  // start measurement
+  if (sps30.start()) Serial.println(F("Measurement started"));
+  else Errorloop((char *) "Could NOT start measurement", 0);
+
   // to here
   
   // Set up the detected sensor with configuration values from eeprom struct
-  Set_Measurement_Interval();
-  Set_AutoSelfCalibration();
-  Set_Temperature_Offset();
-  Set_Altitude_Compensation();
+  //Set_Measurement_Interval();
+  //Set_AutoSelfCalibration();
+  //Set_Temperature_Offset();
+  //Set_Altitude_Compensation();
 
 }
 
 void Read_Sensor() { // Read CO2, temperature and humidity values
 
   // if SCD30 is identified
-  if (co2_sensor == scd30_sensor) {
-    if (scd30.dataReady()) {
-      err_sensor = false;
+//  if (co2_sensor == scd30_sensor) {
+//    if (scd30.dataReady()) {
+//      err_sensor = false;
       // Read SCD30
-      if (!scd30.read()) {
-        Serial.println("Error reading sensor data");
-        return;
-      }
-      else {
-        CO2ppm_value = scd30.CO2;
-        temperature = scd30.temperature;
-        humidity = scd30.relative_humidity;
-      }
-    }
-    else {
+//      if (!scd30.read()) {
+//        Serial.println("Error reading sensor data");
+//        return;
+//      }
+//      else {
+//        CO2ppm_value = scd30.CO2;
+//        temperature = scd30.temperature;
+//        humidity = scd30.relative_humidity;
+//      }
+//    }
+//    else {
       //err_sensor = true;
       //Serial.println("Error SCD30");
-    }
-  } // End SCD30 sensor
+//    }
+//  } // End SCD30 sensor
 
-  // If there is any other CO2 sensor insert code from here 
+  // If there is any other CO2 sensor insert code from here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  static bool header = true;
+  uint8_t ret, error_cnt = 0;
+  struct sps_values val;
+
+
+  // loop to get data
+  do {
+
+    ret = sps30.GetValues(&val);
+
+    // data might not have been ready
+    if (ret == ERR_DATALENGTH){
+
+        if (error_cnt++ > 3) {
+          ErrtoMess((char *) "Error during reading values: ",ret);
+          //return(false);
+        }
+        delay(1000);
+    }
+
+    // if other error
+    else if(ret != ERR_OK) {
+      ErrtoMess((char *) "Error during reading values: ",ret);
+      //return(false);
+    }
+
+  } while (ret != ERR_OK);
+
+  // only print header first time
+  if (header) {
+    Serial.println(F("-------------Mass -----------    ------------- Number --------------   -Average-"));
+    Serial.println(F("     Concentration [μg/m3]             Concentration [#/cm3]             [μm]"));
+    Serial.println(F("P1.0\tP2.5\tP4.0\tP10\tP0.5\tP1.0\tP2.5\tP4.0\tP10\tPartSize\n"));
+    header = false;
+  }
+
+  Serial.print(val.MassPM1);
+  Serial.print(F("\t"));
+  Serial.print(val.MassPM2);
+  Serial.print(F("\t"));
+  Serial.print(val.MassPM4);
+  Serial.print(F("\t"));
+  Serial.print(val.MassPM10);
+  Serial.print(F("\t"));
+  Serial.print(val.NumPM0);
+  Serial.print(F("\t"));
+  Serial.print(val.NumPM1);
+  Serial.print(F("\t"));
+  Serial.print(val.NumPM2);
+  Serial.print(F("\t"));
+  Serial.print(val.NumPM4);
+  Serial.print(F("\t"));
+  Serial.print(val.NumPM10);
+  Serial.print(F("\t"));
+  Serial.print(val.PartSize);
+  Serial.print(F("\n"));
+
+  CO2ppm_value = val.MassPM2;
+        temperature = 0;
+        humidity = 0;
+
+  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
   if (!err_sensor) {
     // Provide the sensor values for Tools -> Serial Monitor or Serial Plotter
@@ -1159,6 +1259,77 @@ void Read_Sensor() { // Read CO2, temperature and humidity values
     Serial.println(humidity, 1);
   }
 }
+
+/**
+ * @brief : read and display device info
+ */
+void GetDeviceInfo()
+{
+  char buf[32];
+  uint8_t ret;
+  SPS30_version v;
+
+  //try to read serial number
+  ret = sps30.GetSerialNumber(buf, 32);
+  if (ret == ERR_OK) {
+    Serial.print(F("Serial number : "));
+    if(strlen(buf) > 0)  Serial.println(buf);
+    else Serial.println(F("not available"));
+  }
+  else
+    ErrtoMess((char *) "could not get serial number. ", ret);
+
+  // try to get product name
+  ret = sps30.GetProductName(buf, 32);
+  if (ret == ERR_OK)  {
+    Serial.print(F("Product name  : "));
+
+    if(strlen(buf) > 0)  Serial.println(buf);
+    else Serial.println(F("not available"));
+  }
+  else
+    ErrtoMess((char *) "could not get product name. ", ret);
+
+  // try to get version info
+  ret = sps30.GetVersion(&v);
+  if (ret != ERR_OK) {
+    Serial.println(F("Can not read version info."));
+    return;
+  }
+
+  Serial.print(F("Firmware level: "));   Serial.print(v.major);
+  Serial.print(".");  Serial.println(v.minor);
+
+  Serial.print(F("Library level : "));  Serial.print(v.DRV_major);
+  Serial.print(".");  Serial.println(v.DRV_minor);
+}
+
+
+void Errorloop(char *mess, uint8_t r)
+{
+  if (r) ErrtoMess(mess, r);
+  else Serial.println(mess);
+  Serial.println(F("Program on hold"));
+  for(;;) delay(100000);
+}
+
+/**
+ *  @brief : display error message
+ *  @param mess : message to display
+ *  @param r : error code
+ *
+ */
+void ErrtoMess(char *mess, uint8_t r)
+{
+  char buf[80];
+
+  Serial.print(mess);
+
+  sps30.GetErrDescription(r, buf, 80);
+  Serial.println(buf);
+}
+
+
 
 void Evaluate_CO2_Value() { // Evaluate measured CO2 value against warning and alarm thresholds
 

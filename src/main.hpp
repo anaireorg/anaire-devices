@@ -33,6 +33,7 @@ void Suspend_Device();
 void Wipe_EEPROM();
 void Firmware_Update();
 void Set_Measurement_Interval();
+void Write_Bluetooth();
 
 void displayBatteryLevel(int colour);
 void displayWifi(int colour_1, int colour_2, boolean active);

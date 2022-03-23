@@ -35,8 +35,10 @@ struct MyConfigStruct
 Preferences preferences;
 
 // Measurements
-int CO2ppm_value = 0;       // CO2 ppm measured value
-int CO2ppm_accumulated = 0; // Accumulates co2 measurements for a MQTT period
+//int CO2ppm_value = 0;       // CO2 ppm measured value
+float CO2ppm_value = 0;       // CO2 ppm measured value
+//int CO2ppm_accumulated = 0; // Accumulates co2 measurements for a MQTT period
+float CO2ppm_accumulated = 0; // Accumulates co2 measurements for a MQTT period
 int CO2ppm_samples = 0;     // Counts de number of samples for a MQTT period
 float temperature;          // Read temperature as Celsius
 float humidity;             // Read humidity in %
@@ -65,7 +67,7 @@ boolean err_MQTT = false;
 boolean err_sensor = false;
 
 // Measurements loop: time between measurements
-unsigned int measurements_loop_duration = 10000; // 10 seconds
+unsigned int measurements_loop_duration = 1000; // 10 seconds
 unsigned long measurements_loop_start;           // holds a timestamp for each control loop start
 
 // MQTT loop: time between MQTT measurements sent to the cloud
@@ -126,7 +128,7 @@ unsigned long SCD30_CALIBRATION_TIME = 10000; // SCD30 CO2 CALIBRATION TIME: 1 m
 #include <sps30.h>
 SPS30 sps30;
 #define SP30_COMMS Wire
-#define DEBUG 2
+#define DEBUG 0
 
 #include <Adafruit_SHT31.h>
 Adafruit_SHT31 sht31;
@@ -284,7 +286,7 @@ void loop()
     // Read sensors
     Read_Sensor();
 
-    if (CO2ppm_value > 0)
+    if (CO2ppm_value > 0)    // REVISAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     {
 
       // Evaluate CO2 value
@@ -318,8 +320,8 @@ void loop()
     }
 
     // Reset samples after sending them to the MQTT server
-    CO2ppm_accumulated = 0;
-    CO2ppm_samples = 0;
+    CO2ppm_accumulated = 0.0;
+    CO2ppm_samples = 0.0;
   }
 
   // Errors loop
@@ -996,9 +998,17 @@ void MQTT_Reconnect()
 void Send_Message_Cloud_App_MQTT()
 { // Send measurements to the cloud application by MQTT
   // Print info
+  float pm25f;
+  int pm25int;
+  
   Serial.print("Sending MQTT message to the send topic: ");
   Serial.println(MQTT_send_topic);
-  sprintf(MQTT_message, "{id: %s,CO2: %d,humidity: %f,temperature: %f,VBat: %f}", anaire_device_id.c_str(), (int)(CO2ppm_accumulated / CO2ppm_samples), humidity, temperature, battery_voltage);
+  Serial.println(CO2ppm_accumulated);
+  Serial.println(CO2ppm_samples);
+  pm25f = CO2ppm_accumulated / CO2ppm_samples;
+  pm25int = round (pm25f);
+  Serial.println(pm25int);
+  sprintf(MQTT_message, "{id: %s,CO2: %d,humidity: %f,temperature: %f,VBat: %f}", anaire_device_id.c_str(), pm25int, humidity, temperature, battery_voltage);
   Serial.print(MQTT_message);
   Serial.println();
 
@@ -1304,20 +1314,9 @@ void Read_Sensor()
   Serial.print(val.MassPM4);
   Serial.print(F("\t"));
   Serial.print(val.MassPM10);
-  Serial.print(F("\t"));
-  Serial.print(val.NumPM0);
-  Serial.print(F("\t"));
-  Serial.print(val.NumPM1);
-  Serial.print(F("\t"));
-  Serial.print(val.NumPM2);
-  Serial.print(F("\t"));
-  Serial.print(val.NumPM4);
-  Serial.print(F("\t"));
-  Serial.print(val.NumPM10);
-  Serial.print(F("\t"));
-  Serial.print(val.PartSize);
   Serial.print(F("\n"));
 
+  //CO2ppm_value = round(val.MassPM2);
   CO2ppm_value = val.MassPM2;
   temperature = 0;
   humidity = 0;
@@ -2053,8 +2052,8 @@ void displayBatteryLevel(int colour)
   // Measure the battery voltage
   battery_voltage = ((float)analogRead(ADC_PIN) / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
 
-  Serial.print("battery voltage: ");
-  Serial.println(battery_voltage);
+//  Serial.print("battery voltage: ");
+//  Serial.println(battery_voltage);
 
   // If battery voltage is up 4.5 then external power supply is working and battery is charging
   if (battery_voltage > USB_Voltage)
@@ -2166,7 +2165,7 @@ void Suspend_Device()
 #if BLUETOOTH
 void Write_Bluetooth()
 { // Write measurements to bluetooth
-  gadgetBle.writeCO2(CO2ppm_value);
+  gadgetBle.writeCO2(round(CO2ppm_value));
   gadgetBle.writeTemperature(temperature);
   gadgetBle.writeHumidity(humidity);
   gadgetBle.commit();

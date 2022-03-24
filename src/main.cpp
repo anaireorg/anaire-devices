@@ -139,8 +139,9 @@ byte failh = 0;
 
 // Adafruit_SHT31 sht31 = Adafruit_SHT31();
 
-#include <AM232X.h>
-AM232X am2320;
+#include "Adafruit_Sensor.h"
+#include "Adafruit_AM2320.h"
+Adafruit_AM2320 am2320 = Adafruit_AM2320();
 bool AM2320flag = false;
 
 // Bluetooth in TTGO T-Display
@@ -1263,7 +1264,7 @@ void Setup_Sensor()
   }
   else
   {
-    Serial.println("found");
+    Serial.println("OK");
     SHT31flag = true;
   }
 
@@ -1274,16 +1275,17 @@ void Setup_Sensor()
     Serial.println("DISABLED");
 
   Serial.print("AM2320 test: ");
-  if (!am2320.begin())
+
+  am2320.begin();
+  humidity = am2320.readHumidity();
+  temperature = am2320.readTemperature();
+  if (!isnan(humidity))
   {
-    Serial.println("none");
-  }
-  else
-  {
-    am2320.wakeUp();
-    Serial.println("found");
+    Serial.println("OK");
     AM2320flag = true;
   }
+  else
+    Serial.println("none");
 }
 
 void Read_Sensor()
@@ -1767,8 +1769,8 @@ void ReadHyT()
   // AM2320////////////////////////////////////////////////////
   else if (AM2320flag == true)
   {
-    humidity = am2320.getHumidity();
-    temperature = am2320.getTemperature();
+    humidity = am2320.readHumidity();
+    temperature = am2320.readTemperature();
 
     if (!isnan(humidity))
     {

@@ -131,6 +131,14 @@ unsigned long SCD30_CALIBRATION_TIME = 10000; // SCD30 CO2 CALIBRATION TIME: 1 m
 SPS30 sps30;
 #define SP30_COMMS Wire
 #define DEBUG 0
+bool SPS30flag = false;
+
+#include "PMS.h"
+PMS pms(Serial1);
+PMS::DATA data;
+bool PMSflag = false;
+#define PMS_TX 26 // PMS TX pin
+#define PMS_RX 27 // PMS RX pin
 
 #include <Adafruit_SHT31.h>
 Adafruit_SHT31 sht31;
@@ -1225,8 +1233,11 @@ void Setup_Sensor()
   // If there is any other CO2 sensor insert code from here
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // set driver debug level
+
+  // PM2.5 SPS30
+
   Wire.begin(SCD30_SDA_pin, SCD30_SCL_pin);
-  Serial.println(F("Trying to connect."));
+  Serial.println(F("Trying to connect to SPS30."));
   sps30.EnableDebugging(DEBUG);
   // Begin communication channel
   SP30_COMMS.begin();
@@ -1241,14 +1252,33 @@ void Setup_Sensor()
   {
     Serial.println(F("Detected SPS30."));
     co2_sensor = scd30_sensor;
+    SPS30flag = true;
+    // read device info
+    GetDeviceInfo();
   }
-  // read device info
-  GetDeviceInfo();
   // start measurement
   if (sps30.start())
     Serial.println(F("Measurement started"));
   else
     Errorloop((char *)"Could NOT start measurement", 0);
+
+  // PMS7003 PMSA003
+
+  Serial.println("Test with Plantower Sensor");
+  Serial1.begin(9600, 26, 27);
+  delay(3000);
+
+  if (pms.read(data))
+  {
+    Serial.println("Plantower sensor found!");
+    co2_sensor = scd30_sensor;
+    PMSflag = true;
+  }
+  else
+  {
+    Serial.println("Could not find Plantower sensor!");
+  }
+
   // to here
 
   // Set up the detected sensor with configuration values from eeprom struct
@@ -1314,88 +1344,118 @@ void Read_Sensor()
 
   // If there is any other CO2 sensor insert code from here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  static bool header = true;
-  uint8_t ret, error_cnt = 0;
-  struct sps_values val;
-  // loop to get data
-  do
+  if (SPS30flag == true)
   {
-    ret = sps30.GetValues(&val);
-    // data might not have been ready
-    if (ret == ERR_DATALENGTH)
+    static bool header = true;
+    uint8_t ret, error_cnt = 0;
+    struct sps_values val;
+    // loop to get data
+    do
     {
-      if (error_cnt++ > 3)
+      ret = sps30.GetValues(&val);
+      // data might not have been ready
+      if (ret == ERR_DATALENGTH)
+      {
+        if (error_cnt++ > 3)
+        {
+          ErrtoMess((char *)"Error during reading values: ", ret);
+          // return(false);
+        }
+        delay(1000);
+      }
+      // if other error
+      else if (ret != ERR_OK)
       {
         ErrtoMess((char *)"Error during reading values: ", ret);
         // return(false);
       }
-      delay(1000);
-    }
-    // if other error
-    else if (ret != ERR_OK)
+    } while (ret != ERR_OK);
+    // only print header first time
+    if (header)
     {
-      ErrtoMess((char *)"Error during reading values: ", ret);
-      // return(false);
+      Serial.println(F("-------------Mass -----------    ------------- Number --------------   -Average-"));
+      Serial.println(F("     Concentration [μg/m3]             Concentration [#/cm3]             [μm]"));
+      Serial.println(F("P1.0\tP2.5\tP4.0\tP10\tP0.5\tP1.0\tP2.5\tP4.0\tP10\tPartSize\n"));
+      header = false;
     }
-  } while (ret != ERR_OK);
-  // only print header first time
-  if (header)
-  {
-    Serial.println(F("-------------Mass -----------    ------------- Number --------------   -Average-"));
-    Serial.println(F("     Concentration [μg/m3]             Concentration [#/cm3]             [μm]"));
-    Serial.println(F("P1.0\tP2.5\tP4.0\tP10\tP0.5\tP1.0\tP2.5\tP4.0\tP10\tPartSize\n"));
-    header = false;
+    //  Serial.print(val.MassPM1);
+    //  Serial.print(F("\t"));
+    //  Serial.print(val.MassPM2);
+    //  Serial.print(F("\t"));
+    //  Serial.print(val.MassPM4);
+    //  Serial.print(F("\t"));
+    //  Serial.print(val.MassPM10);
+    //  Serial.print(F("\n"));
+    /*
+
+    ///////////////////////////////////////////////////////////////////////////////
+
+      temperature = sht31.readTemperature();
+      humidity = sht31.readHumidity();
+
+      if (! isnan(temperature)) {  // check if 'is not a number'
+        Serial.print("Temp *C = "); Serial.print(temperature); Serial.print("\t\t");
+      } else {
+        Serial.println("Failed to read temperature");
+      }
+
+      if (! isnan(humidity)) {  // check if 'is not a number'
+        Serial.print("Hum. % = "); Serial.println(humidity);
+      } else {
+        Serial.println("Failed to read humidity");
+      }
+
+    ///////////////////////////////////////////////////////////////////////////////
+      //CO2ppm_value = round(val.MassPM2);
+
+    */
+
+    CO2ppm_value = val.MassPM2;
+
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    if (!err_sensor)
+    {
+      // Provide the sensor values for Tools -> Serial Monitor or Serial Plotter
+      Serial.print("SPS30 PM2.5: ");
+      Serial.print(CO2ppm_value);
+      Serial.print(" ug/m3   ");
+      //    Serial.print("\t");
+      //    Serial.print("Temperature[ºC]:");
+      //    Serial.print(temperature, 1);
+      //    Serial.print("\t");
+      //    Serial.print("Humidity[%]:");
+      //    Serial.println(humidity, 1);
+    }
   }
-  //  Serial.print(val.MassPM1);
-  //  Serial.print(F("\t"));
-  //  Serial.print(val.MassPM2);
-  //  Serial.print(F("\t"));
-  //  Serial.print(val.MassPM4);
-  //  Serial.print(F("\t"));
-  //  Serial.print(val.MassPM10);
-  //  Serial.print(F("\n"));
-  /*
+//  if (PMSflag == true)
+//  {
+    if (pms.read(data))
+    {
+      Serial.print("PM 1.0 (ug/m3): ");
+      Serial.println(data.PM_AE_UG_1_0);
 
-  ///////////////////////////////////////////////////////////////////////////////
+      Serial.print("PM 2.5 (ug/m3): ");
+      Serial.println(data.PM_AE_UG_2_5);
 
-    temperature = sht31.readTemperature();
-    humidity = sht31.readHumidity();
-
-    if (! isnan(temperature)) {  // check if 'is not a number'
-      Serial.print("Temp *C = "); Serial.print(temperature); Serial.print("\t\t");
-    } else {
-      Serial.println("Failed to read temperature");
+      Serial.print("PM 10.0 (ug/m3): ");
+      Serial.println(data.PM_AE_UG_10_0);
+    }
+    else
+    {
+      Serial.println("No data by Plantower sensor!");
     }
 
-    if (! isnan(humidity)) {  // check if 'is not a number'
-      Serial.print("Hum. % = "); Serial.println(humidity);
-    } else {
-      Serial.println("Failed to read humidity");
-    }
+    CO2ppm_value = data.PM_AE_UG_2_5;
 
-  ///////////////////////////////////////////////////////////////////////////////
-    //CO2ppm_value = round(val.MassPM2);
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  */
-
-  CO2ppm_value = val.MassPM2;
-
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  if (!err_sensor)
-  {
-    // Provide the sensor values for Tools -> Serial Monitor or Serial Plotter
-    Serial.print("PM2.5: ");
+    Serial.print("PMS PM2.5: ");
     Serial.print(CO2ppm_value);
     Serial.print(" ug/m3   ");
-    //    Serial.print("\t");
-    //    Serial.print("Temperature[ºC]:");
-    //    Serial.print(temperature, 1);
-    //    Serial.print("\t");
-    //    Serial.print("Humidity[%]:");
-    //    Serial.println(humidity, 1);
-  }
+  //}
 }
+
 /**
  * @brief : read and display device info
  */
@@ -1452,9 +1512,7 @@ void Errorloop(char *mess, uint8_t r)
     ErrtoMess(mess, r);
   else
     Serial.println(mess);
-  Serial.println(F("Program on hold"));
-  for (;;)
-    delay(100000);
+  Serial.println(F("No SPS30 connected"));
 }
 
 /**

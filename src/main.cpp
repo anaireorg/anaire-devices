@@ -35,13 +35,15 @@ struct MyConfigStruct
 Preferences preferences;
 
 // Measurements
-//int CO2ppm_value = 0;       // CO2 ppm measured value
-float CO2ppm_value = 0;       // CO2 ppm measured value
-//int CO2ppm_accumulated = 0; // Accumulates co2 measurements for a MQTT period
+// int CO2ppm_value = 0;       // CO2 ppm measured value
+float CO2ppm_value = 0; // CO2 ppm measured value
+// int CO2ppm_accumulated = 0; // Accumulates co2 measurements for a MQTT period
 float CO2ppm_accumulated = 0; // Accumulates co2 measurements for a MQTT period
-int CO2ppm_samples = 0;     // Counts de number of samples for a MQTT period
-float temperature;          // Read temperature as Celsius
-float humidity;             // Read humidity in %
+int CO2ppm_samples = 0;       // Counts de number of samples for a MQTT period
+float temperature;            // Read temperature as Celsius
+float humidity;               // Read humidity in %
+int temp;
+int humi;
 
 // CO2 sensors
 enum CO2_sensors
@@ -68,7 +70,7 @@ boolean err_sensor = false;
 
 // Measurements loop: time between measurements
 unsigned int measurements_loop_duration = 1000; // 10 seconds
-unsigned long measurements_loop_start;           // holds a timestamp for each control loop start
+unsigned long measurements_loop_start;          // holds a timestamp for each control loop start
 
 // MQTT loop: time between MQTT measurements sent to the cloud
 unsigned int MQTT_loop_duration = 60000; // 60 seconds
@@ -121,8 +123,8 @@ int vref = 1100;
 #include <Adafruit_SCD30.h>
 
 Adafruit_SCD30 scd30;
-#define SCD30_SDA_pin 26                      // Define the SDA pin used for the SCD30
-#define SCD30_SCL_pin 27                      // Define the SCL pin used for the SCD30
+#define SCD30_SDA_pin 21                      // Define the SDA pin used for the SCD30
+#define SCD30_SCL_pin 22                      // Define the SCL pin used for the SCD30
 unsigned long SCD30_CALIBRATION_TIME = 10000; // SCD30 CO2 CALIBRATION TIME: 1 min = 60000 ms
 
 #include <sps30.h>
@@ -132,9 +134,14 @@ SPS30 sps30;
 
 #include <Adafruit_SHT31.h>
 Adafruit_SHT31 sht31;
+bool SHT31flag = false;
+byte failh = 0;
+
+// Adafruit_SHT31 sht31 = Adafruit_SHT31();
 
 #include <AM232X.h>
 AM232X am2320;
+bool AM2320flag = false;
 
 // Bluetooth in TTGO T-Display
 #if BLUETOOTH
@@ -286,7 +293,7 @@ void loop()
     // Read sensors
     Read_Sensor();
 
-    if (CO2ppm_value > 0)    // REVISAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (CO2ppm_value > 0) // REVISAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     {
 
       // Evaluate CO2 value
@@ -736,12 +743,12 @@ void Check_WiFi_Server()
             client.print(CO2ppm_value);
             client.println("<br>");
             client.print("Temperature: ");
-            client.print(temperature);
+            client.print(temp);
             client.println("<br>");
             client.print("Humidity: ");
-            client.print(humidity);
+            client.print(humi);
             client.println("<br>");
-            client.print("CO2 STATUS: ");
+            client.print("PM2.5 STATUS: ");
             switch (co2_device_status)
             {
             case co2_ok:
@@ -1000,15 +1007,16 @@ void Send_Message_Cloud_App_MQTT()
   // Print info
   float pm25f;
   int pm25int;
-  
+
   Serial.print("Sending MQTT message to the send topic: ");
   Serial.println(MQTT_send_topic);
   Serial.println(CO2ppm_accumulated);
   Serial.println(CO2ppm_samples);
   pm25f = CO2ppm_accumulated / CO2ppm_samples;
-  pm25int = round (pm25f);
+  pm25int = round(pm25f);
   Serial.println(pm25int);
-  sprintf(MQTT_message, "{id: %s,CO2: %d,humidity: %f,temperature: %f,VBat: %f}", anaire_device_id.c_str(), pm25int, humidity, temperature, battery_voltage);
+  ReadHyT();
+  sprintf(MQTT_message, "{id: %s,CO2: %d,humidity: %d,temperature: %d}", anaire_device_id.c_str(), pm25int, humi, temp);
   Serial.print(MQTT_message);
   Serial.println();
 
@@ -1247,6 +1255,35 @@ void Setup_Sensor()
   // Set_AutoSelfCalibration();
   // Set_Temperature_Offset();
   // Set_Altitude_Compensation();
+
+  Serial.print("SHT31 test: ");
+  if (!sht31.begin(0x44))
+  { // Set to 0x45 for alternate i2c addr
+    Serial.println("none");
+  }
+  else
+  {
+    Serial.println("found");
+    SHT31flag = true;
+  }
+
+  Serial.print("Heater Enabled State: ");
+  if (sht31.isHeaterEnabled())
+    Serial.println("ENABLED");
+  else
+    Serial.println("DISABLED");
+
+  Serial.print("AM2320 test: ");
+  if (!am2320.begin())
+  {
+    Serial.println("none");
+  }
+  else
+  {
+    am2320.wakeUp();
+    Serial.println("found");
+    AM2320flag = true;
+  }
 }
 
 void Read_Sensor()
@@ -1307,33 +1344,54 @@ void Read_Sensor()
     Serial.println(F("P1.0\tP2.5\tP4.0\tP10\tP0.5\tP1.0\tP2.5\tP4.0\tP10\tPartSize\n"));
     header = false;
   }
-  Serial.print(val.MassPM1);
-  Serial.print(F("\t"));
-  Serial.print(val.MassPM2);
-  Serial.print(F("\t"));
-  Serial.print(val.MassPM4);
-  Serial.print(F("\t"));
-  Serial.print(val.MassPM10);
-  Serial.print(F("\n"));
+  //  Serial.print(val.MassPM1);
+  //  Serial.print(F("\t"));
+  //  Serial.print(val.MassPM2);
+  //  Serial.print(F("\t"));
+  //  Serial.print(val.MassPM4);
+  //  Serial.print(F("\t"));
+  //  Serial.print(val.MassPM10);
+  //  Serial.print(F("\n"));
+  /*
 
-  //CO2ppm_value = round(val.MassPM2);
+  ///////////////////////////////////////////////////////////////////////////////
+
+    temperature = sht31.readTemperature();
+    humidity = sht31.readHumidity();
+
+    if (! isnan(temperature)) {  // check if 'is not a number'
+      Serial.print("Temp *C = "); Serial.print(temperature); Serial.print("\t\t");
+    } else {
+      Serial.println("Failed to read temperature");
+    }
+
+    if (! isnan(humidity)) {  // check if 'is not a number'
+      Serial.print("Hum. % = "); Serial.println(humidity);
+    } else {
+      Serial.println("Failed to read humidity");
+    }
+
+  ///////////////////////////////////////////////////////////////////////////////
+    //CO2ppm_value = round(val.MassPM2);
+
+  */
+
   CO2ppm_value = val.MassPM2;
-  temperature = 0;
-  humidity = 0;
 
   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   if (!err_sensor)
   {
     // Provide the sensor values for Tools -> Serial Monitor or Serial Plotter
-    Serial.print("CO2[ppm]:");
+    Serial.print("PM2.5: ");
     Serial.print(CO2ppm_value);
-    Serial.print("\t");
-    Serial.print("Temperature[ºC]:");
-    Serial.print(temperature, 1);
-    Serial.print("\t");
-    Serial.print("Humidity[%]:");
-    Serial.println(humidity, 1);
+    Serial.print(" ug/m3   ");
+    //    Serial.print("\t");
+    //    Serial.print("Temperature[ºC]:");
+    //    Serial.print(temperature, 1);
+    //    Serial.print("\t");
+    //    Serial.print("Humidity[%]:");
+    //    Serial.println(humidity, 1);
   }
 }
 /**
@@ -1436,13 +1494,13 @@ void Evaluate_CO2_Value()
   switch (co2_device_status)
   {
   case co2_ok:
-    Serial.println("STATUS: CO2 OK");
+    Serial.println("STATUS: PM2.5 OK");
     break;
   case co2_warning:
-    Serial.println("STATUS: CO2 WARNING");
+    Serial.println("STATUS: PM2.5 WARNING");
     break;
   case co2_alarm:
-    Serial.println("STATUS: CO2 ALARM");
+    Serial.println("STATUS: PM2.5 ALARM");
     break;
   }
 }
@@ -1528,7 +1586,7 @@ void Do_Calibrate_Sensor()
     {
       Serial.print("Performed forced calibration at ");
       Serial.print(eepromConfig.forced_recalibration_reference);
-      Serial.println(" ppm");
+      Serial.println(" ug/m3");
       tft.drawString("CALIBRACIÓN COMPLETA", tft.width() / 2, tft.height() / 2);
     }
     else
@@ -1666,6 +1724,83 @@ void Set_Altitude_Compensation()
 
   // If there is any other CO2 sensor insert code from here
 }
+
+///////////////////////////////////////////////////////////////////////////////
+void ReadHyT()
+{
+  temperature = 0.0;
+  humidity = 0.0;
+  /////////  SHT31
+  if (SHT31flag == true)
+  {
+    humidity = sht31.readHumidity();
+    temperature = sht31.readTemperature();
+
+    if (!isnan(humidity))
+    { // check if 'is not a number'
+      failh = 0;
+      Serial.print("SHT31 Humi % = ");
+      Serial.print(humidity);
+      humi = round(humidity);
+    }
+    else
+    {
+      Serial.println("Failed to read humidity SHT31");
+      if (failh == 5)
+      {
+        failh = 0;
+        sht31.begin(0x44);
+      }
+      else
+        failh = failh + 1;
+    }
+
+    if (!isnan(temperature))
+    { // check if 'is not a number'
+      Serial.print("   Temp *C = ");
+      Serial.println(temperature);
+      temp = round(temperature);
+    }
+    else
+      Serial.println("Failed to read temperature SHT31");
+  }
+  // AM2320////////////////////////////////////////////////////
+  else if (AM2320flag == true)
+  {
+    humidity = am2320.getHumidity();
+    temperature = am2320.getTemperature();
+
+    if (!isnan(humidity))
+    {
+      failh = 0;
+      Serial.print("AM2320 Humi % = ");
+      Serial.print(humidity);
+      humi = round(humidity);
+    }
+    else
+    {
+      Serial.println("Failed to read humidity AM2320");
+      if (failh == 5)
+      {
+        failh = 0;
+        am2320.begin();
+      }
+      else
+        failh = failh + 1;
+    }
+
+    if (!isnan(temperature))
+    {
+      Serial.print("   Temp *C = ");
+      Serial.println(temperature);
+      temp = round(temperature);
+    }
+    else
+      Serial.println("Failed to read temperature AM2320");
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
 
 void Print_Config()
 { // print Anaire device settings
@@ -2052,8 +2187,8 @@ void displayBatteryLevel(int colour)
   // Measure the battery voltage
   battery_voltage = ((float)analogRead(ADC_PIN) / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
 
-//  Serial.print("battery voltage: ");
-//  Serial.println(battery_voltage);
+  //  Serial.print("battery voltage: ");
+  //  Serial.println(battery_voltage);
 
   // If battery voltage is up 4.5 then external power supply is working and battery is charging
   if (battery_voltage > USB_Voltage)

@@ -1264,11 +1264,16 @@ void Setup_Sensor()
 
   // PMS7003 PMSA003
 
-  Serial.println("Test with Plantower Sensor");
-  Serial1.begin(9600, 26, 27);
+  Serial.println("Test Plantower Sensor");
+  Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_RX, PMS_TX);
   delay(3000);
 
-  if (pms.read(data))
+  while (Serial1.available())
+  {
+    Serial1.read();
+  }
+  pms.requestRead();
+  if (pms.readUntil(data))
   {
     Serial.println("Plantower sensor found!");
     co2_sensor = scd30_sensor;
@@ -1428,32 +1433,26 @@ void Read_Sensor()
       //    Serial.println(humidity, 1);
     }
   }
-//  if (PMSflag == true)
-//  {
-    if (pms.read(data))
+  
+  if (PMSflag == true)
+  {
+    while (Serial1.available())
     {
-      Serial.print("PM 1.0 (ug/m3): ");
-      Serial.println(data.PM_AE_UG_1_0);
-
-      Serial.print("PM 2.5 (ug/m3): ");
-      Serial.println(data.PM_AE_UG_2_5);
-
-      Serial.print("PM 10.0 (ug/m3): ");
-      Serial.println(data.PM_AE_UG_10_0);
+      Serial1.read();
+    }
+    pms.requestRead();
+    if (pms.readUntil(data))
+    {
+      CO2ppm_value = data.PM_AE_UG_2_5;
+      Serial.print("PMS PM2.5: ");
+      Serial.print(CO2ppm_value);
+      Serial.print(" ug/m3   ");
     }
     else
     {
       Serial.println("No data by Plantower sensor!");
     }
-
-    CO2ppm_value = data.PM_AE_UG_2_5;
-
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    Serial.print("PMS PM2.5: ");
-    Serial.print(CO2ppm_value);
-    Serial.print(" ug/m3   ");
-  //}
+  }
 }
 
 /**

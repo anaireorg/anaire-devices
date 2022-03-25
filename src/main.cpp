@@ -137,8 +137,8 @@ bool SPS30flag = false;
 PMS pms(Serial1);
 PMS::DATA data;
 bool PMSflag = false;
-#define PMS_TX 26 // PMS TX pin
-#define PMS_RX 27 // PMS RX pin
+#define PMS_TX 17 // PMS TX pin
+#define PMS_RX 15 // PMS RX pin
 
 #include <Adafruit_SHT31.h>
 Adafruit_SHT31 sht31;
@@ -1265,7 +1265,7 @@ void Setup_Sensor()
   // PMS7003 PMSA003
 
   Serial.println("Test Plantower Sensor");
-  Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_RX, PMS_TX);
+  Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
   delay(3000);
 
   while (Serial1.available())

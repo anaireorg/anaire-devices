@@ -169,6 +169,7 @@ bool bluetooth_active = false;
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
 WiFiServer wifi_server(80);
 WiFiClient wifi_client;
+bool PortalFlag = false;
 
 // MQTT
 #include <PubSubClient.h>
@@ -255,6 +256,10 @@ void setup()
 
   // Initialize and warm up CO2 sensor
   Setup_Sensor();
+
+  // Start Captive Portal for 15 seconds
+  PortalFlag = false;
+  Start_Captive_Portal();
 
   // Init control loops
   measurements_loop_start = millis();
@@ -463,6 +468,7 @@ void WiFiEvent(WiFiEvent_t event)
     break;
   case SYSTEM_EVENT_AP_STACONNECTED:
     Serial.println("Client connected");
+//    APflag = true;
     break;
   case SYSTEM_EVENT_AP_STADISCONNECTED:
     Serial.println("Client disconnected");
@@ -823,6 +829,7 @@ void Check_WiFi_Server()
         // Check to see if the client request was "GET /3" to launch captive portal:
         if (currentLine.endsWith("GET /3"))
         {
+          PortalFlag = true;
           Start_Captive_Portal();
         }
 
@@ -890,7 +897,11 @@ void Start_Captive_Portal()
   // sets timeout in seconds until configuration portal gets turned off.
   // If not specified device will remain in configuration mode until
   // switched off via webserver or device is restarted.
-  wifiManager.setConfigPortalTimeout(60);
+
+  if (PortalFlag == true)
+    wifiManager.setConfigPortalTimeout(90);
+  else
+    wifiManager.setConfigPortalTimeout(45);
 
   // it starts an access point
   // and goes into a blocking loop awaiting configuration
@@ -905,6 +916,9 @@ void Start_Captive_Portal()
     // if you get here you have connected to the WiFi
     Serial.println("Captive portal operative");
   }
+
+//  if (APflag == true)
+//    wifiManager.setConfigPortalTimeout(90);
 
   // Save parameters to EEPROM only if any of them changed
   bool write_eeprom = false;
@@ -945,12 +959,11 @@ void Start_Captive_Portal()
   if (write_eeprom)
   {
     Write_EEPROM();
+    ESP.restart();
   }
 
   InCaptivePortal = false;
 
-  // Restart
-  ESP.restart();
 }
 
 void Init_MQTT()
@@ -1433,7 +1446,7 @@ void Read_Sensor()
       //    Serial.println(humidity, 1);
     }
   }
-  
+
   if (PMSflag == true)
   {
     while (Serial1.available())
@@ -1979,13 +1992,14 @@ void Button_Init()
   button_top.setDoubleClickHandler([](Button2 &b)
                                    {
     Serial.println("Top button double click");
-    Suspend_Device(); });
+    PortalFlag = true;
+    Start_Captive_Portal(); });
 
   // Top button triple click: launch captive portal to configure WiFi and MQTT sleep
   button_top.setTripleClickHandler([](Button2 &b)
                                    {
     Serial.println("Top button triple click");
-    Start_Captive_Portal(); });
+    Suspend_Device(); });
 
   // Bottom button short click: show buttons info
   button_bottom.setClickHandler([](Button2 &b)

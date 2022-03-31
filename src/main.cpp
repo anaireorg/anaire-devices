@@ -907,10 +907,7 @@ void Start_Captive_Portal()
   // If not specified device will remain in configuration mode until
   // switched off via webserver or device is restarted.
 
-  if (PortalFlag == true)
-    wifiManager.setConfigPortalTimeout(90);
-  else
-    wifiManager.setConfigPortalTimeout(45);
+    wifiManager.setConfigPortalTimeout(30);
 
   // it starts an access point
   // and goes into a blocking loop awaiting configuration
@@ -925,9 +922,6 @@ void Start_Captive_Portal()
     // if you get here you have connected to the WiFi
     Serial.println("Captive portal operative");
   }
-
-  //  if (APflag == true)
-  //    wifiManager.setConfigPortalTimeout(90);
 
   // Save parameters to EEPROM only if any of them changed
   bool write_eeprom = false;

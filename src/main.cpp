@@ -1040,7 +1040,7 @@ void Send_Message_Cloud_App_MQTT()
   pm25int = round(pm25f);
   Serial.println(pm25int);
   ReadHyT();
-  sprintf(MQTT_message, "{id: %s,CO2: %d,humidity: %d,temperature: %d}", anaire_device_id.c_str(), pm25int, humi, temp);
+  sprintf(MQTT_message, "{id: %s,CO2: %d, PM25: %d,humidity: %d,temperature: %d}", anaire_device_id.c_str(), 0, pm25int, humi, temp);
   Serial.print(MQTT_message);
   Serial.println();
 

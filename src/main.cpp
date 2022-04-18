@@ -10,24 +10,24 @@
 #define BLUETOOTH false // Set to true in case bluetooth is desired
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "v0.1";
+String sw_version = "v0.5";
 String anaire_device_id;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
 {
-  char anaire_device_name[24];                   // Device name; default to anaire_device_id
-  uint16_t CO2ppm_warning_threshold = 700;       // Warning threshold; default to 700ppm
-  uint16_t CO2ppm_alarm_threshold = 1000;        // Alarm threshold; default to 1000ppm
-  char MQTT_server[32] = "sensor.aireciudadano.com";      // MQTT server url or public IP address. Default to Anaire Portal on portal.anaire.org
-  uint16_t MQTT_port = 30183;                       // MQTT port; Default to Anaire Port on 30183
-  boolean acoustic_alarm = true;                 // Global flag to control acoustic alarm; default to true
-  boolean self_calibration = false;              // Automatic Baseline Correction of CO2 sensor; default to false
-  uint16_t forced_recalibration_reference = 420; // Forced Recalibration value; default to 420ppm
-  uint16_t temperature_offset = 600;             // temperature offset for SCD30 CO2 measurements: 600 by default, because of the housing
-  uint16_t altitude_compensation = 600;          // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
-  char wifi_user[24];                            // WiFi user to be used on WPA Enterprise. Default to null (not used)
-  char wifi_password[24];                        // WiFi password to be used on WPA Enterprise. Default to null (not used)
+  char anaire_device_name[24];                       // Device name; default to anaire_device_id
+  uint16_t PM25_warning_threshold = 700;             // Warning threshold; default to 700ppm
+  uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
+  char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address. Default to Anaire Portal on portal.anaire.org
+  uint16_t MQTT_port = 30183;                        // MQTT port; Default to Anaire Port on 30183
+   boolean acoustic_alarm = true;                 // Global flag to control acoustic alarm; default to true
+   boolean self_calibration = false;              // Automatic Baseline Correction of CO2 sensor; default to false
+   uint16_t forced_recalibration_reference = 420; // Forced Recalibration value; default to 420ppm
+   uint16_t temperature_offset = 600;             // temperature offset for SCD30 CO2 measurements: 600 by default, because of the housing
+   uint16_t altitude_compensation = 600;          // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
+  char wifi_user[24];     // WiFi user to be used on WPA Enterprise. Default to null (not used)
+  char wifi_password[24]; // WiFi password to be used on WPA Enterprise. Default to null (not used)
 } eepromConfig;
 
 // to store data on nvs partition
@@ -35,32 +35,32 @@ struct MyConfigStruct
 Preferences preferences;
 
 // Measurements
-// int CO2ppm_value = 0;       // CO2 ppm measured value
-float CO2ppm_value = 0; // CO2 ppm measured value
-// int CO2ppm_accumulated = 0; // Accumulates co2 measurements for a MQTT period
-float CO2ppm_accumulated = 0; // Accumulates co2 measurements for a MQTT period
-int CO2ppm_samples = 0;       // Counts de number of samples for a MQTT period
-float temperature;            // Read temperature as Celsius
-float humidity;               // Read humidity in %
+// int PM25_value = 0;       // CO2 ppm measured value
+float PM25_value = 0; // CO2 ppm measured value
+// int PM25_accumulated = 0; // Accumulates co2 measurements for a MQTT period
+float PM25_accumulated = 0; // Accumulates co2 measurements for a MQTT period
+int PM25_samples = 0;       // Counts de number of samples for a MQTT period
+float temperature;          // Read temperature as Celsius
+float humidity;             // Read humidity in %
 int temp;
 int humi;
 
 // CO2 sensors
-enum CO2_sensors
+enum PM25_sensors
 {
   none,
   scd30_sensor
 }; // possible sensors integrated in the SW
-CO2_sensors co2_sensor = none;
+PM25_sensors pm25_sensor = none;
 
 // CO2 device status
-enum co2_status
+enum pm25_status
 {
-  co2_ok,
-  co2_warning,
-  co2_alarm
-};                                     // the device can have one of those CO2 status
-co2_status co2_device_status = co2_ok; // initialized to ok
+  pm25_ok,
+  pm25_warning,
+  pm25_alarm
+};                                       // the device can have one of those CO2 status
+pm25_status co2_device_status = pm25_ok; // initialized to ok
 
 // device status
 boolean err_global = false;
@@ -135,6 +135,9 @@ SPS30 sps30;
 #define DEBUG 0
 bool SPS30flag = false;
 
+#include <SensirionI2CSen5x.h>
+SensirionI2CSen5x sen5x;
+
 #include "PMS.h"
 PMS pms(Serial1);
 PMS::DATA data;
@@ -191,7 +194,7 @@ StaticJsonDocument<384> jsonBuffer;
 
 #include "rom/rtc.h"
 bool ResetFlag = false;
-//int reason;
+// int reason;
 void print_reset_reason(RESET_REASON reason);
 
 // to know when there is an updating process in place
@@ -317,7 +320,7 @@ void loop()
     // Read sensors
     Read_Sensor();
 
-    if (CO2ppm_value > 0) // REVISAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (PM25_value > 0) // REVISAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     {
 
       // Evaluate CO2 value
@@ -332,8 +335,8 @@ void loop()
 #endif
 
       // Accumulates samples
-      CO2ppm_accumulated += CO2ppm_value;
-      CO2ppm_samples++;
+      PM25_accumulated += PM25_value;
+      PM25_samples++;
     }
   }
 
@@ -345,14 +348,14 @@ void loop()
     MQTT_loop_start = millis();
 
     // Message the MQTT broker in the cloud app to send the measured values
-    if ((!err_wifi) && (CO2ppm_samples > 0))
+    if ((!err_wifi) && (PM25_samples > 0))
     {
       Send_Message_Cloud_App_MQTT();
     }
 
     // Reset samples after sending them to the MQTT server
-    CO2ppm_accumulated = 0.0;
-    CO2ppm_samples = 0.0;
+    PM25_accumulated = 0.0;
+    PM25_samples = 0.0;
   }
 
   // Errors loop
@@ -724,11 +727,11 @@ void Check_WiFi_Server()
             client.println("<br>");
             client.println("------");
             client.println("<br>");
-            client.print("CO2ppm_warning_threshold: ");
-            client.print(eepromConfig.CO2ppm_warning_threshold);
+            client.print("PM25_warning_threshold: ");
+            client.print(eepromConfig.PM25_warning_threshold);
             client.println("<br>");
-            client.print("CO2ppm_alarm_threshold: ");
-            client.print(eepromConfig.CO2ppm_alarm_threshold);
+            client.print("PM25_alarm_threshold: ");
+            client.print(eepromConfig.PM25_alarm_threshold);
             client.println("<br>");
             client.print("MQTT Server: ");
             client.print(eepromConfig.MQTT_server);
@@ -741,7 +744,7 @@ void Check_WiFi_Server()
             client.println("<br>");
             client.println("------");
             client.println("<br>");
-            if (co2_sensor == scd30_sensor)
+            if (pm25_sensor == scd30_sensor)
             {
               client.print("CO2 Sensor: Sensirion SCD30");
               client.println("<br>");
@@ -764,7 +767,7 @@ void Check_WiFi_Server()
             client.println("------");
             client.println("<br>");
             client.print("CO2 PPM: ");
-            client.print(CO2ppm_value);
+            client.print(PM25_value);
             client.println("<br>");
             client.print("Temperature: ");
             client.print(temp);
@@ -775,13 +778,13 @@ void Check_WiFi_Server()
             client.print("PM2.5 STATUS: ");
             switch (co2_device_status)
             {
-            case co2_ok:
+            case pm25_ok:
               client.print("OK");
               break;
-            case co2_warning:
+            case pm25_warning:
               client.print("WARNING");
               break;
-            case co2_alarm:
+            case pm25_alarm:
               client.print("ALARM");
               break;
             }
@@ -907,7 +910,7 @@ void Start_Captive_Portal()
   // If not specified device will remain in configuration mode until
   // switched off via webserver or device is restarted.
 
-    wifiManager.setConfigPortalTimeout(30);
+  wifiManager.setConfigPortalTimeout(30);
 
   // it starts an access point
   // and goes into a blocking loop awaiting configuration
@@ -1034,9 +1037,9 @@ void Send_Message_Cloud_App_MQTT()
 
   Serial.print("Sending MQTT message to the send topic: ");
   Serial.println(MQTT_send_topic);
-  Serial.println(CO2ppm_accumulated);
-  Serial.println(CO2ppm_samples);
-  pm25f = CO2ppm_accumulated / CO2ppm_samples;
+  Serial.println(PM25_accumulated);
+  Serial.println(PM25_samples);
+  pm25f = PM25_accumulated / PM25_samples;
   pm25int = round(pm25f);
   Serial.println(pm25int);
   ReadHyT();
@@ -1077,22 +1080,22 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   }
 
   // Update warning threshold
-  if ((jsonBuffer["warning"]) && (eepromConfig.CO2ppm_warning_threshold != (int)jsonBuffer["warning"]))
+  if ((jsonBuffer["warning"]) && (eepromConfig.PM25_warning_threshold != (int)jsonBuffer["warning"]))
   {
-    eepromConfig.CO2ppm_warning_threshold = (int)jsonBuffer["warning"];
+    eepromConfig.PM25_warning_threshold = (int)jsonBuffer["warning"];
     Evaluate_CO2_Value();
     Serial.print("New warning threshold: ");
-    Serial.println(eepromConfig.CO2ppm_warning_threshold);
+    Serial.println(eepromConfig.PM25_warning_threshold);
     write_eeprom = true;
   }
 
   // Update alarm threshold
-  if ((jsonBuffer["caution"]) && (eepromConfig.CO2ppm_alarm_threshold != (int)jsonBuffer["caution"]))
+  if ((jsonBuffer["caution"]) && (eepromConfig.PM25_alarm_threshold != (int)jsonBuffer["caution"]))
   {
-    eepromConfig.CO2ppm_alarm_threshold = (int)jsonBuffer["caution"];
+    eepromConfig.PM25_alarm_threshold = (int)jsonBuffer["caution"];
     Evaluate_CO2_Value();
     Serial.print("New alarm threshold: ");
-    Serial.println(eepromConfig.CO2ppm_alarm_threshold);
+    Serial.println(eepromConfig.PM25_alarm_threshold);
     write_eeprom = true;
   }
 
@@ -1233,26 +1236,12 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
 }
 
 void Setup_Sensor()
-{ // Identify and initialize CO2, temperature and humidity sensor
+{ // Identify and initialize PM25, temperature and humidity sensor
 
-  // Try Sensirion SCD30
-  //  Wire.begin(SCD30_SDA_pin, SCD30_SCL_pin);
-  //  if (!scd30.begin()) {
-  //    Serial.println("Failed to find Sensirion SCD30 CO2 sensor");
-  //  }
-  //  else {
-  //    co2_sensor = scd30_sensor;
-  //    Serial.println("Sensirion SCD30 CO2 sensor found!");
-  //  }
+  // Test PM2.5 SPS30
 
-  // If there is any other CO2 sensor insert code from here
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // set driver debug level
-
-  // PM2.5 SPS30
-
+  Serial.println(F("Test Sensirion SPS30 sensor"));
   Wire.begin(SCD30_SDA_pin, SCD30_SCL_pin);
-  Serial.println(F("Trying to connect to SPS30."));
   sps30.EnableDebugging(DEBUG);
   // Begin communication channel
   SP30_COMMS.begin();
@@ -1266,7 +1255,7 @@ void Setup_Sensor()
   else
   {
     Serial.println(F("Detected SPS30."));
-    co2_sensor = scd30_sensor;
+    pm25_sensor = scd30_sensor;
     SPS30flag = true;
     // read device info
     GetDeviceInfo();
@@ -1276,6 +1265,54 @@ void Setup_Sensor()
     Serial.println(F("Measurement started"));
   else
     Errorloop((char *)"Could NOT start measurement", 0);
+
+  //////////////////////////////////////////////////////////////////////////////////////////////
+  // Test PM2.5 SEN5X
+  Serial.println("Test Sensirion SEN5X sensor");
+  sen5x.begin(Wire);
+
+  uint16_t error;
+  char errorMessage[256];
+  error = sen5x.deviceReset();
+  if (error)
+  {
+    Serial.print("Error trying to execute deviceReset(): ");
+    errorToString(error, errorMessage, 256);
+    Serial.println(errorMessage);
+  }
+
+  else
+  {
+    // Print SEN55 module information if i2c buffers are large enough
+    printSerialNumber();
+    printModuleVersions();
+
+    float tempOffset = 0.0;
+    error = sen5x.setTemperatureOffsetSimple(tempOffset);
+    if (error)
+    {
+      Serial.print("Error trying to execute setTemperatureOffsetSimple(): ");
+      errorToString(error, errorMessage, 256);
+      Serial.println(errorMessage);
+    }
+    else
+    {
+      Serial.print("Temperature Offset set to ");
+      Serial.print(tempOffset);
+      Serial.println(" deg. Celsius (SEN54/SEN55 only");
+    }
+
+    // Start Measurement
+    error = sen5x.startMeasurement();
+    if (error)
+    {
+      Serial.print("Error trying to execute startMeasurement(): ");
+      errorToString(error, errorMessage, 256);
+      Serial.println(errorMessage);
+    }
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////////////
 
   // PMS7003 PMSA003
 
@@ -1291,7 +1328,7 @@ void Setup_Sensor()
   if (pms.readUntil(data))
   {
     Serial.println("Plantower sensor found!");
-    co2_sensor = scd30_sensor;
+    pm25_sensor = scd30_sensor;
     PMSflag = true;
   }
   else
@@ -1342,7 +1379,7 @@ void Read_Sensor()
 { // Read CO2, temperature and humidity values
 
   // if SCD30 is identified
-  //  if (co2_sensor == scd30_sensor) {
+  //  if (pm25_sensor == scd30_sensor) {
   //    if (scd30.dataReady()) {
   //      err_sensor = false;
   // Read SCD30
@@ -1351,7 +1388,7 @@ void Read_Sensor()
   //        return;
   //      }
   //      else {
-  //        CO2ppm_value = scd30.CO2;
+  //        PM25_value = scd30.CO2;
   //        temperature = scd30.temperature;
   //        humidity = scd30.relative_humidity;
   //      }
@@ -1426,11 +1463,11 @@ void Read_Sensor()
       }
 
     ///////////////////////////////////////////////////////////////////////////////
-      //CO2ppm_value = round(val.MassPM2);
+      //PM25_value = round(val.MassPM2);
 
     */
 
-    CO2ppm_value = val.MassPM2;
+    PM25_value = val.MassPM2;
 
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1438,7 +1475,7 @@ void Read_Sensor()
     {
       // Provide the sensor values for Tools -> Serial Monitor or Serial Plotter
       Serial.print("SPS30 PM2.5: ");
-      Serial.print(CO2ppm_value);
+      Serial.print(PM25_value);
       Serial.print(" ug/m3   ");
       //    Serial.print("\t");
       //    Serial.print("Temperature[ºC]:");
@@ -1458,9 +1495,9 @@ void Read_Sensor()
     pms.requestRead();
     if (pms.readUntil(data))
     {
-      CO2ppm_value = data.PM_AE_UG_2_5;
+      PM25_value = data.PM_AE_UG_2_5;
       Serial.print("PMS PM2.5: ");
-      Serial.print(CO2ppm_value);
+      Serial.print(PM25_value);
       Serial.print(" ug/m3   ");
     }
     else
@@ -1543,37 +1580,112 @@ void ErrtoMess(char *mess, uint8_t r)
   Serial.println(buf);
 }
 
+void printModuleVersions()
+{
+  uint16_t error;
+  char errorMessage[256];
+
+  unsigned char productName[32];
+  uint8_t productNameSize = 32;
+
+  error = sen5x.getProductName(productName, productNameSize);
+
+  if (error)
+  {
+    Serial.print("Error trying to execute getProductName(): ");
+    errorToString(error, errorMessage, 256);
+    Serial.println(errorMessage);
+  }
+  else
+  {
+    Serial.print("ProductName:");
+    Serial.println((char *)productName);
+  }
+
+  uint8_t firmwareMajor;
+  uint8_t firmwareMinor;
+  bool firmwareDebug;
+  uint8_t hardwareMajor;
+  uint8_t hardwareMinor;
+  uint8_t protocolMajor;
+  uint8_t protocolMinor;
+
+  error = sen5x.getVersion(firmwareMajor, firmwareMinor, firmwareDebug,
+                           hardwareMajor, hardwareMinor, protocolMajor,
+                           protocolMinor);
+  if (error)
+  {
+    Serial.print("Error trying to execute getVersion(): ");
+    errorToString(error, errorMessage, 256);
+    Serial.println(errorMessage);
+  }
+  else
+  {
+    Serial.print("Firmware: ");
+    Serial.print(firmwareMajor);
+    Serial.print(".");
+    Serial.print(firmwareMinor);
+    Serial.print(", ");
+
+    Serial.print("Hardware: ");
+    Serial.print(hardwareMajor);
+    Serial.print(".");
+    Serial.println(hardwareMinor);
+  }
+}
+
+void printSerialNumber()
+{
+  uint16_t error;
+  char errorMessage[256];
+  unsigned char serialNumber[32];
+  uint8_t serialNumberSize = 32;
+
+  error = sen5x.getSerialNumber(serialNumber, serialNumberSize);
+  if (error)
+  {
+    Serial.print("Error trying to execute getSerialNumber(): ");
+    errorToString(error, errorMessage, 256);
+    Serial.println(errorMessage);
+  }
+  else
+  {
+    Serial.print("SerialNumber:");
+    Serial.println((char *)serialNumber);
+  }
+}
+
 void Evaluate_CO2_Value()
 { // Evaluate measured CO2 value against warning and alarm thresholds
 
   // Status: ok
-  if (CO2ppm_value < eepromConfig.CO2ppm_warning_threshold)
+  if (PM25_value < eepromConfig.PM25_warning_threshold)
   {
-    co2_device_status = co2_ok; // Update CO2 status
+    co2_device_status = pm25_ok; // Update CO2 status
   }
 
   // Status: warning
-  else if ((CO2ppm_value >= eepromConfig.CO2ppm_warning_threshold) && (CO2ppm_value < eepromConfig.CO2ppm_alarm_threshold))
+  else if ((PM25_value >= eepromConfig.PM25_warning_threshold) && (PM25_value < eepromConfig.PM25_alarm_threshold))
   {
-    co2_device_status = co2_warning; // update CO2 status
+    co2_device_status = pm25_warning; // update CO2 status
   }
 
   // Status: alarm
   else
   {
-    co2_device_status = co2_alarm; // update CO2 status
+    co2_device_status = pm25_alarm; // update CO2 status
   }
 
   // Print info on serial monitor
   switch (co2_device_status)
   {
-  case co2_ok:
+  case pm25_ok:
     Serial.println("STATUS: PM2.5 OK");
     break;
-  case co2_warning:
+  case pm25_warning:
     Serial.println("STATUS: PM2.5 WARNING");
     break;
-  case co2_alarm:
+  case pm25_alarm:
     Serial.println("STATUS: PM2.5 ALARM");
     break;
   }
@@ -1583,7 +1695,7 @@ void Set_Measurement_Interval()
 { // Set CO2 sensor measurement interval
 
   // if SCD30 is identified
-  if (co2_sensor == scd30_sensor)
+  if (pm25_sensor == scd30_sensor)
   {
     uint16_t val = scd30.getMeasurementInterval();
     Serial.print("Reading SCD30 Measurement Interval before change: ");
@@ -1619,7 +1731,7 @@ void Do_Calibrate_Sensor()
   tft.setTextDatum(MC_DATUM);
 
   // if SCD30 is identified
-  if (co2_sensor == scd30_sensor)
+  if (pm25_sensor == scd30_sensor)
   {
 
     // Print info
@@ -1681,7 +1793,7 @@ void Set_Forced_Calibration_Value()
 { // Set Forced Calibration value as zero reference value
 
   // if SCD30 is identified
-  if (co2_sensor == scd30_sensor)
+  if (pm25_sensor == scd30_sensor)
   {
 
     // Adafruit SCD30 library does not have get/set functions for the Forced Calibration Reference, but
@@ -1714,7 +1826,7 @@ void Set_AutoSelfCalibration()
 { // Set autocalibration in the CO2 sensor true or false
 
   // if SCD30 is identified
-  if (co2_sensor == scd30_sensor)
+  if (pm25_sensor == scd30_sensor)
   {
     bool val = scd30.selfCalibrationEnabled();
     Serial.print("Reading SCD30 Self Calibration before change: ");
@@ -1741,7 +1853,7 @@ void Set_Temperature_Offset()
 { // Set CO2 sensor temperature offset
 
   // if SCD30 is identified
-  if (co2_sensor == scd30_sensor)
+  if (pm25_sensor == scd30_sensor)
   {
     uint16_t val = scd30.getTemperatureOffset();
     Serial.print("Reading SCD30 Temperature Offset before change: ");
@@ -1768,11 +1880,11 @@ void Set_Altitude_Compensation()
 { // Set CO2 sensor altitude compensation
 
   // if SCD30 is identified
-  if (co2_sensor == scd30_sensor)
+  if (pm25_sensor == scd30_sensor)
   {
     // paulvha : you can set EITHER the Altitude compensation of the pressure.
     // Setting both does not make sense as both overrule each other, but it is included for demonstration
-    // see Sensirion_CO2_Sensors_SCD30_Interface_Description.pdf
+    // see Sensirion_PM25_sensors_SCD30_Interface_Description.pdf
     //   The CO2 measurement value can be compensated for ambient pressure by feeding the pressure value in mBar to the sensor.
     //   Setting the ambient pressure will overwrite previous and future settings of altitude compensation. Setting the argument to zero
     //   will deactivate the ambient pressure compensation. For setting a new ambient pressure when continuous measurement is running
@@ -1887,9 +1999,9 @@ void Print_Config()
   Serial.print("SW version: ");
   Serial.println(sw_version);
   Serial.print("CO2ppm Warning threshold: ");
-  Serial.println(eepromConfig.CO2ppm_warning_threshold);
+  Serial.println(eepromConfig.PM25_warning_threshold);
   Serial.print("CO2ppm Alarm threshold: ");
-  Serial.println(eepromConfig.CO2ppm_alarm_threshold);
+  Serial.println(eepromConfig.PM25_alarm_threshold);
   Serial.print("MQTT server: ");
   Serial.println(eepromConfig.MQTT_server);
   Serial.print("MQTT Port: ");
@@ -2086,7 +2198,7 @@ void Update_Display()
   tft.setTextDatum(TL_DATUM); // top left
 
   // Set screen and text colours based on CO2 value
-  if (co2_device_status == co2_ok)
+  if (co2_device_status == pm25_ok)
   {
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
@@ -2096,7 +2208,7 @@ void Update_Display()
     displayBatteryLevel(TFT_GREEN);
   }
 
-  else if (co2_device_status == co2_warning)
+  else if (co2_device_status == pm25_warning)
   {
     tft.fillScreen(TFT_YELLOW);
     tft.setTextColor(TFT_RED, TFT_YELLOW);
@@ -2111,7 +2223,7 @@ void Update_Display()
     displayBatteryLevel(TFT_RED);
   }
 
-  else if (co2_device_status == co2_alarm)
+  else if (co2_device_status == pm25_alarm)
   {
     tft.fillScreen(TFT_RED);
     tft.setTextColor(TFT_WHITE, TFT_RED);
@@ -2129,7 +2241,7 @@ void Update_Display()
   // Draw CO2 number
   tft.setTextSize(1);
   tft.setFreeFont(FF95);
-  tft.drawString(String(round(CO2ppm_value), 0), 60, 30);
+  tft.drawString(String(round(PM25_value), 0), 60, 30);
 
   // Draw CO2 units
   tft.setTextSize(1);
@@ -2431,7 +2543,7 @@ void print_reset_reason(RESET_REASON reason)
 #if BLUETOOTH
 void Write_Bluetooth()
 { // Write measurements to bluetooth
-  gadgetBle.writeCO2(round(CO2ppm_value));
+  gadgetBle.writeCO2(round(PM25_value));
   gadgetBle.writeTemperature(temperature);
   gadgetBle.writeHumidity(humidity);
   gadgetBle.commit();

@@ -136,6 +136,16 @@ SPS30 sps30;
 bool SPS30flag = false;
 
 #include <SensirionI2CSen5x.h>
+
+// The used commands use up to 48 bytes. On some Arduino's the default buffer space is not large enough
+#define MAXBUF_REQUIREMENT 48
+
+#if (defined(I2C_BUFFER_LENGTH) &&                 \
+     (I2C_BUFFER_LENGTH >= MAXBUF_REQUIREMENT)) || \
+    (defined(BUFFER_LENGTH) && BUFFER_LENGTH >= MAXBUF_REQUIREMENT)
+#define USE_PRODUCT_INFO
+#endif
+
 SensirionI2CSen5x sen5x;
 bool SEN5Xflag = false;
 float massConcentrationPm1p0;
@@ -180,8 +190,8 @@ bool bluetooth_active = false;
 //#include <WiFi.h>
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "esp_wpa2.h"    //wpa2 library for connections to Enterprise networks
-const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
-//const int WIFI_CONNECT_TIMEOUT = 1000; // 1 seconds
+// const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
+const int WIFI_CONNECT_TIMEOUT = 1000; // 1 seconds
 WiFiServer wifi_server(80);
 WiFiClient wifi_client;
 bool PortalFlag = false;
@@ -920,8 +930,8 @@ void Start_Captive_Portal()
   // If not specified device will remain in configuration mode until
   // switched off via webserver or device is restarted.
 
-  wifiManager.setConfigPortalTimeout(30);
-  //wifiManager.setConfigPortalTimeout(3);
+  // wifiManager.setConfigPortalTimeout(30);
+  wifiManager.setConfigPortalTimeout(3);
 
   // it starts an access point
   // and goes into a blocking loop awaiting configuration
@@ -1075,7 +1085,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   // Test if parsing succeeds.
   if (error)
   {
-    Serial.print(F("deserializeJson() failed: "));
+    Serial.print("deserializeJson() failed: ");
     Serial.println(error.f_str());
     return;
   }
@@ -1249,40 +1259,12 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
 void Setup_Sensor()
 { // Identify and initialize PM25, temperature and humidity sensor
 
-  // Test PM2.5 SPS30
-
-  Serial.println(F("Test Sensirion SPS30 sensor"));
-  Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
-
-  /*
-  sps30.EnableDebugging(DEBUG);
-  // Begin communication channel
-  SP30_COMMS.begin();
-  if (sps30.begin(&SP30_COMMS) == false)
-  {
-    Errorloop((char *)"Could not set I2C communication channel.", 0);
-  }
-  // check for SPS30 connection
-  if (!sps30.probe())
-    Errorloop((char *)"could not probe / connect with SPS30.", 0);
-  else
-  {
-    Serial.println(F("Detected SPS30."));
-    pm25_sensor = scd30_sensor;
-    SPS30flag = true;
-    // read device info
-    GetDeviceInfo();
-  }
-  // start measurement ??????????????????????????????????????????????????????Parece invertido Measurement started sin Sensor
-  if (!sps30.start())
-    Serial.println(F("Measurement started"));
-  else
-    Errorloop((char *)"Could NOT start measurement", 0);
-
-    */
-
   //////////////////////////////////////////////////////////////////////////////////////////////
   // Test PM2.5 SEN5X
+
+  Serial.println("Test Sensirion SEN5X sensor");
+  Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
+
   sen5x.begin(Wire);
   Serial.println("Test Sensirion SEN5X sensor");
 
@@ -1318,6 +1300,35 @@ void Setup_Sensor()
 
   ///////////////////////////////////////////////////////////////////////////////////////////
 
+    // Test PM2.5 SPS30
+
+  Serial.println("Test Sensirion SPS30 sensor");
+  Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
+
+  sps30.EnableDebugging(DEBUG);
+  // Begin communication channel
+  SP30_COMMS.begin();
+  if (sps30.begin(&SP30_COMMS) == false)
+  {
+    Errorloop((char *)"Could not set I2C communication channel.", 0);
+  }
+  // check for SPS30 connection
+  if (!sps30.probe())
+    Errorloop((char *)"could not probe / connect with SPS30.", 0);
+  else
+  {
+    Serial.println("Detected SPS30.");
+    pm25_sensor = scd30_sensor;
+    SPS30flag = true;
+    // read device info
+    GetDeviceInfo();
+  }
+  // start measurement ??????????????????????????????????????????????????????Parece invertido Measurement started sin Sensor
+  if (!sps30.start())
+    Serial.println("Measurement started");
+  else
+    Errorloop((char *)"Could NOT start measurement", 0);
+
   // PMS7003 PMSA003
 
   Serial.println("Test Plantower Sensor");
@@ -1340,40 +1351,35 @@ void Setup_Sensor()
     Serial.println("Could not find Plantower sensor!");
   }
 
-  /*
+  Serial.print("SHT31 test: ");
+  if (!sht31.begin(0x44))
+  { // Set to 0x45 for alternate i2c addr
+    Serial.println("none");
+  }
+  else
+  {
+    Serial.println("OK");
+    SHT31flag = true;
+  }
 
-    Serial.print("SHT31 test: ");
-    if (!sht31.begin(0x44))
-    { // Set to 0x45 for alternate i2c addr
-      Serial.println("none");
-    }
-    else
-    {
-      Serial.println("OK");
-      SHT31flag = true;
-    }
+  Serial.print("Heater Enabled State: ");
+  if (sht31.isHeaterEnabled())
+    Serial.println("ENABLED");
+  else
+    Serial.println("DISABLED");
 
-    Serial.print("Heater Enabled State: ");
-    if (sht31.isHeaterEnabled())
-      Serial.println("ENABLED");
-    else
-      Serial.println("DISABLED");
+  Serial.print("AM2320 test: ");
 
-    Serial.print("AM2320 test: ");
-
-    am2320.begin();
-    humidity = am2320.readHumidity();
-    temperature = am2320.readTemperature();
-    if (!isnan(humidity))
-    {
-      Serial.println("OK");
-      AM2320flag = true;
-    }
-    else
-      Serial.println("none");
-
-
-  */
+  am2320.begin();
+  humidity = am2320.readHumidity();
+  temperature = am2320.readTemperature();
+  if (!isnan(humidity))
+  {
+    Serial.println("OK");
+    AM2320flag = true;
+  }
+  else
+    Serial.println("none");
 }
 
 void Read_Sensor()
@@ -1410,9 +1416,9 @@ void Read_Sensor()
     // only print header first time
     if (header)
     {
-      Serial.println(F("-------------Mass -----------    ------------- Number --------------   -Average-"));
-      Serial.println(F("     Concentration [μg/m3]             Concentration [#/cm3]             [μm]"));
-      Serial.println(F("P1.0\tP2.5\tP4.0\tP10\tP0.5\tP1.0\tP2.5\tP4.0\tP10\tPartSize\n"));
+      Serial.println("-------------Mass -----------    ------------- Number --------------   -Average-");
+      Serial.println("     Concentration [μg/m3]             Concentration [#/cm3]             [μm]");
+      Serial.println("P1.0\tP2.5\tP4.0\tP10\tP0.5\tP1.0\tP2.5\tP4.0\tP10\tPartSize\n");
       header = false;
     }
     PM25_value = val.MassPM2;
@@ -1500,11 +1506,11 @@ void GetDeviceInfo()
   ret = sps30.GetSerialNumber(buf, 32);
   if (ret == ERR_OK)
   {
-    Serial.print(F("Serial number : "));
+    Serial.print("Serial number : ");
     if (strlen(buf) > 0)
       Serial.println(buf);
     else
-      Serial.println(F("not available"));
+      Serial.println("not available");
   }
   else
     ErrtoMess((char *)"could not get serial number. ", ret);
@@ -1512,11 +1518,11 @@ void GetDeviceInfo()
   ret = sps30.GetProductName(buf, 32);
   if (ret == ERR_OK)
   {
-    Serial.print(F("Product name  : "));
+    Serial.print("Product name  : ");
     if (strlen(buf) > 0)
       Serial.println(buf);
     else
-      Serial.println(F("not available"));
+      Serial.println("not available");
   }
   else
     ErrtoMess((char *)"could not get product name. ", ret);
@@ -1524,15 +1530,15 @@ void GetDeviceInfo()
   ret = sps30.GetVersion(&v);
   if (ret != ERR_OK)
   {
-    Serial.println(F("Can not read version info."));
+    Serial.println("Can not read version info.");
     return;
   }
-  Serial.print(F("Firmware level: "));
+  Serial.print("Firmware level: ");
   Serial.print(v.major);
   Serial.print(".");
   Serial.println(v.minor);
 
-  Serial.print(F("Library level : "));
+  Serial.print("Library level : ");
   Serial.print(v.DRV_major);
   Serial.print(".");
   Serial.println(v.DRV_minor);
@@ -1544,7 +1550,7 @@ void Errorloop(char *mess, uint8_t r)
     ErrtoMess(mess, r);
   else
     Serial.println(mess);
-  Serial.println(F("No SPS30 connected"));
+  Serial.println("No SPS30 connected");
 }
 
 /**

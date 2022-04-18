@@ -7,6 +7,9 @@
 
 #include <Arduino.h>
 #include "main.hpp"
+
+#define TTGO_T_Display false // Set to true if Board TTGO T-Display is used
+#define OLED_Display false // Set to true if you use a OLED Diplay
 #define BLUETOOTH false // Set to true in case bluetooth is desired
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
@@ -1264,9 +1267,9 @@ void Setup_Sensor()
 
   Serial.println("Test Sensirion SEN5X sensor");
   Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
-
+  delay(100);
   sen5x.begin(Wire);
-  Serial.println("Test Sensirion SEN5X sensor");
+  delay(100);
 
   uint16_t error;
   char errorMessage[256];
@@ -1300,86 +1303,88 @@ void Setup_Sensor()
 
   ///////////////////////////////////////////////////////////////////////////////////////////
 
-    // Test PM2.5 SPS30
-
-  Serial.println("Test Sensirion SPS30 sensor");
-  Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
-
-  sps30.EnableDebugging(DEBUG);
-  // Begin communication channel
-  SP30_COMMS.begin();
-  if (sps30.begin(&SP30_COMMS) == false)
+  // Test PM2.5 SPS30
+  if (SEN5Xflag == false)
   {
-    Errorloop((char *)"Could not set I2C communication channel.", 0);
-  }
-  // check for SPS30 connection
-  if (!sps30.probe())
-    Errorloop((char *)"could not probe / connect with SPS30.", 0);
-  else
-  {
-    Serial.println("Detected SPS30.");
-    pm25_sensor = scd30_sensor;
-    SPS30flag = true;
-    // read device info
-    GetDeviceInfo();
-  }
-  // start measurement ??????????????????????????????????????????????????????Parece invertido Measurement started sin Sensor
-  if (!sps30.start())
-    Serial.println("Measurement started");
-  else
-    Errorloop((char *)"Could NOT start measurement", 0);
+    Serial.println("Test Sensirion SPS30 sensor");
+    // Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
 
-  // PMS7003 PMSA003
+    sps30.EnableDebugging(DEBUG);
+    // Begin communication channel
+    SP30_COMMS.begin();
+    if (sps30.begin(&SP30_COMMS) == false)
+    {
+      Errorloop((char *)"Could not set I2C communication channel.", 0);
+    }
+    // check for SPS30 connection
+    if (!sps30.probe())
+      Errorloop((char *)"could not probe / connect with SPS30.", 0);
+    else
+    {
+      Serial.println("Detected SPS30.");
+      pm25_sensor = scd30_sensor;
+      SPS30flag = true;
+      // read device info
+      GetDeviceInfo();
+    }
+    // start measurement
+    if (!sps30.start())
+      Serial.println("Measurement started");
+    else
+      Errorloop((char *)"Could NOT start measurement", 0);
 
-  Serial.println("Test Plantower Sensor");
-  Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
-  delay(1000);
+    // PMS7003 PMSA003
 
-  while (Serial1.available())
-  {
-    Serial1.read();
-  }
-  pms.requestRead();
-  if (pms.readUntil(data))
-  {
-    Serial.println("Plantower sensor found!");
-    pm25_sensor = scd30_sensor;
-    PMSflag = true;
-  }
-  else
-  {
-    Serial.println("Could not find Plantower sensor!");
-  }
+    Serial.println("Test Plantower Sensor");
+    Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
+    delay(1000);
 
-  Serial.print("SHT31 test: ");
-  if (!sht31.begin(0x44))
-  { // Set to 0x45 for alternate i2c addr
-    Serial.println("none");
-  }
-  else
-  {
-    Serial.println("OK");
-    SHT31flag = true;
-  }
+    while (Serial1.available())
+    {
+      Serial1.read();
+    }
+    pms.requestRead();
+    if (pms.readUntil(data))
+    {
+      Serial.println("Plantower sensor found!");
+      pm25_sensor = scd30_sensor;
+      PMSflag = true;
+    }
+    else
+    {
+      Serial.println("Could not find Plantower sensor!");
+    }
 
-  Serial.print("Heater Enabled State: ");
-  if (sht31.isHeaterEnabled())
-    Serial.println("ENABLED");
-  else
-    Serial.println("DISABLED");
+    Serial.print("SHT31 test: ");
+    if (!sht31.begin(0x44))
+    { // Set to 0x45 for alternate i2c addr
+      Serial.println("none");
+    }
+    else
+    {
+      Serial.println("OK");
+      SHT31flag = true;
+    }
 
-  Serial.print("AM2320 test: ");
+    Serial.print("Heater Enabled State: ");
+    if (sht31.isHeaterEnabled())
+      Serial.println("ENABLED");
+    else
+      Serial.println("DISABLED");
 
-  am2320.begin();
-  humidity = am2320.readHumidity();
-  temperature = am2320.readTemperature();
-  if (!isnan(humidity))
-  {
-    Serial.println("OK");
-    AM2320flag = true;
+    Serial.print("AM2320 test: ");
+
+    am2320.begin();
+    humidity = am2320.readHumidity();
+    temperature = am2320.readTemperature();
+    if (!isnan(humidity))
+    {
+      Serial.println("OK");
+      AM2320flag = true;
+    }
+    else
+      Serial.println("none");
   }
-  else
-    Serial.println("none");
 }
 
 void Read_Sensor()

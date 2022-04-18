@@ -38,6 +38,8 @@ void Write_Bluetooth();
 void ErrtoMess(char *mess, uint8_t r);
 void Errorloop(char *mess, uint8_t r);
 void GetDeviceInfo();
+void printSerialNumber();
+void printModuleVersions();
 void ReadHyT();
 
 void displayBatteryLevel(int colour);

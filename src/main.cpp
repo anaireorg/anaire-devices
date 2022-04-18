@@ -21,13 +21,13 @@ struct MyConfigStruct
   uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
   char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address. Default to Anaire Portal on portal.anaire.org
   uint16_t MQTT_port = 30183;                        // MQTT port; Default to Anaire Port on 30183
-   boolean acoustic_alarm = true;                 // Global flag to control acoustic alarm; default to true
-   boolean self_calibration = false;              // Automatic Baseline Correction of CO2 sensor; default to false
-   uint16_t forced_recalibration_reference = 420; // Forced Recalibration value; default to 420ppm
-   uint16_t temperature_offset = 600;             // temperature offset for SCD30 CO2 measurements: 600 by default, because of the housing
-   uint16_t altitude_compensation = 600;          // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
-  char wifi_user[24];     // WiFi user to be used on WPA Enterprise. Default to null (not used)
-  char wifi_password[24]; // WiFi password to be used on WPA Enterprise. Default to null (not used)
+  boolean acoustic_alarm = true;                     // Global flag to control acoustic alarm; default to true
+  boolean self_calibration = false;                  // Automatic Baseline Correction of CO2 sensor; default to false
+  uint16_t forced_recalibration_reference = 420;     // Forced Recalibration value; default to 420ppm
+  uint16_t temperature_offset = 600;                 // temperature offset for SCD30 CO2 measurements: 600 by default, because of the housing
+  uint16_t altitude_compensation = 600;              // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
+  char wifi_user[24];                                // WiFi user to be used on WPA Enterprise. Default to null (not used)
+  char wifi_password[24];                            // WiFi password to be used on WPA Enterprise. Default to null (not used)
 } eepromConfig;
 
 // to store data on nvs partition
@@ -137,6 +137,9 @@ bool SPS30flag = false;
 
 #include <SensirionI2CSen5x.h>
 SensirionI2CSen5x sen5x;
+bool SEN5Xflag = false;
+float vocIndex;
+float noxIndex;
 
 #include "PMS.h"
 PMS pms(Serial1);
@@ -1286,6 +1289,7 @@ void Setup_Sensor()
     // Print SEN55 module information if i2c buffers are large enough
     printSerialNumber();
     printModuleVersions();
+    SEN5Xflag = true;
 
     float tempOffset = 0.0;
     error = sen5x.setTemperatureOffsetSimple(tempOffset);
@@ -1378,27 +1382,6 @@ void Setup_Sensor()
 void Read_Sensor()
 { // Read CO2, temperature and humidity values
 
-  // if SCD30 is identified
-  //  if (pm25_sensor == scd30_sensor) {
-  //    if (scd30.dataReady()) {
-  //      err_sensor = false;
-  // Read SCD30
-  //      if (!scd30.read()) {
-  //        Serial.println("Error reading sensor data");
-  //        return;
-  //      }
-  //      else {
-  //        PM25_value = scd30.CO2;
-  //        temperature = scd30.temperature;
-  //        humidity = scd30.relative_humidity;
-  //      }
-  //    }
-  //    else {
-  // err_sensor = true;
-  // Serial.println("Error SCD30");
-  //    }
-  //  } // End SCD30 sensor
-
   // If there is any other CO2 sensor insert code from here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   if (SPS30flag == true)
@@ -1435,41 +1418,7 @@ void Read_Sensor()
       Serial.println(F("P1.0\tP2.5\tP4.0\tP10\tP0.5\tP1.0\tP2.5\tP4.0\tP10\tPartSize\n"));
       header = false;
     }
-    //  Serial.print(val.MassPM1);
-    //  Serial.print(F("\t"));
-    //  Serial.print(val.MassPM2);
-    //  Serial.print(F("\t"));
-    //  Serial.print(val.MassPM4);
-    //  Serial.print(F("\t"));
-    //  Serial.print(val.MassPM10);
-    //  Serial.print(F("\n"));
-    /*
-
-    ///////////////////////////////////////////////////////////////////////////////
-
-      temperature = sht31.readTemperature();
-      humidity = sht31.readHumidity();
-
-      if (! isnan(temperature)) {  // check if 'is not a number'
-        Serial.print("Temp *C = "); Serial.print(temperature); Serial.print("\t\t");
-      } else {
-        Serial.println("Failed to read temperature");
-      }
-
-      if (! isnan(humidity)) {  // check if 'is not a number'
-        Serial.print("Hum. % = "); Serial.println(humidity);
-      } else {
-        Serial.println("Failed to read humidity");
-      }
-
-    ///////////////////////////////////////////////////////////////////////////////
-      //PM25_value = round(val.MassPM2);
-
-    */
-
     PM25_value = val.MassPM2;
-
-    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     if (!err_sensor)
     {
@@ -1477,12 +1426,57 @@ void Read_Sensor()
       Serial.print("SPS30 PM2.5: ");
       Serial.print(PM25_value);
       Serial.print(" ug/m3   ");
-      //    Serial.print("\t");
-      //    Serial.print("Temperature[ºC]:");
-      //    Serial.print(temperature, 1);
-      //    Serial.print("\t");
-      //    Serial.print("Humidity[%]:");
-      //    Serial.println(humidity, 1);
+    }
+  }
+
+  if (SEN5Xflag == true)
+  {
+    uint16_t error;
+    char errorMessage[256];
+
+    error = sen5x.readMeasuredValues(
+        massConcentrationPm1p0, massConcentrationPm2p5, massConcentrationPm4p0,
+        massConcentrationPm10p0, ambientHumidity, ambientTemperature, vocIndex,
+        noxIndex);
+
+    if (error)
+    {
+      Serial.print("Error trying to execute readMeasuredValues(): ");
+      errorToString(error, errorMessage, 256);
+      Serial.println(errorMessage);
+    }
+    else
+    {
+      PM25_value = massConcentrationPm2p5;
+      Serial.print("SEN5X PM2.5: ");
+      Serial.print(PM25_value);
+      Serial.print(" ug/m3   ");
+      Serial.print(" Humi % = ");
+      if (isnan(ambientHumidity))
+        Serial.print("n/a");
+      else
+      {
+        Serial.print(ambientHumidity);
+        humi = round(ambientHumidity);
+      }
+      Serial.println(temperature);
+      if (isnan(ambientTemperature))
+        Serial.print("n/a");
+      else
+      {
+        Serial.print(ambientTemperature);
+        temp = round(temperature);
+      }
+      Serial.print(" VocIndex:");
+      if (isnan(vocIndex))
+        Serial.print("n/a");
+      else
+        Serial.print(vocIndex);
+      Serial.print(" NoxIndex:");
+      if (isnan(noxIndex))
+        Serial.println("n/a");
+      else
+        Serial.println(noxIndex);
     }
   }
 

@@ -125,8 +125,8 @@ int vref = 1100;
 #include <Adafruit_SCD30.h>
 
 Adafruit_SCD30 scd30;
-#define Sensor_SDA_pin 21                      // Define the SDA pin used for the SCD30
-#define Sensor_SCL_pin 22                      // Define the SCL pin used for the SCD30
+#define Sensor_SDA_pin 21                     // Define the SDA pin used for the SCD30
+#define Sensor_SCL_pin 22                     // Define the SCL pin used for the SCD30
 unsigned long SCD30_CALIBRATION_TIME = 10000; // SCD30 CO2 CALIBRATION TIME: 1 min = 60000 ms
 
 #include <sps30.h>
@@ -178,9 +178,10 @@ bool bluetooth_active = false;
 
 // WiFi
 //#include <WiFi.h>
-#include <WiFiManager.h>                // https://github.com/tzapu/WiFiManager
-#include "esp_wpa2.h"                   //wpa2 library for connections to Enterprise networks
+#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
+#include "esp_wpa2.h"    //wpa2 library for connections to Enterprise networks
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
+//const int WIFI_CONNECT_TIMEOUT = 1000; // 1 seconds
 WiFiServer wifi_server(80);
 WiFiClient wifi_client;
 bool PortalFlag = false;
@@ -920,6 +921,7 @@ void Start_Captive_Portal()
   // switched off via webserver or device is restarted.
 
   wifiManager.setConfigPortalTimeout(30);
+  //wifiManager.setConfigPortalTimeout(3);
 
   // it starts an access point
   // and goes into a blocking loop awaiting configuration
@@ -1251,6 +1253,8 @@ void Setup_Sensor()
 
   Serial.println(F("Test Sensirion SPS30 sensor"));
   Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
+
+  /*
   sps30.EnableDebugging(DEBUG);
   // Begin communication channel
   SP30_COMMS.begin();
@@ -1275,10 +1279,12 @@ void Setup_Sensor()
   else
     Errorloop((char *)"Could NOT start measurement", 0);
 
+    */
+
   //////////////////////////////////////////////////////////////////////////////////////////////
   // Test PM2.5 SEN5X
-  Serial.println("Test Sensirion SEN5X sensor");
   sen5x.begin(Wire);
+  Serial.println("Test Sensirion SEN5X sensor");
 
   uint16_t error;
   char errorMessage[256];
@@ -1289,13 +1295,14 @@ void Setup_Sensor()
     errorToString(error, errorMessage, 256);
     Serial.println(errorMessage);
   }
-
   else
   {
     // Print SEN55 module information if i2c buffers are large enough
+    Serial.println("SEN5X sensor found!");
+    pm25_sensor = scd30_sensor;
+    SEN5Xflag = true;
     printSerialNumber();
     printModuleVersions();
-    SEN5Xflag = true;
 
     // Start Measurement
     error = sen5x.startMeasurement();
@@ -1305,6 +1312,8 @@ void Setup_Sensor()
       errorToString(error, errorMessage, 256);
       Serial.println(errorMessage);
     }
+    else
+      Serial.println("SEN5X measurement OK");
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1313,7 +1322,7 @@ void Setup_Sensor()
 
   Serial.println("Test Plantower Sensor");
   Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
-  delay(3000);
+  delay(1000);
 
   while (Serial1.available())
   {
@@ -1331,43 +1340,40 @@ void Setup_Sensor()
     Serial.println("Could not find Plantower sensor!");
   }
 
-  // to here
+  /*
 
-  // Set up the detected sensor with configuration values from eeprom struct
-  // Set_Measurement_Interval();
-  // Set_AutoSelfCalibration();
-  // Set_Temperature_Offset();
-  // Set_Altitude_Compensation();
+    Serial.print("SHT31 test: ");
+    if (!sht31.begin(0x44))
+    { // Set to 0x45 for alternate i2c addr
+      Serial.println("none");
+    }
+    else
+    {
+      Serial.println("OK");
+      SHT31flag = true;
+    }
 
-  Serial.print("SHT31 test: ");
-  if (!sht31.begin(0x44))
-  { // Set to 0x45 for alternate i2c addr
-    Serial.println("none");
-  }
-  else
-  {
-    Serial.println("OK");
-    SHT31flag = true;
-  }
+    Serial.print("Heater Enabled State: ");
+    if (sht31.isHeaterEnabled())
+      Serial.println("ENABLED");
+    else
+      Serial.println("DISABLED");
 
-  Serial.print("Heater Enabled State: ");
-  if (sht31.isHeaterEnabled())
-    Serial.println("ENABLED");
-  else
-    Serial.println("DISABLED");
+    Serial.print("AM2320 test: ");
 
-  Serial.print("AM2320 test: ");
+    am2320.begin();
+    humidity = am2320.readHumidity();
+    temperature = am2320.readTemperature();
+    if (!isnan(humidity))
+    {
+      Serial.println("OK");
+      AM2320flag = true;
+    }
+    else
+      Serial.println("none");
 
-  am2320.begin();
-  humidity = am2320.readHumidity();
-  temperature = am2320.readTemperature();
-  if (!isnan(humidity))
-  {
-    Serial.println("OK");
-    AM2320flag = true;
-  }
-  else
-    Serial.println("none");
+
+  */
 }
 
 void Read_Sensor()
@@ -1443,29 +1449,19 @@ void Read_Sensor()
       Serial.print(PM25_value);
       Serial.print(" ug/m3   ");
       Serial.print(" Humi % = ");
-      if (isnan(ambientHumidity))
-        Serial.print("n/a");
-      else
-      {
-        Serial.print(ambientHumidity);
-        humi = round(ambientHumidity);
-      }
-      Serial.println(temperature);
-      if (isnan(ambientTemperature))
-        Serial.print("n/a");
-      else
-      {
-        Serial.print(ambientTemperature);
-        temp = round(temperature);
-      }
-      Serial.print(" VocIndex:");
+      Serial.print(ambientHumidity);
+      humi = round(ambientHumidity);
+      Serial.print("   Temp *C = ");
+      Serial.print(ambientTemperature);
+      temp = round(temperature);
+      Serial.print("   VocIndex:");
       if (isnan(vocIndex))
-        Serial.print("n/a");
+        Serial.print(" n/a");
       else
         Serial.print(vocIndex);
-      Serial.print(" NoxIndex:");
+      Serial.print("   NoxIndex:");
       if (isnan(noxIndex))
-        Serial.println("n/a");
+        Serial.println(" n/a");
       else
         Serial.println(noxIndex);
     }

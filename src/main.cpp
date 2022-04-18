@@ -125,8 +125,8 @@ int vref = 1100;
 #include <Adafruit_SCD30.h>
 
 Adafruit_SCD30 scd30;
-#define SCD30_SDA_pin 21                      // Define the SDA pin used for the SCD30
-#define SCD30_SCL_pin 22                      // Define the SCL pin used for the SCD30
+#define Sensor_SDA_pin 21                      // Define the SDA pin used for the SCD30
+#define Sensor_SCL_pin 22                      // Define the SCL pin used for the SCD30
 unsigned long SCD30_CALIBRATION_TIME = 10000; // SCD30 CO2 CALIBRATION TIME: 1 min = 60000 ms
 
 #include <sps30.h>
@@ -138,6 +138,12 @@ bool SPS30flag = false;
 #include <SensirionI2CSen5x.h>
 SensirionI2CSen5x sen5x;
 bool SEN5Xflag = false;
+float massConcentrationPm1p0;
+float massConcentrationPm2p5;
+float massConcentrationPm4p0;
+float massConcentrationPm10p0;
+float ambientHumidity;
+float ambientTemperature;
 float vocIndex;
 float noxIndex;
 
@@ -1244,7 +1250,7 @@ void Setup_Sensor()
   // Test PM2.5 SPS30
 
   Serial.println(F("Test Sensirion SPS30 sensor"));
-  Wire.begin(SCD30_SDA_pin, SCD30_SCL_pin);
+  Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
   sps30.EnableDebugging(DEBUG);
   // Begin communication channel
   SP30_COMMS.begin();
@@ -1263,8 +1269,8 @@ void Setup_Sensor()
     // read device info
     GetDeviceInfo();
   }
-  // start measurement
-  if (sps30.start())
+  // start measurement ??????????????????????????????????????????????????????Parece invertido Measurement started sin Sensor
+  if (!sps30.start())
     Serial.println(F("Measurement started"));
   else
     Errorloop((char *)"Could NOT start measurement", 0);
@@ -1290,21 +1296,6 @@ void Setup_Sensor()
     printSerialNumber();
     printModuleVersions();
     SEN5Xflag = true;
-
-    float tempOffset = 0.0;
-    error = sen5x.setTemperatureOffsetSimple(tempOffset);
-    if (error)
-    {
-      Serial.print("Error trying to execute setTemperatureOffsetSimple(): ");
-      errorToString(error, errorMessage, 256);
-      Serial.println(errorMessage);
-    }
-    else
-    {
-      Serial.print("Temperature Offset set to ");
-      Serial.print(tempOffset);
-      Serial.println(" deg. Celsius (SEN54/SEN55 only");
-    }
 
     // Start Measurement
     error = sen5x.startMeasurement();

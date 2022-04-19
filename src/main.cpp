@@ -73,8 +73,7 @@ boolean err_MQTT = false;
 boolean err_sensor = false;
 
 // Measurements loop: time between measurements
-unsigned int measurements_loop_duration = 10000; // 10 seconds !!! TEST SEN5X
-//unsigned int measurements_loop_duration = 1000; // 10 seconds
+unsigned int measurements_loop_duration = 1000; // 1 second
 unsigned long measurements_loop_start;          // holds a timestamp for each control loop start
 
 // MQTT loop: time between MQTT measurements sent to the cloud
@@ -194,8 +193,8 @@ bool bluetooth_active = false;
 //#include <WiFi.h>
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 #include "esp_wpa2.h"    //wpa2 library for connections to Enterprise networks
-// const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
-const int WIFI_CONNECT_TIMEOUT = 1000; // 1 seconds
+const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
+//const int WIFI_CONNECT_TIMEOUT = 1000; // 1 seconds !!! TEST SEN5X
 WiFiServer wifi_server(80);
 WiFiClient wifi_client;
 bool PortalFlag = false;

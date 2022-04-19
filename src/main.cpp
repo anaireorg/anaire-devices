@@ -8,8 +8,8 @@
 #include <Arduino.h>
 #include "main.hpp"
 
-#define TTGO_T_Display false // Set to true if Board TTGO T-Display is used
-#define OLED_Display false // Set to true if you use a OLED Diplay
+#define TDisplay false // Set to true if Board TTGO T-Display is used
+#define OLED false // Set to true if you use a OLED Diplay
 #define BLUETOOTH false // Set to true in case bluetooth is desired
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
@@ -35,15 +35,15 @@ struct MyConfigStruct
 Preferences preferences;
 
 // Measurements
-float PM25_value = 0; // CO2 ppm measured value
-float PM25_accumulated = 0; // Accumulates co2 measurements for a MQTT period
+float PM25_value = 0; // PM25 ppm measured value
+float PM25_accumulated = 0; // Accumulates pm25 measurements for a MQTT period
 float temperature;          // Read temperature as Celsius
 float humidity;             // Read humidity in %
 int PM25_samples = 0;       // Counts de number of samples for a MQTT period
 int temp;
 int humi;
 
-// CO2 sensors
+// PM25 sensors
 enum PM25_sensors
 {
   none,
@@ -53,14 +53,14 @@ enum PM25_sensors
 }; // possible sensors integrated in the SW
 PM25_sensors pm25_sensor = none;
 
-// CO2 device status
+// PM25 device status
 enum pm25_status
 {
   pm25_ok,
   pm25_warning,
   pm25_alarm
-};                                       // the device can have one of those CO2 status
-pm25_status co2_device_status = pm25_ok; // initialized to ok
+};                                       // the device can have one of those PM25 status
+pm25_status pm25_device_status = pm25_ok; // initialized to ok
 
 // device status
 boolean err_global = false;
@@ -84,8 +84,9 @@ unsigned long errors_loop_start;           // holds a timestamp for each error l
 // TTGO ESP32 board
 #include "esp_timer.h"
 #include <Wire.h>
-
 #include <esp_system.h>
+
+#if TDisplay
 
 // Display and fonts
 #include <TFT_eSPI.h>
@@ -121,13 +122,10 @@ int vref = 1100;
 #define Voltage_Threshold_3 3.5
 #define Voltage_Threshold_4 3.3
 
-// Sensirion SCD30 CO2, temperature and humidity sensor
-#include <Adafruit_SCD30.h>
+#endif
 
-Adafruit_SCD30 scd30;
 #define Sensor_SDA_pin 21                     // Define the SDA pin used for the SCD30
 #define Sensor_SCL_pin 22                     // Define the SCL pin used for the SCD30
-unsigned long SCD30_CALIBRATION_TIME = 10000; // SCD30 CO2 CALIBRATION TIME: 1 min = 60000 ms
 
 #include <sps30.h>
 SPS30 sps30;
@@ -179,7 +177,8 @@ bool AM2320flag = false;
 // Bluetooth in TTGO T-Display
 #if BLUETOOTH
 #include "Sensirion_GadgetBle_Lib.h" // to connect to Sensirion MyAmbience Android App available on Google Play
-GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
+//GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
+GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_VOC_PM25_V2);
 bool bluetooth_active = false;
 #endif
 
@@ -244,11 +243,13 @@ void setup()
 
   // print info
   Serial.println();
-  Serial.println("### INIT ANAIRE PiCO2 DEVICE ###########################################");
+  Serial.println("### Inicializando Medidor Aire Ciudadano #################################");
 
+#if TDisplay
   // Initialize TTGO Display and show Anaire splash screen
   Display_Init();
   Display_Splash_Screen();
+#endif
 
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
@@ -272,8 +273,10 @@ void setup()
   Serial.println(gadgetBle.getDeviceIdString());
 #endif
 
+#if TDisplay
   // Initialize TTGO board buttons
   Button_Init();
+#endif
 
   // Start Captive Portal for 15 seconds
   if (ResetFlag == true)
@@ -291,7 +294,7 @@ void setup()
     Init_MQTT();
   }
 
-  // Initialize and warm up CO2 sensor
+  // Initialize and warm up PM25 sensor
   Setup_Sensor();
 
   // Init control loops
@@ -299,18 +302,22 @@ void setup()
   MQTT_loop_start = millis();
   errors_loop_start = millis();
 
-  Serial.println("### ANAIRE PiCO2 DEVICE SETUP FINISHED ###\n");
+  Serial.println("### Configuración del medidor AireCiudadano finalizada ###\n");
+#if TDisplay
   tft.fillScreen(TFT_BLUE);
   tft.setTextColor(TFT_WHITE, TFT_BLUE);
   tft.setTextDatum(6); // bottom left
   tft.setTextSize(1);
   tft.setFreeFont(FF90);
   tft.setTextDatum(MC_DATUM);
-  tft.drawString("ANAIRE PiCO2", tft.width() / 2, tft.height() / 2);
+  tft.drawString("Medidor AireCiudadano", tft.width() / 2, tft.height() / 2);
   delay(1000);
 
   // Update display with new values
   Update_Display();
+#else
+   delay(1000);
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -327,9 +334,6 @@ void loop()
     return;
   }
 
-  // Measure the battery voltage
-  // battery_voltage = ((float)analogRead(ADC_PIN)/4095.0)*2.0*3.3*(vref/1000.0);
-
   // Measurement loop
   if ((millis() - measurements_loop_start) >= measurements_loop_duration)
   {
@@ -340,10 +344,15 @@ void loop()
     // Read sensors
     Read_Sensor();
 
-    if (PM25_value > 0) // REVISAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (PM25_value >= 0) // REVISAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     {
+      // Evaluate PM25 value
+      Evaluate_PM25_Value();
+
       // Update display with new values
+#if TDisplay
       Update_Display();
+#endif
 
 // Update bluetooth app with new values
 #if BLUETOOTH
@@ -385,7 +394,7 @@ void loop()
     if (err_sensor)
     {
       Serial.println("--- err_sensor");
-      // Setup_Sensor();  // Init co2 sensors
+      // Setup_Sensor();  // Init pm25 sensors
     }
 
     if (WiFi.status() != WL_CONNECTED)
@@ -432,9 +441,11 @@ void loop()
   gadgetBle.handleEvents();
 #endif
 
+#if TDisplay
   // Process buttons events
   button_top.loop();
   button_bottom.loop();
+#endif
 
   // Serial.println("--- END LOOP");
 }
@@ -530,6 +541,7 @@ void WiFiEvent(WiFiEvent_t event)
   }
 }
 
+#if TDisplay
 void Interrupt_Restart(Button2 &btn)
 { // Restarts the device if any button is pressed while calibrating or in captive portal
   Serial.println("Any button click");
@@ -538,6 +550,7 @@ void Interrupt_Restart(Button2 &btn)
     ESP.restart();
   }
 }
+#endif
 
 void Connect_WiFi()
 { // Connect to WiFi
@@ -661,33 +674,6 @@ void Print_WiFi_Status()
   Serial.print(WiFi.RSSI());
   Serial.println(" dBm");
 
-  /*
-  // Print authentication used:
-  Serial.print("Encryption type: ");
-  switch (WiFi.encryptionType()) {
-    case WIFI_AUTH_OPEN:
-      Serial.println("Open WiFi");
-      break;
-    case WIFI_AUTH_WEP:
-      Serial.println("WEP");
-      break;
-    case WIFI_AUTH_WPA_PSK:
-      Serial.println("WPA-PSK");
-      break;
-    case WIFI_AUTH_WPA2_PSK:
-      Serial.println("WPA2-PSK");
-      break;
-    case WIFI_AUTH_WPA_WPA2_PSK:
-      Serial.println("WPA-WPA2-PSK");
-      break;
-    case WIFI_AUTH_WPA2_ENTERPRISE:
-      Serial.println("WPA2-Enterprise");
-      break;
-    default:
-      Serial.println("Unknown encryption type");
-      break;
-  }
-  */
 }
 
 void Check_WiFi_Server()
@@ -716,7 +702,7 @@ void Check_WiFi_Server()
             client.println("Content-type:text/html");
             client.println();
             // Print current info
-            client.print("ANAIRE PiCO2 DEVICE");
+            client.print("Medidor AireCiudadano");
             client.println("<br>");
             client.print("SW version: ");
             client.print(sw_version);
@@ -770,7 +756,7 @@ void Check_WiFi_Server()
             client.print(humi);
             client.println("<br>");
             client.print("PM2.5 STATUS: ");
-            switch (co2_device_status)
+            switch (pm25_device_status)
             {
             case pm25_ok:
               client.print("OK");
@@ -786,13 +772,7 @@ void Check_WiFi_Server()
             client.println("------");
             client.println("<br>");
 
-            // Calibration:
-            client.print("Click <a href=\"/1\">here</a> to calibrate the device.<br>");
-            client.println("<br>");
-            // Activate autocalibration Calibration:
-            client.print("Click <a href=\"/2\">here</a> to activate auto calibration.<br>");
-            client.println("<br>");
-            // Captive portal:
+          // Captive portal:
             client.print("Click <a href=\"/3\">here</a> to launch captive portal to set up WiFi and MQTT endpoint.<br>");
             client.println("<br>");
             // Suspend:
@@ -851,20 +831,23 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
 
   InCaptivePortal = true;
+  String wifiAP = "AnaireWiFi_" + anaire_device_id;
+  Serial.println(wifiAP);
 
+#if TDisplay
   tft.fillScreen(TFT_WHITE);
   tft.setTextColor(TFT_RED, TFT_WHITE);
   tft.setTextSize(1);
   tft.setFreeFont(FF90);
   tft.setTextDatum(MC_DATUM);
-  String wifiAP = "AnaireWiFi_" + anaire_device_id;
   tft.drawString(wifiAP, tft.width() / 2, tft.height() / 2);
+#endif
+
   wifi_server.stop();
 
   // Local intialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
   wifiManager.setDebugOutput(true);
-  // wifiManager.setCountry("ES"); // it is not recognizing the country...
   wifiManager.disconnect();
   WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
@@ -1026,7 +1009,7 @@ void Send_Message_Cloud_App_MQTT()
   pm25int = round(pm25f);
   Serial.println(pm25int);
   ReadHyT();
-  sprintf(MQTT_message, "{id: %s,CO2: %d, PM25: %d,humidity: %d,temperature: %d}", anaire_device_id.c_str(), 0, pm25int, humi, temp);
+  sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d}", anaire_device_id.c_str(), pm25int, humi, temp);
   Serial.print(MQTT_message);
   Serial.println();
 
@@ -1066,6 +1049,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   if ((jsonBuffer["warning"]) && (eepromConfig.PM25_warning_threshold != (int)jsonBuffer["warning"]))
   {
     eepromConfig.PM25_warning_threshold = (int)jsonBuffer["warning"];
+    Evaluate_PM25_Value();
     Serial.print("New warning threshold: ");
     Serial.println(eepromConfig.PM25_warning_threshold);
     write_eeprom = true;
@@ -1075,6 +1059,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   if ((jsonBuffer["caution"]) && (eepromConfig.PM25_alarm_threshold != (int)jsonBuffer["caution"]))
   {
     eepromConfig.PM25_alarm_threshold = (int)jsonBuffer["caution"];
+    Evaluate_PM25_Value();
     Serial.print("New alarm threshold: ");
     Serial.println(eepromConfig.PM25_alarm_threshold);
     write_eeprom = true;
@@ -1283,9 +1268,7 @@ void Setup_Sensor()
 }
 
 void Read_Sensor()
-{ // Read CO2, temperature and humidity values
-
-  // If there is any other CO2 sensor insert code from here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+{ // Read PM25, temperature and humidity values
 
   if (SPS30flag == true)
   {
@@ -1498,10 +1481,10 @@ void printModuleVersions()
     Serial.print("ProductName:");
     Serial.println((char *)productName);
   }
-
+  
+  bool firmwareDebug;
   uint8_t firmwareMajor;
   uint8_t firmwareMinor;
-  bool firmwareDebug;
   uint8_t hardwareMajor;
   uint8_t hardwareMinor;
   uint8_t protocolMajor;
@@ -1552,29 +1535,29 @@ void printSerialNumber()
   }
 }
 
-void Evaluate_CO2_Value()
-{ // Evaluate measured CO2 value against warning and alarm thresholds
+void Evaluate_PM25_Value()
+{ // Evaluate measured PM25 value against warning and alarm thresholds
 
   // Status: ok
   if (PM25_value < eepromConfig.PM25_warning_threshold)
   {
-    co2_device_status = pm25_ok; // Update CO2 status
+    pm25_device_status = pm25_ok; // Update PM25 status
   }
 
   // Status: warning
   else if ((PM25_value >= eepromConfig.PM25_warning_threshold) && (PM25_value < eepromConfig.PM25_alarm_threshold))
   {
-    co2_device_status = pm25_warning; // update CO2 status
+    pm25_device_status = pm25_warning; // update PM25 status
   }
 
   // Status: alarm
   else
   {
-    co2_device_status = pm25_alarm; // update CO2 status
+    pm25_device_status = pm25_alarm; // update PM25 status
   }
 
   // Print info on serial monitor
-  switch (co2_device_status)
+  switch (pm25_device_status)
   {
   case pm25_ok:
     Serial.println("STATUS: PM2.5 OK");
@@ -1675,9 +1658,9 @@ void Print_Config()
   Serial.println(eepromConfig.anaire_device_name);
   Serial.print("SW version: ");
   Serial.println(sw_version);
-  Serial.print("CO2ppm Warning threshold: ");
+  Serial.print("PM25 Warning threshold: ");
   Serial.println(eepromConfig.PM25_warning_threshold);
-  Serial.print("CO2ppm Alarm threshold: ");
+  Serial.print("PM25 Alarm threshold: ");
   Serial.println(eepromConfig.PM25_alarm_threshold);
   Serial.print("MQTT server: ");
   Serial.println(eepromConfig.MQTT_server);
@@ -1707,6 +1690,7 @@ void espDelay(int ms)
   esp_light_sleep_start();
 }
 
+#if TDisplay
 void Button_Init()
 { // Manage TTGO T-Display board buttons
 
@@ -1716,7 +1700,6 @@ void Button_Init()
   //   - Top button double click: sleep; click a button to wake up
   //   - Top button triple click: starts captive portal
   //   - Bottom button short click: buttons usage
-  //   - Bottom button long click: performs CO2 sensor forced calibration
   //   - Bottom button double click: restart device
   //   - Bottom button triple click: enables auto self calibration
 
@@ -1856,8 +1839,8 @@ void Update_Display()
 
   tft.setTextDatum(TL_DATUM); // top left
 
-  // Set screen and text colours based on CO2 value
-  if (co2_device_status == pm25_ok)
+  // Set screen and text colours based on PM25 value
+  if (pm25_device_status == pm25_ok)
   {
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
@@ -1866,7 +1849,7 @@ void Update_Display()
     displayBatteryLevel(TFT_GREEN);
   }
 
-  else if (co2_device_status == pm25_warning)
+  else if (pm25_device_status == pm25_warning)
   {
     tft.fillScreen(TFT_YELLOW);
     tft.setTextColor(TFT_RED, TFT_YELLOW);
@@ -1876,7 +1859,7 @@ void Update_Display()
     displayBatteryLevel(TFT_RED);
   }
 
-  else if (co2_device_status == pm25_alarm)
+  else if (pm25_device_status == pm25_alarm)
   {
     tft.fillScreen(TFT_RED);
     tft.setTextColor(TFT_WHITE, TFT_RED);
@@ -1886,12 +1869,12 @@ void Update_Display()
     displayBatteryLevel(TFT_WHITE);
   }
 
-  // Draw CO2 number
+  // Draw PM25 number
   tft.setTextSize(1);
   tft.setFreeFont(FF95);
   tft.drawString(String(round(PM25_value), 0), 60, 30);
 
-  // Draw CO2 units
+  // Draw PM25 units
   tft.setTextSize(1);
   tft.setFreeFont(FF90);
   tft.drawString("PPM", 200, 115);
@@ -1903,11 +1886,13 @@ void Update_Display()
   tft.drawString(String(humidity, 1) + "%", 140, 115);
 
   // Draw bluetooth device id
-  // if (bluetooth_active) {
-  //  tft.setTextDatum(8); // bottom right
-  //  tft.drawString(gadgetBle.getDeviceIdString(), 230, 125);
-  //}
+#if BLUETOOTH
+//  tft.setTextDatum(8); // bottom right
+  tft.drawString(gadgetBle.getDeviceIdString(), 200, 115);
+#endif
 }
+
+#endif
 
 void Get_Anaire_DeviceId()
 { // Get TTGO T-Display info and fill up anaire_device_id with last 6 digits (in HEX) of WiFi mac address
@@ -1981,7 +1966,9 @@ void Firmware_Update()
 
   // Reading data over SSL may be slow, use an adequate timeout
   UpdateClient.setTimeout(30); // timeout argument is defined in seconds for setTimeout
+  Serial.println("ACTUALIZACION EN CURSO");
 
+#if TDisplay
   // Update display
   tft.fillScreen(TFT_ORANGE);
   tft.setTextColor(TFT_BLACK, TFT_ORANGE);
@@ -1989,6 +1976,7 @@ void Firmware_Update()
   tft.setFreeFont(FF90);
   tft.setTextDatum(MC_DATUM);
   tft.drawString("ACTUALIZACION EN CURSO", tft.width() / 2, tft.height() / 2);
+#endif
 
   // t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
   t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
@@ -1998,8 +1986,12 @@ void Firmware_Update()
 
   case HTTP_UPDATE_FAILED:
     Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+    
+#if TDisplay
     tft.fillScreen(TFT_ORANGE);
     tft.drawString("ACTUALIZACION FALLIDA", tft.width() / 2, tft.height() / 2);
+#endif
+
     delay(1000);
     break;
 
@@ -2009,13 +2001,16 @@ void Firmware_Update()
 
   case HTTP_UPDATE_OK:
     Serial.println("HTTP_UPDATE_OK");
+#if TDisplay
     tft.fillScreen(TFT_ORANGE);
     tft.drawString("ACTUALIZACION COMPLETA", tft.width() / 2, tft.height() / 2);
+#endif
     delay(1000);
     break;
   }
 }
 
+#if TDisplay
 void displayBatteryLevel(int colour)
 { // Draw a battery showing the level of charge
 
@@ -2095,8 +2090,13 @@ void displayWifi(int colour_1, int colour_2, boolean active)
   }
 }
 
+#endif
+
 void Suspend_Device()
 {
+  Serial.println("Presione un boton para despertar");
+
+#if TDisplay
   // int r = digitalRead(TFT_BL);
   tft.fillScreen(TFT_BLACK);
   tft.setTextColor(TFT_GREEN, TFT_BLACK);
@@ -2106,6 +2106,9 @@ void Suspend_Device()
   // digitalWrite(TFT_BL, !r);
   tft.writecommand(TFT_DISPOFF);
   tft.writecommand(TFT_SLPIN);
+#else
+  espDelay(3000);
+#endif
 
   // After using light sleep, you need to disable timer wake, because here use external IO port to wake up
   esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
@@ -2178,9 +2181,10 @@ void print_reset_reason(RESET_REASON reason)
 #if BLUETOOTH
 void Write_Bluetooth()
 { // Write measurements to bluetooth
-  gadgetBle.writeCO2(round(PM25_value));
-  gadgetBle.writeTemperature(temperature);
-  gadgetBle.writeHumidity(humidity);
+  gadgetBle.writePM2p5(PM25int);
+  gadgetBle.writeTemperature(temp);
+  gadgetBle.writeHumidity(humi);
+  Serial.println("Bluetooth frame: PM25, humidity and temperature");
   gadgetBle.commit();
 }
 #endif

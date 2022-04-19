@@ -9,7 +9,7 @@ void Init_MQTT();
 void Setup_Sensor();
 void Update_Display();
 void Read_Sensor();
-void Evaluate_CO2_Value();
+void Evaluate_PM25_Value();
 void Update_Display();
 void Send_Message_Cloud_App_MQTT();
 void MQTT_Reconnect();

@@ -24,9 +24,9 @@ struct MyConfigStruct
   uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
   char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address. Default to Anaire Portal on portal.anaire.org
   uint16_t MQTT_port = 30183;                        // MQTT port; Default to Anaire Port on 30183
-  boolean acoustic_alarm = true;                     // Global flag to control acoustic alarm; default to true
-  boolean self_calibration = false;                  // Automatic Baseline Correction of CO2 sensor; default to false
-  uint16_t forced_recalibration_reference = 420;     // Forced Recalibration value; default to 420ppm
+//  boolean acoustic_alarm = true;                     // Global flag to control acoustic alarm; default to true
+//  boolean self_calibration = false;                  // Automatic Baseline Correction of CO2 sensor; default to false
+//  uint16_t forced_recalibration_reference = 420;     // Forced Recalibration value; default to 420ppm
   uint16_t temperature_offset = 600;                 // temperature offset for SCD30 CO2 measurements: 600 by default, because of the housing
   uint16_t altitude_compensation = 600;              // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
   char wifi_user[24];                                // WiFi user to be used on WPA Enterprise. Default to null (not used)
@@ -187,7 +187,7 @@ bool bluetooth_active = false;
 #endif
 
 // AZ-Delivery Active Buzzer
-#define BUZZER_GPIO 12 // signal GPIO12 (pin TOUCH5/ADC15/GPIO12 on TTGO)
+//#define BUZZER_GPIO 12 // signal GPIO12 (pin TOUCH5/ADC15/GPIO12 on TTGO)
 
 // WiFi
 //#include <WiFi.h>
@@ -762,9 +762,9 @@ void Check_WiFi_Server()
             client.print("MQTT Port: ");
             client.print(eepromConfig.MQTT_port);
             client.println("<br>");
-            client.print("Alarm: ");
-            client.print(eepromConfig.acoustic_alarm);
-            client.println("<br>");
+//            client.print("Alarm: ");
+//            client.print(eepromConfig.acoustic_alarm);
+//            client.println("<br>");
             client.println("------");
             client.println("<br>");
             if (pm25_sensor == scd30_sensor)
@@ -774,12 +774,12 @@ void Check_WiFi_Server()
               client.print("Measurement Interval: ");
               client.print(measurements_loop_duration / 1000);
               client.println("<br>");
-              client.print("Auto Calibration: ");
-              client.print(eepromConfig.self_calibration);
-              client.println("<br>");
-              client.print("Forced Recalibration Reference: ");
-              client.print(eepromConfig.forced_recalibration_reference);
-              client.println("<br>");
+//              client.print("Auto Calibration: ");
+//              client.print(eepromConfig.self_calibration);
+//              client.println("<br>");
+//              client.print("Forced Recalibration Reference: ");
+//              client.print(eepromConfig.forced_recalibration_reference);
+//              client.println("<br>");
               client.print("Temperature Offset: ");
               client.print(eepromConfig.temperature_offset);
               client.println("<br>");
@@ -848,18 +848,6 @@ void Check_WiFi_Server()
         }
 
         // Check to see if the client request was "GET /1" to calibrate the sensor:
-        if (currentLine.endsWith("GET /1"))
-        {
-          Do_Calibrate_Sensor();
-        }
-
-        // Check to see if the client request was "GET /2" to activate autocalibration:
-        if (currentLine.endsWith("GET /2"))
-        {
-          eepromConfig.self_calibration = true;
-          Set_AutoSelfCalibration();
-          Write_EEPROM();
-        }
 
         // Check to see if the client request was "GET /3" to launch captive portal:
         if (currentLine.endsWith("GET /3"))
@@ -1123,21 +1111,6 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     write_eeprom = true;
   }
 
-  // Update acoustic alarm
-  if ((jsonBuffer["alarm"]) && ((eepromConfig.acoustic_alarm) && (jsonBuffer["alarm"] == "OFF")))
-  {
-    eepromConfig.acoustic_alarm = false;
-    Serial.println("Acoustic alarm value: OFF");
-    write_eeprom = true;
-  }
-
-  if ((jsonBuffer["alarm"]) && ((!eepromConfig.acoustic_alarm) && (jsonBuffer["alarm"] == "ON")))
-  {
-    eepromConfig.acoustic_alarm = true;
-    Serial.println("Acoustic alarm value: ON");
-    write_eeprom = true;
-  }
-
   // Check MQTT server
   if ((jsonBuffer["MQTT_server"]) && (eepromConfig.MQTT_server != jsonBuffer["MQTT_server"]))
   {
@@ -1171,13 +1144,6 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     }
   }
 
-  // Check FRC value
-  if ((jsonBuffer["FRC_value"]) && (eepromConfig.forced_recalibration_reference != (uint16_t)jsonBuffer["FRC_value"]))
-  {
-    eepromConfig.forced_recalibration_reference = (uint16_t)jsonBuffer["FRC_value"];
-    write_eeprom = true;
-  }
-
   // Check temperature offset
   if ((jsonBuffer["temperature_offset"]) && (eepromConfig.temperature_offset != (uint16_t)jsonBuffer["temperature_offset"]))
   {
@@ -1191,31 +1157,6 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   {
     eepromConfig.altitude_compensation = (uint16_t)jsonBuffer["altitude_compensation"];
     Set_Altitude_Compensation();
-    write_eeprom = true;
-  }
-
-  // If calibration has been enabled, justo do it
-  if ((jsonBuffer["FRC"]) && (jsonBuffer["FRC"] == "ON"))
-  {
-    Do_Calibrate_Sensor();
-    // write_eeprom = true;
-  }
-
-  // Update self calibration
-  if ((jsonBuffer["ABC"]) && ((eepromConfig.self_calibration) && (jsonBuffer["ABC"] == "OFF")))
-  {
-    eepromConfig.self_calibration = false;
-    write_eeprom = true;
-    Set_AutoSelfCalibration();
-    Serial.println("self_calibration: OFF");
-    write_eeprom = true;
-  }
-
-  if ((jsonBuffer["ABC"]) && ((!eepromConfig.self_calibration) && (jsonBuffer["ABC"] == "ON")))
-  {
-    eepromConfig.self_calibration = true;
-    Set_AutoSelfCalibration();
-    Serial.println("self_calibration: ON");
     write_eeprom = true;
   }
 
@@ -1710,137 +1651,6 @@ void Set_Measurement_Interval()
   // If there is any other CO2 sensor insert code from here
 }
 
-void Do_Calibrate_Sensor()
-{ // Calibrate CO2 sensor
-
-  Calibrating = true;
-
-  // Update Display
-  tft.fillScreen(TFT_WHITE);
-  tft.setTextColor(TFT_RED, TFT_WHITE);
-  tft.setTextSize(1);
-  tft.setFreeFont(FF90);
-  tft.setTextDatum(MC_DATUM);
-
-  // if SCD30 is identified
-  if (pm25_sensor == scd30_sensor)
-  {
-
-    // Print info
-    Serial.println("Calibrating SCD30 sensor...");
-
-    // Timestamp for calibrating start time
-    int calibrating_start = millis();
-
-    // Wait for calibrating time before executing forced calibration command
-    int counter = SCD30_CALIBRATION_TIME / 1000;
-    while ((millis() - calibrating_start) < SCD30_CALIBRATION_TIME)
-    {
-
-      // update display
-      tft.fillScreen(TFT_WHITE);
-      tft.drawString("CALIBRANDO " + String(counter), tft.width() / 2, tft.height() / 2);
-
-      // if not there are not connectivity errors, receive MQTT messages, to be able to interrupt calibration process
-      if ((!err_MQTT) && (!err_wifi))
-      {
-        MQTT_client.loop();
-      }
-      Serial.print(counter);
-      Serial.print(".");
-      delay(500);
-      Serial.println(".");
-      delay(500);
-      counter = counter - 1;
-
-      // Process buttons events
-      // button_top.loop();
-      // button_bottom.loop();
-    }
-
-    // Perform forced recalibration
-    tft.fillScreen(TFT_WHITE);
-    if (scd30.forceRecalibrationWithReference(eepromConfig.forced_recalibration_reference))
-    {
-      Serial.print("Performed forced calibration at ");
-      Serial.print(eepromConfig.forced_recalibration_reference);
-      Serial.println(" ug/m3");
-      tft.drawString("CALIBRACIÓN COMPLETA", tft.width() / 2, tft.height() / 2);
-    }
-    else
-    {
-      Serial.println("Could not perform forced calibration");
-      tft.drawString("ERROR DE CALIBRACIÓN", tft.width() / 2, tft.height() / 2);
-    }
-
-    delay(2000); // keep the message on screen
-  }
-
-  // If there is any other CO2 sensor insert code from here
-
-  Calibrating = false;
-}
-
-void Set_Forced_Calibration_Value()
-{ // Set Forced Calibration value as zero reference value
-
-  // if SCD30 is identified
-  if (pm25_sensor == scd30_sensor)
-  {
-
-    // Adafruit SCD30 library does not have get/set functions for the Forced Calibration Reference, but
-    // bool forceRecalibrationWithReference(uint16_t reference);
-    // uint16_t getForcedCalibrationReference(void);
-    // Therefore the value cannot be set, and even the reading will be always 400, by the docs
-    // What we are doing in Anaire devices is to use eepromConfig.forced_recalibration_reference when performing a forced calibration in Do_calibrate_Sensor() function
-    /*
-    uint16_t val = scd30.getForcedCalibrationReference();
-    Serial.print("Reading SCD30 Forced Calibration Reference before change: ");
-    Serial.println(val);
-    Serial.print("Setting new SCD30 Forced Calibration Reference to: ");
-    Serial.println(eepromConfig.forced_recalibration_reference);
-    if (scd30.setForcedCalibrationReference(eepromConfig.forced_recalibration_reference)) {
-      delay(100);
-      val = scd30.getForcedCalibrationReference()();
-      Serial.print("Reading SCD30 Forced Calibration Reference after change: ");
-      Serial.println(val);
-    }
-    else {
-      Serial.println("Could not set Forced Calibration Reference");
-    }
-    */
-  }
-
-  // If there is any other CO2 sensor insert code from here
-}
-
-void Set_AutoSelfCalibration()
-{ // Set autocalibration in the CO2 sensor true or false
-
-  // if SCD30 is identified
-  if (pm25_sensor == scd30_sensor)
-  {
-    bool val = scd30.selfCalibrationEnabled();
-    Serial.print("Reading SCD30 Self Calibration before change: ");
-    Serial.println(val);
-    Serial.print("Setting new SCD30 Self Calibration to: ");
-    Serial.println(eepromConfig.self_calibration);
-    if (scd30.selfCalibrationEnabled(eepromConfig.self_calibration))
-    {
-      delay(500);
-      val = scd30.selfCalibrationEnabled();
-      Serial.print("Reading SCD30 Self Calibration after change: ");
-      Serial.println(val);
-    }
-    else
-    {
-      Serial.println("Could not set Self Calibration");
-    }
-  }
-
-  // If there is any other CO2 sensor insert code from here
-}
-
 void Set_Temperature_Offset()
 { // Set CO2 sensor temperature offset
 
@@ -1998,12 +1808,12 @@ void Print_Config()
   Serial.println(eepromConfig.MQTT_server);
   Serial.print("MQTT Port: ");
   Serial.println(eepromConfig.MQTT_port);
-  Serial.print("Acoustic Alarm: ");
-  Serial.println(eepromConfig.acoustic_alarm);
-  Serial.print("Self Calibration: ");
-  Serial.println(eepromConfig.self_calibration);
-  Serial.print("Forced Recalibration Reference: ");
-  Serial.println(eepromConfig.forced_recalibration_reference);
+//  Serial.print("Acoustic Alarm: ");
+//  Serial.println(eepromConfig.acoustic_alarm);
+//  Serial.print("Self Calibration: ");
+//  Serial.println(eepromConfig.self_calibration);
+//  Serial.print("Forced Recalibration Reference: ");
+//  Serial.println(eepromConfig.forced_recalibration_reference);
   Serial.print("Temperature Offset: ");
   Serial.println(eepromConfig.temperature_offset);
   Serial.print("Altitude Compensation: ");
@@ -2058,18 +1868,7 @@ void Button_Init()
     tft.drawString("IP " + WiFi.localIP().toString(), 10, 53);
     tft.drawString("MAC " + String(WiFi.macAddress()), 10, 69);
     tft.drawString("RSSI " + String(WiFi.RSSI()), 10, 85);
-    if (eepromConfig.acoustic_alarm) {
-      tft.drawString("ALARMA: SI", 10, 101);
-    }
-    else {
-      tft.drawString("ALARMA: NO", 10, 101);
-    }
-    if (eepromConfig.self_calibration) {
-      tft.drawString("CALIBRACION: AUTO", 10, 117);
-    }
-    else {
-      tft.drawString("CALIBRACION: FORZADA", 10, 117);
-    }
+
     delay(5000); // keep the info in the display for 5s
     Update_Display(); });
 
@@ -2082,14 +1881,7 @@ void Button_Init()
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
     tft.setTextDatum(MC_DATUM);
-    if (eepromConfig.acoustic_alarm) {
-      eepromConfig.acoustic_alarm = false;
-      tft.drawString("ALARMA: NO", tft.width()/2, tft.height()/2);
-    }
-    else {
-      eepromConfig.acoustic_alarm = true;
-      tft.drawString("ALARMA: SI", tft.width()/2, tft.height()/2);
-    }
+
     Write_EEPROM();
     delay(5000); // keep the info in the display for 5s
     Update_Display(); });
@@ -2131,16 +1923,16 @@ void Button_Init()
   button_bottom.setLongClickDetectedHandler([](Button2 &b)
                                             {
                                               Serial.println("Bottom button long click");
-                                              eepromConfig.self_calibration = false;
+//                                              eepromConfig.self_calibration = false;
                                               tft.fillScreen(TFT_WHITE);
                                               tft.setTextColor(TFT_RED, TFT_WHITE);
                                               tft.setTextSize(1);
                                               tft.setFreeFont(FF90);
                                               tft.setTextDatum(MC_DATUM);
-                                              tft.drawString("CALIBRACION: FORZADA", tft.width() / 2, tft.height() / 2);
+//                                              tft.drawString("CALIBRACION: FORZADA", tft.width() / 2, tft.height() / 2);
                                               delay(1000);
-                                              Set_AutoSelfCalibration();
-                                              Do_Calibrate_Sensor();
+//                                              Set_AutoSelfCalibration();
+//                                              Do_Calibrate_Sensor();
                                               Write_EEPROM(); });
 
   // Bottom button double click: restart
@@ -2159,16 +1951,16 @@ void Button_Init()
   // Bottom button triple click: activate sensor self calibration
   button_bottom.setTripleClickHandler([](Button2 &b)
                                       {
-    Serial.println("Bottom button triple click");
-    eepromConfig.self_calibration = true;
+//    Serial.println("Bottom button triple click");
+//    eepromConfig.self_calibration = true;
     tft.fillScreen(TFT_WHITE);
     tft.setTextColor(TFT_RED, TFT_WHITE);
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString("CALIBRACION: AUTO", tft.width()/2, tft.height()/2);
+//    tft.drawString("CALIBRACION: AUTO", tft.width()/2, tft.height()/2);
     delay(1000);
-    Set_AutoSelfCalibration(); 
+//    Set_AutoSelfCalibration(); 
     Write_EEPROM();
     Update_Display(); });
 }
@@ -2194,9 +1986,8 @@ void Update_Display()
   {
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
-    digitalWrite(BUZZER_GPIO, LOW);
     displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
-    displayBuzzer(TFT_GREEN, eepromConfig.acoustic_alarm);
+//    displayBuzzer(TFT_GREEN, eepromConfig.acoustic_alarm);
     displayBatteryLevel(TFT_GREEN);
   }
 
@@ -2204,14 +1995,9 @@ void Update_Display()
   {
     tft.fillScreen(TFT_YELLOW);
     tft.setTextColor(TFT_RED, TFT_YELLOW);
-    if (eepromConfig.acoustic_alarm)
-    {
-      digitalWrite(BUZZER_GPIO, HIGH);
-    }
     delay(50);
-    digitalWrite(BUZZER_GPIO, LOW);
     displayWifi(TFT_RED, TFT_YELLOW, (WiFi.status() == WL_CONNECTED));
-    displayBuzzer(TFT_RED, eepromConfig.acoustic_alarm);
+//    displayBuzzer(TFT_RED, eepromConfig.acoustic_alarm);
     displayBatteryLevel(TFT_RED);
   }
 
@@ -2219,14 +2005,9 @@ void Update_Display()
   {
     tft.fillScreen(TFT_RED);
     tft.setTextColor(TFT_WHITE, TFT_RED);
-    if (eepromConfig.acoustic_alarm)
-    {
-      digitalWrite(BUZZER_GPIO, HIGH);
-    }
-    delay(250);
-    digitalWrite(BUZZER_GPIO, LOW);
+
     displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
-    displayBuzzer(TFT_WHITE, eepromConfig.acoustic_alarm);
+//    displayBuzzer(TFT_WHITE, eepromConfig.acoustic_alarm);
     displayBatteryLevel(TFT_WHITE);
   }
 
@@ -2436,19 +2217,6 @@ void displayWifi(int colour_1, int colour_2, boolean active)
   { // draw an X over
     tft.drawLine(6, 16, 34, 46, colour_1);
     tft.drawLine(34, 16, 6, 46, colour_1);
-  }
-}
-
-void displayBuzzer(int colour, boolean active)
-{ // Draw buzzer status
-  // tft.fillRect(14, 65, 4, 10, colour);
-  tft.fillRect(14, 66, 4, 11, colour);
-  tft.fillTriangle(25, 60, 16, 70, 25, 80, colour);
-
-  if (!active)
-  { // draw an X over
-    tft.drawLine(10, 90, 30, 55, colour);
-    tft.drawLine(30, 90, 10, 55, colour);
   }
 }
 

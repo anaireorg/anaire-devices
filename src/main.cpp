@@ -5,6 +5,10 @@
 // 19/04/2022 info@aireciudadano.com
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+// Pendientes:
+// BT funcionando en este codigo
+// TTGO T Display funcionando
+
 #include <Arduino.h>
 #include "main.hpp"
 
@@ -69,7 +73,8 @@ boolean err_MQTT = false;
 boolean err_sensor = false;
 
 // Measurements loop: time between measurements
-unsigned int measurements_loop_duration = 1000; // 10 seconds
+unsigned int measurements_loop_duration = 10000; // 10 seconds !!! TEST SEN5X
+//unsigned int measurements_loop_duration = 1000; // 10 seconds
 unsigned long measurements_loop_start;          // holds a timestamp for each control loop start
 
 // MQTT loop: time between MQTT measurements sent to the cloud
@@ -875,8 +880,8 @@ void Start_Captive_Portal()
   // If not specified device will remain in configuration mode until
   // switched off via webserver or device is restarted.
 
-  // wifiManager.setConfigPortalTimeout(30);
-  wifiManager.setConfigPortalTimeout(3);
+   wifiManager.setConfigPortalTimeout(30);
+  //wifiManager.setConfigPortalTimeout(3);   !!!TEST SEN5X
 
   // it starts an access point
   // and goes into a blocking loop awaiting configuration

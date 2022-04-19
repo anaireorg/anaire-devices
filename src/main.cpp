@@ -6,14 +6,19 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pendientes:
-// BT funcionando en este codigo
+// Programacion de modelo de sensor por portal cautivo
+// BT funcionando en este codigo y sin WIFI y encendiendo sensor con pin enable
 // TTGO T Display funcionando
 // Agregar comparacion de valores de PM25 para emoticons y colores
 // OLED funcionando
+// Valor de RSSI cuando la wifi este encendida
+// Añadir coordenadas GPS
+// Añadir VOCs y NOx para SEN5XSuspend_Device()
 
 #include <Arduino.h>
 #include "main.hpp"
 
+#define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define TDisplay false  // Set to true if Board TTGO T-Display is used
 #define OLED false      // Set to true if you use a OLED Diplay
 #define BLUETOOTH false // Set to true in case bluetooth is desired
@@ -40,6 +45,12 @@ struct MyConfigStruct
   char wifi_user[24];                                // WiFi user to be used on WPA Enterprise. Default to null (not used)
   char wifi_password[24];                            // WiFi password to be used on WPA Enterprise. Default to null (not used)
 } eepromConfig;
+
+#ifdef BrownoutOFF
+//OFF BROWNOUT/////////////////////
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
+#endif
 
 // to store data on nvs partition
 #include <Preferences.h>
@@ -265,6 +276,11 @@ void setup()
   // print info
   Serial.println();
   Serial.println("### Inicializando Medidor Aire Ciudadano #################################");
+
+#if BrownoutOFF
+//OFF BROWNOUT/////////////////////
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable   detector
+#endif
 
 #if TDisplay
   // Initialize TTGO Display and show Anaire splash screen
@@ -1229,7 +1245,7 @@ void Setup_Sensor()
       Serial.print("Error trying to execute startMeasurement(): ");
       errorToString(error, errorMessage, 256);
       Serial.println(errorMessage);
-      ESP.restart();
+      //ESP.restart();
     }
     else
       Serial.println("SEN5X measurement OK");

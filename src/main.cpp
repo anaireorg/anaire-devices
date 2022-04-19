@@ -8,13 +8,20 @@
 // Pendientes:
 // BT funcionando en este codigo
 // TTGO T Display funcionando
+// Agregar comparacion de valores de PM25 para emoticons y colores
+// OLED funcionando
 
 #include <Arduino.h>
 #include "main.hpp"
 
-#define TDisplay false // Set to true if Board TTGO T-Display is used
-#define OLED false // Set to true if you use a OLED Diplay
+#define TDisplay false  // Set to true if Board TTGO T-Display is used
+#define OLED false      // Set to true if you use a OLED Diplay
 #define BLUETOOTH false // Set to true in case bluetooth is desired
+#define SPS30sen true   // Sensor Sensirion SPS30
+#define SEN5Xsen false  // Sensor Sensirion SEN5X
+#define PMSsen false    // Sensor Plantower PMS
+#define SHT31sen true  // Sensor DHT31 humedad y temperatura
+#define AM2320sen false // Sensor AM2320 humedad y temperatura
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "v0.4";
@@ -39,11 +46,12 @@ struct MyConfigStruct
 Preferences preferences;
 
 // Measurements
-float PM25_value = 0; // PM25 ppm measured value
+float PM25_value = 0;       // PM25 measured value
 float PM25_accumulated = 0; // Accumulates pm25 measurements for a MQTT period
 float temperature;          // Read temperature as Celsius
 float humidity;             // Read humidity in %
 int PM25_samples = 0;       // Counts de number of samples for a MQTT period
+int pm25int;                // PM25 publicado
 int temp;
 int humi;
 
@@ -63,7 +71,7 @@ enum pm25_status
   pm25_ok,
   pm25_warning,
   pm25_alarm
-};                                       // the device can have one of those PM25 status
+};                                        // the device can have one of those PM25 status
 pm25_status pm25_device_status = pm25_ok; // initialized to ok
 
 // device status
@@ -128,15 +136,18 @@ int vref = 1100;
 
 #endif
 
-#define Sensor_SDA_pin 21                     // Define the SDA pin used for the SCD30
-#define Sensor_SCL_pin 22                     // Define the SCL pin used for the SCD30
+#define Sensor_SDA_pin 21 // Define the SDA pin used for the SCD30
+#define Sensor_SCL_pin 22 // Define the SCL pin used for the SCD30
 
+#if SPS30sen
 #include <sps30.h>
 SPS30 sps30;
 #define SP30_COMMS Wire
 #define DEBUG 0
-bool SPS30flag = false;
+// bool SPS30flag = false;
+#endif
 
+#if SEN5Xsen
 #include <SensirionI2CSen5x.h>
 
 // The used commands use up to 48 bytes. On some Arduino's the default buffer space is not large enough
@@ -149,7 +160,7 @@ bool SPS30flag = false;
 #endif
 
 SensirionI2CSen5x sen5x;
-bool SEN5Xflag = false;
+// bool SEN5Xflag = false;
 float massConcentrationPm1p0;
 float massConcentrationPm2p5;
 float massConcentrationPm4p0;
@@ -159,12 +170,18 @@ float ambientTemperature;
 float vocIndex;
 float noxIndex;
 
+#endif
+
+#if PMSsen
+
 #include "PMS.h"
 PMS pms(Serial1);
 PMS::DATA data;
-bool PMSflag = false;
+// bool PMSflag = false;
 #define PMS_TX 17 // PMS TX pin
 #define PMS_RX 15 // PMS RX pin
+
+#endif
 
 #include <Adafruit_SHT31.h>
 Adafruit_SHT31 sht31;
@@ -181,7 +198,7 @@ bool AM2320flag = false;
 // Bluetooth in TTGO T-Display
 #if BLUETOOTH
 #include "Sensirion_GadgetBle_Lib.h" // to connect to Sensirion MyAmbience Android App available on Google Play
-//GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
+// GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
 GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_VOC_PM25_V2);
 bool bluetooth_active = false;
 #endif
@@ -191,10 +208,10 @@ bool bluetooth_active = false;
 
 // WiFi
 //#include <WiFi.h>
-#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
-#include "esp_wpa2.h"    //wpa2 library for connections to Enterprise networks
+#include <WiFiManager.h>                // https://github.com/tzapu/WiFiManager
+#include "esp_wpa2.h"                   //wpa2 library for connections to Enterprise networks
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
-//const int WIFI_CONNECT_TIMEOUT = 1000; // 1 seconds !!! TEST SEN5X
+// const int WIFI_CONNECT_TIMEOUT = 1000; // 1 seconds !!! TEST SEN5X
 WiFiServer wifi_server(80);
 WiFiClient wifi_client;
 bool PortalFlag = false;
@@ -306,6 +323,7 @@ void setup()
   MQTT_loop_start = millis();
   errors_loop_start = millis();
 
+  Serial.println("");
   Serial.println("### Configuración del medidor AireCiudadano finalizada ###\n");
 #if TDisplay
   tft.fillScreen(TFT_BLUE);
@@ -320,7 +338,7 @@ void setup()
   // Update display with new values
   Update_Display();
 #else
-   delay(1000);
+  delay(1000);
 #endif
 }
 
@@ -677,7 +695,6 @@ void Print_WiFi_Status()
   Serial.print("Signal strength (RSSI):");
   Serial.print(WiFi.RSSI());
   Serial.println(" dBm");
-
 }
 
 void Check_WiFi_Server()
@@ -745,9 +762,9 @@ void Check_WiFi_Server()
             client.print("MQTT Port: ");
             client.print(eepromConfig.MQTT_port);
             client.println("<br>");
-//            client.print("Alarm: ");
-//            client.print(eepromConfig.acoustic_alarm);
-//            client.println("<br>");
+            //            client.print("Alarm: ");
+            //            client.print(eepromConfig.acoustic_alarm);
+            //            client.println("<br>");
             client.println("------");
             client.println("<br>");
             client.print("PM2.5: ");
@@ -776,7 +793,7 @@ void Check_WiFi_Server()
             client.println("------");
             client.println("<br>");
 
-          // Captive portal:
+            // Captive portal:
             client.print("Click <a href=\"/3\">here</a> to launch captive portal to set up WiFi and MQTT endpoint.<br>");
             client.println("<br>");
             // Suspend:
@@ -879,8 +896,8 @@ void Start_Captive_Portal()
   // If not specified device will remain in configuration mode until
   // switched off via webserver or device is restarted.
 
-   wifiManager.setConfigPortalTimeout(30);
-  //wifiManager.setConfigPortalTimeout(3);   !!!TEST SEN5X
+  wifiManager.setConfigPortalTimeout(30);
+  // wifiManager.setConfigPortalTimeout(3);   !!!TEST SEN5X
 
   // it starts an access point
   // and goes into a blocking loop awaiting configuration
@@ -1003,7 +1020,6 @@ void Send_Message_Cloud_App_MQTT()
 { // Send measurements to the cloud application by MQTT
   // Print info
   float pm25f;
-  int pm25int;
 
   Serial.print("Sending MQTT message to the send topic: ");
   Serial.println(MQTT_send_topic);
@@ -1145,8 +1161,42 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
 void Setup_Sensor()
 { // Identify and initialize PM25, temperature and humidity sensor
 
-  //////////////////////////////////////////////////////////////////////////////////////////////
-  // Test PM2.5 SEN5X
+  // Test PM2.5 SPS30
+
+#if SPS30sen
+
+  Serial.println("Test Sensirion SPS30 sensor");
+  // Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
+
+  sps30.EnableDebugging(DEBUG);
+  // Begin communication channel
+  SP30_COMMS.begin();
+  if (sps30.begin(&SP30_COMMS) == false)
+  {
+    Errorloop((char *)"Could not set I2C communication channel.", 0);
+  }
+  // check for SPS30 connection
+  if (!sps30.probe())
+    Errorloop((char *)"could not probe / connect with SPS30.", 0);
+  else
+  {
+    Serial.println("Detected SPS30.");
+    pm25_sensor = sps30_sensor;
+    // SPS30flag = true;
+    //  read device info
+    GetDeviceInfo();
+  }
+  // start measurement
+  if (sps30.start())
+    Serial.println("Measurement started");
+  else
+    Errorloop((char *)"Could NOT start measurement", 0);
+#endif
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Test PM2.5 SEN5X
+
+#if SEN5Xsen
 
   Serial.println("Test Sensirion SEN5X sensor");
   Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
@@ -1168,7 +1218,7 @@ void Setup_Sensor()
     // Print SEN55 module information if i2c buffers are large enough
     Serial.println("SEN5X sensor found!");
     pm25_sensor = sen5x_sensor;
-    SEN5Xflag = true;
+    // SEN5Xflag = true;
     printSerialNumber();
     printModuleVersions();
 
@@ -1184,216 +1234,188 @@ void Setup_Sensor()
     else
       Serial.println("SEN5X measurement OK");
   }
+#endif
 
   ///////////////////////////////////////////////////////////////////////////////////////////
 
-  // Test PM2.5 SPS30
-  if (SEN5Xflag == false)
+  // PMS7003 PMSA003
+#if PMSsen
+
+  Serial.println("Test Plantower Sensor");
+  Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
+  delay(1000);
+
+  while (Serial1.available())
   {
-    Serial.println("Test Sensirion SPS30 sensor");
-    // Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
-
-    sps30.EnableDebugging(DEBUG);
-    // Begin communication channel
-    SP30_COMMS.begin();
-    if (sps30.begin(&SP30_COMMS) == false)
-    {
-      Errorloop((char *)"Could not set I2C communication channel.", 0);
-    }
-    // check for SPS30 connection
-    if (!sps30.probe())
-      Errorloop((char *)"could not probe / connect with SPS30.", 0);
-    else
-    {
-      Serial.println("Detected SPS30.");
-      pm25_sensor = sps30_sensor;
-      SPS30flag = true;
-      // read device info
-      GetDeviceInfo();
-    }
-    // start measurement
-    if (!sps30.start())
-      Serial.println("Measurement started");
-    else
-      Errorloop((char *)"Could NOT start measurement", 0);
-
-    // PMS7003 PMSA003
-
-    Serial.println("Test Plantower Sensor");
-    Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
-    delay(1000);
-
-    while (Serial1.available())
-    {
-      Serial1.read();
-    }
-    pms.requestRead();
-    if (pms.readUntil(data))
-    {
-      Serial.println("Plantower sensor found!");
-      pm25_sensor = pms_sensor;
-      PMSflag = true;
-    }
-    else
-    {
-      Serial.println("Could not find Plantower sensor!");
-    }
-
-    Serial.print("SHT31 test: ");
-    if (!sht31.begin(0x44))
-    { // Set to 0x45 for alternate i2c addr
-      Serial.println("none");
-    }
-    else
-    {
-      Serial.println("OK");
-      SHT31flag = true;
-    }
-
-    Serial.print("Heater Enabled State: ");
-    if (sht31.isHeaterEnabled())
-      Serial.println("ENABLED");
-    else
-      Serial.println("DISABLED");
-
-    Serial.print("AM2320 test: ");
-
-    am2320.begin();
-    humidity = am2320.readHumidity();
-    temperature = am2320.readTemperature();
-    if (!isnan(humidity))
-    {
-      Serial.println("OK");
-      AM2320flag = true;
-    }
-    else
-      Serial.println("none");
+    Serial1.read();
   }
+  pms.requestRead();
+  if (pms.readUntil(data))
+  {
+    Serial.println("Plantower sensor found!");
+    pm25_sensor = pms_sensor;
+    // PMSflag = true;
+  }
+  else
+  {
+    Serial.println("Could not find Plantower sensor!");
+  }
+#endif
+
+#if SHT31sen
+
+  Serial.print("SHT31 test: ");
+  if (!sht31.begin(0x44))
+  { // Set to 0x45 for alternate i2c addr
+    Serial.println("none");
+  }
+  else
+  {
+    Serial.println("OK");
+    SHT31flag = true;
+  }
+
+  Serial.print("Heater Enabled State: ");
+  if (sht31.isHeaterEnabled())
+    Serial.println("ENABLED");
+  else
+    Serial.println("DISABLED");
+#endif
+
+#if AM2320sen
+
+  Serial.print("AM2320 test: ");
+  am2320.begin();
+  humidity = am2320.readHumidity();
+  temperature = am2320.readTemperature();
+  if (!isnan(humidity))
+  {
+    Serial.println("OK");
+    AM2320flag = true;
+  }
+  else
+    Serial.println("none");
+#endif
+
 }
 
 void Read_Sensor()
 { // Read PM25, temperature and humidity values
 
-  if (SPS30flag == true)
+#if SPS30sen
+  uint8_t ret, error_cnt = 0;
+  struct sps_values val;
+  // loop to get data
+  do
   {
-    static bool header = true;
-    uint8_t ret, error_cnt = 0;
-    struct sps_values val;
-    // loop to get data
-    do
+    ret = sps30.GetValues(&val);
+    // data might not have been ready
+    if (ret == ERR_DATALENGTH)
     {
-      ret = sps30.GetValues(&val);
-      // data might not have been ready
-      if (ret == ERR_DATALENGTH)
-      {
-        if (error_cnt++ > 3)
-        {
-          ErrtoMess((char *)"Error during reading values: ", ret);
-          // return(false);
-        }
-        delay(1000);
-      }
-      // if other error
-      else if (ret != ERR_OK)
+      if (error_cnt++ > 3)
       {
         ErrtoMess((char *)"Error during reading values: ", ret);
         // return(false);
       }
-    } while (ret != ERR_OK);
-    // only print header first time
-    if (header)
-    {
-      Serial.println("-------------Mass -----------    ------------- Number --------------   -Average-");
-      Serial.println("     Concentration [μg/m3]             Concentration [#/cm3]             [μm]");
-      Serial.println("P1.0\tP2.5\tP4.0\tP10\tP0.5\tP1.0\tP2.5\tP4.0\tP10\tPartSize\n");
-      header = false;
+      delay(1000);
     }
-    PM25_value = val.MassPM2;
-
-    if (!err_sensor)
+    // if other error
+    else if (ret != ERR_OK)
     {
-      // Provide the sensor values for Tools -> Serial Monitor or Serial Plotter
-      Serial.print("SPS30 PM2.5: ");
-      Serial.print(PM25_value);
-      Serial.print(" ug/m3   ");
+      ErrtoMess((char *)"Error during reading values: ", ret);
+      // return(false);
     }
-  }
+  } while (ret != ERR_OK);
 
-  if (SEN5Xflag == true)
+  PM25_value = val.MassPM2;
+
+  if (!err_sensor)
   {
-    uint16_t error;
-    char errorMessage[256];
-
-    error = sen5x.readMeasuredValues(
-        massConcentrationPm1p0, massConcentrationPm2p5, massConcentrationPm4p0,
-        massConcentrationPm10p0, ambientHumidity, ambientTemperature, vocIndex,
-        noxIndex);
-
-    if (error)
-    {
-      Serial.print("Error trying to execute readMeasuredValues(): ");
-        errorToString(error, errorMessage, 256);
-        Serial.println(errorMessage);
-        delay(10);
-        Wire.begin(18, 19);;
-        delay(10);
-        sen5x.begin(Wire);
-        delay(10);
-        Wire.begin(21, 22);;
-        delay(10);
-        sen5x.begin(Wire);
-        Serial.println("Reinit I2C");
-        delay(10);
-    }
-    else
-    {
-      PM25_value = massConcentrationPm2p5;
-      Serial.print("SEN5X PM2.5: ");
-      Serial.print(PM25_value);
-      Serial.print(" ug/m3   ");
-      Serial.print(" Humi % = ");
-      Serial.print(ambientHumidity);
-      humi = round(ambientHumidity);
-      Serial.print("   Temp *C = ");
-      Serial.print(ambientTemperature);
-      temp = round(temperature);
-      Serial.print("   VocIndex:");
-      if (isnan(vocIndex))
-        Serial.print(" n/a");
-      else
-        Serial.print(vocIndex);
-      Serial.print("   NoxIndex:");
-      if (isnan(noxIndex))
-        Serial.println(" n/a");
-      else
-        Serial.println(noxIndex);
-    }
+    // Provide the sensor values for Tools -> Serial Monitor or Serial Plotter
+    Serial.print("SPS30 PM2.5: ");
+    Serial.print(PM25_value);
+    Serial.print(" ug/m3   ");
   }
+#endif
 
-  if (PMSflag == true)
+#if SEN5Xsen
+
+  uint16_t error;
+  char errorMessage[256];
+
+  error = sen5x.readMeasuredValues(
+      massConcentrationPm1p0, massConcentrationPm2p5, massConcentrationPm4p0,
+      massConcentrationPm10p0, ambientHumidity, ambientTemperature, vocIndex,
+      noxIndex);
+
+  if (error)
   {
-    while (Serial1.available())
-    {
-      Serial1.read();
-    }
-    pms.requestRead();
-    if (pms.readUntil(data))
-    {
-      PM25_value = data.PM_AE_UG_2_5;
-      Serial.print("PMS PM2.5: ");
-      Serial.print(PM25_value);
-      Serial.print(" ug/m3   ");
-    }
-    else
-    {
-      Serial.println("No data by Plantower sensor!");
-    }
+    Serial.print("Error trying to execute readMeasuredValues(): ");
+    errorToString(error, errorMessage, 256);
+    Serial.println(errorMessage);
+    delay(10);
+    //        Wire.begin(18, 19);;
+    //        delay(10);
+    //        sen5x.begin(Wire);
+    //        delay(10);
+    //        Wire.begin(21, 22);;
+    //        delay(10);
+    //        sen5x.begin(Wire);
+    Setup_Sensor();
+    Serial.println("Reinit I2C");
+    delay(10);
   }
+  else
+  {
+    PM25_value = massConcentrationPm2p5;
+    Serial.print("SEN5X PM2.5: ");
+    Serial.print(PM25_value);
+    Serial.print(" ug/m3   ");
+    Serial.print(" Humi % = ");
+    Serial.print(ambientHumidity);
+    humi = round(ambientHumidity);
+    Serial.print("   Temp *C = ");
+    Serial.print(ambientTemperature);
+    temp = round(temperature);
+    Serial.print("   VocIndex:");
+    if (isnan(vocIndex))
+      Serial.print(" n/a");
+    else
+      Serial.print(vocIndex);
+    Serial.print("   NoxIndex:");
+    if (isnan(noxIndex))
+      Serial.println(" n/a");
+    else
+      Serial.println(noxIndex);
+  }
+#endif
+
+#if PMSsen
+  while (Serial1.available())
+  {
+    Serial1.read();
+  }
+  pms.requestRead();
+  if (pms.readUntil(data))
+  {
+    PM25_value = data.PM_AE_UG_2_5;
+    Serial.print("PMS PM2.5: ");
+    Serial.print(PM25_value);
+    Serial.print(" ug/m3   ");
+  }
+  else
+  {
+    Serial.println("No data by Plantower sensor!");
+  }
+#endif
 }
 
 /**
  * @brief : read and display device info
  */
+
+#if SPS30sen
+
 void GetDeviceInfo()
 {
   char buf[32];
@@ -1464,6 +1486,10 @@ void ErrtoMess(char *mess, uint8_t r)
   Serial.println(buf);
 }
 
+#endif
+
+#if SEN5Xsen
+
 void printModuleVersions()
 {
   uint16_t error;
@@ -1485,7 +1511,7 @@ void printModuleVersions()
     Serial.print("ProductName:");
     Serial.println((char *)productName);
   }
-  
+
   bool firmwareDebug;
   uint8_t firmwareMajor;
   uint8_t firmwareMinor;
@@ -1539,6 +1565,8 @@ void printSerialNumber()
   }
 }
 
+#endif
+
 void Evaluate_PM25_Value()
 { // Evaluate measured PM25 value against warning and alarm thresholds
 
@@ -1578,76 +1606,79 @@ void Evaluate_PM25_Value()
 ///////////////////////////////////////////////////////////////////////////////
 void ReadHyT()
 {
+  /////////  SHT31
+#if SHT31sen
+
   temperature = 0.0;
   humidity = 0.0;
-  /////////  SHT31
-  if (SHT31flag == true)
-  {
-    humidity = sht31.readHumidity();
-    temperature = sht31.readTemperature();
+  humidity = sht31.readHumidity();
+  temperature = sht31.readTemperature();
 
-    if (!isnan(humidity))
-    { // check if 'is not a number'
-      failh = 0;
-      Serial.print("SHT31 Humi % = ");
-      Serial.print(humidity);
-      humi = round(humidity);
-    }
-    else
-    {
-      Serial.println("Failed to read humidity SHT31");
-      if (failh == 5)
-      {
-        failh = 0;
-        sht31.begin(0x44);
-      }
-      else
-        failh = failh + 1;
-    }
-
-    if (!isnan(temperature))
-    { // check if 'is not a number'
-      Serial.print("   Temp *C = ");
-      Serial.println(temperature);
-      temp = round(temperature);
-    }
-    else
-      Serial.println("Failed to read temperature SHT31");
+  if (!isnan(humidity))
+  { // check if 'is not a number'
+    failh = 0;
+    Serial.print("SHT31 Humi % = ");
+    Serial.print(humidity);
+    humi = round(humidity);
   }
-  // AM2320////////////////////////////////////////////////////
-  else if (AM2320flag == true)
+  else
   {
-    humidity = am2320.readHumidity();
-    temperature = am2320.readTemperature();
-
-    if (!isnan(humidity))
+    Serial.println("Failed to read humidity SHT31");
+    if (failh == 5)
     {
       failh = 0;
-      Serial.print("AM2320 Humi % = ");
-      Serial.print(humidity);
-      humi = round(humidity);
+      sht31.begin(0x44);
     }
     else
-    {
-      Serial.println("Failed to read humidity AM2320");
-      if (failh == 5)
-      {
-        failh = 0;
-        am2320.begin();
-      }
-      else
-        failh = failh + 1;
-    }
-
-    if (!isnan(temperature))
-    {
-      Serial.print("   Temp *C = ");
-      Serial.println(temperature);
-      temp = round(temperature);
-    }
-    else
-      Serial.println("Failed to read temperature AM2320");
+      failh = failh + 1;
   }
+
+  if (!isnan(temperature))
+  { // check if 'is not a number'
+    Serial.print("   Temp *C = ");
+    Serial.println(temperature);
+    temp = round(temperature);
+  }
+  else
+    Serial.println("Failed to read temperature SHT31");
+#endif
+
+    // AM2320//
+#if AM2320sen
+
+  temperature = 0.0;
+  humidity = 0.0;
+  humidity = am2320.readHumidity();
+  temperature = am2320.readTemperature();
+
+  if (!isnan(humidity))
+  {
+    failh = 0;
+    Serial.print("AM2320 Humi % = ");
+    Serial.print(humidity);
+    humi = round(humidity);
+  }
+  else
+  {
+    Serial.println("Failed to read humidity AM2320");
+    if (failh == 5)
+    {
+      failh = 0;
+      am2320.begin();
+    }
+    else
+      failh = failh + 1;
+  }
+
+  if (!isnan(temperature))
+  {
+    Serial.print("   Temp *C = ");
+    Serial.println(temperature);
+    temp = round(temperature);
+  }
+  else
+    Serial.println("Failed to read temperature AM2320");
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1670,12 +1701,12 @@ void Print_Config()
   Serial.println(eepromConfig.MQTT_server);
   Serial.print("MQTT Port: ");
   Serial.println(eepromConfig.MQTT_port);
-//  Serial.print("Acoustic Alarm: ");
-//  Serial.println(eepromConfig.acoustic_alarm);
-//  Serial.print("Self Calibration: ");
-//  Serial.println(eepromConfig.self_calibration);
-//  Serial.print("Forced Recalibration Reference: ");
-//  Serial.println(eepromConfig.forced_recalibration_reference);
+  //  Serial.print("Acoustic Alarm: ");
+  //  Serial.println(eepromConfig.acoustic_alarm);
+  //  Serial.print("Self Calibration: ");
+  //  Serial.println(eepromConfig.self_calibration);
+  //  Serial.print("Forced Recalibration Reference: ");
+  //  Serial.println(eepromConfig.forced_recalibration_reference);
   Serial.print("Temperature Offset: ");
   Serial.println(eepromConfig.temperature_offset);
   Serial.print("Altitude Compensation: ");
@@ -1849,7 +1880,7 @@ void Update_Display()
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
     displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
-//    displayBuzzer(TFT_GREEN, eepromConfig.acoustic_alarm);
+    //    displayBuzzer(TFT_GREEN, eepromConfig.acoustic_alarm);
     displayBatteryLevel(TFT_GREEN);
   }
 
@@ -1859,7 +1890,7 @@ void Update_Display()
     tft.setTextColor(TFT_RED, TFT_YELLOW);
     delay(50);
     displayWifi(TFT_RED, TFT_YELLOW, (WiFi.status() == WL_CONNECTED));
-//    displayBuzzer(TFT_RED, eepromConfig.acoustic_alarm);
+    //    displayBuzzer(TFT_RED, eepromConfig.acoustic_alarm);
     displayBatteryLevel(TFT_RED);
   }
 
@@ -1869,7 +1900,7 @@ void Update_Display()
     tft.setTextColor(TFT_WHITE, TFT_RED);
 
     displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
-//    displayBuzzer(TFT_WHITE, eepromConfig.acoustic_alarm);
+    //    displayBuzzer(TFT_WHITE, eepromConfig.acoustic_alarm);
     displayBatteryLevel(TFT_WHITE);
   }
 
@@ -1891,7 +1922,7 @@ void Update_Display()
 
   // Draw bluetooth device id
 #if BLUETOOTH
-//  tft.setTextDatum(8); // bottom right
+  //  tft.setTextDatum(8); // bottom right
   tft.drawString(gadgetBle.getDeviceIdString(), 200, 115);
 #endif
 }
@@ -1990,7 +2021,7 @@ void Firmware_Update()
 
   case HTTP_UPDATE_FAILED:
     Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
-    
+
 #if TDisplay
     tft.fillScreen(TFT_ORANGE);
     tft.drawString("ACTUALIZACION FALLIDA", tft.width() / 2, tft.height() / 2);
@@ -2185,7 +2216,7 @@ void print_reset_reason(RESET_REASON reason)
 #if BLUETOOTH
 void Write_Bluetooth()
 { // Write measurements to bluetooth
-  gadgetBle.writePM2p5(PM25int);
+  gadgetBle.writePM2p5(pm25int);
   gadgetBle.writeTemperature(temp);
   gadgetBle.writeHumidity(humi);
   Serial.println("Bluetooth frame: PM25, humidity and temperature");

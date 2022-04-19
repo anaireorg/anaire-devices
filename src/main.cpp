@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // AireCiudadano medidor Fijo - Medidor de PM2.5 abierto, medición opcional de humedad y temperatura.
 // Más información en: aireciudadano.com
-// Esta versión es un fork del proyecto Anaire (https://www.anaire.org/) enfocado en la medición de CO2.
-// 20/03/2022 info@aireciudadano.com
+// Este firmware es un fork del proyecto Anaire (https://www.anaire.org/) recomendado para la medición de CO2.
+// 19/04/2022 info@aireciudadano.com
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <Arduino.h>
@@ -13,7 +13,7 @@
 #define BLUETOOTH false // Set to true in case bluetooth is desired
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "v0.5";
+String sw_version = "v0.4";
 String anaire_device_id;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
@@ -24,9 +24,6 @@ struct MyConfigStruct
   uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
   char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address. Default to Anaire Portal on portal.anaire.org
   uint16_t MQTT_port = 30183;                        // MQTT port; Default to Anaire Port on 30183
-//  boolean acoustic_alarm = true;                     // Global flag to control acoustic alarm; default to true
-//  boolean self_calibration = false;                  // Automatic Baseline Correction of CO2 sensor; default to false
-//  uint16_t forced_recalibration_reference = 420;     // Forced Recalibration value; default to 420ppm
   uint16_t temperature_offset = 600;                 // temperature offset for SCD30 CO2 measurements: 600 by default, because of the housing
   uint16_t altitude_compensation = 600;              // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
   char wifi_user[24];                                // WiFi user to be used on WPA Enterprise. Default to null (not used)
@@ -38,13 +35,11 @@ struct MyConfigStruct
 Preferences preferences;
 
 // Measurements
-// int PM25_value = 0;       // CO2 ppm measured value
 float PM25_value = 0; // CO2 ppm measured value
-// int PM25_accumulated = 0; // Accumulates co2 measurements for a MQTT period
 float PM25_accumulated = 0; // Accumulates co2 measurements for a MQTT period
-int PM25_samples = 0;       // Counts de number of samples for a MQTT period
 float temperature;          // Read temperature as Celsius
 float humidity;             // Read humidity in %
+int PM25_samples = 0;       // Counts de number of samples for a MQTT period
 int temp;
 int humi;
 
@@ -52,7 +47,9 @@ int humi;
 enum PM25_sensors
 {
   none,
-  scd30_sensor
+  sen5x_sensor,
+  sps30_sensor,
+  pms_sensor
 }; // possible sensors integrated in the SW
 PM25_sensors pm25_sensor = none;
 
@@ -345,10 +342,6 @@ void loop()
 
     if (PM25_value > 0) // REVISAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     {
-
-      // Evaluate CO2 value
-      Evaluate_CO2_Value();
-
       // Update display with new values
       Update_Display();
 
@@ -767,29 +760,7 @@ void Check_WiFi_Server()
 //            client.println("<br>");
             client.println("------");
             client.println("<br>");
-            if (pm25_sensor == scd30_sensor)
-            {
-              client.print("CO2 Sensor: Sensirion SCD30");
-              client.println("<br>");
-              client.print("Measurement Interval: ");
-              client.print(measurements_loop_duration / 1000);
-              client.println("<br>");
-//              client.print("Auto Calibration: ");
-//              client.print(eepromConfig.self_calibration);
-//              client.println("<br>");
-//              client.print("Forced Recalibration Reference: ");
-//              client.print(eepromConfig.forced_recalibration_reference);
-//              client.println("<br>");
-              client.print("Temperature Offset: ");
-              client.print(eepromConfig.temperature_offset);
-              client.println("<br>");
-              client.print("Altitude Compensation: ");
-              client.print(eepromConfig.altitude_compensation);
-              client.println("<br>");
-            }
-            client.println("------");
-            client.println("<br>");
-            client.print("CO2 PPM: ");
+            client.print("PM2.5: ");
             client.print(PM25_value);
             client.println("<br>");
             client.print("Temperature: ");
@@ -1095,7 +1066,6 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   if ((jsonBuffer["warning"]) && (eepromConfig.PM25_warning_threshold != (int)jsonBuffer["warning"]))
   {
     eepromConfig.PM25_warning_threshold = (int)jsonBuffer["warning"];
-    Evaluate_CO2_Value();
     Serial.print("New warning threshold: ");
     Serial.println(eepromConfig.PM25_warning_threshold);
     write_eeprom = true;
@@ -1105,7 +1075,6 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   if ((jsonBuffer["caution"]) && (eepromConfig.PM25_alarm_threshold != (int)jsonBuffer["caution"]))
   {
     eepromConfig.PM25_alarm_threshold = (int)jsonBuffer["caution"];
-    Evaluate_CO2_Value();
     Serial.print("New alarm threshold: ");
     Serial.println(eepromConfig.PM25_alarm_threshold);
     write_eeprom = true;
@@ -1142,22 +1111,6 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     {
       Init_MQTT();
     }
-  }
-
-  // Check temperature offset
-  if ((jsonBuffer["temperature_offset"]) && (eepromConfig.temperature_offset != (uint16_t)jsonBuffer["temperature_offset"]))
-  {
-    eepromConfig.temperature_offset = (uint16_t)jsonBuffer["temperature_offset"];
-    Set_Temperature_Offset();
-    write_eeprom = true;
-  }
-
-  // Check altitude_compensation
-  if ((jsonBuffer["altitude_compensation"]) && (eepromConfig.altitude_compensation != (uint16_t)jsonBuffer["altitude_compensation"]))
-  {
-    eepromConfig.altitude_compensation = (uint16_t)jsonBuffer["altitude_compensation"];
-    Set_Altitude_Compensation();
-    write_eeprom = true;
   }
 
   // print info
@@ -1208,9 +1161,9 @@ void Setup_Sensor()
 
   Serial.println("Test Sensirion SEN5X sensor");
   Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
-  delay(100);
+  delay(10);
   sen5x.begin(Wire);
-  delay(100);
+  delay(10);
 
   uint16_t error;
   char errorMessage[256];
@@ -1225,7 +1178,7 @@ void Setup_Sensor()
   {
     // Print SEN55 module information if i2c buffers are large enough
     Serial.println("SEN5X sensor found!");
-    pm25_sensor = scd30_sensor;
+    pm25_sensor = sen5x_sensor;
     SEN5Xflag = true;
     printSerialNumber();
     printModuleVersions();
@@ -1237,6 +1190,7 @@ void Setup_Sensor()
       Serial.print("Error trying to execute startMeasurement(): ");
       errorToString(error, errorMessage, 256);
       Serial.println(errorMessage);
+      ESP.restart();
     }
     else
       Serial.println("SEN5X measurement OK");
@@ -1263,7 +1217,7 @@ void Setup_Sensor()
     else
     {
       Serial.println("Detected SPS30.");
-      pm25_sensor = scd30_sensor;
+      pm25_sensor = sps30_sensor;
       SPS30flag = true;
       // read device info
       GetDeviceInfo();
@@ -1288,7 +1242,7 @@ void Setup_Sensor()
     if (pms.readUntil(data))
     {
       Serial.println("Plantower sensor found!");
-      pm25_sensor = scd30_sensor;
+      pm25_sensor = pms_sensor;
       PMSflag = true;
     }
     else
@@ -1391,8 +1345,18 @@ void Read_Sensor()
     if (error)
     {
       Serial.print("Error trying to execute readMeasuredValues(): ");
-      errorToString(error, errorMessage, 256);
-      Serial.println(errorMessage);
+        errorToString(error, errorMessage, 256);
+        Serial.println(errorMessage);
+        delay(10);
+        Wire.begin(18, 19);;
+        delay(10);
+        sen5x.begin(Wire);
+        delay(10);
+        Wire.begin(21, 22);;
+        delay(10);
+        sen5x.begin(Wire);
+        Serial.println("Reinit I2C");
+        delay(10);
     }
     else
     {
@@ -1622,95 +1586,6 @@ void Evaluate_CO2_Value()
     Serial.println("STATUS: PM2.5 ALARM");
     break;
   }
-}
-
-void Set_Measurement_Interval()
-{ // Set CO2 sensor measurement interval
-
-  // if SCD30 is identified
-  if (pm25_sensor == scd30_sensor)
-  {
-    uint16_t val = scd30.getMeasurementInterval();
-    Serial.print("Reading SCD30 Measurement Interval before change: ");
-    Serial.println(val);
-    Serial.print("Setting new SCD30 Measurement Interval to: ");
-    Serial.println((measurements_loop_duration / 1000) - 1);
-    if (scd30.setMeasurementInterval((measurements_loop_duration / 1000) - 1))
-    {
-      delay(500);
-      val = scd30.getMeasurementInterval();
-      Serial.print("Reading SCD30 Measurement Interval after change: ");
-      Serial.println(val);
-    }
-    else
-    {
-      Serial.println("Could not set SCD30 Measurement Interval");
-    }
-  }
-
-  // If there is any other CO2 sensor insert code from here
-}
-
-void Set_Temperature_Offset()
-{ // Set CO2 sensor temperature offset
-
-  // if SCD30 is identified
-  if (pm25_sensor == scd30_sensor)
-  {
-    uint16_t val = scd30.getTemperatureOffset();
-    Serial.print("Reading SCD30 Temperature Offset before change: ");
-    Serial.println(val);
-    Serial.print("Setting new SCD30 Temperature Offset to: ");
-    Serial.println(eepromConfig.temperature_offset);
-    if (scd30.setTemperatureOffset(eepromConfig.temperature_offset))
-    {
-      delay(500);
-      val = scd30.getTemperatureOffset();
-      Serial.print("Reading SCD30 Temperature Offset after change: ");
-      Serial.println(val);
-    }
-    else
-    {
-      Serial.println("Could not set SCD30 Temperature Offset");
-    }
-  }
-
-  // If there is any other CO2 sensor insert code from here
-}
-
-void Set_Altitude_Compensation()
-{ // Set CO2 sensor altitude compensation
-
-  // if SCD30 is identified
-  if (pm25_sensor == scd30_sensor)
-  {
-    // paulvha : you can set EITHER the Altitude compensation of the pressure.
-    // Setting both does not make sense as both overrule each other, but it is included for demonstration
-    // see Sensirion_PM25_sensors_SCD30_Interface_Description.pdf
-    //   The CO2 measurement value can be compensated for ambient pressure by feeding the pressure value in mBar to the sensor.
-    //   Setting the ambient pressure will overwrite previous and future settings of altitude compensation. Setting the argument to zero
-    //   will deactivate the ambient pressure compensation. For setting a new ambient pressure when continuous measurement is running
-    //   the whole command has to be written to SCD30.
-    //   Setting altitude is disregarded when an ambient pressure is given to the sensor
-    uint16_t val = scd30.getAltitudeOffset();
-    Serial.print("Reading SCD30 Altitude Compensation before change: ");
-    Serial.println(val);
-    Serial.print("Setting new SCD30 Altitude Compensation to: ");
-    Serial.println(eepromConfig.altitude_compensation);
-    if (scd30.setAltitudeOffset(eepromConfig.altitude_compensation))
-    {
-      delay(500);
-      val = scd30.getAltitudeOffset();
-      Serial.print("Reading SCD30 Altitude Compensation after change: ");
-      Serial.println(val);
-    }
-    else
-    {
-      Serial.println("Could not set SCD30 altitude compensation");
-    }
-  }
-
-  // If there is any other CO2 sensor insert code from here
 }
 
 ///////////////////////////////////////////////////////////////////////////////

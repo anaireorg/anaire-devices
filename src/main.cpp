@@ -6,6 +6,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pendientes:
+// Nombre de la estacion con modelo de sensor, board y etiqueta propia si es posible
 // Programacion de modelo de sensor por portal cautivo
 // BT funcionando en este codigo y sin WIFI y encendiendo sensor con pin enable
 // TTGO T Display funcionando
@@ -13,7 +14,7 @@
 // OLED funcionando
 // Valor de RSSI cuando la wifi este encendida
 // Añadir coordenadas GPS
-// Añadir VOCs y NOx para SEN5XSuspend_Device()
+// Añadir VOCs y NOx para SEN5X
 
 #include <Arduino.h>
 #include "main.hpp"

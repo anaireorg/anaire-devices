@@ -20,14 +20,14 @@
 #include "main.hpp"
 
 #define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define TDisplay false  // Set to true if Board TTGO T-Display is used
-#define OLED false      // Set to true if you use a OLED Diplay
-#define BLUETOOTH false // Set to true in case bluetooth is desired
-#define SPS30sen true   // Sensor Sensirion SPS30
-#define SEN5Xsen false  // Sensor Sensirion SEN5X
-#define PMSsen false    // Sensor Plantower PMS
-#define SHT31sen true  // Sensor DHT31 humedad y temperatura
-#define AM2320sen false // Sensor AM2320 humedad y temperatura
+#define TDisplay false    // Set to true if Board TTGO T-Display is used
+#define OLED false        // Set to true if you use a OLED Diplay
+#define BLUETOOTH false   // Set to true in case bluetooth is desired
+#define SPS30sen true     // Sensor Sensirion SPS30
+#define SEN5Xsen false    // Sensor Sensirion SEN5X
+#define PMSsen false      // Sensor Plantower PMS
+#define SHT31sen true     // Sensor DHT31 humedad y temperatura
+#define AM2320sen false   // Sensor AM2320 humedad y temperatura
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "v0.4";
@@ -39,16 +39,18 @@ struct MyConfigStruct
   char anaire_device_name[24];                       // Device name; default to anaire_device_id
   uint16_t PM25_warning_threshold = 700;             // Warning threshold; default to 700ppm
   uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
-  char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address. Default to Anaire Portal on portal.anaire.org
-  uint16_t MQTT_port = 30183;                        // MQTT port; Default to Anaire Port on 30183
+  char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
+  uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
   uint16_t temperature_offset = 600;                 // temperature offset for SCD30 CO2 measurements: 600 by default, because of the housing
   uint16_t altitude_compensation = 600;              // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
   char wifi_user[24];                                // WiFi user to be used on WPA Enterprise. Default to null (not used)
   char wifi_password[24];                            // WiFi password to be used on WPA Enterprise. Default to null (not used)
+  char sensor_lat[9] = "0.0";                          // Sensor latitude  GPS
+  char sensor_lon[9] = "0.0";                          // Sensor longitude GPS
 } eepromConfig;
 
 #ifdef BrownoutOFF
-//OFF BROWNOUT/////////////////////
+// OFF BROWNOUT/////////////////////
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #endif
@@ -66,6 +68,9 @@ int PM25_samples = 0;       // Counts de number of samples for a MQTT period
 int pm25int;                // PM25 publicado
 int temp;
 int humi;
+
+float latitudef = 0.0;
+float longitudef = 0.0;
 
 // PM25 sensors
 enum PM25_sensors
@@ -279,8 +284,8 @@ void setup()
   Serial.println("### Inicializando Medidor Aire Ciudadano #################################");
 
 #if BrownoutOFF
-//OFF BROWNOUT/////////////////////
-  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable   detector
+  // OFF BROWNOUT/////////////////////
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // disable   detector
 #endif
 
 #if TDisplay
@@ -303,6 +308,9 @@ void setup()
   // Wipe_EEPROM();
   Read_EEPROM();
   Print_Config();
+
+  latitudef = atof(eepromConfig.sensor_lat);
+  longitudef = atof(eepromConfig.sensor_lon);
 
 // Initialize the GadgetBle Library for Bluetooth
 #if BLUETOOTH
@@ -779,6 +787,12 @@ void Check_WiFi_Server()
             client.print("MQTT Port: ");
             client.print(eepromConfig.MQTT_port);
             client.println("<br>");
+            client.print("Sensor latitude: ");
+            client.print(eepromConfig.sensor_lat);
+            client.println("<br>");
+            client.print("Sensor longitude: ");
+            client.print(eepromConfig.sensor_lon);
+            client.println("<br>");
             //            client.print("Alarm: ");
             //            client.print(eepromConfig.acoustic_alarm);
             //            client.println("<br>");
@@ -869,7 +883,7 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
 
   InCaptivePortal = true;
-  String wifiAP = "AnaireWiFi_" + anaire_device_id;
+  String wifiAP = "AireCiudadano_" + anaire_device_id;
   Serial.println(wifiAP);
 
 #if TDisplay
@@ -890,24 +904,30 @@ void Start_Captive_Portal()
   WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
   // Captive portal parameters
-  WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise</p>"); // only custom html
-  WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user", eepromConfig.wifi_user, 24);
-  WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
-  WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server</p>"); // only custom html
-  WiFiManagerParameter custom_mqtt_server("Server", "MQTT server", eepromConfig.MQTT_server, 24);
+  WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server:</p>"); // only custom html
+  WiFiManagerParameter custom_mqtt_server("Server", "MQTT server", eepromConfig.MQTT_server, 32);
   char port[6];
   itoa(eepromConfig.MQTT_port, port, 10);
   WiFiManagerParameter custom_mqtt_port("Port", "MQTT port", port, 6);
+  WiFiManagerParameter custom_sensor_html("<p>Set Sensor Latitude & Longitude (4 decimal digits):</p>"); // only custom html
+  WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor", eepromConfig.sensor_lat, 9);
+  WiFiManagerParameter custom_sensor_longitude("Longitude", "Longitude sensor", eepromConfig.sensor_lon, 9);
+  WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise:</p>"); // only custom html
+  WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user", eepromConfig.wifi_user, 24);
+  WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
 
   // wifiManager.setSaveParamsCallback(saveParamCallback);
 
   // Add parameters
-  wifiManager.addParameter(&custom_wifi_html);
-  wifiManager.addParameter(&custom_wifi_user);
-  wifiManager.addParameter(&custom_wifi_password);
   wifiManager.addParameter(&custom_mqtt_html);
   wifiManager.addParameter(&custom_mqtt_server);
   wifiManager.addParameter(&custom_mqtt_port);
+  wifiManager.addParameter(&custom_sensor_html);
+  wifiManager.addParameter(&custom_sensor_latitude);
+  wifiManager.addParameter(&custom_sensor_longitude);
+  wifiManager.addParameter(&custom_wifi_html);
+  wifiManager.addParameter(&custom_wifi_user);
+  wifiManager.addParameter(&custom_wifi_password);
 
   // sets timeout in seconds until configuration portal gets turned off.
   // If not specified device will remain in configuration mode until
@@ -933,22 +953,6 @@ void Start_Captive_Portal()
   // Save parameters to EEPROM only if any of them changed
   bool write_eeprom = false;
 
-  if (eepromConfig.wifi_user != custom_wifi_user.getValue())
-  {
-    strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
-    eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
-    write_eeprom = true;
-    Serial.print("WiFi user: ");
-    Serial.println(eepromConfig.wifi_user);
-  }
-  if (eepromConfig.wifi_password != custom_wifi_password.getValue())
-  {
-    strncpy(eepromConfig.wifi_password, custom_wifi_password.getValue(), sizeof(eepromConfig.wifi_password));
-    eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
-    write_eeprom = true;
-    Serial.print("WiFi password: ");
-    Serial.println(eepromConfig.wifi_password);
-  }
   if (eepromConfig.MQTT_server != custom_mqtt_server.getValue())
   {
     strncpy(eepromConfig.MQTT_server, custom_mqtt_server.getValue(), sizeof(eepromConfig.MQTT_server));
@@ -964,6 +968,58 @@ void Start_Captive_Portal()
     write_eeprom = true;
     Serial.print("MQTT port: ");
     Serial.println(eepromConfig.MQTT_port);
+  }
+
+  if (eepromConfig.sensor_lat != custom_sensor_latitude.getValue())
+  {
+    strncpy(eepromConfig.sensor_lat, custom_sensor_latitude.getValue(), sizeof(eepromConfig.sensor_lat));
+    eepromConfig.sensor_lat[sizeof(eepromConfig.sensor_lat) - 1] = '\0';
+    write_eeprom = true;
+    Serial.print("Sensor Latitude: ");
+    Serial.println(eepromConfig.sensor_lat);
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+    // Rutina para cambiar de char a float
+
+    latitudef = atof(eepromConfig.sensor_lat);
+    Serial.print("Latitude float: ");
+    Serial.println(latitudef);
+
+  }
+
+  if (eepromConfig.sensor_lon != custom_sensor_longitude.getValue())
+  {
+    strncpy(eepromConfig.sensor_lon, custom_sensor_longitude.getValue(), sizeof(eepromConfig.sensor_lon));
+    eepromConfig.sensor_lon[sizeof(eepromConfig.sensor_lon) - 1] = '\0';
+    write_eeprom = true;
+    Serial.print("Sensor Longitude: ");
+    Serial.println(eepromConfig.sensor_lon);
+
+    //////////////////////////////////////////////////////////////////////////////////////////
+    // Rutina para cambiar de char a float
+
+    longitudef = atof(eepromConfig.sensor_lon);
+    Serial.print("Longitude float: ");
+    Serial.println(longitudef);
+
+  }
+
+  if (eepromConfig.wifi_user != custom_wifi_user.getValue())
+  {
+    strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
+    eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
+    write_eeprom = true;
+    Serial.print("WiFi user: ");
+    Serial.println(eepromConfig.wifi_user);
+  }
+
+  if (eepromConfig.wifi_password != custom_wifi_password.getValue())
+  {
+    strncpy(eepromConfig.wifi_password, custom_wifi_password.getValue(), sizeof(eepromConfig.wifi_password));
+    eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
+    write_eeprom = true;
+    Serial.print("WiFi password: ");
+    Serial.println(eepromConfig.wifi_password);
   }
 
   if (write_eeprom)
@@ -1046,7 +1102,7 @@ void Send_Message_Cloud_App_MQTT()
   pm25int = round(pm25f);
   Serial.println(pm25int);
   ReadHyT();
-  sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d}", anaire_device_id.c_str(), pm25int, humi, temp);
+  sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f}", anaire_device_id.c_str(), pm25int, humi, temp, latitudef, longitudef);
   Serial.print(MQTT_message);
   Serial.println();
 
@@ -1246,7 +1302,7 @@ void Setup_Sensor()
       Serial.print("Error trying to execute startMeasurement(): ");
       errorToString(error, errorMessage, 256);
       Serial.println(errorMessage);
-      //ESP.restart();
+      // ESP.restart();
     }
     else
       Serial.println("SEN5X measurement OK");
@@ -1313,7 +1369,6 @@ void Setup_Sensor()
   else
     Serial.println("none");
 #endif
-
 }
 
 void Read_Sensor()
@@ -1718,6 +1773,10 @@ void Print_Config()
   Serial.println(eepromConfig.MQTT_server);
   Serial.print("MQTT Port: ");
   Serial.println(eepromConfig.MQTT_port);
+  Serial.print("Sensor latitude: ");
+  Serial.println(eepromConfig.sensor_lat);
+  Serial.print("Sensor longitude: ");
+  Serial.println(eepromConfig.sensor_lon);
   //  Serial.print("Acoustic Alarm: ");
   //  Serial.println(eepromConfig.acoustic_alarm);
   //  Serial.print("Self Calibration: ");

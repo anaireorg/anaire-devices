@@ -13,7 +13,7 @@
 // Agregar comparacion de valores de PM25 para emoticons y colores
 // OLED funcionando
 // Valor de RSSI cuando la wifi este encendida
-// Añadir coordenadas GPS
+// OK : Añadir coordenadas GPS
 // Añadir VOCs y NOx para SEN5X
 
 #include <Arduino.h>
@@ -1093,6 +1093,7 @@ void Send_Message_Cloud_App_MQTT()
 { // Send measurements to the cloud application by MQTT
   // Print info
   float pm25f;
+  int8_t RSSI;
 
   Serial.print("Sending MQTT message to the send topic: ");
   Serial.println(MQTT_send_topic);
@@ -1102,7 +1103,11 @@ void Send_Message_Cloud_App_MQTT()
   pm25int = round(pm25f);
   Serial.println(pm25int);
   ReadHyT();
-  sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f}", anaire_device_id.c_str(), pm25int, humi, temp, latitudef, longitudef);
+  RSSI = WiFi.RSSI();
+  Serial.print("Signal strength (RSSI):");
+  Serial.print(RSSI);
+  Serial.println(" dBm");
+  sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d}", anaire_device_id.c_str(), pm25int, humi, temp, latitudef, longitudef, RSSI);
   Serial.print(MQTT_message);
   Serial.println();
 

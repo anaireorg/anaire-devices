@@ -12,15 +12,16 @@
 // TTGO T Display funcionando
 // Agregar comparacion de valores de PM25 para emoticons y colores
 // OLED funcionando
-// Valor de RSSI cuando la wifi este encendida
+// OK: Valor de RSSI cuando la wifi este encendida
 // OK : Añadir coordenadas GPS
 // Añadir VOCs y NOx para SEN5X
+// Revisar presicion envio de float, si cortarla o dejarlo al usuario
 
 #include <Arduino.h>
 #include "main.hpp"
 
 #define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define TDisplay false    // Set to true if Board TTGO T-Display is used
+#define TDisplay true    // Set to true if Board TTGO T-Display is used
 #define OLED false        // Set to true if you use a OLED Diplay
 #define BLUETOOTH false   // Set to true in case bluetooth is desired
 #define SPS30sen true     // Sensor Sensirion SPS30

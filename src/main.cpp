@@ -12,22 +12,22 @@
 // TTGO T Display funcionando
 // Agregar comparacion de valores de PM25 para emoticons y colores
 // OLED funcionando
-// OK: Valor de RSSI cuando la wifi este encendida
-// OK : Añadir coordenadas GPS
-// Añadir VOCs y NOx para SEN5X
+//          OK: Valor de RSSI para modo wifi
+//          OK: Añadir coordenadas GPS
+//          OK: Añadir VOCs y NOx para SEN5X
 // Revisar presicion envio de float, si cortarla o dejarlo al usuario
 
 #include <Arduino.h>
 #include "main.hpp"
 
 #define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define TDisplay true    // Set to true if Board TTGO T-Display is used
+#define TDisplay false    // Set to true if Board TTGO T-Display is used
 #define OLED false        // Set to true if you use a OLED Diplay
 #define BLUETOOTH false   // Set to true in case bluetooth is desired
-#define SPS30sen true     // Sensor Sensirion SPS30
-#define SEN5Xsen false    // Sensor Sensirion SEN5X
+#define SPS30sen false    // Sensor Sensirion SPS30
+#define SEN5Xsen true     // Sensor Sensirion SEN5X
 #define PMSsen false      // Sensor Plantower PMS
-#define SHT31sen true     // Sensor DHT31 humedad y temperatura
+#define SHT31sen false    // Sensor DHT31 humedad y temperatura
 #define AM2320sen false   // Sensor AM2320 humedad y temperatura
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
@@ -46,8 +46,8 @@ struct MyConfigStruct
   uint16_t altitude_compensation = 600;              // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
   char wifi_user[24];                                // WiFi user to be used on WPA Enterprise. Default to null (not used)
   char wifi_password[24];                            // WiFi password to be used on WPA Enterprise. Default to null (not used)
-  char sensor_lat[9] = "0.0";                          // Sensor latitude  GPS
-  char sensor_lon[9] = "0.0";                          // Sensor longitude GPS
+  char sensor_lat[10] = "0.0";                        // Sensor latitude  GPS
+  char sensor_lon[10] = "0.0";                        // Sensor longitude GPS
 } eepromConfig;
 
 #ifdef BrownoutOFF
@@ -911,8 +911,8 @@ void Start_Captive_Portal()
   itoa(eepromConfig.MQTT_port, port, 10);
   WiFiManagerParameter custom_mqtt_port("Port", "MQTT port", port, 6);
   WiFiManagerParameter custom_sensor_html("<p>Set Sensor Latitude & Longitude (4 decimal digits):</p>"); // only custom html
-  WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor", eepromConfig.sensor_lat, 9);
-  WiFiManagerParameter custom_sensor_longitude("Longitude", "Longitude sensor", eepromConfig.sensor_lon, 9);
+  WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor", eepromConfig.sensor_lat, 10);
+  WiFiManagerParameter custom_sensor_longitude("Longitude", "Longitude sensor", eepromConfig.sensor_lon, 10);
   WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise:</p>"); // only custom html
   WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user", eepromConfig.wifi_user, 24);
   WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
@@ -985,7 +985,6 @@ void Start_Captive_Portal()
     latitudef = atof(eepromConfig.sensor_lat);
     Serial.print("Latitude float: ");
     Serial.println(latitudef);
-
   }
 
   if (eepromConfig.sensor_lon != custom_sensor_longitude.getValue())
@@ -1002,7 +1001,6 @@ void Start_Captive_Portal()
     longitudef = atof(eepromConfig.sensor_lon);
     Serial.print("Longitude float: ");
     Serial.println(longitudef);
-
   }
 
   if (eepromConfig.wifi_user != custom_wifi_user.getValue())
@@ -1108,7 +1106,21 @@ void Send_Message_Cloud_App_MQTT()
   Serial.print("Signal strength (RSSI):");
   Serial.print(RSSI);
   Serial.println(" dBm");
+#ifdef SEN5Xsen
+  uint8_t voc;
+  uint8_t nox;
+  if (isnan(vocIndex))
+    voc = 0;
+  else
+    voc = round(vocIndex);
+  if (isnan(noxIndex))
+    nox = 0;
+  else
+    nox = round(noxIndex);
+  sprintf(MQTT_message, "{id: %s,PM25: %d,VOC: %d,NOx: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d}", anaire_device_id.c_str(), pm25int, voc, nox, humi, temp, latitudef, longitudef, RSSI);
+#else
   sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d}", anaire_device_id.c_str(), pm25int, humi, temp, latitudef, longitudef, RSSI);
+#endif
   Serial.print(MQTT_message);
   Serial.println();
 
@@ -1963,7 +1975,9 @@ void Update_Display()
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
     displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
     //    displayBuzzer(TFT_GREEN, eepromConfig.acoustic_alarm);
+#if Bluetooth
     displayBatteryLevel(TFT_GREEN);
+#endif
   }
 
   else if (pm25_device_status == pm25_warning)
@@ -1973,7 +1987,9 @@ void Update_Display()
     delay(50);
     displayWifi(TFT_RED, TFT_YELLOW, (WiFi.status() == WL_CONNECTED));
     //    displayBuzzer(TFT_RED, eepromConfig.acoustic_alarm);
+#if Bluetooth
     displayBatteryLevel(TFT_RED);
+#endif
   }
 
   else if (pm25_device_status == pm25_alarm)
@@ -1983,7 +1999,9 @@ void Update_Display()
 
     displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
     //    displayBuzzer(TFT_WHITE, eepromConfig.acoustic_alarm);
+#if Bluetooth
     displayBatteryLevel(TFT_WHITE);
+#endif
   }
 
   // Draw PM25 number
@@ -2128,14 +2146,15 @@ void Firmware_Update()
 }
 
 #if TDisplay
+#if Bluetooth
 void displayBatteryLevel(int colour)
 { // Draw a battery showing the level of charge
 
   // Measure the battery voltage
   battery_voltage = ((float)analogRead(ADC_PIN) / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
 
-  //  Serial.print("battery voltage: ");
-  //  Serial.println(battery_voltage);
+  Serial.print("battery voltage: ");
+  Serial.println(battery_voltage);
 
   // If battery voltage is up 4.5 then external power supply is working and battery is charging
   if (battery_voltage > USB_Voltage)
@@ -2190,6 +2209,7 @@ void displayBatteryLevel(int colour)
     Serial.println("Battery level too low");
   }
 }
+#endif
 
 void displayWifi(int colour_1, int colour_2, boolean active)
 { // Draw WiFi icon

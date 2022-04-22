@@ -9,48 +9,49 @@
 // Nombre de la estacion con modelo de sensor, board y etiqueta propia si es posible
 // Programacion de modelo de sensor por portal cautivo
 // BT funcionando en este codigo y sin WIFI y encendiendo sensor con pin enable
-// TTGO T Display funcionando
+//          OK: TTGO T Display funcionando
 // Agregar comparacion de valores de PM25 para emoticons y colores
 // OLED funcionando
+//          OK: AireCiudadano Splash Screen, mala muesta de la imagen
 //          OK: Valor de RSSI para modo wifi
 //          OK: Añadir coordenadas GPS
 //          OK: Añadir VOCs y NOx para SEN5X
-// Revisar presicion envio de float, si cortarla o dejarlo al usuario
+//          OK: Revisar presicion envio de float, si cortarla o dejarlo al usuario
 
 #include <Arduino.h>
 #include "main.hpp"
 
 #define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define TDisplay false    // Set to true if Board TTGO T-Display is used
+#define TDisplay true     // Set to true if Board TTGO T-Display is used
 #define OLED false        // Set to true if you use a OLED Diplay
 #define BLUETOOTH false   // Set to true in case bluetooth is desired
-#define SPS30sen false    // Sensor Sensirion SPS30
-#define SEN5Xsen true     // Sensor Sensirion SEN5X
+#define SPS30sen true     // Sensor Sensirion SPS30
+#define SEN5Xsen false    // Sensor Sensirion SEN5X
 #define PMSsen false      // Sensor Plantower PMS
-#define SHT31sen false    // Sensor DHT31 humedad y temperatura
+#define SHT31sen true     // Sensor DHT31 humedad y temperatura
 #define AM2320sen false   // Sensor AM2320 humedad y temperatura
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "v0.4";
-String anaire_device_id;
+String aireciudadano_device_id;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
 {
-  char anaire_device_name[24];                       // Device name; default to anaire_device_id
+  char aireciudadano_device_name[24];                       // Device name; default to aireciudadano_device_id
   uint16_t PM25_warning_threshold = 700;             // Warning threshold; default to 700ppm
   uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
   char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
   uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
-  uint16_t temperature_offset = 600;                 // temperature offset for SCD30 CO2 measurements: 600 by default, because of the housing
-  uint16_t altitude_compensation = 600;              // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
+  //uint16_t temperature_offset = 600;                 // temperature offset for SCD30 CO2 measurements: 600 by default, because of the housing
+  //uint16_t altitude_compensation = 600;              // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
   char wifi_user[24];                                // WiFi user to be used on WPA Enterprise. Default to null (not used)
   char wifi_password[24];                            // WiFi password to be used on WPA Enterprise. Default to null (not used)
-  char sensor_lat[10] = "0.0";                        // Sensor latitude  GPS
-  char sensor_lon[10] = "0.0";                        // Sensor longitude GPS
+  char sensor_lat[10] = "0.0";                       // Sensor latitude  GPS
+  char sensor_lon[10] = "0.0";                       // Sensor longitude GPS
 } eepromConfig;
 
-#ifdef BrownoutOFF
+#if BrownoutOFF
 // OFF BROWNOUT/////////////////////
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -130,8 +131,8 @@ unsigned long errors_loop_start;           // holds a timestamp for each error l
 #define FF95 &ArchivoNarrow_Regular50pt7b
 TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup.h
 
-// Customized Anaire splash screen
-#include "anaire_ttgo_splash.h"
+// Customized AireCiudadano splash screen
+#include "Icono_AireCiudadano.h"
 
 // Buttons: Top and bottom considered when USB connector is positioned on the right of the board
 #include "Button2.h"
@@ -290,20 +291,21 @@ void setup()
 #endif
 
 #if TDisplay
-  // Initialize TTGO Display and show Anaire splash screen
+  // Initialize TTGO Display and show AireCiudadano splash screen
   Display_Init();
   Display_Splash_Screen();
+  delay(5000);
 #endif
 
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
 
   // Get device id
-  Get_Anaire_DeviceId();
+  Get_AireCiudadano_DeviceId();
 
   // Set MQTT topics
   MQTT_send_topic = "measurement";                   // Measurements are sent to this topic
-  MQTT_receive_topic = "config/" + anaire_device_id; // Config messages will be received in config/id
+  MQTT_receive_topic = "config/" + aireciudadano_device_id; // Config messages will be received in config/id
 
   // Read EEPROM config values
   // Wipe_EEPROM();
@@ -756,11 +758,11 @@ void Check_WiFi_Server()
             client.println("<br>");
             client.println("------");
             client.println("<br>");
-            client.print("Anaire Device ID: ");
-            client.print(anaire_device_id);
+            client.print("AireCiudadano Device ID: ");
+            client.print(aireciudadano_device_id);
             client.println("<br>");
-            client.print("Anaire Device name: ");
-            client.print(eepromConfig.anaire_device_name);
+            client.print("AireCiudadano Device name: ");
+            client.print(eepromConfig.aireciudadano_device_name);
             client.println("<br>");
             client.print("SSID: ");
             client.print(String(WiFi.SSID()));
@@ -884,7 +886,7 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
 
   InCaptivePortal = true;
-  String wifiAP = "AireCiudadano_" + anaire_device_id;
+  String wifiAP = "AireCiudadano_" + aireciudadano_device_id;
   Serial.println(wifiAP);
 
 #if TDisplay
@@ -910,7 +912,7 @@ void Start_Captive_Portal()
   char port[6];
   itoa(eepromConfig.MQTT_port, port, 10);
   WiFiManagerParameter custom_mqtt_port("Port", "MQTT port", port, 6);
-  WiFiManagerParameter custom_sensor_html("<p>Set Sensor Latitude & Longitude (4 decimal digits):</p>"); // only custom html
+  WiFiManagerParameter custom_sensor_html("<p>Set Sensor Latitude & Longitude (4 or 5 decimal digits):</p>"); // only custom html
   WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor", eepromConfig.sensor_lat, 10);
   WiFiManagerParameter custom_sensor_longitude("Longitude", "Longitude sensor", eepromConfig.sensor_lon, 10);
   WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise:</p>"); // only custom html
@@ -978,13 +980,7 @@ void Start_Captive_Portal()
     write_eeprom = true;
     Serial.print("Sensor Latitude: ");
     Serial.println(eepromConfig.sensor_lat);
-
-    //////////////////////////////////////////////////////////////////////////////////////////
-    // Rutina para cambiar de char a float
-
-    latitudef = atof(eepromConfig.sensor_lat);
-    Serial.print("Latitude float: ");
-    Serial.println(latitudef);
+    latitudef = atof(eepromConfig.sensor_lat);    // Cambiar de string a float
   }
 
   if (eepromConfig.sensor_lon != custom_sensor_longitude.getValue())
@@ -994,13 +990,7 @@ void Start_Captive_Portal()
     write_eeprom = true;
     Serial.print("Sensor Longitude: ");
     Serial.println(eepromConfig.sensor_lon);
-
-    //////////////////////////////////////////////////////////////////////////////////////////
-    // Rutina para cambiar de char a float
-
-    longitudef = atof(eepromConfig.sensor_lon);
-    Serial.print("Longitude float: ");
-    Serial.println(longitudef);
+    longitudef = atof(eepromConfig.sensor_lon);   // Cambiar de string a float
   }
 
   if (eepromConfig.wifi_user != custom_wifi_user.getValue())
@@ -1041,7 +1031,7 @@ void Init_MQTT()
   MQTT_client.setBufferSize(512); // to receive messages up to 512 bytes length (default is 256)
   MQTT_client.setServer(eepromConfig.MQTT_server, eepromConfig.MQTT_port);
   MQTT_client.setCallback(Receive_Message_Cloud_App_MQTT);
-  MQTT_client.connect(anaire_device_id.c_str());
+  MQTT_client.connect(aireciudadano_device_id.c_str());
 
   if (!MQTT_client.connected())
   {
@@ -1068,7 +1058,7 @@ void MQTT_Reconnect()
     lastReconnectAttempt = now;
     Serial.print("Attempting MQTT connection...");
     // Attempt to connect
-    if (MQTT_client.connect(anaire_device_id.c_str()))
+    if (MQTT_client.connect(aireciudadano_device_id.c_str()))
     {
       err_MQTT = false;
       Serial.println("MQTT connected");
@@ -1106,7 +1096,8 @@ void Send_Message_Cloud_App_MQTT()
   Serial.print("Signal strength (RSSI):");
   Serial.print(RSSI);
   Serial.println(" dBm");
-#ifdef SEN5Xsen
+
+#if SEN5Xsen
   uint8_t voc;
   uint8_t nox;
   if (isnan(vocIndex))
@@ -1117,9 +1108,9 @@ void Send_Message_Cloud_App_MQTT()
     nox = 0;
   else
     nox = round(noxIndex);
-  sprintf(MQTT_message, "{id: %s,PM25: %d,VOC: %d,NOx: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d}", anaire_device_id.c_str(), pm25int, voc, nox, humi, temp, latitudef, longitudef, RSSI);
+  sprintf(MQTT_message, "{id: %s,PM25: %d,VOC: %d,NOx: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, latitudef, longitudef, RSSI);
 #else
-  sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d}", anaire_device_id.c_str(), pm25int, humi, temp, latitudef, longitudef, RSSI);
+  sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, latitudef, longitudef, RSSI);
 #endif
   Serial.print(MQTT_message);
   Serial.println();
@@ -1147,12 +1138,12 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   }
 
   // Update name
-  if ((jsonBuffer["name"]) && (eepromConfig.anaire_device_name != jsonBuffer["name"]))
+  if ((jsonBuffer["name"]) && (eepromConfig.aireciudadano_device_name != jsonBuffer["name"]))
   {
-    strncpy(eepromConfig.anaire_device_name, jsonBuffer["name"].as<const char *>(), sizeof(eepromConfig.anaire_device_name));
-    eepromConfig.anaire_device_name[sizeof(eepromConfig.anaire_device_name) - 1] = '\0';
-    Serial.print("Anaire device name: ");
-    Serial.println(eepromConfig.anaire_device_name);
+    strncpy(eepromConfig.aireciudadano_device_name, jsonBuffer["name"].as<const char *>(), sizeof(eepromConfig.aireciudadano_device_name));
+    eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
+    Serial.print("AireCiudadano device name: ");
+    Serial.println(eepromConfig.aireciudadano_device_name);
     write_eeprom = true;
   }
 
@@ -1774,13 +1765,13 @@ void ReadHyT()
 ///////////////////////////////////////////////////////////////////////////////
 
 void Print_Config()
-{ // print Anaire device settings
+{ // print AireCiudadano device settings
 
   Serial.println("#######################################");
   Serial.print("device id: ");
-  Serial.println(anaire_device_id);
-  Serial.print("anaire device name: ");
-  Serial.println(eepromConfig.anaire_device_name);
+  Serial.println(aireciudadano_device_id);
+  Serial.print("AireCiudadano device name: ");
+  Serial.println(eepromConfig.aireciudadano_device_name);
   Serial.print("SW version: ");
   Serial.println(sw_version);
   Serial.print("PM25 Warning threshold: ");
@@ -1801,10 +1792,10 @@ void Print_Config()
   //  Serial.println(eepromConfig.self_calibration);
   //  Serial.print("Forced Recalibration Reference: ");
   //  Serial.println(eepromConfig.forced_recalibration_reference);
-  Serial.print("Temperature Offset: ");
-  Serial.println(eepromConfig.temperature_offset);
-  Serial.print("Altitude Compensation: ");
-  Serial.println(eepromConfig.altitude_compensation);
+  //  Serial.print("Temperature Offset: ");
+  //  Serial.println(eepromConfig.temperature_offset);
+  //  Serial.print("Altitude Compensation: ");
+  //  Serial.println(eepromConfig.altitude_compensation);
   Serial.print("WiFi user: ");
   Serial.println(eepromConfig.wifi_user);
   Serial.print("WiFi user's password: ");
@@ -1849,7 +1840,7 @@ void Button_Init()
     tft.setTextDatum(TL_DATUM); // top left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
-    tft.drawString("ID " + anaire_device_id, 10, 5);
+    tft.drawString("ID " + aireciudadano_device_id, 10, 5);
     tft.drawString("SW " + sw_version, 10, 21);
     tft.drawString("SSID " + String(WiFi.SSID()), 10, 37);
     tft.drawString("IP " + WiFi.localIP().toString(), 10, 53);
@@ -1959,8 +1950,9 @@ void Display_Init()
 }
 
 void Display_Splash_Screen()
-{ // Display Anaire splash screen
-  tft.pushImage(0, 0, 240, 135, anaire_ttgo_splash);
+{ // Display AireCiudadano splash screen
+  tft.setSwapBytes(true);
+  tft.pushImage(0, 0, 240, 135, Icono_AireCiudadano);
 }
 
 void Update_Display()
@@ -2029,22 +2021,22 @@ void Update_Display()
 
 #endif
 
-void Get_Anaire_DeviceId()
-{ // Get TTGO T-Display info and fill up anaire_device_id with last 6 digits (in HEX) of WiFi mac address
+void Get_AireCiudadano_DeviceId()
+{ // Get TTGO T-Display info and fill up aireciudadano_device_id with last 6 digits (in HEX) of WiFi mac address
   uint32_t chipId = 0;
   for (int i = 0; i < 17; i = i + 8)
   {
     chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
   }
-  anaire_device_id = String(chipId, HEX); // HEX format for backwards compatibility to Anaire devices based on NodeMCU board
+  aireciudadano_device_id = String(chipId, HEX); // HEX format for backwards compatibility to AireCiudadano devices based on NodeMCU board
   Serial.printf("ESP32 Chip model = %s Rev %d.\t", ESP.getChipModel(), ESP.getChipRevision());
   Serial.printf("This chip has %d cores and %dMB Flash.\n", ESP.getChipCores(), ESP.getFlashChipSize() / (1024 * 1024));
-  Serial.print("Anaire Device ID: ");
-  Serial.println(anaire_device_id);
+  Serial.print("AireCiudadano Device ID: ");
+  Serial.println(aireciudadano_device_id);
 }
 
 void Read_EEPROM()
-{ // Read Anaire device persistent info
+{ // Read AireCiudadano device persistent info
   if (preferences.getBytesLength("config") > 0)
   {
     boolean result = preferences.getBytes("config", &eepromConfig, sizeof(eepromConfig));
@@ -2059,13 +2051,13 @@ void Read_EEPROM()
   }
   else
   {
-    anaire_device_id.toCharArray(eepromConfig.anaire_device_name, sizeof(eepromConfig.anaire_device_name)); // Initialize anaire_device_name with anaire_device_id
+    aireciudadano_device_id.toCharArray(eepromConfig.aireciudadano_device_name, sizeof(eepromConfig.aireciudadano_device_name)); // Initialize aireciudadano_device_name with aireciudadano_device_id
     Serial.println("No EEPROM data - using default config values");
   }
 }
 
 void Write_EEPROM()
-{ // Write Anaire device persistent info
+{ // Write AireCiudadano device persistent info
   boolean result = preferences.putBytes("config", &eepromConfig, sizeof(eepromConfig));
   if (result)
   {
@@ -2078,7 +2070,7 @@ void Write_EEPROM()
 }
 
 void Wipe_EEPROM()
-{ // Wipe Anaire device persistent info to reset config data
+{ // Wipe AireCiudadano device persistent info to reset config data
   boolean result = preferences.clear();
   if (result)
   {

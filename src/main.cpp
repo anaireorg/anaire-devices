@@ -12,7 +12,7 @@
 //          OK: TTGO T Display funcionando
 // Agregar comparacion de valores de PM25 para emoticons y colores
 // OLED funcionando
-//          OK: AireCiudadano Splash Screen, mala muesta de la imagen
+//          OK: AireCiudadano Splash Screen, mala muesta de la imagen, ver duracion
 //          OK: Valor de RSSI para modo wifi
 //          OK: Añadir coordenadas GPS
 //          OK: Añadir VOCs y NOx para SEN5X
@@ -38,7 +38,7 @@ String aireciudadano_device_id;
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
 {
-  char aireciudadano_device_name[24];                       // Device name; default to aireciudadano_device_id
+  char aireciudadano_device_name[36];                // Device name; default to aireciudadano_device_id
   uint16_t PM25_warning_threshold = 700;             // Warning threshold; default to 700ppm
   uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
   char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.

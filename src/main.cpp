@@ -6,7 +6,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pendientes:
-// Nombre de la estacion con modelo de sensor (NO), board (NO) y etiqueta propia si es posible (SI)
+//          OK: Nombre de la estacion con modelo de sensor (NO), board (NO) y etiqueta propia si es posible (SI)
 // Programacion de modelo de sensor por portal cautivo
 // BT funcionando en este codigo y sin WIFI y encendiendo sensor con pin enable
 //          OK: TTGO T Display funcionando
@@ -22,8 +22,8 @@
 #include "main.hpp"
 
 #define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define TDisplay false    // Set to true if Board TTGO T-Display is used
-#define OLED false        // Set to true if you use a OLED Diplay
+#define TDisplay true    // Set to true if Board TTGO T-Display is used
+#define OLED true        // Set to true if you use a OLED Diplay
 #define BLUETOOTH false   // Set to true in case bluetooth is desired
 #define SPS30sen true     // Sensor Sensirion SPS30
 #define SEN5Xsen false    // Sensor Sensirion SEN5X
@@ -36,10 +36,7 @@
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "v0.4";
 String aireciudadano_device_id;
-String aireciudadano_device_id_CustomName;
-//byte ID1;
-//byte ID2;
-String IDsensor;
+String aireciudadano_charac_id;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
@@ -2053,29 +2050,25 @@ void Get_AireCiudadano_DeviceId()
 { // Get TTGO T-Display info and fill up aireciudadano_device_id with last 6 digits (in HEX) of WiFi mac address or Custom_Name + 6 digits
   uint32_t chipId = 0;
   char aireciudadano_device_id_endframe[10];
-  String tempo1;
+  String chipIdHEX;
   for (int i = 0; i < 17; i = i + 8)
   {
     chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
   }
-  //printf("%chipID", chipID); 
-  // strncpy(eepromConfig.aireciudadano_device_name, custom_id_name.getValue(), sizeof(eepromConfig.aireciudadano_device_name));
-  //eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
-  tempo1 = String(chipId,HEX);
-  strncpy(aireciudadano_device_id_endframe, tempo1.c_str(), sizeof(aireciudadano_device_id_endframe));
+  chipIdHEX = String(chipId,HEX);
+  strncpy(aireciudadano_device_id_endframe, chipIdHEX.c_str(), sizeof(aireciudadano_device_id_endframe));
   Aireciudadano_Characteristics();
-//  strcpy(IDsensor, aireciudadano_device_id_endframe);
-  Serial.print("aireciudadano_device_id_endframe: ");
-  Serial.println(aireciudadano_device_id_endframe);
-  Serial.print("IDsensor: ");
-  Serial.println(IDsensor);
+  //Serial.print("aireciudadano_device_id_endframe: ");
+  //Serial.println(aireciudadano_device_id_endframe);
+  //Serial.print("aireciudadano_charac_id: ");
+  //Serial.println(aireciudadano_charac_id);
   Serial.printf("ESP32 Chip model = %s Rev %d.\t", ESP.getChipModel(), ESP.getChipRevision());
   Serial.printf("This chip has %d cores and %dMB Flash.\n", ESP.getChipCores(), ESP.getFlashChipSize() / (1024 * 1024));
   Serial.print("AireCiudadano Device ID: ");
   if (String(aireciudadano_device_id).isEmpty())
-    aireciudadano_device_id = IDsensor + aireciudadano_device_id_endframe;
+    aireciudadano_device_id = aireciudadano_charac_id + aireciudadano_device_id_endframe;
   else
-    aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "_" + aireciudadano_device_id_endframe;
+    aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "_" + aireciudadano_charac_id + "-" + aireciudadano_device_id_endframe;
   Serial.println(aireciudadano_device_id);
 }
 
@@ -2117,8 +2110,8 @@ void Aireciudadano_Characteristics()
 
   Serial.print("ID1: ");
   Serial.println(ID1);
-  IDsensor = String(ID1,HEX);
-  Serial.println(IDsensor);
+  aireciudadano_charac_id = String(ID1,HEX);
+  Serial.println(aireciudadano_charac_id);
 }
 
 void Read_EEPROM()

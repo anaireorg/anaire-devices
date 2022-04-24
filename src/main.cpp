@@ -6,7 +6,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pendientes:
-// Nombre de la estacion con modelo de sensor, board y etiqueta propia si es posible
+// Nombre de la estacion con modelo de sensor (NO), board (NO) y etiqueta propia si es posible (SI)
 // Programacion de modelo de sensor por portal cautivo
 // BT funcionando en este codigo y sin WIFI y encendiendo sensor con pin enable
 //          OK: TTGO T Display funcionando
@@ -22,7 +22,7 @@
 #include "main.hpp"
 
 #define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define TDisplay true     // Set to true if Board TTGO T-Display is used
+#define TDisplay false    // Set to true if Board TTGO T-Display is used
 #define OLED false        // Set to true if you use a OLED Diplay
 #define BLUETOOTH false   // Set to true in case bluetooth is desired
 #define SPS30sen true     // Sensor Sensirion SPS30
@@ -30,16 +30,21 @@
 #define PMSsen false      // Sensor Plantower PMS
 #define SHT31sen false    // Sensor DHT31 humedad y temperatura
 #define AM2320sen true    // Sensor AM2320 humedad y temperatura
+#define AdjPMS false      // PMS sensor adjust
+#define ExtAnt false      // External antenna
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "v0.4";
 String aireciudadano_device_id;
 String aireciudadano_device_id_CustomName;
+//byte ID1;
+//byte ID2;
+String IDsensor;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
 {
-  char aireciudadano_device_name[30];                // Device name; default to aireciudadano_device_id
+  char aireciudadano_device_name[28];                // Device name; default to aireciudadano_device_id
   uint16_t PM25_warning_threshold = 700;             // Warning threshold; default to 700ppm
   uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
   char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
@@ -917,9 +922,9 @@ void Start_Captive_Portal()
   WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
   // Captive portal parameters
-  WiFiManagerParameter custom_id_html("<p>Set Station Custom Name:</p>");                           // only custom html
+  WiFiManagerParameter custom_id_html("<p>Set Station Custom Name:</p>");                                             // only custom html
   WiFiManagerParameter custom_id_name("CustomName", "30 characters max", eepromConfig.aireciudadano_device_name, 30); //!!!!!!!!!!!
-  WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server:</p>");                                                     // only custom html
+  WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server:</p>");                                                   // only custom html
   WiFiManagerParameter custom_mqtt_server("Server", "MQTT server", eepromConfig.MQTT_server, 32);
   char port[6];
   itoa(eepromConfig.MQTT_port, port, 10);
@@ -2047,20 +2052,73 @@ void Update_Display()
 void Get_AireCiudadano_DeviceId()
 { // Get TTGO T-Display info and fill up aireciudadano_device_id with last 6 digits (in HEX) of WiFi mac address or Custom_Name + 6 digits
   uint32_t chipId = 0;
-  String aireciudadano_device_id_endframe;
+  char aireciudadano_device_id_endframe[10];
+  String tempo1;
   for (int i = 0; i < 17; i = i + 8)
   {
     chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
   }
-  aireciudadano_device_id_endframe = String(chipId, HEX);
+  //printf("%chipID", chipID); 
+  // strncpy(eepromConfig.aireciudadano_device_name, custom_id_name.getValue(), sizeof(eepromConfig.aireciudadano_device_name));
+  //eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
+  tempo1 = String(chipId,HEX);
+  strncpy(aireciudadano_device_id_endframe, tempo1.c_str(), sizeof(aireciudadano_device_id_endframe));
+  Aireciudadano_Characteristics();
+//  strcpy(IDsensor, aireciudadano_device_id_endframe);
+  Serial.print("aireciudadano_device_id_endframe: ");
+  Serial.println(aireciudadano_device_id_endframe);
+  Serial.print("IDsensor: ");
+  Serial.println(IDsensor);
   Serial.printf("ESP32 Chip model = %s Rev %d.\t", ESP.getChipModel(), ESP.getChipRevision());
   Serial.printf("This chip has %d cores and %dMB Flash.\n", ESP.getChipCores(), ESP.getFlashChipSize() / (1024 * 1024));
   Serial.print("AireCiudadano Device ID: ");
   if (String(aireciudadano_device_id).isEmpty())
-    aireciudadano_device_id = aireciudadano_device_id_endframe;
+    aireciudadano_device_id = IDsensor + aireciudadano_device_id_endframe;
   else
     aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "_" + aireciudadano_device_id_endframe;
   Serial.println(aireciudadano_device_id);
+}
+
+void Aireciudadano_Characteristics()
+{ // ID1
+  // AM2320  = 00000001 = 1
+  // SHT31   = 00000010 = 2
+  // PMS     = 00000100 = 4
+  // AdjPMS  = 00001000 = 8
+  // SEN5X   = 00010000 = 16
+  // SPS30   = 00100000 = 32
+
+  // ID2
+  // TDisplay =  00000001 = 256
+  // OLED =      00000010 = 512
+  // ExtAntena = 00000100 = 1024
+  //
+  uint16_t ID1 = 0;
+  
+  if (AM2320sen)
+    ID1 = ID1 + 1;
+  if (SHT31sen)
+    ID1 = ID1 + 2;
+  if (PMSsen)
+    ID1 = ID1 + 4;
+  if (AdjPMS)
+    ID1 = ID1 + 8;
+  if (SEN5Xsen)
+    ID1 = ID1 + 16;
+  if (SPS30sen)
+    ID1 = ID1 + 32;
+
+  if (TDisplay)
+    ID1 = ID1 + 256;
+  if (OLED)
+    ID1 = ID1 + 512;
+  if (ExtAnt)
+    ID1 = ID1 + 1024;
+
+  Serial.print("ID1: ");
+  Serial.println(ID1);
+  IDsensor = String(ID1,HEX);
+  Serial.println(IDsensor);
 }
 
 void Read_EEPROM()

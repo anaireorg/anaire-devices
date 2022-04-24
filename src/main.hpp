@@ -1,6 +1,7 @@
 void Display_Init();
 void Display_Splash_Screen();
 void Get_AireCiudadano_DeviceId();
+void Aireciudadano_Characteristics();
 void Read_EEPROM();
 void Print_Config();
 void Button_Init();

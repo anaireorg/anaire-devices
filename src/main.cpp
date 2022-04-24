@@ -28,12 +28,13 @@
 #define SPS30sen true     // Sensor Sensirion SPS30
 #define SEN5Xsen false    // Sensor Sensirion SEN5X
 #define PMSsen false      // Sensor Plantower PMS
-#define SHT31sen true     // Sensor DHT31 humedad y temperatura
-#define AM2320sen false   // Sensor AM2320 humedad y temperatura
+#define SHT31sen false    // Sensor DHT31 humedad y temperatura
+#define AM2320sen true    // Sensor AM2320 humedad y temperatura
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "v0.4";
 String aireciudadano_device_id;
+String aireciudadano_device_id_endframe;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
@@ -43,12 +44,12 @@ struct MyConfigStruct
   uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
   char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
   uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
-  //uint16_t temperature_offset = 600;                 // temperature offset for SCD30 CO2 measurements: 600 by default, because of the housing
-  //uint16_t altitude_compensation = 600;              // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
-  char wifi_user[24];                                // WiFi user to be used on WPA Enterprise. Default to null (not used)
-  char wifi_password[24];                            // WiFi password to be used on WPA Enterprise. Default to null (not used)
-  char sensor_lat[10] = "0.0";                       // Sensor latitude  GPS
-  char sensor_lon[10] = "0.0";                       // Sensor longitude GPS
+  // uint16_t temperature_offset = 600;                 // temperature offset for SCD30 CO2 measurements: 600 by default, because of the housing
+  // uint16_t altitude_compensation = 600;              // altitude compensation for SCD30 CO2 measurements: 600, Madrid altitude
+  char wifi_user[24];          // WiFi user to be used on WPA Enterprise. Default to null (not used)
+  char wifi_password[24];      // WiFi password to be used on WPA Enterprise. Default to null (not used)
+  char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
+  char sensor_lon[10] = "0.0"; // Sensor longitude GPS
 } eepromConfig;
 
 #if BrownoutOFF
@@ -300,18 +301,21 @@ void setup()
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
 
+  // Read EEPROM config values
+  Read_EEPROM();
+  aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
+  
   // Get device id
   Get_AireCiudadano_DeviceId();
-
+  
   // Set MQTT topics
-  MQTT_send_topic = "measurement";                   // Measurements are sent to this topic
+  MQTT_send_topic = "measurement";                          // Measurements are sent to this topic
   MQTT_receive_topic = "config/" + aireciudadano_device_id; // Config messages will be received in config/id
-
-  // Read EEPROM config values
-  // Wipe_EEPROM();
-  Read_EEPROM();
+    
+  // Print initial configuration
   Print_Config();
 
+  // Set Latitude and Longitude
   latitudef = atof(eepromConfig.sensor_lat);
   longitudef = atof(eepromConfig.sensor_lon);
 
@@ -761,7 +765,7 @@ void Check_WiFi_Server()
             client.print("AireCiudadano Device ID: ");
             client.print(aireciudadano_device_id);
             client.println("<br>");
-            client.print("AireCiudadano Device name: ");
+            client.print("AireCiudadano device name: ");
             client.print(eepromConfig.aireciudadano_device_name);
             client.println("<br>");
             client.print("SSID: ");
@@ -884,7 +888,8 @@ void Check_WiFi_Server()
 
 void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
-
+  char Custom_Name[30];
+  char aireciudadano_char[36];
   InCaptivePortal = true;
   String wifiAP = "AireCiudadano_" + aireciudadano_device_id;
   Serial.println(wifiAP);
@@ -907,7 +912,9 @@ void Start_Captive_Portal()
   WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
   // Captive portal parameters
-  WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server:</p>"); // only custom html
+  WiFiManagerParameter custom_id_html("<p>Set Station Custom Name (30 characters max):</p>"); // only custom html
+  WiFiManagerParameter custom_id_name("customName", "Custom Name", Custom_Name, 30);          //!!!!!!!!!!!
+  WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server:</p>");                           // only custom html
   WiFiManagerParameter custom_mqtt_server("Server", "MQTT server", eepromConfig.MQTT_server, 32);
   char port[6];
   itoa(eepromConfig.MQTT_port, port, 10);
@@ -922,6 +929,8 @@ void Start_Captive_Portal()
   // wifiManager.setSaveParamsCallback(saveParamCallback);
 
   // Add parameters
+  wifiManager.addParameter(&custom_id_html);
+  wifiManager.addParameter(&custom_id_name);
   wifiManager.addParameter(&custom_mqtt_html);
   wifiManager.addParameter(&custom_mqtt_server);
   wifiManager.addParameter(&custom_mqtt_port);
@@ -956,6 +965,25 @@ void Start_Captive_Portal()
   // Save parameters to EEPROM only if any of them changed
   bool write_eeprom = false;
 
+  strncpy(Custom_Name, custom_id_name.getValue(), sizeof(Custom_Name));
+
+  if (String(Custom_Name).isEmpty())
+    aireciudadano_device_id = aireciudadano_device_id_endframe;
+  else
+    aireciudadano_device_id = String(Custom_Name) + "_" + aireciudadano_device_id_endframe;
+
+  strncpy(aireciudadano_char, aireciudadano_device_id.c_str(), sizeof(aireciudadano_char));
+
+  if (eepromConfig.aireciudadano_device_name != aireciudadano_char)
+  {
+    strncpy(eepromConfig.aireciudadano_device_name, aireciudadano_char, sizeof(eepromConfig.aireciudadano_device_name));
+    eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
+    write_eeprom = true;
+
+    Serial.print("Device name (captive portal): ");
+    Serial.println(eepromConfig.aireciudadano_device_name);
+  }
+
   if (eepromConfig.MQTT_server != custom_mqtt_server.getValue())
   {
     strncpy(eepromConfig.MQTT_server, custom_mqtt_server.getValue(), sizeof(eepromConfig.MQTT_server));
@@ -980,7 +1008,7 @@ void Start_Captive_Portal()
     write_eeprom = true;
     Serial.print("Sensor Latitude: ");
     Serial.println(eepromConfig.sensor_lat);
-    latitudef = atof(eepromConfig.sensor_lat);    // Cambiar de string a float
+    latitudef = atof(eepromConfig.sensor_lat); // Cambiar de string a float
   }
 
   if (eepromConfig.sensor_lon != custom_sensor_longitude.getValue())
@@ -990,7 +1018,7 @@ void Start_Captive_Portal()
     write_eeprom = true;
     Serial.print("Sensor Longitude: ");
     Serial.println(eepromConfig.sensor_lon);
-    longitudef = atof(eepromConfig.sensor_lon);   // Cambiar de string a float
+    longitudef = atof(eepromConfig.sensor_lon); // Cambiar de string a float
   }
 
   if (eepromConfig.wifi_user != custom_wifi_user.getValue())
@@ -1142,7 +1170,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   {
     strncpy(eepromConfig.aireciudadano_device_name, jsonBuffer["name"].as<const char *>(), sizeof(eepromConfig.aireciudadano_device_name));
     eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
-    Serial.print("AireCiudadano device name: ");
+    Serial.print("AireCiudadano device name (json buffer): ");
     Serial.println(eepromConfig.aireciudadano_device_name);
     write_eeprom = true;
   }
@@ -1840,7 +1868,7 @@ void Button_Init()
     tft.setTextDatum(TL_DATUM); // top left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
-    tft.drawString("ID " + aireciudadano_device_id, 10, 5);
+    tft.drawString("ID " + aireciudadano_device_id, 10, 5);         //!!!Arreglar por nuevo tamaño String
     tft.drawString("SW " + sw_version, 10, 21);
     tft.drawString("SSID " + String(WiFi.SSID()), 10, 37);
     tft.drawString("IP " + WiFi.localIP().toString(), 10, 53);
@@ -2022,16 +2050,20 @@ void Update_Display()
 #endif
 
 void Get_AireCiudadano_DeviceId()
-{ // Get TTGO T-Display info and fill up aireciudadano_device_id with last 6 digits (in HEX) of WiFi mac address
+{ // Get TTGO T-Display info and fill up aireciudadano_device_id with last 6 digits (in HEX) of WiFi mac address or Custom_Name + 6 digits
   uint32_t chipId = 0;
   for (int i = 0; i < 17; i = i + 8)
   {
     chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
   }
-  aireciudadano_device_id = String(chipId, HEX); // HEX format for backwards compatibility to AireCiudadano devices based on NodeMCU board
+  aireciudadano_device_id_endframe = String(chipId, HEX);
   Serial.printf("ESP32 Chip model = %s Rev %d.\t", ESP.getChipModel(), ESP.getChipRevision());
   Serial.printf("This chip has %d cores and %dMB Flash.\n", ESP.getChipCores(), ESP.getFlashChipSize() / (1024 * 1024));
   Serial.print("AireCiudadano Device ID: ");
+  if (String(aireciudadano_device_id).isEmpty())
+    aireciudadano_device_id = aireciudadano_device_id_endframe;
+  else
+    Serial.print(" =same= ");
   Serial.println(aireciudadano_device_id);
 }
 

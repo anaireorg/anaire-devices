@@ -12,7 +12,7 @@
 //          OK: TTGO T Display funcionando
 // Agregar comparacion de valores de PM25 para emoticons y colores
 // OLED funcionando
-//          OK: AireCiudadano Splash Screen, mala muesta de la imagen, ver duracion
+//          OK: AireCiudadano Splash Screen
 //          OK: Valor de RSSI para modo wifi
 //          OK: Añadir coordenadas GPS
 //          OK: Añadir VOCs y NOx para SEN5X

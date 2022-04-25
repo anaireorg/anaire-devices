@@ -17,21 +17,30 @@
 //          OK: Añadir coordenadas GPS
 //          OK: Añadir VOCs y NOx para SEN5X
 //          OK: Revisar presicion envio de float, si cortarla o dejarlo al usuario
+//          OK: Variable Sensor de exteriores o interiores, ExternalSensor via mqtt Var1 datavar1
 
 #include <Arduino.h>
 #include "main.hpp"
 
 #define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define TDisplay true    // Set to true if Board TTGO T-Display is used
-#define OLED true        // Set to true if you use a OLED Diplay
+#define TDisplay false    // Set to true if Board TTGO T-Display is used
+#define OLED false        // Set to true if you use a OLED Diplay
 #define BLUETOOTH false   // Set to true in case bluetooth is desired
-#define SPS30sen true     // Sensor Sensirion SPS30
+#define SPS30sen false    // Sensor Sensirion SPS30
 #define SEN5Xsen false    // Sensor Sensirion SEN5X
 #define PMSsen false      // Sensor Plantower PMS
 #define SHT31sen false    // Sensor DHT31 humedad y temperatura
-#define AM2320sen true    // Sensor AM2320 humedad y temperatura
+#define AM2320sen false   // Sensor AM2320 humedad y temperatura
 #define AdjPMS false      // PMS sensor adjust
 #define ExtAnt false      // External antenna
+#define ExternalAmb true  // Set to true if your sensor is outdoors measuring outside environment, false if is indoor
+
+uint8_t CustomValue = 0;
+uint8_t CustomSenPM = 0;
+uint8_t CustomSenHYT = 0;
+uint8_t CustomBoard = 0;
+uint8_t CustomDisplay = 0;
+uint8_t OutdoorsAmb = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "v0.4";
@@ -237,6 +246,8 @@ const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
 WiFiServer wifi_server(80);
 WiFiClient wifi_client;
 bool PortalFlag = false;
+
+WiFiManager wifiManager;
 
 // MQTT
 #include <PubSubClient.h>
@@ -913,7 +924,7 @@ void Start_Captive_Portal()
   wifi_server.stop();
 
   // Local intialization. Once its business is done, there is no need to keep it around
-  WiFiManager wifiManager;
+  // WiFiManager wifiManager;
   wifiManager.setDebugOutput(true);
   wifiManager.disconnect();
   WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
@@ -932,8 +943,26 @@ void Start_Captive_Portal()
   WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise:</p>"); // only custom html
   WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user", eepromConfig.wifi_user, 24);
   WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
+  WiFiManagerParameter custom_sensorPM_type;
+  WiFiManagerParameter custom_sensorHYT_type;
+  WiFiManagerParameter custom_board_type;
+  WiFiManagerParameter custom_display_type;
+  WiFiManagerParameter custom_outin_type;
 
-  // wifiManager.setSaveParamsCallback(saveParamCallback);
+  const char *custom_senHYT_str = "<br/><br/><label for='customSenHYT'>Sensor HYT type:</label><br/><input type='radio' name='customSenHYT' value='0' checked> None<br><input type='radio' name='customSenHYT' value='1'> Sensirion SHT31<br><input type='radio' name='customSenHYT' value='2'> AM2320";
+  new (&custom_sensorHYT_type) WiFiManagerParameter(custom_senHYT_str); // custom html input
+
+  const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM type:</label><br/><input type='radio' name='customSenPM' value='0' checked> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw data<br><input type='radio' name='customSenPM' value='4'> Plantower PMS with PM formula data adjust";
+  new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str); // custom html input
+
+  const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0' checked> With internal antenna<br><input type='radio' name='customBoard' value='1'> For external anttena";
+  new (&custom_board_type) WiFiManagerParameter(custom_board_str); // custom html input
+
+  const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0' checked> Without display<br><input type='radio' name='customDisplay' value='1'> TTGO T-Display color display<br><input type='radio' name='customDisplay' value='2'> OLED 0.96-inch display with 128×64 pixels<br><input type='radio' name='customDisplay' value='3'> OLED 0.66-inch display with 64x48 pixels";
+  new (&custom_display_type) WiFiManagerParameter(custom_display_str); // custom html input
+
+  const char *custom_outin_str = "<br/><br/><label for='customOutIn'>IMPORTANT - Outdoors or indoors measurements:</label><br/><input type='radio' name='customOutIn' value='0' checked> Outdoors - the sensor measure outdoors air<br><input type='radio' name='customOutIn' value='1'> Indoors - the sensor measure indoors air";
+  new (&custom_outin_type) WiFiManagerParameter(custom_outin_str); // custom html input
 
   // Add parameters
   wifiManager.addParameter(&custom_id_html);
@@ -947,6 +976,13 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_wifi_html);
   wifiManager.addParameter(&custom_wifi_user);
   wifiManager.addParameter(&custom_wifi_password);
+  wifiManager.addParameter(&custom_sensorPM_type);
+  wifiManager.addParameter(&custom_sensorHYT_type);
+  wifiManager.addParameter(&custom_board_type);
+  wifiManager.addParameter(&custom_display_type);
+  wifiManager.addParameter(&custom_outin_type);
+
+  wifiManager.setSaveParamsCallback(saveParamCallback);
 
   // sets timeout in seconds until configuration portal gets turned off.
   // If not specified device will remain in configuration mode until
@@ -1045,6 +1081,34 @@ void Start_Captive_Portal()
   InCaptivePortal = false;
 }
 
+String getParam(String name)
+{
+  // read parameter from server, for customhmtl input
+  String value;
+
+  if (wifiManager.server->hasArg(name))
+  {
+    value = wifiManager.server->arg(name);
+  }
+  CustomValue = atoi(value.c_str());
+  return value;
+}
+
+void saveParamCallback()
+{
+  Serial.println("[CALLBACK] saveParamCallback fired");
+  Serial.println("Value customSenPM = " + getParam("customSenPM"));
+  CustomSenPM = CustomValue;
+  Serial.println("Value cutomSenHYT = " + getParam("customSenHYT"));
+  CustomSenHYT = CustomValue;
+  Serial.println("Value customBoard = " + getParam("customBoard"));
+  CustomBoard = CustomValue;
+  Serial.println("Value customDisplay = " + getParam("customDisplay"));
+  CustomDisplay = CustomValue;
+  Serial.println("Value customOutIn = " + getParam("customOutIn"));
+  OutdoorsAmb = CustomValue;
+}
+
 void Init_MQTT()
 { // MQTT Init function
   Serial.print("Attempting to connect to the MQTT broker ");
@@ -1108,6 +1172,7 @@ void Send_Message_Cloud_App_MQTT()
   // Print info
   float pm25f;
   int8_t RSSI;
+  int8_t datavar1;
 
   Serial.print("Sending MQTT message to the send topic: ");
   Serial.println(MQTT_send_topic);
@@ -1122,6 +1187,11 @@ void Send_Message_Cloud_App_MQTT()
   Serial.print(RSSI);
   Serial.println(" dBm");
 
+  if (ExternalAmb)
+    datavar1 = 1;
+  else
+    datavar1 = 0;
+
 #if SEN5Xsen
   uint8_t voc;
   uint8_t nox;
@@ -1133,9 +1203,9 @@ void Send_Message_Cloud_App_MQTT()
     nox = 0;
   else
     nox = round(noxIndex);
-  sprintf(MQTT_message, "{id: %s,PM25: %d,VOC: %d,NOx: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, latitudef, longitudef, RSSI);
+  sprintf(MQTT_message, "{id: %s,PM25: %d,VOC: %d,NOx: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, latitudef, longitudef, RSSI, datavar1);
 #else
-  sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, latitudef, longitudef, RSSI);
+  sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, latitudef, longitudef, RSSI, datavar1);
 #endif
   Serial.print(MQTT_message);
   Serial.println();
@@ -2055,18 +2125,14 @@ void Get_AireCiudadano_DeviceId()
   {
     chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
   }
-  chipIdHEX = String(chipId,HEX);
+  chipIdHEX = String(chipId, HEX);
   strncpy(aireciudadano_device_id_endframe, chipIdHEX.c_str(), sizeof(aireciudadano_device_id_endframe));
   Aireciudadano_Characteristics();
-  //Serial.print("aireciudadano_device_id_endframe: ");
-  //Serial.println(aireciudadano_device_id_endframe);
-  //Serial.print("aireciudadano_charac_id: ");
-  //Serial.println(aireciudadano_charac_id);
   Serial.printf("ESP32 Chip model = %s Rev %d.\t", ESP.getChipModel(), ESP.getChipRevision());
   Serial.printf("This chip has %d cores and %dMB Flash.\n", ESP.getChipCores(), ESP.getFlashChipSize() / (1024 * 1024));
   Serial.print("AireCiudadano Device ID: ");
   if (String(aireciudadano_device_id).isEmpty())
-    aireciudadano_device_id = aireciudadano_charac_id + aireciudadano_device_id_endframe;
+    aireciudadano_device_id = aireciudadano_charac_id + "-" + aireciudadano_device_id_endframe;
   else
     aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "_" + aireciudadano_charac_id + "-" + aireciudadano_device_id_endframe;
   Serial.println(aireciudadano_device_id);
@@ -2085,9 +2151,9 @@ void Aireciudadano_Characteristics()
   // TDisplay =  00000001 = 256
   // OLED =      00000010 = 512
   // ExtAntena = 00000100 = 1024
-  //
+
   uint16_t ID1 = 0;
-  
+
   if (AM2320sen)
     ID1 = ID1 + 1;
   if (SHT31sen)
@@ -2110,7 +2176,7 @@ void Aireciudadano_Characteristics()
 
   Serial.print("ID1: ");
   Serial.println(ID1);
-  aireciudadano_charac_id = String(ID1,HEX);
+  aireciudadano_charac_id = String(ID1, HEX);
   Serial.println(aireciudadano_charac_id);
 }
 

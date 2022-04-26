@@ -22,25 +22,25 @@
 #include <Arduino.h>
 #include "main.hpp"
 
-#define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define TDisplay false    // Set to true if Board TTGO T-Display is used
-#define OLED false        // Set to true if you use a OLED Diplay
-#define BLUETOOTH false   // Set to true in case bluetooth is desired
-#define SPS30sen false    // Sensor Sensirion SPS30
-#define SEN5Xsen false    // Sensor Sensirion SEN5X
-#define PMSsen false      // Sensor Plantower PMS
-#define SHT31sen false    // Sensor DHT31 humedad y temperatura
-#define AM2320sen false   // Sensor AM2320 humedad y temperatura
-#define AdjPMS false      // PMS sensor adjust
-#define ExtAnt false      // External antenna
-#define ExternalAmb true  // Set to true if your sensor is outdoors measuring outside environment, false if is indoor
+bool SPS30sen = false;   // Sensor Sensirion SPS30
+bool SEN5Xsen = false;   // Sensor Sensirion SEN5X
+bool PMSsen = false;     // Sensor Plantower PMS
+bool AdjPMS = false;     // PMS sensor adjust
+bool SHT31sen = false;   // Sensor DHT31 humedad y temperatura
+bool AM2320sen = false;  // Sensor AM2320 humedad y temperatura
+bool TDisplay = false;   // Set to true if Board TTGO T-Display is used
+bool OLED096 = false;    // Set to true if you use a OLED Diplay 0.96 inch 128x64
+bool OLED066 = false;    // Set to true if you use a OLED Diplay 0.66 inch 64x48
+bool ExtAnt = false;     // External antenna
+bool ExternalAmb = true; // Set to true if your sensor is outdoors measuring outside environment, false if is indoor
+
+bool BrownoutOFF = false; // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
+
+bool BLUETOOTH = false; // Set to true in case bluetooth is desired
 
 uint8_t CustomValue = 0;
-uint8_t CustomSenPM = 0;
-uint8_t CustomSenHYT = 0;
-uint8_t CustomBoard = 0;
-uint8_t CustomDisplay = 0;
-uint8_t OutdoorsAmb = 0;
+uint16_t CustomValtotal = 0;
+char CustomValTotalString[9] = "00000000";
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "v0.4";
@@ -50,7 +50,7 @@ String aireciudadano_charac_id;
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
 {
-  char aireciudadano_device_name[28];                // Device name; default to aireciudadano_device_id
+  char aireciudadano_device_name[29];                // Device name; default to aireciudadano_device_id
   uint16_t PM25_warning_threshold = 700;             // Warning threshold; default to 700ppm
   uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
   char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
@@ -61,6 +61,7 @@ struct MyConfigStruct
   char wifi_password[24];      // WiFi password to be used on WPA Enterprise. Default to null (not used)
   char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
   char sensor_lon[10] = "0.0"; // Sensor longitude GPS
+  char ConfigValues[9] = "00000000";
 } eepromConfig;
 
 #if BrownoutOFF
@@ -299,6 +300,16 @@ void setup()
   Serial.println();
   Serial.println("##### Inicializando Medidor Aire Ciudadano #####");
 
+  // init preferences to handle persitent config data
+  preferences.begin("config"); // use "config" namespace
+
+  // Read EEPROM config values
+  Read_EEPROM();
+  aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
+
+  // Get device id
+  Get_AireCiudadano_DeviceId();
+
 #if BrownoutOFF
   // OFF BROWNOUT/////////////////////
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // disable   detector
@@ -311,15 +322,11 @@ void setup()
   delay(5000);
 #endif
 
-  // init preferences to handle persitent config data
-  preferences.begin("config"); // use "config" namespace
+#if OLED096
+#endif
 
-  // Read EEPROM config values
-  Read_EEPROM();
-  aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
-
-  // Get device id
-  Get_AireCiudadano_DeviceId();
+#if OLED066
+#endif
 
   // Set MQTT topics
   MQTT_send_topic = "measurement";                          // Measurements are sent to this topic
@@ -945,21 +952,21 @@ void Start_Captive_Portal()
   WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
   WiFiManagerParameter custom_sensorPM_type;
   WiFiManagerParameter custom_sensorHYT_type;
-  WiFiManagerParameter custom_board_type;
   WiFiManagerParameter custom_display_type;
+  WiFiManagerParameter custom_board_type;
   WiFiManagerParameter custom_outin_type;
-
-  const char *custom_senHYT_str = "<br/><br/><label for='customSenHYT'>Sensor HYT type:</label><br/><input type='radio' name='customSenHYT' value='0' checked> None<br><input type='radio' name='customSenHYT' value='1'> Sensirion SHT31<br><input type='radio' name='customSenHYT' value='2'> AM2320";
-  new (&custom_sensorHYT_type) WiFiManagerParameter(custom_senHYT_str); // custom html input
 
   const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM type:</label><br/><input type='radio' name='customSenPM' value='0' checked> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw data<br><input type='radio' name='customSenPM' value='4'> Plantower PMS with PM formula data adjust";
   new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str); // custom html input
 
-  const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0' checked> With internal antenna<br><input type='radio' name='customBoard' value='1'> For external anttena";
-  new (&custom_board_type) WiFiManagerParameter(custom_board_str); // custom html input
+  const char *custom_senHYT_str = "<br/><br/><label for='customSenHYT'>Sensor HYT type:</label><br/><input type='radio' name='customSenHYT' value='0' checked> None<br><input type='radio' name='customSenHYT' value='1'> Sensirion SHT31<br><input type='radio' name='customSenHYT' value='2'> AM2320";
+  new (&custom_sensorHYT_type) WiFiManagerParameter(custom_senHYT_str); // custom html input
 
   const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0' checked> Without display<br><input type='radio' name='customDisplay' value='1'> TTGO T-Display color display<br><input type='radio' name='customDisplay' value='2'> OLED 0.96-inch display with 128×64 pixels<br><input type='radio' name='customDisplay' value='3'> OLED 0.66-inch display with 64x48 pixels";
   new (&custom_display_type) WiFiManagerParameter(custom_display_str); // custom html input
+
+  const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0' checked> Normal<br><input type='radio' name='customBoard' value='1'> For use with external antenna";
+  new (&custom_board_type) WiFiManagerParameter(custom_board_str); // custom html input
 
   const char *custom_outin_str = "<br/><br/><label for='customOutIn'>IMPORTANT - Outdoors or indoors measurements:</label><br/><input type='radio' name='customOutIn' value='0' checked> Outdoors - the sensor measure outdoors air<br><input type='radio' name='customOutIn' value='1'> Indoors - the sensor measure indoors air";
   new (&custom_outin_type) WiFiManagerParameter(custom_outin_str); // custom html input
@@ -978,8 +985,8 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_wifi_password);
   wifiManager.addParameter(&custom_sensorPM_type);
   wifiManager.addParameter(&custom_sensorHYT_type);
-  wifiManager.addParameter(&custom_board_type);
   wifiManager.addParameter(&custom_display_type);
+  wifiManager.addParameter(&custom_board_type);
   wifiManager.addParameter(&custom_outin_type);
 
   wifiManager.setSaveParamsCallback(saveParamCallback);
@@ -1072,6 +1079,40 @@ void Start_Captive_Portal()
     Serial.println(eepromConfig.wifi_password);
   }
 
+  // char ConfigValues[9] = "00000000";
+  CustomValTotalString[8] = {0};
+  sprintf(CustomValTotalString, "%8d", CustomValtotal);
+  if (CustomValTotalString[0] == ' ')
+    CustomValTotalString[0] = '0';
+  if (CustomValTotalString[1] == ' ')
+    CustomValTotalString[1] = '0';
+  if (CustomValTotalString[2] == ' ')
+    CustomValTotalString[2] = '0';
+  if (CustomValTotalString[3] == ' ')
+    CustomValTotalString[3] = '0';
+  if (CustomValTotalString[4] == ' ')
+    CustomValTotalString[4] = '0';
+  if (CustomValTotalString[5] == ' ')
+    CustomValTotalString[5] = '0';
+  if (CustomValTotalString[6] == ' ')
+    CustomValTotalString[6] = '0';
+  if (CustomValTotalString[7] == ' ')
+    CustomValTotalString[7] = '0';
+  if (CustomValTotalString[8] == ' ')
+    CustomValTotalString[8] = '0';
+
+  Serial.print("CustomValTotalString: ");
+  Serial.println(CustomValTotalString);
+
+  if (eepromConfig.ConfigValues != CustomValTotalString)
+  {
+    strncpy(eepromConfig.ConfigValues, CustomValTotalString, sizeof(eepromConfig.ConfigValues));
+    eepromConfig.ConfigValues[sizeof(eepromConfig.ConfigValues) - 1] = '\0';
+    write_eeprom = true;
+    Serial.print("Configuration Values: ");
+    Serial.println(eepromConfig.ConfigValues);
+  }
+
   if (write_eeprom)
   {
     Write_EEPROM();
@@ -1098,15 +1139,17 @@ void saveParamCallback()
 {
   Serial.println("[CALLBACK] saveParamCallback fired");
   Serial.println("Value customSenPM = " + getParam("customSenPM"));
-  CustomSenPM = CustomValue;
+  CustomValtotal = CustomValue;
   Serial.println("Value cutomSenHYT = " + getParam("customSenHYT"));
-  CustomSenHYT = CustomValue;
-  Serial.println("Value customBoard = " + getParam("customBoard"));
-  CustomBoard = CustomValue;
+  CustomValtotal = CustomValtotal + (CustomValue * 10);
   Serial.println("Value customDisplay = " + getParam("customDisplay"));
-  CustomDisplay = CustomValue;
+  CustomValtotal = CustomValtotal + (CustomValue * 100);
+  Serial.println("Value customBoard = " + getParam("customBoard"));
+  CustomValtotal = CustomValtotal + (CustomValue * 1000);
   Serial.println("Value customOutIn = " + getParam("customOutIn"));
-  OutdoorsAmb = CustomValue;
+  CustomValtotal = CustomValtotal + (CustomValue * 10000);
+  Serial.print("CustomValtotal: ");
+  Serial.println(CustomValtotal);
 }
 
 void Init_MQTT()
@@ -1530,13 +1573,6 @@ void Read_Sensor()
     errorToString(error, errorMessage, 256);
     Serial.println(errorMessage);
     delay(10);
-    //        Wire.begin(18, 19);;
-    //        delay(10);
-    //        sen5x.begin(Wire);
-    //        delay(10);
-    //        Wire.begin(21, 22);;
-    //        delay(10);
-    //        sen5x.begin(Wire);
     Setup_Sensor();
     Serial.println("Reinit I2C");
     delay(10);
@@ -1768,13 +1804,13 @@ void Evaluate_PM25_Value()
   switch (pm25_device_status)
   {
   case pm25_ok:
-    Serial.println("STATUS: PM2.5 OK");
+    Serial.println("STATUS: PM2.5 level OK");
     break;
   case pm25_warning:
-    Serial.println("STATUS: PM2.5 WARNING");
+    Serial.println("STATUS: PM2.5 level WARNING");
     break;
   case pm25_alarm:
-    Serial.println("STATUS: PM2.5 ALARM");
+    Serial.println("STATUS: PM2.5 levelALARM");
     break;
   }
 }
@@ -1881,20 +1917,12 @@ void Print_Config()
   Serial.println(eepromConfig.sensor_lat);
   Serial.print("Sensor longitude: ");
   Serial.println(eepromConfig.sensor_lon);
-  //  Serial.print("Acoustic Alarm: ");
-  //  Serial.println(eepromConfig.acoustic_alarm);
-  //  Serial.print("Self Calibration: ");
-  //  Serial.println(eepromConfig.self_calibration);
-  //  Serial.print("Forced Recalibration Reference: ");
-  //  Serial.println(eepromConfig.forced_recalibration_reference);
-  //  Serial.print("Temperature Offset: ");
-  //  Serial.println(eepromConfig.temperature_offset);
-  //  Serial.print("Altitude Compensation: ");
-  //  Serial.println(eepromConfig.altitude_compensation);
   Serial.print("WiFi user: ");
   Serial.println(eepromConfig.wifi_user);
   Serial.print("WiFi user's password: ");
   Serial.println(eepromConfig.wifi_password);
+  Serial.print("Configuration values: ");
+  Serial.println(eepromConfig.ConfigValues);
   Serial.println("#######################################");
 }
 
@@ -2139,40 +2167,133 @@ void Get_AireCiudadano_DeviceId()
 }
 
 void Aireciudadano_Characteristics()
-{ // ID1
-  // AM2320  = 00000001 = 1
-  // SHT31   = 00000010 = 2
-  // PMS     = 00000100 = 4
-  // AdjPMS  = 00001000 = 8
-  // SEN5X   = 00010000 = 16
-  // SPS30   = 00100000 = 32
-
-  // ID2
-  // TDisplay =  00000001 = 256
-  // OLED =      00000010 = 512
-  // ExtAntena = 00000100 = 1024
-
+{ 
   uint16_t ID1 = 0;
+  Serial.print("eepromConfig.ConfigValues: ");
+  Serial.println(eepromConfig.ConfigValues);
+  Serial.print("eepromConfig.ConfigValues[3]: ");
+  Serial.println(eepromConfig.ConfigValues[3]);
+  if (eepromConfig.ConfigValues[3] == '0')
+  {
+    ExternalAmb = true;
+    Serial.println("Outdoors");
+  }
+  else
+  {
+    ExternalAmb = false;
+    Serial.println("Indoors");
+  }
 
-  if (AM2320sen)
+  if (eepromConfig.ConfigValues[4] == '0')
+  {
+    Serial.println("Normal board");
+  }
+  else
+  {
+    Serial.println("Board with externa antenna");
+  }
+  Serial.print("eepromConfig.ConfigValues[5]: ");
+  Serial.println(eepromConfig.ConfigValues[5]);
+
+  TDisplay = false;
+  OLED096 = false;
+  OLED066 = false;
+  if (eepromConfig.ConfigValues[5] == '0')
+    Serial.println("None Display");
+  else if (eepromConfig.ConfigValues[5] == '1')
+  {
+    TDisplay = true;
+    Serial.println("TTGO TDisplay board");
+  }
+  else if (eepromConfig.ConfigValues[5] == '2')
+  {
+    OLED096 = true;
+    Serial.println("OLED 0.96 inch display 128x64");
+  }
+  else if (eepromConfig.ConfigValues[5] == '3')
+  {
+    OLED066 = true;
+    Serial.println("OLED 0.66 inch display 64x48");
+  }
+
+  Serial.print("eepromConfig.ConfigValues[6]: ");
+  Serial.println(eepromConfig.ConfigValues[6]);
+  SHT31sen = false;
+  AM2320sen = false;
+  if (eepromConfig.ConfigValues[6] == '0')
+    Serial.println("None sensor HYT");
+  else if (eepromConfig.ConfigValues[6] == '1')
+  {
+    SHT31sen = true;
+    Serial.println("SHT31 sensor");
+  }
+  else if (eepromConfig.ConfigValues[6] == '2')
+  {
+    AM2320sen = true;
+    Serial.println("AM2320 sensor");
+  }
+
+  Serial.print("eepromConfig.ConfigValues[7]: ");
+  Serial.println(eepromConfig.ConfigValues[7]);
+  SPS30sen = false;
+  SEN5Xsen = false;
+  PMSsen = false;
+  AdjPMS = false;
+  if (eepromConfig.ConfigValues[7] == '0')
+    Serial.println("None PM sensor");
+  else if (eepromConfig.ConfigValues[7] == '1')
+  {
+    SPS30sen = true;
+    Serial.println("SPS30 sensor");
+  }
+  else if (eepromConfig.ConfigValues[7] == '2')
+  {
+    SEN5Xsen = true;
+    Serial.println("SEN5X sensor");
+  }
+  else if (eepromConfig.ConfigValues[7] == '3')
+  {
+    PMSsen = true;
+    Serial.println("PMS sensor");
+  }
+  else if (eepromConfig.ConfigValues[7] == '4')
+  {
+    AdjPMS = true;
+    Serial.println("PMS sensor with stadistical adjust");
+  }
+
+  // SPS30sen = 1
+  // SEN5Xsen = 2
+  // PMSsen = 4
+  // AdjPMS = 8
+  // SHT31sen = 16
+  // AM2320sen =32
+  // TDisplay = 256
+  // OLED096 = 512
+  // OLED066 = 1024
+  // ExternalAmb = 2048
+
+  if (SPS30sen)
     ID1 = ID1 + 1;
-  if (SHT31sen)
+  if (SEN5Xsen)
     ID1 = ID1 + 2;
   if (PMSsen)
     ID1 = ID1 + 4;
   if (AdjPMS)
     ID1 = ID1 + 8;
-  if (SEN5Xsen)
+  if (SHT31sen)
     ID1 = ID1 + 16;
-  if (SPS30sen)
+  if (AM2320sen)
     ID1 = ID1 + 32;
 
   if (TDisplay)
     ID1 = ID1 + 256;
-  if (OLED)
+  if (OLED096)
     ID1 = ID1 + 512;
-  if (ExtAnt)
+  if (OLED066)
     ID1 = ID1 + 1024;
+  if (ExternalAmb)
+    ID1 = ID1 + 2048;
 
   Serial.print("ID1: ");
   Serial.println(ID1);

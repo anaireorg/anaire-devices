@@ -34,9 +34,8 @@ bool OLED066 = false;    // Set to true if you use a OLED Diplay 0.66 inch 64x48
 bool ExtAnt = false;     // External antenna
 bool ExternalAmb = true; // Set to true if your sensor is outdoors measuring outside environment, false if is indoor
 
-bool BrownoutOFF = false; // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-
-bool BLUETOOTH = false; // Set to true in case bluetooth is desired
+#define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
+#define Bluetooth false   // Set to true in case bluetooth is desired
 
 uint8_t CustomValue = 0;
 uint16_t CustomValtotal = 0;
@@ -130,8 +129,6 @@ unsigned long errors_loop_start;           // holds a timestamp for each error l
 #include <Wire.h>
 #include <esp_system.h>
 
-#if TDisplay
-
 // Display and fonts
 #include <TFT_eSPI.h>
 #include <SPI.h>
@@ -166,20 +163,14 @@ int vref = 1100;
 #define Voltage_Threshold_3 3.5
 #define Voltage_Threshold_4 3.3
 
-#endif
-
 #define Sensor_SDA_pin 21 // Define the SDA pin used for the SCD30
 #define Sensor_SCL_pin 22 // Define the SCL pin used for the SCD30
 
-#if SPS30sen
 #include <sps30.h>
 SPS30 sps30;
 #define SP30_COMMS Wire
 #define DEBUG 0
-// bool SPS30flag = false;
-#endif
 
-#if SEN5Xsen
 #include <SensirionI2CSen5x.h>
 
 // The used commands use up to 48 bytes. On some Arduino's the default buffer space is not large enough
@@ -202,18 +193,12 @@ float ambientTemperature;
 float vocIndex;
 float noxIndex;
 
-#endif
-
-#if PMSsen
-
 #include "PMS.h"
 PMS pms(Serial1);
 PMS::DATA data;
 // bool PMSflag = false;
 #define PMS_TX 17 // PMS TX pin
 #define PMS_RX 15 // PMS RX pin
-
-#endif
 
 #include <Adafruit_SHT31.h>
 Adafruit_SHT31 sht31;
@@ -228,7 +213,7 @@ Adafruit_AM2320 am2320 = Adafruit_AM2320();
 bool AM2320flag = false;
 
 // Bluetooth in TTGO T-Display
-#if BLUETOOTH
+#if Bluetooth
 #include "Sensirion_GadgetBle_Lib.h" // to connect to Sensirion MyAmbience Android App available on Google Play
 // GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
 GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_VOC_PM25_V2);
@@ -239,7 +224,6 @@ bool bluetooth_active = false;
 //#define BUZZER_GPIO 12 // signal GPIO12 (pin TOUCH5/ADC15/GPIO12 on TTGO)
 
 // WiFi
-//#include <WiFi.h>
 #include <WiFiManager.h>                // https://github.com/tzapu/WiFiManager
 #include "esp_wpa2.h"                   //wpa2 library for connections to Enterprise networks
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
@@ -315,18 +299,22 @@ void setup()
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // disable   detector
 #endif
 
-#if TDisplay
+ if (TDisplay == true)
+ {
   // Initialize TTGO Display and show AireCiudadano splash screen
   Display_Init();
   Display_Splash_Screen();
   delay(5000);
-#endif
+ }
 
-#if OLED096
-#endif
+if (OLED096 == true) {
 
-#if OLED066
-#endif
+}
+
+ if (OLED066 == true)
+ {
+
+ }
 
   // Set MQTT topics
   MQTT_send_topic = "measurement";                          // Measurements are sent to this topic
@@ -340,16 +328,17 @@ void setup()
   longitudef = atof(eepromConfig.sensor_lon);
 
 // Initialize the GadgetBle Library for Bluetooth
-#if BLUETOOTH
+#if Bluetooth
   gadgetBle.begin();
   Serial.print("Sensirion GadgetBle Lib initialized with deviceId = ");
   Serial.println(gadgetBle.getDeviceIdString());
 #endif
 
-#if TDisplay
+ if (TDisplay == true)
+ {
   // Initialize TTGO board buttons
   Button_Init();
-#endif
+ }
 
   // Start Captive Portal for 15 seconds
   if (ResetFlag == true)
@@ -377,7 +366,7 @@ void setup()
 
   Serial.println("");
   Serial.println("### Configuración del medidor AireCiudadano finalizada ###\n");
-#if TDisplay
+  if (TDisplay == true) {
   tft.fillScreen(TFT_BLUE);
   tft.setTextColor(TFT_WHITE, TFT_BLUE);
   tft.setTextDatum(6); // bottom left
@@ -386,12 +375,11 @@ void setup()
   tft.setTextDatum(MC_DATUM);
   tft.drawString("Medidor AireCiudadano", tft.width() / 2, tft.height() / 2);
   delay(1000);
-
   // Update display with new values
   Update_Display();
-#else
+  }
+ else
   delay(1000);
-#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -424,12 +412,12 @@ void loop()
       Evaluate_PM25_Value();
 
       // Update display with new values
-#if TDisplay
+  if (TDisplay == true) {
       Update_Display();
-#endif
+}
 
 // Update bluetooth app with new values
-#if BLUETOOTH
+#if Bluetooth
       Write_Bluetooth();
 #endif
 
@@ -511,15 +499,15 @@ void loop()
   Check_WiFi_Server();
 
 // Process bluetooth events
-#if BLUETOOTH
+#if Bluetooth
   gadgetBle.handleEvents();
 #endif
 
-#if TDisplay
+  if (TDisplay == true) {
   // Process buttons events
   button_top.loop();
   button_bottom.loop();
-#endif
+}
 
   // Serial.println("--- END LOOP");
 }
@@ -615,7 +603,6 @@ void WiFiEvent(WiFiEvent_t event)
   }
 }
 
-#if TDisplay
 void Interrupt_Restart(Button2 &btn)
 { // Restarts the device if any button is pressed while calibrating or in captive portal
   Serial.println("Any button click");
@@ -624,7 +611,6 @@ void Interrupt_Restart(Button2 &btn)
     ESP.restart();
   }
 }
-#endif
 
 void Connect_WiFi()
 { // Connect to WiFi
@@ -919,14 +905,14 @@ void Start_Captive_Portal()
     wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
 
-#if TDisplay
+  if (TDisplay == true) {
   tft.fillScreen(TFT_WHITE);
   tft.setTextColor(TFT_RED, TFT_WHITE);
   tft.setTextSize(1);
   tft.setFreeFont(FF90);
   tft.setTextDatum(MC_DATUM);
   tft.drawString(wifiAP, tft.width() / 2, tft.height() / 2);
-#endif
+}
 
   wifi_server.stop();
 
@@ -1235,7 +1221,8 @@ void Send_Message_Cloud_App_MQTT()
   else
     datavar1 = 0;
 
-#if SEN5Xsen
+ if (SEN5Xsen == true)
+ {
   uint8_t voc;
   uint8_t nox;
   if (isnan(vocIndex))
@@ -1247,9 +1234,10 @@ void Send_Message_Cloud_App_MQTT()
   else
     nox = round(noxIndex);
   sprintf(MQTT_message, "{id: %s,PM25: %d,VOC: %d,NOx: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, latitudef, longitudef, RSSI, datavar1);
-#else
+ }
+ else {
   sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, latitudef, longitudef, RSSI, datavar1);
-#endif
+}
   Serial.print(MQTT_message);
   Serial.println();
 
@@ -1383,7 +1371,7 @@ void Setup_Sensor()
 
   // Test PM2.5 SPS30
 
-#if SPS30sen
+  if (SPS30sen == true) {
 
   Serial.println("Test Sensirion SPS30 sensor");
   // Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
@@ -1411,12 +1399,12 @@ void Setup_Sensor()
     Serial.println("Measurement started");
   else
     Errorloop((char *)"Could NOT start measurement", 0);
-#endif
+  }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Test PM2.5 SEN5X
 
-#if SEN5Xsen
+ if (SEN5Xsen == true) {
 
   Serial.println("Test Sensirion SEN5X sensor");
   Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
@@ -1454,12 +1442,13 @@ void Setup_Sensor()
     else
       Serial.println("SEN5X measurement OK");
   }
-#endif
+}
 
   ///////////////////////////////////////////////////////////////////////////////////////////
 
   // PMS7003 PMSA003
-#if PMSsen
+ if (PMSsen == true)
+ {
 
   Serial.println("Test Plantower Sensor");
   Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
@@ -1480,9 +1469,10 @@ void Setup_Sensor()
   {
     Serial.println("Could not find Plantower sensor!");
   }
-#endif
+}
 
-#if SHT31sen
+ if (SHT31sen == true)
+ {
 
   Serial.print("SHT31 test: ");
   if (!sht31.begin(0x44))
@@ -1500,9 +1490,9 @@ void Setup_Sensor()
     Serial.println("ENABLED");
   else
     Serial.println("DISABLED");
-#endif
+}
 
-#if AM2320sen
+ if (AM2320sen == true) {
 
   Serial.print("AM2320 test: ");
   am2320.begin();
@@ -1515,13 +1505,13 @@ void Setup_Sensor()
   }
   else
     Serial.println("none");
-#endif
+}
 }
 
 void Read_Sensor()
 { // Read PM25, temperature and humidity values
 
-#if SPS30sen
+  if (SPS30sen == true) {
   uint8_t ret, error_cnt = 0;
   struct sps_values val;
   // loop to get data
@@ -1555,9 +1545,10 @@ void Read_Sensor()
     Serial.print(PM25_value);
     Serial.print(" ug/m3   ");
   }
-#endif
+}
 
-#if SEN5Xsen
+ if (SEN5Xsen == true)
+ {
 
   uint16_t error;
   char errorMessage[256];
@@ -1600,9 +1591,10 @@ void Read_Sensor()
     else
       Serial.println(noxIndex);
   }
-#endif
+}
 
-#if PMSsen
+ if (PMSsen == true)
+ {
   while (Serial1.available())
   {
     Serial1.read();
@@ -1619,14 +1611,12 @@ void Read_Sensor()
   {
     Serial.println("No data by Plantower sensor!");
   }
-#endif
+}
 }
 
 /**
  * @brief : read and display device info
  */
-
-#if SPS30sen
 
 void GetDeviceInfo()
 {
@@ -1698,9 +1688,6 @@ void ErrtoMess(char *mess, uint8_t r)
   Serial.println(buf);
 }
 
-#endif
-
-#if SEN5Xsen
 
 void printModuleVersions()
 {
@@ -1777,8 +1764,6 @@ void printSerialNumber()
   }
 }
 
-#endif
-
 void Evaluate_PM25_Value()
 { // Evaluate measured PM25 value against warning and alarm thresholds
 
@@ -1819,8 +1804,8 @@ void Evaluate_PM25_Value()
 void ReadHyT()
 {
   /////////  SHT31
-#if SHT31sen
-
+ if (SHT31sen == true)
+ {
   temperature = 0.0;
   humidity = 0.0;
   humidity = sht31.readHumidity();
@@ -1853,10 +1838,11 @@ void ReadHyT()
   }
   else
     Serial.println("Failed to read temperature SHT31");
-#endif
+}
 
     // AM2320//
-#if AM2320sen
+ if (AM2320sen == true)
+ {
 
   temperature = 0.0;
   humidity = 0.0;
@@ -1890,7 +1876,7 @@ void ReadHyT()
   }
   else
     Serial.println("Failed to read temperature AM2320");
-#endif
+ }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1933,7 +1919,6 @@ void espDelay(int ms)
   esp_light_sleep_start();
 }
 
-#if TDisplay
 void Button_Init()
 { // Manage TTGO T-Display board buttons
 
@@ -2136,13 +2121,12 @@ void Update_Display()
   tft.drawString(String(humidity, 1) + "%", 140, 115);
 
   // Draw bluetooth device id
-#if BLUETOOTH
+#if Bluetooth
   //  tft.setTextDatum(8); // bottom right
   tft.drawString(gadgetBle.getDeviceIdString(), 200, 115);
 #endif
 }
 
-#endif
 
 void Get_AireCiudadano_DeviceId()
 { // Get TTGO T-Display info and fill up aireciudadano_device_id with last 6 digits (in HEX) of WiFi mac address or Custom_Name + 6 digits
@@ -2361,7 +2345,7 @@ void Firmware_Update()
   UpdateClient.setTimeout(30); // timeout argument is defined in seconds for setTimeout
   Serial.println("ACTUALIZACION EN CURSO");
 
-#if TDisplay
+  if (TDisplay == true) {
   // Update display
   tft.fillScreen(TFT_ORANGE);
   tft.setTextColor(TFT_BLACK, TFT_ORANGE);
@@ -2369,7 +2353,7 @@ void Firmware_Update()
   tft.setFreeFont(FF90);
   tft.setTextDatum(MC_DATUM);
   tft.drawString("ACTUALIZACION EN CURSO", tft.width() / 2, tft.height() / 2);
-#endif
+}
 
   // t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
   t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
@@ -2380,10 +2364,10 @@ void Firmware_Update()
   case HTTP_UPDATE_FAILED:
     Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
 
-#if TDisplay
+  if (TDisplay == true) {
     tft.fillScreen(TFT_ORANGE);
     tft.drawString("ACTUALIZACION FALLIDA", tft.width() / 2, tft.height() / 2);
-#endif
+}
 
     delay(1000);
     break;
@@ -2394,16 +2378,16 @@ void Firmware_Update()
 
   case HTTP_UPDATE_OK:
     Serial.println("HTTP_UPDATE_OK");
-#if TDisplay
+  if (TDisplay == true) {
     tft.fillScreen(TFT_ORANGE);
     tft.drawString("ACTUALIZACION COMPLETA", tft.width() / 2, tft.height() / 2);
-#endif
+}
     delay(1000);
     break;
   }
 }
 
-#if TDisplay
+// #if TDisplay
 #if Bluetooth
 void displayBatteryLevel(int colour)
 { // Draw a battery showing the level of charge
@@ -2485,13 +2469,11 @@ void displayWifi(int colour_1, int colour_2, boolean active)
   }
 }
 
-#endif
-
 void Suspend_Device()
 {
   Serial.println("Presione un boton para despertar");
 
-#if TDisplay
+  if (TDisplay == true) {
   // int r = digitalRead(TFT_BL);
   tft.fillScreen(TFT_BLACK);
   tft.setTextColor(TFT_GREEN, TFT_BLACK);
@@ -2501,9 +2483,10 @@ void Suspend_Device()
   // digitalWrite(TFT_BL, !r);
   tft.writecommand(TFT_DISPOFF);
   tft.writecommand(TFT_SLPIN);
-#else
+  }
+ else {
   espDelay(3000);
-#endif
+}
 
   // After using light sleep, you need to disable timer wake, because here use external IO port to wake up
   esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
@@ -2573,7 +2556,7 @@ void print_reset_reason(RESET_REASON reason)
   }
 }
 
-#if BLUETOOTH
+#if Bluetooth
 void Write_Bluetooth()
 { // Write measurements to bluetooth
   gadgetBle.writePM2p5(pm25int);

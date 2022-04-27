@@ -18,7 +18,12 @@
 //          OK: Añadir VOCs y NOx para SEN5X
 //          OK: Revisar presicion envio de float, si cortarla o dejarlo al usuario
 //          OK: Variable Sensor de exteriores o interiores, ExternalSensor via mqtt Var1 datavar1
-// Tiempo de muestreo
+//          OK: Tiempo de muestreo
+//
+// MODIFICACIONES EXTERNAS:
+// Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:
+// _configPortalTimeout = 180000;   // New Config Portal Timeout
+//  DEBUG_WM(DEBUG_VERBOSE,F("New Config Portal Timeout: 180 seconds"));
 
 #include <Arduino.h>
 #include "main.hpp"
@@ -37,6 +42,7 @@ bool ExternalAmb = true; // Set to true if your sensor is outdoors measuring out
 
 #define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define Bluetooth false   // Set to true in case bluetooth is desired
+#define WPA2 false        // Colocar en true para redes con WPA2
 
 uint8_t CustomValue = 0;
 uint16_t CustomValtotal = 0;
@@ -53,10 +59,11 @@ struct MyConfigStruct
   char aireciudadano_device_name[29];                // Device name; default to aireciudadano_device_id
   uint16_t PM25_warning_threshold = 700;             // Warning threshold; default to 700ppm
   uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
+  uint16_t PublicTime = 1;                           // Publication Time
   char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
   uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
-  char wifi_user[24];                                // WiFi user to be used on WPA Enterprise. Default to null (not used)
-  char wifi_password[24];                            // WiFi password to be used on WPA Enterprise. Default to null (not used)
+//  char wifi_user[24];                                // WiFi user to be used on WPA Enterprise. Default to null (not used)
+//  char wifi_password[24];                            // WiFi password to be used on WPA Enterprise. Default to null (not used)
   char sensor_lat[10] = "0.0";                       // Sensor latitude  GPS
   char sensor_lon[10] = "0.0";                       // Sensor longitude GPS
   char ConfigValues[9] = "00000000";
@@ -115,7 +122,7 @@ unsigned int measurements_loop_duration = 1000; // 1 second
 unsigned long measurements_loop_start;          // holds a timestamp for each control loop start
 
 // MQTT loop: time between MQTT measurements sent to the cloud
-unsigned int MQTT_loop_duration = 60000; // 60 seconds
+//unsigned int MQTT_loop_duration = 60000; // 60 seconds
 unsigned long MQTT_loop_start;           // holds a timestamp for each cloud loop start
 unsigned long lastReconnectAttempt = 0;  // MQTT reconnections
 
@@ -224,7 +231,11 @@ bool bluetooth_active = false;
 
 // WiFi
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
-//#include "esp_wpa2.h"                   //wpa2 library for connections to Enterprise networks
+
+#if WPA2
+#include "esp_wpa2.h"                   //wpa2 library for connections to Enterprise networks
+#endif
+
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
 // const int WIFI_CONNECT_TIMEOUT = 1000; // 1 seconds !!! TEST SEN5X
 WiFiServer wifi_server(80);
@@ -428,7 +439,7 @@ void loop()
   }
 
   // MQTT loop
-  if ((millis() - MQTT_loop_start) >= MQTT_loop_duration)
+  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
   {
 
     // New timestamp for the loop start time
@@ -625,6 +636,7 @@ void Connect_WiFi()
   Serial.print("Attempting to connect to WiFi network: ");
   Serial.println(String(reinterpret_cast<const char *>(conf.sta.ssid))); // WiFi.SSID() is not filled up until the connection is established
 
+#if WPA2
   // If there are not wifi user and wifi password defined, proceed to traight forward configuration
   if ((strlen(eepromConfig.wifi_user) == 0) && (strlen(eepromConfig.wifi_password) == 0))
   {
@@ -632,17 +644,18 @@ void Connect_WiFi()
   }
   else
   { // set up wpa2 enterprise
-    //    Serial.println("Attempting to authenticate using WPA2 Enterprise...");
-    //    Serial.print("User: ");
-    //    Serial.println(eepromConfig.wifi_user);
-    //    Serial.print("Password: ");
-    //    Serial.println(eepromConfig.wifi_password);
-    //    esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide identity
-    //    esp_wifi_sta_wpa2_ent_set_username((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide username --> identity and username is same
-    //    esp_wifi_sta_wpa2_ent_set_password((uint8_t *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password)); // provide password
-    //    esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();                                                         // set config settings to default
-    //    esp_wifi_sta_wpa2_ent_enable(&config);                                                                         // set config settings to enable function
+        Serial.println("Attempting to authenticate using WPA2 Enterprise...");
+        Serial.print("User: ");
+        Serial.println(eepromConfig.wifi_user);
+        Serial.print("Password: ");
+        Serial.println(eepromConfig.wifi_password);
+        esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide identity
+        esp_wifi_sta_wpa2_ent_set_username((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide username --> identity and username is same
+        esp_wifi_sta_wpa2_ent_set_password((uint8_t *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password)); // provide password
+        esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();                                                         // set config settings to default
+        esp_wifi_sta_wpa2_ent_enable(&config);                                                                         // set config settings to enable function
   }
+#endif
 
   // Connect to wifi
   WiFi.begin();
@@ -795,6 +808,8 @@ void Check_WiFi_Server()
             client.print("PM25_alarm_threshold: ");
             client.print(eepromConfig.PM25_alarm_threshold);
             client.println("<br>");
+            client.print("Publication Time: ");
+            client.print(eepromConfig.PublicTime);
             client.print("MQTT Server: ");
             client.print(eepromConfig.MQTT_server);
             client.println("<br>");
@@ -926,7 +941,11 @@ void Start_Captive_Portal()
 
   // Captive portal parameters
   WiFiManagerParameter custom_id_html("<p>Set Station Custom Name:</p>");                                             // only custom html
-  WiFiManagerParameter custom_id_name("CustomName", "30 characters max", eepromConfig.aireciudadano_device_name, 30); //!!!!!!!!!!!
+  WiFiManagerParameter custom_id_name("CustomName", "30 characters max", eepromConfig.aireciudadano_device_name, 30);
+  WiFiManagerParameter custom_ptime_html("<p>Set Publication Server Time in minutes:</p>");                                                   // only custom html
+  char Ptime[5];
+  itoa(eepromConfig.PublicTime, Ptime, 10);
+  WiFiManagerParameter custom_public_time("Ptime", "Publication Time", Ptime, 4);
   WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server:</p>");                                                   // only custom html
   WiFiManagerParameter custom_mqtt_server("Server", "MQTT server", eepromConfig.MQTT_server, 32);
   char port[6];
@@ -962,6 +981,8 @@ void Start_Captive_Portal()
   // Add parameters
   wifiManager.addParameter(&custom_id_html);
   wifiManager.addParameter(&custom_id_name);
+  wifiManager.addParameter(&custom_ptime_html);
+  wifiManager.addParameter(&custom_public_time);
   wifiManager.addParameter(&custom_mqtt_html);
   wifiManager.addParameter(&custom_mqtt_server);
   wifiManager.addParameter(&custom_mqtt_port);
@@ -1010,6 +1031,14 @@ void Start_Captive_Portal()
     write_eeprom = true;
     Serial.print("Device name (captive portal): ");
     Serial.println(eepromConfig.aireciudadano_device_name);
+  }
+
+  if (eepromConfig.PublicTime != atoi(custom_public_time.getValue()))
+  {
+    eepromConfig.PublicTime = atoi(custom_public_time.getValue());
+    write_eeprom = true;
+    Serial.print("Publication time: ");
+    Serial.println(eepromConfig.PublicTime);
   }
 
   if (eepromConfig.MQTT_server != custom_mqtt_server.getValue())
@@ -1215,10 +1244,13 @@ void Send_Message_Cloud_App_MQTT()
   Serial.print("Sending MQTT message to the send topic: ");
   Serial.println(MQTT_send_topic);
   // Serial.println(PM25_accumulated);
+  Serial.println(PM25_accumulated);
   // Serial.println(PM25_samples);
+  Serial.println(PM25_samples);
   pm25f = PM25_accumulated / PM25_samples;
   pm25int = round(pm25f);
   // Serial.println(pm25int);
+  Serial.println(pm25int);
   ReadHyT();
   RSSI = WiFi.RSSI();
   Serial.print("Signal strength (RSSI):");
@@ -1907,6 +1939,8 @@ void Print_Config()
   Serial.println(eepromConfig.PM25_warning_threshold);
   Serial.print("PM25 Alarm threshold: ");
   Serial.println(eepromConfig.PM25_alarm_threshold);
+  Serial.print("Publication Time: ");
+  Serial.println(eepromConfig.PublicTime);
   Serial.print("MQTT server: ");
   Serial.println(eepromConfig.MQTT_server);
   Serial.print("MQTT Port: ");
@@ -1915,10 +1949,10 @@ void Print_Config()
   Serial.println(eepromConfig.sensor_lat);
   Serial.print("Sensor longitude: ");
   Serial.println(eepromConfig.sensor_lon);
-  Serial.print("WiFi user: ");
-  Serial.println(eepromConfig.wifi_user);
-  Serial.print("WiFi user's password: ");
-  Serial.println(eepromConfig.wifi_password);
+//  Serial.print("WiFi user: ");
+//  Serial.println(eepromConfig.wifi_user);
+//  Serial.print("WiFi user's password: ");
+//  Serial.println(eepromConfig.wifi_password);
   Serial.print("Configuration values: ");
   Serial.println(eepromConfig.ConfigValues);
   Serial.println("#######################################");

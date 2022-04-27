@@ -54,10 +54,10 @@ struct MyConfigStruct
   uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
   char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
   uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
-  char wifi_user[24];          // WiFi user to be used on WPA Enterprise. Default to null (not used)
-  char wifi_password[24];      // WiFi password to be used on WPA Enterprise. Default to null (not used)
-  char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
-  char sensor_lon[10] = "0.0"; // Sensor longitude GPS
+  char wifi_user[24];                                // WiFi user to be used on WPA Enterprise. Default to null (not used)
+  char wifi_password[24];                            // WiFi password to be used on WPA Enterprise. Default to null (not used)
+  char sensor_lat[10] = "0.0";                       // Sensor latitude  GPS
+  char sensor_lon[10] = "0.0";                       // Sensor longitude GPS
   char ConfigValues[9] = "00000000";
 } eepromConfig;
 
@@ -222,7 +222,7 @@ bool bluetooth_active = false;
 //#define BUZZER_GPIO 12 // signal GPIO12 (pin TOUCH5/ADC15/GPIO12 on TTGO)
 
 // WiFi
-#include <WiFiManager.h>                // https://github.com/tzapu/WiFiManager
+#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 //#include "esp_wpa2.h"                   //wpa2 library for connections to Enterprise networks
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
 // const int WIFI_CONNECT_TIMEOUT = 1000; // 1 seconds !!! TEST SEN5X
@@ -631,16 +631,16 @@ void Connect_WiFi()
   }
   else
   { // set up wpa2 enterprise
-//    Serial.println("Attempting to authenticate using WPA2 Enterprise...");
-//    Serial.print("User: ");
-//    Serial.println(eepromConfig.wifi_user);
-//    Serial.print("Password: ");
-//    Serial.println(eepromConfig.wifi_password);
-//    esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide identity
-//    esp_wifi_sta_wpa2_ent_set_username((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide username --> identity and username is same
-//    esp_wifi_sta_wpa2_ent_set_password((uint8_t *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password)); // provide password
-//    esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();                                                         // set config settings to default
-//    esp_wifi_sta_wpa2_ent_enable(&config);                                                                         // set config settings to enable function
+    //    Serial.println("Attempting to authenticate using WPA2 Enterprise...");
+    //    Serial.print("User: ");
+    //    Serial.println(eepromConfig.wifi_user);
+    //    Serial.print("Password: ");
+    //    Serial.println(eepromConfig.wifi_password);
+    //    esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide identity
+    //    esp_wifi_sta_wpa2_ent_set_username((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide username --> identity and username is same
+    //    esp_wifi_sta_wpa2_ent_set_password((uint8_t *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password)); // provide password
+    //    esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();                                                         // set config settings to default
+    //    esp_wifi_sta_wpa2_ent_enable(&config);                                                                         // set config settings to enable function
   }
 
   // Connect to wifi
@@ -934,9 +934,9 @@ void Start_Captive_Portal()
   WiFiManagerParameter custom_sensor_html("<p>Set Sensor Latitude & Longitude (4 or 5 decimal digits):</p>"); // only custom html
   WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor", eepromConfig.sensor_lat, 10);
   WiFiManagerParameter custom_sensor_longitude("Longitude", "Longitude sensor", eepromConfig.sensor_lon, 10);
-//  WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise:</p>"); // only custom html
-//  WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user", eepromConfig.wifi_user, 24);
-//  WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
+  //  WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise:</p>"); // only custom html
+  //  WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user", eepromConfig.wifi_user, 24);
+  //  WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
   WiFiManagerParameter custom_sensorPM_type;
   WiFiManagerParameter custom_sensorHYT_type;
   WiFiManagerParameter custom_display_type;
@@ -967,9 +967,9 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_sensor_html);
   wifiManager.addParameter(&custom_sensor_latitude);
   wifiManager.addParameter(&custom_sensor_longitude);
-//  wifiManager.addParameter(&custom_wifi_html);
-//  wifiManager.addParameter(&custom_wifi_user);
-//  wifiManager.addParameter(&custom_wifi_password);
+  //  wifiManager.addParameter(&custom_wifi_html);
+  //  wifiManager.addParameter(&custom_wifi_user);
+  //  wifiManager.addParameter(&custom_wifi_password);
   wifiManager.addParameter(&custom_sensorPM_type);
   wifiManager.addParameter(&custom_sensorHYT_type);
   wifiManager.addParameter(&custom_display_type);
@@ -1047,25 +1047,25 @@ void Start_Captive_Portal()
     Serial.println(eepromConfig.sensor_lon);
     longitudef = atof(eepromConfig.sensor_lon); // Cambiar de string a float
   }
-/*
-  if (eepromConfig.wifi_user != custom_wifi_user.getValue())
-  {
-    strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
-    eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
-    write_eeprom = true;
-    Serial.print("WiFi user: ");
-    Serial.println(eepromConfig.wifi_user);
-  }
+  /*
+    if (eepromConfig.wifi_user != custom_wifi_user.getValue())
+    {
+      strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
+      eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
+      write_eeprom = true;
+      Serial.print("WiFi user: ");
+      Serial.println(eepromConfig.wifi_user);
+    }
 
-  if (eepromConfig.wifi_password != custom_wifi_password.getValue())
-  {
-    strncpy(eepromConfig.wifi_password, custom_wifi_password.getValue(), sizeof(eepromConfig.wifi_password));
-    eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
-    write_eeprom = true;
-    Serial.print("WiFi password: ");
-    Serial.println(eepromConfig.wifi_password);
-  }
-*/
+    if (eepromConfig.wifi_password != custom_wifi_password.getValue())
+    {
+      strncpy(eepromConfig.wifi_password, custom_wifi_password.getValue(), sizeof(eepromConfig.wifi_password));
+      eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
+      write_eeprom = true;
+      Serial.print("WiFi password: ");
+      Serial.println(eepromConfig.wifi_password);
+    }
+  */
 
   CustomValTotalString[8] = {0};
   sprintf(CustomValTotalString, "%8d", CustomValtotal);
@@ -1091,13 +1091,20 @@ void Start_Captive_Portal()
   Serial.print("CustomValTotalString: ");
   Serial.println(CustomValTotalString);
 
-  if (eepromConfig.ConfigValues != CustomValTotalString)
+  if (CustomValtotal == 0)
   {
-    strncpy(eepromConfig.ConfigValues, CustomValTotalString, sizeof(eepromConfig.ConfigValues));
-    eepromConfig.ConfigValues[sizeof(eepromConfig.ConfigValues) - 1] = '\0';
-    write_eeprom = true;
-    Serial.print("Configuration Values: ");
-    Serial.println(eepromConfig.ConfigValues);
+    Serial.print("No configuration sensor values ​​chosen, no changes will be stored");
+  }
+  else
+  {
+    if (eepromConfig.ConfigValues != CustomValTotalString)
+    {
+      strncpy(eepromConfig.ConfigValues, CustomValTotalString, sizeof(eepromConfig.ConfigValues));
+      eepromConfig.ConfigValues[sizeof(eepromConfig.ConfigValues) - 1] = '\0';
+      write_eeprom = true;
+      Serial.print("Configuration Values: ");
+      Serial.println(eepromConfig.ConfigValues);
+    }
   }
 
   if (write_eeprom)

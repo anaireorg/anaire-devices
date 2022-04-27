@@ -19,6 +19,9 @@
 //          OK: Revisar presicion envio de float, si cortarla o dejarlo al usuario
 //          OK: Variable Sensor de exteriores o interiores, ExternalSensor via mqtt Var1 datavar1
 //          OK: Tiempo de muestreo
+// Revisar diferencia entre Sensor characteristics y Numero ID de la configuracion del sensor
+// Revisar Update por Portal Cautivo
+// Guardar configuracion de sensores en el Portal Cautivo
 //
 // MODIFICACIONES EXTERNAS:
 // Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:
@@ -38,7 +41,7 @@ bool TDisplay = false;   // Set to true if Board TTGO T-Display is used
 bool OLED096 = false;    // Set to true if you use a OLED Diplay 0.96 inch 128x64
 bool OLED066 = false;    // Set to true if you use a OLED Diplay 0.66 inch 64x48
 bool ExtAnt = false;     // External antenna
-bool ExternalAmb = true; // Set to true if your sensor is outdoors measuring outside environment, false if is indoor
+bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring outside environment, false if is outdoors
 
 #define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define Bluetooth false   // Set to true in case bluetooth is desired
@@ -1257,7 +1260,7 @@ void Send_Message_Cloud_App_MQTT()
   Serial.print(RSSI);
   Serial.println(" dBm");
 
-  if (ExternalAmb)
+  if (AmbInOutdoors)
     datavar1 = 1;
   else
     datavar1 = 0;
@@ -2204,12 +2207,12 @@ void Aireciudadano_Characteristics()
   Serial.println(eepromConfig.ConfigValues[3]);
   if (eepromConfig.ConfigValues[3] == '0')
   {
-    ExternalAmb = true;
+    AmbInOutdoors = false;
     Serial.println("Outdoors");
   }
   else
   {
-    ExternalAmb = false;
+    AmbInOutdoors = true;
     Serial.println("Indoors");
   }
 
@@ -2300,7 +2303,7 @@ void Aireciudadano_Characteristics()
   // TDisplay = 256
   // OLED096 = 512
   // OLED066 = 1024
-  // ExternalAmb = 2048
+  // AmbInOutdoors = 2048
 
   if (SPS30sen)
     ID1 = ID1 + 1;
@@ -2321,7 +2324,7 @@ void Aireciudadano_Characteristics()
     ID1 = ID1 + 512;
   if (OLED066)
     ID1 = ID1 + 1024;
-  if (ExternalAmb)
+  if (AmbInOutdoors)
     ID1 = ID1 + 2048;
 
   Serial.print("ID1: ");

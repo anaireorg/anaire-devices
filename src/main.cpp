@@ -19,14 +19,15 @@
 //          OK: Revisar presicion envio de float, si cortarla o dejarlo al usuario
 //          OK: Variable Sensor de exteriores o interiores, ExternalSensor via mqtt Var1 datavar1
 //          OK: Tiempo de muestreo
-// Revisar diferencia entre Sensor characteristics y Numero ID de la configuracion del sensor
-// Revisar Update por Portal Cautivo
+//          OK: Revisar diferencia entre Sensor characteristics y Numero ID de la configuracion del sensor
+//          OK: Revisar Update por Portal Cautivo
 // Guardar configuracion de sensores en el Portal Cautivo
 //
 // MODIFICACIONES EXTERNAS:
 // Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:
-// _configPortalTimeout = 180000;   // New Config Portal Timeout
-//  DEBUG_WM(DEBUG_VERBOSE,F("New Config Portal Timeout: 180 seconds"));
+// _configPortalTimeout = 300000;   // New Config Portal Timeout
+//  DEBUG_WM(DEBUG_VERBOSE,F("New Config Portal Timeout: 300 seconds"));
+// Modificado WiFiManager.template.htlm y template.h en texto: Configure WiFi por Configure WiFi and Sensor
 
 #include <Arduino.h>
 #include "main.hpp"

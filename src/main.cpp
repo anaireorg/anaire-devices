@@ -18,6 +18,7 @@
 //          OK: Añadir VOCs y NOx para SEN5X
 //          OK: Revisar presicion envio de float, si cortarla o dejarlo al usuario
 //          OK: Variable Sensor de exteriores o interiores, ExternalSensor via mqtt Var1 datavar1
+// Tiempo de muestreo
 
 #include <Arduino.h>
 #include "main.hpp"
@@ -1093,7 +1094,7 @@ void Start_Captive_Portal()
 
   if (CustomValtotal == 0)
   {
-    Serial.print("No configuration sensor values ​​chosen, no changes will be stored");
+    Serial.println("No configuration sensor values ​​chosen, no changes will be stored");
   }
   else
   {
@@ -2156,7 +2157,7 @@ void Get_AireCiudadano_DeviceId()
   if (String(aireciudadano_device_id).isEmpty())
     aireciudadano_device_id = aireciudadano_charac_id + "-" + aireciudadano_device_id_endframe;
   else
-    aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "_" + aireciudadano_charac_id + "-" + aireciudadano_device_id_endframe;
+    aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "-" + aireciudadano_charac_id + "_" + aireciudadano_device_id_endframe;
   Serial.println(aireciudadano_device_id);
 }
 

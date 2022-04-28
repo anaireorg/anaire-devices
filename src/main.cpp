@@ -76,20 +76,20 @@ struct MyConfigStruct
   char ConfigValues[8] = "00000000";
   char aireciudadano_device_name[26]; // Device name; default to aireciudadano_device_id
 #else
-  char sensor_lat[10] = "-11.99130";  // Aquí colocar la Latitud del sensor 
-  char sensor_lon[10] = "-76.90210"; // Colocar la Longitud del sensor
-  char ConfigValues[10] = "000010311";
-  char aireciudadano_device_name[36] = "NuevosAires_PE_LIMA_Huachipa_02"; // Nombre de la estacion
+  char sensor_lat[10] = "4.69385";  // Aquí colocar la Latitud del sensor 
+  char sensor_lon[10] = "-74.09372"; // Colocar la Longitud del sensor
+  char ConfigValues[10] = "000010111";
+  char aireciudadano_device_name[36] = "AireCiudadano_DBB_CO_BOG_SML_12"; // Nombre de la estacion
 #endif
 } eepromConfig;
 
 #if PreProgSensor
 //const char *ssid = "Techotyva";
 //const char *password = "Layuyux31";
-//const char *ssid = "TPred";
-//const char *password = "apt413sago16";
-const char *ssid = "Rosa";
-const char *password = "Rudysicha";
+const char *ssid = "TPred";
+const char *password = "apt413sago16";
+//const char *ssid = "Rosa";
+//const char *password = "Rudysicha";
 char aireciudadano_device_nameTemp[30] = {0};
 #endif
 

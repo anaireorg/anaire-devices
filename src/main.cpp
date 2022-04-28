@@ -325,10 +325,9 @@ void setup()
 #if PreProgSensor
   strncpy(eepromConfig.aireciudadano_device_name, aireciudadano_device_nameTemp, sizeof(eepromConfig.aireciudadano_device_name));
   Serial.print("T2:");
-  aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
   Serial.println(eepromConfig.aireciudadano_device_name);
 #endif
-
+  aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
   // Get device id
   Get_AireCiudadano_DeviceId();
 

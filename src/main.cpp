@@ -32,25 +32,30 @@
 #include <Arduino.h>
 #include "main.hpp"
 
-bool SPS30sen = false;   // Sensor Sensirion SPS30
-bool SEN5Xsen = false;   // Sensor Sensirion SEN5X
-bool PMSsen = false;     // Sensor Plantower PMS
-bool AdjPMS = false;     // PMS sensor adjust
-bool SHT31sen = false;   // Sensor DHT31 humedad y temperatura
-bool AM2320sen = false;  // Sensor AM2320 humedad y temperatura
-bool TDisplay = false;   // Set to true if Board TTGO T-Display is used
-bool OLED096 = false;    // Set to true if you use a OLED Diplay 0.96 inch 128x64
-bool OLED066 = false;    // Set to true if you use a OLED Diplay 0.66 inch 64x48
-bool ExtAnt = false;     // External antenna
+bool SPS30sen = false;      // Sensor Sensirion SPS30
+bool SEN5Xsen = false;      // Sensor Sensirion SEN5X
+bool PMSsen = false;        // Sensor Plantower PMS
+bool AdjPMS = false;        // PMS sensor adjust
+bool SHT31sen = false;      // Sensor DHT31 humedad y temperatura
+bool AM2320sen = false;     // Sensor AM2320 humedad y temperatura
+bool TDisplay = false;      // Set to true if Board TTGO T-Display is used
+bool OLED096 = false;       // Set to true if you use a OLED Diplay 0.96 inch 128x64
+bool OLED066 = false;       // Set to true if you use a OLED Diplay 0.66 inch 64x48
+bool ExtAnt = false;        // External antenna
 bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring outside environment, false if is outdoors
 
-#define BrownoutOFF false // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define Bluetooth false   // Set to true in case bluetooth is desired
-#define WPA2 false        // Colocar en true para redes con WPA2
+#define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
+#define Bluetooth false     // Set to true in case bluetooth is desired
+#define WPA2 false          // Colocar en true para redes con WPA2
+#define PreProgSensor true // Variables de sensor preprogramadas:
+                            // Latitude: char sensor_lat[10] = "xx.xxxx";
+                            // Longitude: char sensor_lon[10] = "xx.xxxx";
+                            // Valores de configuración: char ConfigValues[9] = "000xxxxx";
+                            // Nombre estación: char aireciudadano_device_name[36] = "xxxxxxxxxxxxxx";
 
 uint8_t CustomValue = 0;
 uint16_t CustomValtotal = 0;
-char CustomValTotalString[9] = "00000000";
+char CustomValTotalString[10] = "000000000";
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "v0.4";
@@ -60,18 +65,28 @@ String aireciudadano_charac_id;
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
 {
-  char aireciudadano_device_name[29];                // Device name; default to aireciudadano_device_id
   uint16_t PM25_warning_threshold = 700;             // Warning threshold; default to 700ppm
   uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
   uint16_t PublicTime = 1;                           // Publication Time
-  char MQTT_server[32] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
   uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
-//  char wifi_user[24];                                // WiFi user to be used on WPA Enterprise. Default to null (not used)
-//  char wifi_password[24];                            // WiFi password to be used on WPA Enterprise. Default to null (not used)
-  char sensor_lat[10] = "0.0";                       // Sensor latitude  GPS
-  char sensor_lon[10] = "0.0";                       // Sensor longitude GPS
-  char ConfigValues[9] = "00000000";
+  char MQTT_server[30] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
+#if !PreProgSensor
+  char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
+  char sensor_lon[10] = "0.0"; // Sensor longitude GPS
+  char ConfigValues[8] = "00000000";
+  char aireciudadano_device_name[26]; // Device name; default to aireciudadano_device_id
+#else
+  char sensor_lat[10] = "4.61194";  // Aquí colocar la Latitud del sensor 
+  char sensor_lon[10] = "-74.14675"; // Colocar la Longitud del sensor
+  char ConfigValues[10] = "000000311";
+  char aireciudadano_device_name[30] = "AireCiudadano_01"; // Nombre de la estacion
+#endif
 } eepromConfig;
+
+#if PreProgSensor
+const char *ssid = "TPred";
+const char *password = "apt413sago16";
+#endif
 
 #if BrownoutOFF
 // OFF BROWNOUT/////////////////////
@@ -126,9 +141,8 @@ unsigned int measurements_loop_duration = 1000; // 1 second
 unsigned long measurements_loop_start;          // holds a timestamp for each control loop start
 
 // MQTT loop: time between MQTT measurements sent to the cloud
-//unsigned int MQTT_loop_duration = 60000; // 60 seconds
-unsigned long MQTT_loop_start;           // holds a timestamp for each cloud loop start
-unsigned long lastReconnectAttempt = 0;  // MQTT reconnections
+unsigned long MQTT_loop_start;          // holds a timestamp for each cloud loop start
+unsigned long lastReconnectAttempt = 0; // MQTT reconnections
 
 // Errors loop: time between error condition recovery
 unsigned int errors_loop_duration = 60000; // 60 seconds
@@ -237,7 +251,7 @@ bool bluetooth_active = false;
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 
 #if WPA2
-#include "esp_wpa2.h"                   //wpa2 library for connections to Enterprise networks
+#include "esp_wpa2.h" //wpa2 library for connections to Enterprise networks
 #endif
 
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
@@ -301,9 +315,13 @@ void setup()
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
 
+  Serial.print("T1: ");
+  Serial.println(eepromConfig.aireciudadano_device_name);
   // Read EEPROM config values
   Read_EEPROM();
+  Serial.print("T2:");
   aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
+  Serial.println(eepromConfig.aireciudadano_device_name);
 
   // Get device id
   Get_AireCiudadano_DeviceId();
@@ -353,7 +371,7 @@ void setup()
     Button_Init();
   }
 
-  // Start Captive Portal for 15 seconds
+  // Start Captive Portal for 30 seconds
   if (ResetFlag == true)
   {
     Start_Captive_Portal();
@@ -631,14 +649,16 @@ void Interrupt_Restart(Button2 &btn)
 void Connect_WiFi()
 { // Connect to WiFi
 
-  WiFi.disconnect(true); // disconnect form wifi to set new wifi connection
+  WiFi.disconnect(true); // disconnect from wifi to set new wifi connection
   WiFi.mode(WIFI_STA);   // init wifi mode
   WiFi.onEvent(WiFiEvent);
 
+#if !PreProgSensor
   wifi_config_t conf;
   esp_wifi_get_config(WIFI_IF_STA, &conf); // Get WiFi configuration
   Serial.print("Attempting to connect to WiFi network: ");
   Serial.println(String(reinterpret_cast<const char *>(conf.sta.ssid))); // WiFi.SSID() is not filled up until the connection is established
+#endif
 
 #if WPA2
   // If there are not wifi user and wifi password defined, proceed to traight forward configuration
@@ -648,21 +668,24 @@ void Connect_WiFi()
   }
   else
   { // set up wpa2 enterprise
-        Serial.println("Attempting to authenticate using WPA2 Enterprise...");
-        Serial.print("User: ");
-        Serial.println(eepromConfig.wifi_user);
-        Serial.print("Password: ");
-        Serial.println(eepromConfig.wifi_password);
-        esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide identity
-        esp_wifi_sta_wpa2_ent_set_username((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide username --> identity and username is same
-        esp_wifi_sta_wpa2_ent_set_password((uint8_t *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password)); // provide password
-        esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();                                                         // set config settings to default
-        esp_wifi_sta_wpa2_ent_enable(&config);                                                                         // set config settings to enable function
+    Serial.println("Attempting to authenticate using WPA2 Enterprise...");
+    Serial.print("User: ");
+    Serial.println(eepromConfig.wifi_user);
+    Serial.print("Password: ");
+    Serial.println(eepromConfig.wifi_password);
+    esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide identity
+    esp_wifi_sta_wpa2_ent_set_username((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide username --> identity and username is same
+    esp_wifi_sta_wpa2_ent_set_password((uint8_t *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password)); // provide password
+    esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();                                                         // set config settings to default
+    esp_wifi_sta_wpa2_ent_enable(&config);                                                                         // set config settings to enable function
   }
 #endif
 
-  // Connect to wifi
+#if !PreProgSensor
   WiFi.begin();
+#else
+  WiFi.begin(ssid, password);
+#endif
 
   // Timestamp for connection timeout
   int wifi_timeout_start = millis();
@@ -944,13 +967,13 @@ void Start_Captive_Portal()
   WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
   // Captive portal parameters
-  WiFiManagerParameter custom_id_html("<p>Set Station Custom Name:</p>");                                             // only custom html
+  WiFiManagerParameter custom_id_html("<p>Set Station Custom Name:</p>"); // only custom html
   WiFiManagerParameter custom_id_name("CustomName", "30 characters max", eepromConfig.aireciudadano_device_name, 30);
-  WiFiManagerParameter custom_ptime_html("<p>Set Publication Server Time in minutes:</p>");                                                   // only custom html
+  WiFiManagerParameter custom_ptime_html("<p>Set Publication Server Time in minutes:</p>"); // only custom html
   char Ptime[5];
   itoa(eepromConfig.PublicTime, Ptime, 10);
   WiFiManagerParameter custom_public_time("Ptime", "Publication Time", Ptime, 4);
-  WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server:</p>");                                                   // only custom html
+  WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server:</p>"); // only custom html
   WiFiManagerParameter custom_mqtt_server("Server", "MQTT server", eepromConfig.MQTT_server, 32);
   char port[6];
   itoa(eepromConfig.MQTT_port, port, 10);
@@ -1101,7 +1124,7 @@ void Start_Captive_Portal()
     }
   */
 
-  CustomValTotalString[8] = {0};
+  CustomValTotalString[9] = {0};
   sprintf(CustomValTotalString, "%8d", CustomValtotal);
   if (CustomValTotalString[0] == ' ')
     CustomValTotalString[0] = '0';
@@ -1121,6 +1144,10 @@ void Start_Captive_Portal()
     CustomValTotalString[7] = '0';
   if (CustomValTotalString[8] == ' ')
     CustomValTotalString[8] = '0';
+  if (CustomValTotalString[9] == ' ')
+    CustomValTotalString[9] = '0';
+  
+
 
   Serial.print("CustomValTotalString: ");
   Serial.println(CustomValTotalString);
@@ -1953,10 +1980,6 @@ void Print_Config()
   Serial.println(eepromConfig.sensor_lat);
   Serial.print("Sensor longitude: ");
   Serial.println(eepromConfig.sensor_lon);
-//  Serial.print("WiFi user: ");
-//  Serial.println(eepromConfig.wifi_user);
-//  Serial.print("WiFi user's password: ");
-//  Serial.println(eepromConfig.wifi_password);
   Serial.print("Configuration values: ");
   Serial.println(eepromConfig.ConfigValues);
   Serial.println("#######################################");
@@ -2204,9 +2227,9 @@ void Aireciudadano_Characteristics()
   uint16_t ID1 = 0;
   Serial.print("eepromConfig.ConfigValues: ");
   Serial.println(eepromConfig.ConfigValues);
-  Serial.print("eepromConfig.ConfigValues[3]: ");
-  Serial.println(eepromConfig.ConfigValues[3]);
-  if (eepromConfig.ConfigValues[3] == '0')
+  Serial.print("eepromConfig.ConfigValues[5]: ");
+  Serial.println(eepromConfig.ConfigValues[5]);
+  if (eepromConfig.ConfigValues[5] == '0')
   {
     AmbInOutdoors = false;
     Serial.println("Outdoors");
@@ -2217,7 +2240,7 @@ void Aireciudadano_Characteristics()
     Serial.println("Indoors");
   }
 
-  if (eepromConfig.ConfigValues[4] == '0')
+  if (eepromConfig.ConfigValues[6] == '0')
   {
     Serial.println("Normal board");
   }
@@ -2225,71 +2248,71 @@ void Aireciudadano_Characteristics()
   {
     Serial.println("Board with externa antenna");
   }
-  Serial.print("eepromConfig.ConfigValues[5]: ");
-  Serial.println(eepromConfig.ConfigValues[5]);
+  Serial.print("eepromConfig.ConfigValues[7]: ");
+  Serial.println(eepromConfig.ConfigValues[7]);
 
   TDisplay = false;
   OLED096 = false;
   OLED066 = false;
-  if (eepromConfig.ConfigValues[5] == '0')
+  if (eepromConfig.ConfigValues[7] == '0')
     Serial.println("None Display");
-  else if (eepromConfig.ConfigValues[5] == '1')
+  else if (eepromConfig.ConfigValues[7] == '1')
   {
     TDisplay = true;
     Serial.println("TTGO TDisplay board");
   }
-  else if (eepromConfig.ConfigValues[5] == '2')
+  else if (eepromConfig.ConfigValues[7] == '2')
   {
     OLED096 = true;
     Serial.println("OLED 0.96 inch display 128x64");
   }
-  else if (eepromConfig.ConfigValues[5] == '3')
+  else if (eepromConfig.ConfigValues[7] == '3')
   {
     OLED066 = true;
     Serial.println("OLED 0.66 inch display 64x48");
   }
 
-  Serial.print("eepromConfig.ConfigValues[6]: ");
-  Serial.println(eepromConfig.ConfigValues[6]);
+  Serial.print("eepromConfig.ConfigValues[8]: ");
+  Serial.println(eepromConfig.ConfigValues[8]);
   SHT31sen = false;
   AM2320sen = false;
-  if (eepromConfig.ConfigValues[6] == '0')
+  if (eepromConfig.ConfigValues[8] == '0')
     Serial.println("None sensor HYT");
-  else if (eepromConfig.ConfigValues[6] == '1')
+  else if (eepromConfig.ConfigValues[8] == '1')
   {
     SHT31sen = true;
     Serial.println("SHT31 sensor");
   }
-  else if (eepromConfig.ConfigValues[6] == '2')
+  else if (eepromConfig.ConfigValues[8] == '2')
   {
     AM2320sen = true;
     Serial.println("AM2320 sensor");
   }
 
-  Serial.print("eepromConfig.ConfigValues[7]: ");
-  Serial.println(eepromConfig.ConfigValues[7]);
+  Serial.print("eepromConfig.ConfigValues[9]: ");
+  Serial.println(eepromConfig.ConfigValues[9]);
   SPS30sen = false;
   SEN5Xsen = false;
   PMSsen = false;
   AdjPMS = false;
-  if (eepromConfig.ConfigValues[7] == '0')
+  if (eepromConfig.ConfigValues[9] == '0')
     Serial.println("None PM sensor");
-  else if (eepromConfig.ConfigValues[7] == '1')
+  else if (eepromConfig.ConfigValues[9] == '1')
   {
     SPS30sen = true;
     Serial.println("SPS30 sensor");
   }
-  else if (eepromConfig.ConfigValues[7] == '2')
+  else if (eepromConfig.ConfigValues[9] == '2')
   {
     SEN5Xsen = true;
     Serial.println("SEN5X sensor");
   }
-  else if (eepromConfig.ConfigValues[7] == '3')
+  else if (eepromConfig.ConfigValues[9] == '3')
   {
     PMSsen = true;
     Serial.println("PMS sensor");
   }
-  else if (eepromConfig.ConfigValues[7] == '4')
+  else if (eepromConfig.ConfigValues[9] == '4')
   {
     AdjPMS = true;
     Serial.println("PMS sensor with stadistical adjust");

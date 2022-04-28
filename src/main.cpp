@@ -78,7 +78,7 @@ struct MyConfigStruct
 #else
   char sensor_lat[10] = "4.61194";  // Aquí colocar la Latitud del sensor 
   char sensor_lon[10] = "-74.14675"; // Colocar la Longitud del sensor
-  char ConfigValues[10] = "000000311";
+  char ConfigValues[10] = "000000121";
   char aireciudadano_device_name[30] = "AireCiudadano_01"; // Nombre de la estacion
 #endif
 } eepromConfig;
@@ -86,6 +86,7 @@ struct MyConfigStruct
 #if PreProgSensor
 const char *ssid = "TPred";
 const char *password = "apt413sago16";
+char aireciudadano_device_nameTemp[30] = {0};
 #endif
 
 #if BrownoutOFF
@@ -314,14 +315,19 @@ void setup()
 
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
-
+#if PreProgSensor
   Serial.print("T1: ");
   Serial.println(eepromConfig.aireciudadano_device_name);
+  strcpy(aireciudadano_device_nameTemp, eepromConfig.aireciudadano_device_name);
+#endif
   // Read EEPROM config values
   Read_EEPROM();
+#if PreProgSensor
+  strncpy(eepromConfig.aireciudadano_device_name, aireciudadano_device_nameTemp, sizeof(eepromConfig.aireciudadano_device_name));
   Serial.print("T2:");
   aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
   Serial.println(eepromConfig.aireciudadano_device_name);
+#endif
 
   // Get device id
   Get_AireCiudadano_DeviceId();
@@ -2227,9 +2233,9 @@ void Aireciudadano_Characteristics()
   uint16_t ID1 = 0;
   Serial.print("eepromConfig.ConfigValues: ");
   Serial.println(eepromConfig.ConfigValues);
-  Serial.print("eepromConfig.ConfigValues[5]: ");
-  Serial.println(eepromConfig.ConfigValues[5]);
-  if (eepromConfig.ConfigValues[5] == '0')
+  Serial.print("eepromConfig.ConfigValues[4]: ");
+  Serial.println(eepromConfig.ConfigValues[4]);
+  if (eepromConfig.ConfigValues[4] == '0')
   {
     AmbInOutdoors = false;
     Serial.println("Outdoors");
@@ -2240,7 +2246,7 @@ void Aireciudadano_Characteristics()
     Serial.println("Indoors");
   }
 
-  if (eepromConfig.ConfigValues[6] == '0')
+  if (eepromConfig.ConfigValues[5] == '0')
   {
     Serial.println("Normal board");
   }
@@ -2248,71 +2254,71 @@ void Aireciudadano_Characteristics()
   {
     Serial.println("Board with externa antenna");
   }
-  Serial.print("eepromConfig.ConfigValues[7]: ");
-  Serial.println(eepromConfig.ConfigValues[7]);
+  Serial.print("eepromConfig.ConfigValues[6]: ");
+  Serial.println(eepromConfig.ConfigValues[6]);
 
   TDisplay = false;
   OLED096 = false;
   OLED066 = false;
-  if (eepromConfig.ConfigValues[7] == '0')
+  if (eepromConfig.ConfigValues[6] == '0')
     Serial.println("None Display");
-  else if (eepromConfig.ConfigValues[7] == '1')
+  else if (eepromConfig.ConfigValues[6] == '1')
   {
     TDisplay = true;
     Serial.println("TTGO TDisplay board");
   }
-  else if (eepromConfig.ConfigValues[7] == '2')
+  else if (eepromConfig.ConfigValues[6] == '2')
   {
     OLED096 = true;
     Serial.println("OLED 0.96 inch display 128x64");
   }
-  else if (eepromConfig.ConfigValues[7] == '3')
+  else if (eepromConfig.ConfigValues[6] == '3')
   {
     OLED066 = true;
     Serial.println("OLED 0.66 inch display 64x48");
   }
 
-  Serial.print("eepromConfig.ConfigValues[8]: ");
-  Serial.println(eepromConfig.ConfigValues[8]);
+  Serial.print("eepromConfig.ConfigValues[7]: ");
+  Serial.println(eepromConfig.ConfigValues[7]);
   SHT31sen = false;
   AM2320sen = false;
-  if (eepromConfig.ConfigValues[8] == '0')
+  if (eepromConfig.ConfigValues[7] == '0')
     Serial.println("None sensor HYT");
-  else if (eepromConfig.ConfigValues[8] == '1')
+  else if (eepromConfig.ConfigValues[7] == '1')
   {
     SHT31sen = true;
     Serial.println("SHT31 sensor");
   }
-  else if (eepromConfig.ConfigValues[8] == '2')
+  else if (eepromConfig.ConfigValues[7] == '2')
   {
     AM2320sen = true;
     Serial.println("AM2320 sensor");
   }
 
-  Serial.print("eepromConfig.ConfigValues[9]: ");
-  Serial.println(eepromConfig.ConfigValues[9]);
+  Serial.print("eepromConfig.ConfigValues[8]: ");
+  Serial.println(eepromConfig.ConfigValues[8]);
   SPS30sen = false;
   SEN5Xsen = false;
   PMSsen = false;
   AdjPMS = false;
-  if (eepromConfig.ConfigValues[9] == '0')
+  if (eepromConfig.ConfigValues[8] == '0')
     Serial.println("None PM sensor");
-  else if (eepromConfig.ConfigValues[9] == '1')
+  else if (eepromConfig.ConfigValues[8] == '1')
   {
     SPS30sen = true;
     Serial.println("SPS30 sensor");
   }
-  else if (eepromConfig.ConfigValues[9] == '2')
+  else if (eepromConfig.ConfigValues[8] == '2')
   {
     SEN5Xsen = true;
     Serial.println("SEN5X sensor");
   }
-  else if (eepromConfig.ConfigValues[9] == '3')
+  else if (eepromConfig.ConfigValues[8] == '3')
   {
     PMSsen = true;
     Serial.println("PMS sensor");
   }
-  else if (eepromConfig.ConfigValues[9] == '4')
+  else if (eepromConfig.ConfigValues[8] == '4')
   {
     AdjPMS = true;
     Serial.println("PMS sensor with stadistical adjust");

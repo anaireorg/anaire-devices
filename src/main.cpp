@@ -6,7 +6,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pendientes:
-//          OK: Nombre de la estacion con modelo de sensor (NO), board (NO) y etiqueta propia si es posible (SI)
+//          OK: Nombre de la estacion con modelo de sensor, board  y etiqueta propia si es posible
 //          OK: Programacion de modelo de sensor por portal cautivo
 // BT funcionando en este codigo y sin WIFI y encendiendo sensor con pin enable
 //          OK: TTGO T Display funcionando
@@ -21,7 +21,7 @@
 //          OK: Tiempo de muestreo
 //          OK: Revisar diferencia entre Sensor characteristics y Numero ID de la configuracion del sensor
 //          OK: Revisar Update por Portal Cautivo
-// Guardar configuracion de sensores en el Portal Cautivo
+// Guardar configuracion de sensores, board, display y demás en el Portal Cautivo
 //
 // MODIFICACIONES EXTERNAS:
 // Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:
@@ -74,12 +74,12 @@ struct MyConfigStruct
   char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
   char sensor_lon[10] = "0.0"; // Sensor longitude GPS
   char ConfigValues[8] = "00000000";
-  char aireciudadano_device_name[26]; // Device name; default to aireciudadano_device_id
+  char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #else
-  char sensor_lat[10] = "4.69385";  // Aquí colocar la Latitud del sensor 
-  char sensor_lon[10] = "-74.09372"; // Colocar la Longitud del sensor
-  char ConfigValues[10] = "000010111";
-  char aireciudadano_device_name[36] = "AireCiudadano_DBB_CO_BOG_SML_12"; // Nombre de la estacion
+  char sensor_lat[10] = "4.69375";  // Aquí colocar la Latitud del sensor 
+  char sensor_lon[10] = "-74.09382"; // Colocar la Longitud del sensor
+  char ConfigValues[10] = "000010121";
+  char aireciudadano_device_name[30] = "AireCiudadano_DBB_02"; // Nombre de la estacion
 #endif
 } eepromConfig;
 

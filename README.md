@@ -1,6 +1,6 @@
 # Medidor AireCiudadano: sensores de PM2.5, humedad y temperatura. Opcional VOC y NOx
 
-![Logo](https://github.com/danielbernalb/LibreCO2/blob/main/images/arduino-uno-original-clone.jpg)
+![Logo](https://github.com/danielbernalb/Aire_Ciudadano/blob/main/img/Icono.jpg)
 
 Página web: https://aireciudadano.com/
 

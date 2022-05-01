@@ -17,7 +17,7 @@
 //          OK: Añadir coordenadas GPS
 //          OK: Añadir VOCs y NOx para SEN5X
 //          OK: Revisar presicion envio de float, si cortarla o dejarlo al usuario
-//          OK: Variable Sensor de exteriores o interiores, ExternalSensor via mqtt Var1 datavar1
+//          OK: Variable Sensor de exteriores o interiores, ExternalSensor via mqtt InOut inout
 //          OK: Tiempo de muestreo
 //          OK: Revisar diferencia entre Sensor characteristics y Numero ID de la configuracion del sensor
 //          OK: Revisar Update por Portal Cautivo
@@ -56,11 +56,12 @@ bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring o
 uint8_t CustomValue = 0;
 uint16_t CustomValtotal = 0;
 char CustomValTotalString[10] = "000000000";
+uint16_t IDn = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "v0.4";
 String aireciudadano_device_id;
-String aireciudadano_charac_id;
+//String aireciudadano_charac_id;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
@@ -78,8 +79,8 @@ struct MyConfigStruct
 #else
   char sensor_lat[10] = "4.69375";  // Aquí colocar la Latitud del sensor 
   char sensor_lon[10] = "-74.09382"; // Colocar la Longitud del sensor
-  char ConfigValues[10] = "000010121";
-  char aireciudadano_device_name[30] = "AireCiudadano_DBB_02"; // Nombre de la estacion
+  char ConfigValues[10] = "000010111";
+  char aireciudadano_device_name[30] = "AireCiudadano_DBB_01"; // Nombre de la estacion
 #endif
 } eepromConfig;
 
@@ -1280,7 +1281,7 @@ void Send_Message_Cloud_App_MQTT()
   // Print info
   float pm25f;
   int8_t RSSI;
-  int8_t datavar1;
+  int8_t inout;
 
   Serial.print("Sending MQTT message to the send topic: ");
   Serial.println(MQTT_send_topic);
@@ -1299,9 +1300,9 @@ void Send_Message_Cloud_App_MQTT()
   Serial.println(" dBm");
 
   if (AmbInOutdoors)
-    datavar1 = 1;
+    inout = 1;
   else
-    datavar1 = 0;
+    inout = 0;
 
   if (SEN5Xsen == true)
   {
@@ -1315,11 +1316,11 @@ void Send_Message_Cloud_App_MQTT()
       nox = 0;
     else
       nox = round(noxIndex);
-    sprintf(MQTT_message, "{id: %s,PM25: %d,VOC: %d,NOx: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, latitudef, longitudef, RSSI, datavar1);
+    sprintf(MQTT_message, "{id: %s,PM25: %d,VOC: %d,NOx: %d,humidity: %d,temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn);
   }
   else
   {
-    sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d, latitude: %f, longitude: %f, RSSI: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, latitudef, longitudef, RSSI, datavar1);
+    sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn);
   }
   Serial.print(MQTT_message);
   Serial.println();
@@ -2226,15 +2227,14 @@ void Get_AireCiudadano_DeviceId()
   Serial.printf("This chip has %d cores and %dMB Flash.\n", ESP.getChipCores(), ESP.getFlashChipSize() / (1024 * 1024));
   Serial.print("AireCiudadano Device ID: ");
   if (String(aireciudadano_device_id).isEmpty())
-    aireciudadano_device_id = aireciudadano_charac_id + "-" + aireciudadano_device_id_endframe;
+    aireciudadano_device_id = aireciudadano_device_id_endframe;
   else
-    aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "-" + aireciudadano_charac_id + "_" + aireciudadano_device_id_endframe;
+    aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "-" + aireciudadano_device_id_endframe;
   Serial.println(aireciudadano_device_id);
 }
 
 void Aireciudadano_Characteristics()
 {
-  uint16_t ID1 = 0;
   Serial.print("eepromConfig.ConfigValues: ");
   Serial.println(eepromConfig.ConfigValues);
   Serial.print("eepromConfig.ConfigValues[4]: ");
@@ -2340,31 +2340,31 @@ void Aireciudadano_Characteristics()
   // AmbInOutdoors = 2048
 
   if (SPS30sen)
-    ID1 = ID1 + 1;
+    IDn = IDn + 1;
   if (SEN5Xsen)
-    ID1 = ID1 + 2;
+    IDn = IDn + 2;
   if (PMSsen)
-    ID1 = ID1 + 4;
+    IDn = IDn + 4;
   if (AdjPMS)
-    ID1 = ID1 + 8;
+    IDn = IDn + 8;
   if (SHT31sen)
-    ID1 = ID1 + 16;
+    IDn = IDn + 16;
   if (AM2320sen)
-    ID1 = ID1 + 32;
+    IDn = IDn + 32;
 
   if (TDisplay)
-    ID1 = ID1 + 256;
+    IDn = IDn + 256;
   if (OLED096)
-    ID1 = ID1 + 512;
+    IDn = IDn + 512;
   if (OLED066)
-    ID1 = ID1 + 1024;
+    IDn = IDn + 1024;
   if (AmbInOutdoors)
-    ID1 = ID1 + 2048;
+    IDn = IDn + 2048;
 
-  Serial.print("ID1: ");
-  Serial.println(ID1);
-  aireciudadano_charac_id = String(ID1, HEX);
-  Serial.println(aireciudadano_charac_id);
+  Serial.print("IDn: ");
+  Serial.println(IDn);
+  //aireciudadano_charac_id = String(IDn, HEX);
+  //Serial.println(aireciudadano_charac_id);
 }
 
 void Read_EEPROM()

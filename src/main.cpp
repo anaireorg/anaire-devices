@@ -47,7 +47,7 @@ bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring o
 #define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define Bluetooth false     // Set to true in case bluetooth is desired
 #define WPA2 false          // Colocar en true para redes con WPA2
-#define PreProgSensor true // Variables de sensor preprogramadas:
+#define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";
                             // Longitude: char sensor_lon[10] = "xx.xxxx";
                             // Valores de configuración: char ConfigValues[9] = "000xxxxx";
@@ -61,7 +61,7 @@ uint16_t IDn = 0;
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "v0.4";
 String aireciudadano_device_id;
-//String aireciudadano_charac_id;
+// String aireciudadano_charac_id;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
@@ -74,10 +74,10 @@ struct MyConfigStruct
 #if !PreProgSensor
   char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
   char sensor_lon[10] = "0.0"; // Sensor longitude GPS
-  char ConfigValues[8] = "00000000";
+  char ConfigValues[10] = "00000000";
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #else
-  char sensor_lat[10] = "4.69375";  // Aquí colocar la Latitud del sensor 
+  char sensor_lat[10] = "4.69375";   // Aquí colocar la Latitud del sensor
   char sensor_lon[10] = "-74.09382"; // Colocar la Longitud del sensor
   char ConfigValues[10] = "000010111";
   char aireciudadano_device_name[30] = "AireCiudadano_DBB_01"; // Nombre de la estacion
@@ -85,12 +85,12 @@ struct MyConfigStruct
 } eepromConfig;
 
 #if PreProgSensor
-//const char *ssid = "Techotyva";
-//const char *password = "Layuyux31";
+// const char *ssid = "Techotyva";
+// const char *password = "Layuyux31";
 const char *ssid = "TPred";
 const char *password = "apt413sago16";
-//const char *ssid = "Rosa";
-//const char *password = "Rudysicha";
+// const char *ssid = "Rosa";
+// const char *password = "Rudysicha";
 char aireciudadano_device_nameTemp[30] = {0};
 #endif
 
@@ -130,6 +130,7 @@ PM25_sensors pm25_sensor = none;
 // PM25 device status
 enum pm25_status
 {
+  pm25_no,
   pm25_ok,
   pm25_warning,
   pm25_alarm
@@ -877,6 +878,9 @@ void Check_WiFi_Server()
             client.print("PM2.5 STATUS: ");
             switch (pm25_device_status)
             {
+            case pm25_no:
+              client.print("No initialized or connected sensor");
+              break;
             case pm25_ok:
               client.print("OK");
               break;
@@ -1157,8 +1161,6 @@ void Start_Captive_Portal()
     CustomValTotalString[8] = '0';
   if (CustomValTotalString[9] == ' ')
     CustomValTotalString[9] = '0';
-  
-
 
   Serial.print("CustomValTotalString: ");
   Serial.println(CustomValTotalString);
@@ -1855,7 +1857,12 @@ void Evaluate_PM25_Value()
 { // Evaluate measured PM25 value against warning and alarm thresholds
 
   // Status: ok
-  if (PM25_value < eepromConfig.PM25_warning_threshold)
+  if (PM25_value == 0)
+  {
+    pm25_device_status = pm25_no; // Update PM25 status
+  }
+
+  else if (PM25_value < eepromConfig.PM25_warning_threshold)
   {
     pm25_device_status = pm25_ok; // Update PM25 status
   }
@@ -1875,6 +1882,9 @@ void Evaluate_PM25_Value()
   // Print info on serial monitor
   switch (pm25_device_status)
   {
+  case pm25_no:
+    Serial.println("No initialized or connected sensor");
+    break;
   case pm25_ok:
     Serial.println("STATUS: PM2.5 level OK");
     break;
@@ -2363,8 +2373,8 @@ void Aireciudadano_Characteristics()
 
   Serial.print("IDn: ");
   Serial.println(IDn);
-  //aireciudadano_charac_id = String(IDn, HEX);
-  //Serial.println(aireciudadano_charac_id);
+  // aireciudadano_charac_id = String(IDn, HEX);
+  // Serial.println(aireciudadano_charac_id);
 }
 
 void Read_EEPROM()

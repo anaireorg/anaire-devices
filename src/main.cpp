@@ -55,7 +55,7 @@ bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring o
 
 uint8_t CustomValue = 0;
 uint16_t CustomValtotal = 0;
-char CustomValTotalString[10] = "000000000";
+char CustomValTotalString[9] = "00000000";
 uint16_t IDn = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
@@ -74,7 +74,7 @@ struct MyConfigStruct
 #if !PreProgSensor
   char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
   char sensor_lon[10] = "0.0"; // Sensor longitude GPS
-  char ConfigValues[10] = "00000000";
+  char ConfigValues[10] = "000000000";
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #else
   char sensor_lat[10] = "4.69375";   // Aquí colocar la Latitud del sensor
@@ -1140,7 +1140,7 @@ void Start_Captive_Portal()
   */
 
   CustomValTotalString[9] = {0};
-  sprintf(CustomValTotalString, "%8d", CustomValtotal);
+  sprintf(CustomValTotalString, "%9d", CustomValtotal);
   if (CustomValTotalString[0] == ' ')
     CustomValTotalString[0] = '0';
   if (CustomValTotalString[1] == ' ')
@@ -1159,8 +1159,6 @@ void Start_Captive_Portal()
     CustomValTotalString[7] = '0';
   if (CustomValTotalString[8] == ' ')
     CustomValTotalString[8] = '0';
-  if (CustomValTotalString[9] == ' ')
-    CustomValTotalString[9] = '0';
 
   Serial.print("CustomValTotalString: ");
   Serial.println(CustomValTotalString);

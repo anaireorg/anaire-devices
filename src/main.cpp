@@ -1046,7 +1046,8 @@ void Start_Captive_Portal()
   // If not specified device will remain in configuration mode until
   // switched off via webserver or device is restarted.
 
-  wifiManager.setConfigPortalTimeout(30);
+  wifiManager.setConfigPortalTimeout(90);
+  //wifiManager.setConfigPortalTimeout(30);
   // wifiManager.setConfigPortalTimeout(3);   !!!TEST SEN5X
 
   // it starts an access point

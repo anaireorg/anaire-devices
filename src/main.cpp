@@ -979,9 +979,12 @@ void Start_Captive_Portal()
   // WiFiManager wifiManager;
   wifiManager.setDebugOutput(true);
   wifiManager.disconnect();
+  wifiManager.setShowPassword(false);
+  
   WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
   // Captive portal parameters
+  
   WiFiManagerParameter custom_id_html("<p>Set Station Custom Name:</p>"); // only custom html
   WiFiManagerParameter custom_id_name("CustomName", "30 characters max", eepromConfig.aireciudadano_device_name, 30);
   WiFiManagerParameter custom_ptime_html("<p>Set Publication Server Time in minutes:</p>"); // only custom html
@@ -2238,7 +2241,8 @@ void Get_AireCiudadano_DeviceId()
   if (String(aireciudadano_device_id).isEmpty())
     aireciudadano_device_id = aireciudadano_device_id_endframe;
   else
-    aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "-" + aireciudadano_device_id_endframe;
+    //aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "-" + aireciudadano_device_id_endframe;
+    aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + aireciudadano_device_id_endframe;
   Serial.println(aireciudadano_device_id);
 }
 

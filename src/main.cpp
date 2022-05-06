@@ -979,9 +979,8 @@ void Start_Captive_Portal()
   // WiFiManager wifiManager;
   wifiManager.setDebugOutput(true);
   wifiManager.disconnect();
-  wifiManager.setShowPassword(false);
   
-  WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
+    WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
   // Captive portal parameters
   

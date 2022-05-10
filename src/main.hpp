@@ -45,3 +45,22 @@ String getParam(String name);
 
 //#define TFT_SLPIN   0x10
 //#define TFT_DISPOFF 0x28
+
+  void displayInit(U8G2 &u8g2);
+  void showWelcome();
+  void showProgress(unsigned int progress, unsigned int total);
+  void welcomeAddMessage(String msg);
+  void AddMessage(String msg);
+  void displayCenterBig(String msg);
+  void displayBottomLine(String msg);
+  void displayEmoticonLabel(int numsmle, String msg);
+  void displayBigEmoticon(String msg);
+  void displayBigLabel(int cursor, String msg);
+  void displaySensorAverage(int average);
+  void displaySensorData(int pm25, int pm10, int chargeLevel, float humi, float temp, int rssi);
+  void displayStatus(bool wifiOn, bool bleOn, bool blePair, bool dataOn);
+  void displayLiveIcon();  
+  void displayPrefSaveIcon(bool enable);
+  void updateError(unsigned int error);
+  void pageStart();
+  void pageEnd();

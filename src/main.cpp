@@ -291,6 +291,7 @@ bool bluetooth_active = false;
 
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
 // const int WIFI_CONNECT_TIMEOUT = 1000; // 1 seconds !!! TEST SEN5X
+const int captiveportaltime = 90;
 WiFiServer wifi_server(80);
 WiFiClient wifi_client;
 bool PortalFlag = false;
@@ -459,7 +460,6 @@ void setup()
     u8g2.setFont(u8g2_font_4x6_tf); // 5x7 5x7 6x10 4x6 5x7
     u8g2.setCursor(0, dh / 2);
     u8g2.print("Medidor Listo"); // aireciudadano_device_id
-
     delay(1000);
     pageEnd();
   }
@@ -1022,6 +1022,22 @@ void Start_Captive_Portal()
     tft.setFreeFont(FF90);
     tft.setTextDatum(MC_DATUM);
     tft.drawString(wifiAP, tft.width() / 2, tft.height() / 2);
+  }
+  
+  if (OLED66 == true || OLED96 == true)
+  {
+    pageStart();
+    u8g2.setFont(u8g2_font_4x6_tf); // 5x7 5x7 6x10 4x6 5x7
+    u8g2.setCursor(2, (dh / 2) - 10);
+    u8g2.print("Portal cautivo"); // aireciudadano_device_id
+    
+    u8g2.setFont(u8g2_font_5x7_tf); // 5x7 5x7 6x10 4x6 5x7
+    u8g2.setCursor(2, dh / 2);
+    u8g2.print(captiveportaltime);
+    u8g2.setCursor(13, dh / 2);
+    u8g2.print(" segundos");
+//    delay(2000);
+    pageEnd();
   }
 
   if (OLED66 == true || OLED96 == true)
@@ -2751,7 +2767,9 @@ void Write_Bluetooth()
 
 void displayInit()
 {
+  Serial.println("test1");
   u8g2.begin();
+  Serial.println("test3");
   u8g2.setFont(u8g2_font_6x10_tf);
   u8g2.setContrast(255);
   u8g2.setFontRefHeightExtendedText();

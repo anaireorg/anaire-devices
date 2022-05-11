@@ -39,13 +39,13 @@ bool AdjPMS = false;        // PMS sensor adjust
 bool SHT31sen = false;      // Sensor DHT31 humedad y temperatura
 bool AM2320sen = false;     // Sensor AM2320 humedad y temperatura
 bool TDisplay = false;      // Set to true if Board TTGO T-Display is used
-bool OLED096 = false;       // Set to true if you use a OLED Diplay 0.96 inch 128x64
-bool OLED066 = false;       // Set to true if you use a OLED Diplay 0.66 inch 64x48
+bool OLED96 = false;        // Set to true if you use a OLED Diplay 0.96 inch 128x64
+bool OLED66 = false;        // Set to true if you use a OLED Diplay 0.66 inch 64x48
 bool ExtAnt = false;        // External antenna
 bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring outside environment, false if is outdoors
 
-#define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define Bluetooth false     // Set to true in case bluetooth is desired
+#define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define WPA2 false          // Colocar en true para redes con WPA2
 #define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";
@@ -162,7 +162,31 @@ unsigned long errors_loop_start;           // holds a timestamp for each error l
 
 // OLED display
 #include <U8g2lib.h>
-U8G2 u8g2;
+#include "Iconos.h"
+
+// Firmware version from git rev-list command
+String VERSION_CODE = "rev ";
+#ifdef SRC_REV
+int VCODE = SRC_REV;
+#else
+int VCODE = 0;
+#endif
+
+unsigned int mcount, ecode = 0;
+int lastDrawedLine = 0;
+unsigned int inthumi = 0;
+unsigned int inttemp = 0;
+unsigned int cursor = 0;
+bool toggleLive;
+int dw = 0; // display width
+int dh = 0; // display height
+
+// if (OLED96 == true)
+// U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
+// else // display via i2c for TTGO_T7 (old D1MINI) board
+U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
+
+// U8G2 u8g2;
 
 // Display and fonts
 #include <TFT_eSPI.h>
@@ -355,12 +379,15 @@ void setup()
     delay(5000);
   }
 
-  if (OLED096 == true)
+  if (OLED96 == true || OLED66 == true)
   {
-  }
-
-  if (OLED066 == true)
-  {
+    displayInit();
+    pageStart();
+    showWelcome();
+    delay(1000);
+    u8g2.drawXBM(31, 15, 32, 32, IconoAC2);
+    delay(4000);
+    pageEnd();
   }
 
   // Set MQTT topics
@@ -426,8 +453,17 @@ void setup()
     // Update display with new values
     Update_Display();
   }
-  else
+  else if (OLED66 == true || OLED96 == true)
+  {
+    pageStart();
+    u8g2.setFont(u8g2_font_4x6_tf); // 5x7 5x7 6x10 4x6 5x7
+    u8g2.setCursor(0, dh / 2);
+    u8g2.print("Medidor Listo"); // aireciudadano_device_id
+
     delay(1000);
+    pageEnd();
+  }
+  delay(1000);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -463,6 +499,11 @@ void loop()
       if (TDisplay == true)
       {
         Update_Display();
+      }
+
+      else if (OLED66 == true || OLED96 == true)
+      {
+        UpdateOLED();
       }
 
 // Update bluetooth app with new values
@@ -517,6 +558,11 @@ void loop()
     else
     {
       err_wifi = false;
+      if (OLED66 == true || OLED96 == true)
+      {
+        u8g2.drawBitmap(dw - 20, dh - 8, 1, 8, Icono_wifi_on);
+        u8g2.drawLine(0, 38, 63, 38);
+      }
     }
 
     // Reconnect MQTT if needed
@@ -958,6 +1004,7 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
+  const int captiveportaltime = 90;
 
   wifiAP = String(eepromConfig.aireciudadano_device_name);
 
@@ -977,17 +1024,33 @@ void Start_Captive_Portal()
     tft.drawString(wifiAP, tft.width() / 2, tft.height() / 2);
   }
 
+  if (OLED66 == true || OLED96 == true)
+  {
+    pageStart();
+    u8g2.setFont(u8g2_font_4x6_tf); // 5x7 5x7 6x10 4x6 5x7
+    u8g2.setCursor(2, (dh / 2) - 10);
+    u8g2.print("Portal cautivo"); // aireciudadano_device_id
+
+    u8g2.setFont(u8g2_font_5x7_tf); // 5x7 5x7 6x10 4x6 5x7
+    u8g2.setCursor(2, dh / 2);
+    u8g2.print(captiveportaltime);
+    u8g2.setCursor(13, dh / 2);
+    u8g2.print(" segundos");
+    //    delay(2000);
+    pageEnd();
+  }
+
   wifi_server.stop();
 
   // Local intialization. Once its business is done, there is no need to keep it around
   // WiFiManager wifiManager;
   wifiManager.setDebugOutput(true);
   wifiManager.disconnect();
-  
-    WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
+
+  WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
   // Captive portal parameters
-  
+
   WiFiManagerParameter custom_id_html("<p>Set Station Custom Name:</p>"); // only custom html
   WiFiManagerParameter custom_id_name("CustomName", "30 characters max", eepromConfig.aireciudadano_device_name, 30);
   WiFiManagerParameter custom_ptime_html("<p>Set Publication Server Time in minutes:</p>"); // only custom html
@@ -1052,9 +1115,9 @@ void Start_Captive_Portal()
   // If not specified device will remain in configuration mode until
   // switched off via webserver or device is restarted.
 
-  wifiManager.setConfigPortalTimeout(90);
-  //wifiManager.setConfigPortalTimeout(30);
-  // wifiManager.setConfigPortalTimeout(3);   !!!TEST SEN5X
+  wifiManager.setConfigPortalTimeout(captiveportaltime);
+  // wifiManager.setConfigPortalTimeout(30);
+  //  wifiManager.setConfigPortalTimeout(3);   !!!TEST SEN5X
 
   // it starts an access point
   // and goes into a blocking loop awaiting configuration
@@ -1332,6 +1395,11 @@ void Send_Message_Cloud_App_MQTT()
   Serial.print(MQTT_message);
   Serial.println();
 
+  if (OLED66 == true || OLED96 == true)
+  {
+    u8g2.drawBitmap(dw - 30, dh - 8, 1, 8, Icono_data_on);
+    u8g2.drawLine(0, 38, 63, 38);
+  }
   // send message, the Print interface can be used to set the message contents
   MQTT_client.publish(MQTT_send_topic.c_str(), MQTT_message);
 }
@@ -2226,6 +2294,17 @@ void Update_Display()
 #endif
 }
 
+void UpdateOLED()
+{
+  pageStart();
+  displaySensorAverage(round(PM25_value));
+  displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
+  if (toggleLive)
+    u8g2.drawBitmap(0, dh - 8, 1, 8, Icono_sensor_live);
+  toggleLive = !toggleLive;
+  pageEnd();
+}
+
 void Get_AireCiudadano_DeviceId()
 { // Get TTGO T-Display info and fill up aireciudadano_device_id with last 6 digits (in HEX) of WiFi mac address or Custom_Name + 6 digits
   uint32_t chipId = 0;
@@ -2245,7 +2324,7 @@ void Get_AireCiudadano_DeviceId()
     aireciudadano_device_id = aireciudadano_device_id_endframe;
   else
     aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "_" + aireciudadano_device_id_endframe;
-    //aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + aireciudadano_device_id_endframe;
+  // aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + aireciudadano_device_id_endframe;
   Serial.println(aireciudadano_device_id);
 }
 
@@ -2278,8 +2357,8 @@ void Aireciudadano_Characteristics()
   Serial.println(eepromConfig.ConfigValues[6]);
 
   TDisplay = false;
-  OLED096 = false;
-  OLED066 = false;
+  OLED96 = false;
+  OLED66 = false;
   if (eepromConfig.ConfigValues[6] == '0')
     Serial.println("None Display");
   else if (eepromConfig.ConfigValues[6] == '1')
@@ -2289,12 +2368,12 @@ void Aireciudadano_Characteristics()
   }
   else if (eepromConfig.ConfigValues[6] == '2')
   {
-    OLED096 = true;
+    OLED96 = true;
     Serial.println("OLED 0.96 inch display 128x64");
   }
   else if (eepromConfig.ConfigValues[6] == '3')
   {
-    OLED066 = true;
+    OLED66 = true;
     Serial.println("OLED 0.66 inch display 64x48");
   }
 
@@ -2351,8 +2430,8 @@ void Aireciudadano_Characteristics()
   // SHT31sen = 16
   // AM2320sen =32
   // TDisplay = 256
-  // OLED096 = 512
-  // OLED066 = 1024
+  // OLED96 = 512
+  // OLED66 = 1024
   // AmbInOutdoors = 2048
 
   if (SPS30sen)
@@ -2370,9 +2449,9 @@ void Aireciudadano_Characteristics()
 
   if (TDisplay)
     IDn = IDn + 256;
-  if (OLED096)
+  if (OLED96)
     IDn = IDn + 512;
-  if (OLED066)
+  if (OLED66)
     IDn = IDn + 1024;
   if (AmbInOutdoors)
     IDn = IDn + 2048;
@@ -2670,8 +2749,7 @@ void Write_Bluetooth()
 }
 #endif
 
-
-void GUIUtils::displayInit(U8G2 &u8g2)
+void displayInit()
 {
   u8g2.begin();
   u8g2.setFont(u8g2_font_6x10_tf);
@@ -2681,37 +2759,31 @@ void GUIUtils::displayInit(U8G2 &u8g2)
   u8g2.setFontPosTop();
   u8g2.setFontDirection(0);
   u8g2.setFontMode(0);
-  this->u8g2 = u8g2;
-  Serial.println("-->[OLED] display ready.");
+  dw = u8g2.getDisplayWidth();
+  dh = u8g2.getDisplayHeight();
+//  Serial.println("OLED display ready");
 }
 
-void GUIUtils::showWelcome()
+void showWelcome()
 {
   u8g2.clearBuffer();
   u8g2.setFont(u8g2_font_5x8_tf);
-  u8g2.drawStr(0, 0, "CanAirIO");
+  u8g2.drawStr(0, 0, "AireCiudadano");
   u8g2.sendBuffer();
-  String version = String(VERSION_CODE + VCODE);
-  u8g2.setFont(u8g2_font_4x6_tf);
-  u8g2.drawStr(46, 1, version.c_str());
-  u8g2.drawLine(0, 9, 63, 9);
+  u8g2.drawStr(0, 9, "ver: ");
   u8g2.sendBuffer();
-  lastDrawedLine = 12;
-  // only for first screen
-  Serial.println("-->[OLED] welcome screen ready.");
+  // String version = String(VERSION_CODE + VCODE);
+  String version = String(VCODE);
+  //  u8g2.setFont(u8g2_font_4x6_tf);
+  u8g2.drawStr(22, 9, version.c_str());
+  //  u8g2.drawLine(0, 20, 63, 20);
   u8g2.sendBuffer();
-}
-
-void GUIUtils::showProgress(unsigned int progress, unsigned int total)
-{
-  u8g2.setFont(u8g2_font_4x6_tf);
-  char output[12];
-  sprintf(output, "%03d%%", (progress / (total / 100)));
-  u8g2.drawStr(0, lastDrawedLine, output);
+  lastDrawedLine = 10;
+  Serial.println("OLED display ready");
   u8g2.sendBuffer();
 }
 
-void GUIUtils::welcomeAddMessage(String msg)
+void welcomeAddMessage(String msg)
 {
   u8g2.setFont(u8g2_font_4x6_tf);
   u8g2.drawStr(0, lastDrawedLine, msg.c_str());
@@ -2719,26 +2791,40 @@ void GUIUtils::welcomeAddMessage(String msg)
   u8g2.sendBuffer();
 }
 
-void GUIUtils::AddMessage(String msg)
+void AddMessage(String msg)
 {
   u8g2.setFont(u8g2_font_4x6_tf);
   u8g2.drawStr(7, lastDrawedLine, msg.c_str());
   u8g2.sendBuffer();
 }
 
-void GUIUtils::displayCenterBig(String msg)
+void displayCenterBig(String msg)
 {
-  u8g2.setCursor(36, 6);
-  u8g2.setFont(u8g2_font_9x18B_tf);
+  if (dw > 64)
+  {
+    u8g2.setCursor(dw - 64, 6);
+    u8g2.setFont(u8g2_font_inb24_mn);
+  }
+  else
+  {
+    u8g2.setCursor(dw - 28, 7);
+    u8g2.setFont(u8g2_font_9x18B_tf);
+  }
   u8g2.print(msg.c_str());
+
+  u8g2.setCursor(94, 36);
+  // u8g2.setFont(u8g2_font_4x6_tf);
+  u8g2.setFont(u8g2_font_6x13_tf);
+  u8g2.print(" ug/m3");
 }
 
-void GUIUtils::displayBottomLine(String msg)
+void displayBottomLine(String msg)
 {
   u8g2.setFont(u8g2_font_4x6_tf);
+  u8g2.print(msg);
 }
 
-void GUIUtils::displayEmoticonLabel(int cursor, String msg)
+void displayEmoticonLabel(int cursor, String msg)
 {
   u8g2.setFont(u8g2_font_unifont_t_emoticons);
   u8g2.drawGlyph(76, 12, cursor);
@@ -2747,57 +2833,57 @@ void GUIUtils::displayEmoticonLabel(int cursor, String msg)
   u8g2.print(msg);
 }
 
-void GUIUtils::displayBigEmoticon(String msg)
+void displayTextLevel(String msg)
 {
-  u8g2.setFont(u8g2_font_5x7_tf); //5x7 5x7 6x10 4x6 5x7
+  u8g2.setFont(u8g2_font_5x7_tf); // 5x7 5x7 6x10 4x6 5x7
   u8g2.setCursor(29, 28);         //(35, 26);; (25, 29); (30, 29); (29, 28); (25, 30)(30, 29)
-  u8g2.print(msg);                //4 8 7 6 7 6
+  u8g2.print(msg);                // 4 8 7 6 7 6
 }
 
-void GUIUtils::displayBigLabel(int cursor, String msg)
+void displayColorLevel(int cursor, String msg)
 {
-  u8g2.setFont(u8g2_font_4x6_tf); 
+  u8g2.setFont(u8g2_font_4x6_tf);
   u8g2.setCursor(35, 20);
   u8g2.print(msg);
 }
 
-void GUIUtils::displaySensorAverage(int average)
+void displaySensorAverage(int average)
 {
   if (average < 13)
   {
     u8g2.drawXBM(0, 1, 32, 32, SmileFaceGood);
-    displayBigEmoticon("  GOOD");
-    displayBigLabel(0, " green");
+    displayTextLevel("  GOOD");
+    displayColorLevel(0, " green");
   }
   else if (average < 36)
   {
     u8g2.drawXBM(0, 1, 32, 32, SmileFaceModerate);
-    displayBigEmoticon("MODERATE");
-    displayBigLabel(0, "yellow");
+    displayTextLevel("MODERATE");
+    displayColorLevel(0, "yellow");
   }
   else if (average < 56)
   {
     u8g2.drawXBM(0, 1, 32, 32, SmileFaceUnhealthySGroups);
-    displayBigEmoticon("UNH SEN");
-    displayBigLabel(0, "orange");
+    displayTextLevel("UNH SEN");
+    displayColorLevel(0, "orange");
   }
   else if (average < 151)
   {
     u8g2.drawXBM(0, 1, 32, 32, SmileFaceUnhealthy);
-    displayBigEmoticon("UNHEALT");
-    displayBigLabel(0, "  red");
+    displayTextLevel("UNHEALT");
+    displayColorLevel(0, "  red");
   }
   else if (average < 251)
   {
     u8g2.drawXBM(0, 1, 32, 32, SmileFaceVeryUnhealthy);
-    displayBigEmoticon("V UNHEA");
-    displayBigLabel(0, "violet");
+    displayTextLevel("V UNHEA");
+    displayColorLevel(0, "violet");
   }
   else
   {
     u8g2.drawXBM(0, 1, 32, 32, SmileFaceHazardous);
-    displayBigEmoticon("HAZARD");
-    displayBigLabel(0, " brown");
+    displayTextLevel("HAZARD");
+    displayColorLevel(0, " brown");
   }
   char output[4];
   sprintf(output, "%03d", average);
@@ -2805,80 +2891,46 @@ void GUIUtils::displaySensorAverage(int average)
 }
 
 // TODO: separate this function, format/display
-void GUIUtils::displaySensorData(int pm25, int pm10, int chargeLevel, float humi, float temp, int rssi)
+void displaySensorData(int pm25, int humi, int temp, int rssi)
 {
-  if (mcount < 65535)
-    mcount++;
-  else
-    mcount = 0;
+  //  pageStart();
   char output[22];
-  inthumi = (int)humi;
-  inttemp = (int)temp;
-  sprintf(output, "%03d E%02d H%02d%% T%02d%°C", pm25, ecode, inthumi, inttemp); // 000 E00 H00% T00°C
+  sprintf(output, "%03d H%02d%% T%02d%°C", pm25, inthumi, inttemp); // 000 E00 H00% T00°C
   displayBottomLine(String(output));
-  Serial.print(" PM2.5:");
-  Serial.print(output);
+  //  Serial.print(" PM2.5:");
+  //  Serial.print(output);
 
   u8g2.setFont(u8g2_font_4x6_tf);
   u8g2.setCursor(51, 0);
-  sprintf(output, "%03d", pm25);
+  sprintf(output, "%04d", pm25);
   u8g2.print(output);
 
   u8g2.setFont(u8g2_font_6x12_tf);
 
-      u8g2.setCursor(40, 23);   // valor RSSI
+  u8g2.setCursor(20, 39);
 
-    if (rssi == 0) {
-      u8g2.print("   ");
-      Serial.println("");
-    }
-    else{
-      Serial.print(" RSSI:");
-      Serial.println(rssi);
-      rssi = abs (rssi); 
-      sprintf(output, "%02d", rssi);
-      u8g2.print(rssi);       
-    }
+  if (rssi == 0)
+  {
+    u8g2.print("   ");
+    Serial.println("");
+  }
+  else
+  {
+    Serial.print(" RSSI: ");
+    Serial.println(rssi);
+    rssi = abs(rssi);
+    sprintf(output, "%02d", rssi);
+    u8g2.print(rssi);
+    //    pageEnd();
+  }
 }
 
-void GUIUtils::displayStatus(bool wifiOn, bool bleOn, bool blePair, bool dataOn)
-{
-  if (bleOn)
-    u8g2.drawBitmap(54, 40, 1, 8, ic_bluetooth_on);
-  if (blePair)
-    u8g2.drawBitmap(54, 40, 1, 8, ic_bluetooth_pair);
-  if (wifiOn)
-    u8g2.drawBitmap(44, 40, 1, 8, ic_wifi_on);
-  if (dataOn)
-    u8g2.drawBitmap(34, 40, 1, 8, ic_data_on);
-  u8g2.drawLine(0, 38, 63, 38);
-}
-
-void GUIUtils::displayLiveIcon()
-{
-  if (toggleLive)
-    u8g2.drawBitmap(0, 40, 1, 8, ic_sensor_live);
-
-  toggleLive = !toggleLive;
-}
-
-void GUIUtils::displayPrefSaveIcon(bool enable)
-{
-  if (enable)
-    u8g2.drawBitmap(10, 40, 1, 8, ic_pref_save);
-}
-
-void GUIUtils::updateError(unsigned int error)
-{
-  ecode = error;
-}
-
-void GUIUtils::pageStart()
+void pageStart()
 {
   u8g2.firstPage();
 }
 
-void GUIUtils::pageEnd()
+void pageEnd()
 {
   u8g2.nextPage();
 }

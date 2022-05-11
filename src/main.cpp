@@ -2,7 +2,7 @@
 // AireCiudadano medidor Fijo - Medidor de PM2.5 abierto, medición opcional de humedad y temperatura.
 // Más información en: aireciudadano.com
 // Este firmware es un fork del proyecto Anaire (https://www.anaire.org/) recomendado para la medición de CO2.
-// 19/04/2022 info@aireciudadano.com
+// 11/05/2022 info@aireciudadano.com
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pendientes:
@@ -44,7 +44,7 @@ bool OLED66 = false;        // Set to true if you use a OLED Diplay 0.66 inch 64
 bool ExtAnt = false;        // External antenna
 bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring outside environment, false if is outdoors
 
-#define Bluetooth false     // Set to true in case bluetooth is desired
+#define Bluetooth true      // Set to true in case bluetooth is desired
 #define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define WPA2 false          // Colocar en true para redes con WPA2
 #define PreProgSensor false // Variables de sensor preprogramadas:
@@ -59,7 +59,7 @@ char CustomValTotalString[9] = "00000000";
 uint16_t IDn = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "v0.4";
+String sw_version = "v1.1";
 String aireciudadano_device_id;
 // String aireciudadano_charac_id;
 
@@ -74,6 +74,7 @@ struct MyConfigStruct
 #if !PreProgSensor
   char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
   char sensor_lon[10] = "0.0"; // Sensor longitude GPS
+//  char ConfigValues[10] = "000010121";
   char ConfigValues[10] = "000000000";
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #else
@@ -146,6 +147,9 @@ boolean err_sensor = false;
 // Measurements loop: time between measurements
 unsigned int measurements_loop_duration = 1000; // 1 second
 unsigned long measurements_loop_start;          // holds a timestamp for each control loop start
+
+unsigned int Bluetooth_loop_times = 5; // 5 seconds
+unsigned int Con_loop_times = 0;
 
 // MQTT loop: time between MQTT measurements sent to the cloud
 unsigned long MQTT_loop_start;          // holds a timestamp for each cloud loop start
@@ -279,9 +283,9 @@ GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_VOC_PM25_V2);
 bool bluetooth_active = false;
 #endif
 
-// AZ-Delivery Active Buzzer
-//#define BUZZER_GPIO 12 // signal GPIO12 (pin TOUCH5/ADC15/GPIO12 on TTGO)
+#define OUT_EN 26 // Enable del elevador de voltaje
 
+#if !Bluetooth
 // WiFi
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 
@@ -291,7 +295,7 @@ bool bluetooth_active = false;
 
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
 // const int WIFI_CONNECT_TIMEOUT = 1000; // 1 seconds !!! TEST SEN5X
-//const int captiveportaltime = 90;
+// const int captiveportaltime = 90;
 WiFiServer wifi_server(80);
 WiFiClient wifi_client;
 bool PortalFlag = false;
@@ -313,6 +317,8 @@ StaticJsonDocument<384> jsonBuffer;
 // OTA Update
 #include <HTTPClient.h>
 #include <HTTPUpdate.h>
+
+#endif
 
 #include "rom/rtc.h"
 bool ResetFlag = false;
@@ -343,6 +349,12 @@ void setup()
 
   Serial.println("CPU0 reset reason:");
   print_reset_reason(rtc_get_reset_reason(0));
+
+  // Out for power on and off sensors
+  pinMode(OUT_EN, OUTPUT);
+  // On sensors
+  digitalWrite(OUT_EN, HIGH); // step-up on
+  delay(1000);
 
   // print info
   Serial.println();
@@ -391,9 +403,11 @@ void setup()
     pageEnd();
   }
 
+#if !Bluetooth
   // Set MQTT topics
   MQTT_send_topic = "measurement";                          // Measurements are sent to this topic
   MQTT_receive_topic = "config/" + aireciudadano_device_id; // Config messages will be received in config/id
+#endif
 
   // Print initial configuration
   Print_Config();
@@ -415,6 +429,7 @@ void setup()
     Button_Init();
   }
 
+#if !Bluetooth
   // Start Captive Portal for 30 seconds
   if (ResetFlag == true)
   {
@@ -430,14 +445,17 @@ void setup()
   {
     Init_MQTT();
   }
+#endif
 
   // Initialize and warm up PM25 sensor
   Setup_Sensor();
 
   // Init control loops
   measurements_loop_start = millis();
-  MQTT_loop_start = millis();
   errors_loop_start = millis();
+#if !Bluetooth
+  MQTT_loop_start = millis();
+#endif
 
   Serial.println("");
   Serial.println("### Configuración del medidor AireCiudadano finalizada ###\n");
@@ -471,7 +489,6 @@ void setup()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void loop()
 {
-
   // Serial.println ("--- LOOP BEGIN ---");
 
   // If a firmware update is in progress do not do anything else
@@ -479,6 +496,10 @@ void loop()
   {
     return;
   }
+#if Bluetooth
+  // Measure the battery voltage
+  battery_voltage = ((float)analogRead(ADC_PIN) / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
+#endif
 
   // Measurement loop
   if ((millis() - measurements_loop_start) >= measurements_loop_duration)
@@ -506,17 +527,33 @@ void loop()
         UpdateOLED();
       }
 
-// Update bluetooth app with new values
-#if Bluetooth
-      Write_Bluetooth();
-#endif
-
       // Accumulates samples
       PM25_accumulated += PM25_value;
       PM25_samples++;
+      Con_loop_times++;
     }
   }
 
+#if Bluetooth
+
+    // Bluetooth loop
+    if (Con_loop_times >= Bluetooth_loop_times)
+    {
+      float PM25f;
+      Serial.println(PM25_accumulated);
+      Serial.println(PM25_samples);
+      PM25f = PM25_accumulated / PM25_samples;
+      pm25int = round(PM25f);
+      Serial.println(pm25int);
+      Serial.print("PM25: ");
+      Serial.print(pm25int);
+      ReadHyT();
+      Write_Bluetooth();
+      PM25_accumulated = 0.0;
+      PM25_samples = 0.0;
+      Con_loop_times = 0;
+    }
+#else
   // MQTT loop
   if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
   {
@@ -534,6 +571,7 @@ void loop()
     PM25_accumulated = 0.0;
     PM25_samples = 0.0;
   }
+#endif
 
   // Errors loop
   if ((millis() - errors_loop_start) >= errors_loop_duration)
@@ -548,6 +586,8 @@ void loop()
       Serial.println("--- err_sensor");
       // Setup_Sensor();  // Init pm25 sensors
     }
+
+#if !Bluetooth
 
     if (WiFi.status() != WL_CONNECTED)
     {
@@ -580,7 +620,10 @@ void loop()
       MQTT_Reconnect();
       Init_MQTT();
     }
+#endif
   }
+
+#if !Bluetooth
 
   // From here, all other tasks performed outside of measurements, MQTT and error loops
 
@@ -592,6 +635,9 @@ void loop()
 
   // Process wifi server requests
   Check_WiFi_Server();
+
+#endif
+
 
 // Process bluetooth events
 #if Bluetooth
@@ -611,6 +657,8 @@ void loop()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+#if !Bluetooth
 
 void WiFiEvent(WiFiEvent_t event)
 {
@@ -696,15 +744,6 @@ void WiFiEvent(WiFiEvent_t event)
     break;
   default:
     break;
-  }
-}
-
-void Interrupt_Restart(Button2 &btn)
-{ // Restarts the device if any button is pressed while calibrating or in captive portal
-  Serial.println("Any button click");
-  if ((InCaptivePortal) || (Calibrating))
-  {
-    ESP.restart();
   }
 }
 
@@ -1023,20 +1062,20 @@ void Start_Captive_Portal()
     tft.setTextDatum(MC_DATUM);
     tft.drawString(wifiAP, tft.width() / 2, tft.height() / 2);
   }
-  
+
   if (OLED66 == true || OLED96 == true)
   {
     pageStart();
     u8g2.setFont(u8g2_font_4x6_tf); // 5x7 5x7 6x10 4x6 5x7
     u8g2.setCursor(2, (dh / 2) - 10);
     u8g2.print("Portal cautivo"); // aireciudadano_device_id
-    
+
     u8g2.setFont(u8g2_font_5x7_tf); // 5x7 5x7 6x10 4x6 5x7
     u8g2.setCursor(2, dh / 2);
     u8g2.print(captiveportaltime);
     u8g2.setCursor(13, dh / 2);
     u8g2.print(" segundos");
-//    delay(2000);
+    //    delay(2000);
     pageEnd();
   }
 
@@ -1269,23 +1308,6 @@ String getParam(String name)
   }
   CustomValue = atoi(value.c_str());
   return value;
-}
-
-void saveParamCallback()
-{
-  Serial.println("[CALLBACK] saveParamCallback fired");
-  Serial.println("Value customSenPM = " + getParam("customSenPM"));
-  CustomValtotal = CustomValue;
-  Serial.println("Value cutomSenHYT = " + getParam("customSenHYT"));
-  CustomValtotal = CustomValtotal + (CustomValue * 10);
-  Serial.println("Value customDisplay = " + getParam("customDisplay"));
-  CustomValtotal = CustomValtotal + (CustomValue * 100);
-  Serial.println("Value customBoard = " + getParam("customBoard"));
-  CustomValtotal = CustomValtotal + (CustomValue * 1000);
-  Serial.println("Value customOutIn = " + getParam("customOutIn"));
-  CustomValtotal = CustomValtotal + (CustomValue * 10000);
-  Serial.print("CustomValtotal: ");
-  Serial.println(CustomValtotal);
 }
 
 void Init_MQTT()
@@ -1523,6 +1545,108 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     Serial.println("Update firmware to latest bin");
     Firmware_Update();
   }
+}
+
+void Firmware_Update()
+{
+
+  Serial.println("### FIRMWARE UPDATE ###");
+
+  // For remote firmware update
+  WiFiClientSecure UpdateClient;
+  UpdateClient.setInsecure();
+
+  // Reading data over SSL may be slow, use an adequate timeout
+  UpdateClient.setTimeout(30); // timeout argument is defined in seconds for setTimeout
+  Serial.println("ACTUALIZACION EN CURSO");
+
+  if (TDisplay == true)
+  {
+    // Update display
+    tft.fillScreen(TFT_ORANGE);
+    tft.setTextColor(TFT_BLACK, TFT_ORANGE);
+    tft.setTextSize(1);
+    tft.setFreeFont(FF90);
+    tft.setTextDatum(MC_DATUM);
+    tft.drawString("ACTUALIZACION EN CURSO", tft.width() / 2, tft.height() / 2);
+  }
+
+  // t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+
+  switch (ret)
+  {
+
+  case HTTP_UPDATE_FAILED:
+    Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+
+    if (TDisplay == true)
+    {
+      tft.fillScreen(TFT_ORANGE);
+      tft.drawString("ACTUALIZACION FALLIDA", tft.width() / 2, tft.height() / 2);
+    }
+
+    delay(1000);
+    break;
+
+  case HTTP_UPDATE_NO_UPDATES:
+    Serial.println("HTTP_UPDATE_NO_UPDATES");
+    break;
+
+  case HTTP_UPDATE_OK:
+    Serial.println("HTTP_UPDATE_OK");
+    if (TDisplay == true)
+    {
+      tft.fillScreen(TFT_ORANGE);
+      tft.drawString("ACTUALIZACION COMPLETA", tft.width() / 2, tft.height() / 2);
+    }
+    delay(1000);
+    break;
+  }
+}
+
+void displayWifi(int colour_1, int colour_2, boolean active)
+{ // Draw WiFi icon
+  tft.drawCircle(20, 30, 14, colour_1);
+  tft.drawCircle(20, 30, 10, colour_1);
+  tft.fillCircle(20, 30, 6, colour_1);
+  tft.fillRect(6, 30, 30, 30, colour_2);
+  // tft.fillRect(18, 30, 4, 8, colour_1);
+  tft.fillRect(19, 30, 4, 8, colour_1);
+
+  if (!active)
+  { // draw an X over
+    tft.drawLine(6, 16, 34, 46, colour_1);
+    tft.drawLine(34, 16, 6, 46, colour_1);
+  }
+}
+
+#endif
+
+void Interrupt_Restart(Button2 &btn)
+{ // Restarts the device if any button is pressed while calibrating or in captive portal
+  Serial.println("Any button click");
+  if ((InCaptivePortal) || (Calibrating))
+  {
+    ESP.restart();
+  }
+}
+
+void saveParamCallback()
+{
+  Serial.println("[CALLBACK] saveParamCallback fired");
+  Serial.println("Value customSenPM = " + getParam("customSenPM"));
+  CustomValtotal = CustomValue;
+  Serial.println("Value cutomSenHYT = " + getParam("customSenHYT"));
+  CustomValtotal = CustomValtotal + (CustomValue * 10);
+  Serial.println("Value customDisplay = " + getParam("customDisplay"));
+  CustomValtotal = CustomValtotal + (CustomValue * 100);
+  Serial.println("Value customBoard = " + getParam("customBoard"));
+  CustomValtotal = CustomValtotal + (CustomValue * 1000);
+  Serial.println("Value customOutIn = " + getParam("customOutIn"));
+  CustomValtotal = CustomValtotal + (CustomValue * 10000);
+  Serial.print("CustomValtotal: ");
+  Serial.println(CustomValtotal);
 }
 
 void Setup_Sensor()
@@ -2009,7 +2133,7 @@ void ReadHyT()
       temp = round(temperature);
     }
     else
-      Serial.println("Failed to read temperature SHT31");
+      Serial.println("   Failed to read temperature SHT31");
   }
 
   // AM2320//
@@ -2023,13 +2147,13 @@ void ReadHyT()
     if (!isnan(humidity))
     {
       failh = 0;
-      Serial.print("AM2320 Humi % = ");
+      Serial.print("   AM2320 Humi % = ");
       Serial.print(humidity);
       humi = round(humidity);
     }
     else
     {
-      Serial.println("Failed to read humidity AM2320");
+      Serial.println("   Failed to read humidity AM2320");
       if (failh == 5)
       {
         failh = 0;
@@ -2046,7 +2170,7 @@ void ReadHyT()
       temp = round(temperature);
     }
     else
-      Serial.println("Failed to read temperature AM2320");
+      Serial.println("   Failed to read temperature AM2320");
   }
 }
 
@@ -2066,6 +2190,7 @@ void Print_Config()
   Serial.println(eepromConfig.PM25_warning_threshold);
   Serial.print("PM25 Alarm threshold: ");
   Serial.println(eepromConfig.PM25_alarm_threshold);
+#if !Bluetooth
   Serial.print("Publication Time: ");
   Serial.println(eepromConfig.PublicTime);
   Serial.print("MQTT server: ");
@@ -2076,6 +2201,7 @@ void Print_Config()
   Serial.println(eepromConfig.sensor_lat);
   Serial.print("Sensor longitude: ");
   Serial.println(eepromConfig.sensor_lon);
+#endif
   Serial.print("Configuration values: ");
   Serial.println(eepromConfig.ConfigValues);
   Serial.println("#######################################");
@@ -2119,10 +2245,13 @@ void Button_Init()
     tft.setFreeFont(FF90);
     tft.drawString("ID " + aireciudadano_device_id, 10, 5);         //!!!Arreglar por nuevo tamaño String
     tft.drawString("SW " + sw_version, 10, 21);
+
+#if !Bluetooth
     tft.drawString("SSID " + String(WiFi.SSID()), 10, 37);
     tft.drawString("IP " + WiFi.localIP().toString(), 10, 53);
     tft.drawString("MAC " + String(WiFi.macAddress()), 10, 69);
     tft.drawString("RSSI " + String(WiFi.RSSI()), 10, 85);
+#endif
 
     delay(5000); // keep the info in the display for 5s
     Update_Display(); });
@@ -2145,8 +2274,14 @@ void Button_Init()
   button_top.setDoubleClickHandler([](Button2 &b)
                                    {
     Serial.println("Top button double click");
+#if !Bluetooth
     PortalFlag = true;
-    Start_Captive_Portal(); });
+    Start_Captive_Portal();
+#else
+    Serial.println("No function");
+#endif
+     });
+
 
   // Top button triple click: launch captive portal to configure WiFi and MQTT sleep
   button_top.setTripleClickHandler([](Button2 &b)
@@ -2170,7 +2305,7 @@ void Button_Init()
     tft.drawString("Abajo Corto: Info", 10, 69);
     tft.drawString("  Largo: Calibrar", 10, 85);
     tft.drawString("  Doble: Reiniciar", 10, 101);
-    tft.drawString("  Triple: Autocalibración", 10, 117);
+//    tft.drawString("  Triple: Autocalibración", 10, 117);
     delay(5000);
     Update_Display(); });
 
@@ -2242,8 +2377,10 @@ void Update_Display()
   {
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
+#if !Bluetooth
     displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
-    //    displayBuzzer(TFT_GREEN, eepromConfig.acoustic_alarm);
+#endif
+
 #if Bluetooth
     displayBatteryLevel(TFT_GREEN);
 #endif
@@ -2254,8 +2391,10 @@ void Update_Display()
     tft.fillScreen(TFT_YELLOW);
     tft.setTextColor(TFT_RED, TFT_YELLOW);
     delay(50);
+#if !Bluetooth
     displayWifi(TFT_RED, TFT_YELLOW, (WiFi.status() == WL_CONNECTED));
-    //    displayBuzzer(TFT_RED, eepromConfig.acoustic_alarm);
+#endif
+
 #if Bluetooth
     displayBatteryLevel(TFT_RED);
 #endif
@@ -2265,10 +2404,10 @@ void Update_Display()
   {
     tft.fillScreen(TFT_RED);
     tft.setTextColor(TFT_WHITE, TFT_RED);
-
+#if !Bluetooth
     displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
     //    displayBuzzer(TFT_WHITE, eepromConfig.acoustic_alarm);
-#if Bluetooth
+#else
     displayBatteryLevel(TFT_WHITE);
 #endif
   }
@@ -2300,7 +2439,11 @@ void UpdateOLED()
 {
   pageStart();
   displaySensorAverage(round(PM25_value));
+#if !Bluetooth
   displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
+#else
+  displaySensorData(round(PM25_value), humi, temp, 0);
+#endif
   if (toggleLive)
     u8g2.drawBitmap(0, dh - 8, 1, 8, Icono_sensor_live);
   toggleLive = !toggleLive;
@@ -2511,64 +2654,6 @@ void Wipe_EEPROM()
   }
 }
 
-void Firmware_Update()
-{
-
-  Serial.println("### FIRMWARE UPDATE ###");
-
-  // For remote firmware update
-  WiFiClientSecure UpdateClient;
-  UpdateClient.setInsecure();
-
-  // Reading data over SSL may be slow, use an adequate timeout
-  UpdateClient.setTimeout(30); // timeout argument is defined in seconds for setTimeout
-  Serial.println("ACTUALIZACION EN CURSO");
-
-  if (TDisplay == true)
-  {
-    // Update display
-    tft.fillScreen(TFT_ORANGE);
-    tft.setTextColor(TFT_BLACK, TFT_ORANGE);
-    tft.setTextSize(1);
-    tft.setFreeFont(FF90);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("ACTUALIZACION EN CURSO", tft.width() / 2, tft.height() / 2);
-  }
-
-  // t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
-
-  switch (ret)
-  {
-
-  case HTTP_UPDATE_FAILED:
-    Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
-
-    if (TDisplay == true)
-    {
-      tft.fillScreen(TFT_ORANGE);
-      tft.drawString("ACTUALIZACION FALLIDA", tft.width() / 2, tft.height() / 2);
-    }
-
-    delay(1000);
-    break;
-
-  case HTTP_UPDATE_NO_UPDATES:
-    Serial.println("HTTP_UPDATE_NO_UPDATES");
-    break;
-
-  case HTTP_UPDATE_OK:
-    Serial.println("HTTP_UPDATE_OK");
-    if (TDisplay == true)
-    {
-      tft.fillScreen(TFT_ORANGE);
-      tft.drawString("ACTUALIZACION COMPLETA", tft.width() / 2, tft.height() / 2);
-    }
-    delay(1000);
-    break;
-  }
-}
-
 // #if TDisplay
 #if Bluetooth
 void displayBatteryLevel(int colour)
@@ -2635,25 +2720,11 @@ void displayBatteryLevel(int colour)
 }
 #endif
 
-void displayWifi(int colour_1, int colour_2, boolean active)
-{ // Draw WiFi icon
-  tft.drawCircle(20, 30, 14, colour_1);
-  tft.drawCircle(20, 30, 10, colour_1);
-  tft.fillCircle(20, 30, 6, colour_1);
-  tft.fillRect(6, 30, 30, 30, colour_2);
-  // tft.fillRect(18, 30, 4, 8, colour_1);
-  tft.fillRect(19, 30, 4, 8, colour_1);
-
-  if (!active)
-  { // draw an X over
-    tft.drawLine(6, 16, 34, 46, colour_1);
-    tft.drawLine(34, 16, 6, 46, colour_1);
-  }
-}
-
 void Suspend_Device()
 {
   Serial.println("Presione un boton para despertar");
+  // Off sensors
+  digitalWrite(OUT_EN, LOW); // step-up off
 
   if (TDisplay == true)
   {
@@ -2740,17 +2811,6 @@ void print_reset_reason(RESET_REASON reason)
   }
 }
 
-#if Bluetooth
-void Write_Bluetooth()
-{ // Write measurements to bluetooth
-  gadgetBle.writePM2p5(pm25int);
-  gadgetBle.writeTemperature(temp);
-  gadgetBle.writeHumidity(humi);
-  Serial.println("Bluetooth frame: PM25, humidity and temperature");
-  gadgetBle.commit();
-}
-#endif
-
 void displayInit()
 {
   u8g2.begin();
@@ -2763,7 +2823,7 @@ void displayInit()
   u8g2.setFontMode(0);
   dw = u8g2.getDisplayWidth();
   dh = u8g2.getDisplayHeight();
-//  Serial.println("OLED display ready");
+  //  Serial.println("OLED display ready");
 }
 
 void showWelcome()
@@ -2911,6 +2971,8 @@ void displaySensorData(int pm25, int humi, int temp, int rssi)
 
   u8g2.setCursor(20, 39);
 
+#if !Bluetooth
+
   if (rssi == 0)
   {
     u8g2.print("   ");
@@ -2925,6 +2987,8 @@ void displaySensorData(int pm25, int humi, int temp, int rssi)
     u8g2.print(rssi);
     //    pageEnd();
   }
+#endif
+
 }
 
 void pageStart()
@@ -2936,3 +3000,14 @@ void pageEnd()
 {
   u8g2.nextPage();
 }
+
+#if Bluetooth
+void Write_Bluetooth()
+{ // Write measurements to bluetooth
+  gadgetBle.writePM2p5(pm25int);
+  gadgetBle.writeTemperature(temp);
+  gadgetBle.writeHumidity(humi);
+  Serial.println("Bluetooth frame: PM25, humidity and temperature");
+  gadgetBle.commit();
+}
+#endif

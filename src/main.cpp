@@ -1700,6 +1700,8 @@ void Read_Sensor()
     } while (ret != ERR_OK);
 
     PM25_value = val.MassPM2;
+    Serial.print("val.MassPM2: ");
+    Serial.println(val.MassPM2);
 
     if (!err_sensor)
     {
@@ -2751,9 +2753,7 @@ void Write_Bluetooth()
 
 void displayInit()
 {
-  Serial.println("test1");
   u8g2.begin();
-  Serial.println("test3");
   u8g2.setFont(u8g2_font_6x10_tf);
   u8g2.setContrast(255);
   u8g2.setFontRefHeightExtendedText();

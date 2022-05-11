@@ -39,8 +39,8 @@ bool AdjPMS = false;        // PMS sensor adjust
 bool SHT31sen = false;      // Sensor DHT31 humedad y temperatura
 bool AM2320sen = false;     // Sensor AM2320 humedad y temperatura
 bool TDisplay = false;      // Set to true if Board TTGO T-Display is used
-bool OLED96 = false;        // Set to true if you use a OLED Diplay 0.96 inch 128x64
 bool OLED66 = false;        // Set to true if you use a OLED Diplay 0.66 inch 64x48
+bool OLED96 = false;        // Set to true if you use a OLED Diplay 0.96 inch 128x64
 bool ExtAnt = false;        // External antenna
 bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring outside environment, false if is outdoors
 
@@ -74,8 +74,9 @@ struct MyConfigStruct
 #if !PreProgSensor
   char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
   char sensor_lon[10] = "0.0"; // Sensor longitude GPS
-//  char ConfigValues[10] = "000010121";
-  char ConfigValues[10] = "000000000";
+//    char ConfigValues[10] = "000010121";
+  char ConfigValues[10] = "000010311";
+//  char ConfigValues[10] = "000000000";
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #else
   char sensor_lat[10] = "4.69375";   // Aquí colocar la Latitud del sensor
@@ -188,7 +189,9 @@ int dh = 0; // display height
 // if (OLED96 == true)
 // U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
 // else // display via i2c for TTGO_T7 (old D1MINI) board
-U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
+
+//U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
+U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
 
 // U8G2 u8g2;
 
@@ -392,7 +395,7 @@ void setup()
     delay(5000);
   }
 
-  if (OLED96 == true || OLED66 == true)
+  if (OLED66 == true || OLED96 == true)
   {
     displayInit();
     pageStart();
@@ -489,16 +492,16 @@ void setup()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 void loop()
 {
-  // Serial.println ("--- LOOP BEGIN ---");
-
   // If a firmware update is in progress do not do anything else
   if (updating)
   {
     return;
   }
 #if Bluetooth
+#if TDisplay
   // Measure the battery voltage
   battery_voltage = ((float)analogRead(ADC_PIN) / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
+#endif
 #endif
 
   // Measurement loop
@@ -1658,7 +1661,7 @@ void Setup_Sensor()
   {
 
     Serial.println("Test Sensirion SPS30 sensor");
-    // Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
+    Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
 
     sps30.EnableDebugging(DEBUG);
     // Begin communication channel
@@ -2110,7 +2113,7 @@ void ReadHyT()
     if (!isnan(humidity))
     { // check if 'is not a number'
       failh = 0;
-      Serial.print("SHT31 Humi % = ");
+      Serial.print("   SHT31 Humi % = ");
       Serial.print(humidity);
       humi = round(humidity);
     }
@@ -2358,7 +2361,7 @@ void Button_Init()
 void Display_Init()
 { // TTGO T-Display init
   tft.init();
-  tft.setRotation(1);
+  tft.setRotation(1); ///////////////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }
 
 void Display_Splash_Screen()
@@ -2437,6 +2440,9 @@ void Update_Display()
 
 void UpdateOLED()
 {
+
+//  Serial.println("Sensor Read Update OLED");
+
   pageStart();
   displaySensorAverage(round(PM25_value));
 #if !Bluetooth
@@ -2502,8 +2508,8 @@ void Aireciudadano_Characteristics()
   Serial.println(eepromConfig.ConfigValues[6]);
 
   TDisplay = false;
-  OLED96 = false;
   OLED66 = false;
+  OLED96 = false;
   if (eepromConfig.ConfigValues[6] == '0')
     Serial.println("None Display");
   else if (eepromConfig.ConfigValues[6] == '1')
@@ -2575,8 +2581,8 @@ void Aireciudadano_Characteristics()
   // SHT31sen = 16
   // AM2320sen =32
   // TDisplay = 256
-  // OLED96 = 512
-  // OLED66 = 1024
+  // OLED66 = 512
+  // OLED96 = 1024
   // AmbInOutdoors = 2048
 
   if (SPS30sen)
@@ -2594,9 +2600,9 @@ void Aireciudadano_Characteristics()
 
   if (TDisplay)
     IDn = IDn + 256;
-  if (OLED96)
-    IDn = IDn + 512;
   if (OLED66)
+    IDn = IDn + 512;
+  if (OLED96)
     IDn = IDn + 1024;
   if (AmbInOutdoors)
     IDn = IDn + 2048;

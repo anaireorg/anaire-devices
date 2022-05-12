@@ -74,8 +74,8 @@ struct MyConfigStruct
 #if !PreProgSensor
   char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
   char sensor_lon[10] = "0.0"; // Sensor longitude GPS
-//    char ConfigValues[10] = "000010121";
-  char ConfigValues[10] = "000010311";
+    char ConfigValues[10] = "000010121";
+//  char ConfigValues[10] = "000010311";
 //  char ConfigValues[10] = "000000000";
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #else
@@ -149,7 +149,7 @@ boolean err_sensor = false;
 unsigned int measurements_loop_duration = 1000; // 1 second
 unsigned long measurements_loop_start;          // holds a timestamp for each control loop start
 
-unsigned int Bluetooth_loop_times = 5; // 5 seconds
+unsigned int Bluetooth_loop_times = 10; // 5 seconds
 unsigned int Con_loop_times = 0;
 
 // MQTT loop: time between MQTT measurements sent to the cloud
@@ -190,8 +190,8 @@ int dh = 0; // display height
 // U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
 // else // display via i2c for TTGO_T7 (old D1MINI) board
 
-//U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
-U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
+U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
+//U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
 
 // U8G2 u8g2;
 
@@ -401,7 +401,7 @@ void setup()
     pageStart();
     showWelcome();
     delay(1000);
-    u8g2.drawXBM(31, 15, 32, 32, IconoAC2);
+    u8g2.drawXBM(31, 15, 32, 32, IconoAC);
     delay(4000);
     pageEnd();
   }
@@ -551,6 +551,7 @@ void loop()
       Serial.print("PM25: ");
       Serial.print(pm25int);
       ReadHyT();
+//      displaySensorAverage(pm25int);
       Write_Bluetooth();
       PM25_accumulated = 0.0;
       PM25_samples = 0.0;
@@ -1827,8 +1828,8 @@ void Read_Sensor()
     } while (ret != ERR_OK);
 
     PM25_value = val.MassPM2;
-    Serial.print("val.MassPM2: ");
-    Serial.println(val.MassPM2);
+//    Serial.print("val.MassPM2: ");
+//    Serial.println(val.MassPM2);
 
     if (!err_sensor)
     {
@@ -2361,7 +2362,8 @@ void Button_Init()
 void Display_Init()
 { // TTGO T-Display init
   tft.init();
-  tft.setRotation(1); ///////////////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  //tft.setRotation(1); ///////////////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  tft.setRotation(0); ///////////////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!
 }
 
 void Display_Splash_Screen()
@@ -2444,14 +2446,15 @@ void UpdateOLED()
 //  Serial.println("Sensor Read Update OLED");
 
   pageStart();
-  displaySensorAverage(round(PM25_value));
+  displaySensorAverage(pm25int);
 #if !Bluetooth
   displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
 #else
   displaySensorData(round(PM25_value), humi, temp, 0);
 #endif
+//  u8g2.drawBitmap(dw - 15, dh - 8, 1, 8, Icono_bt_on);
   if (toggleLive)
-    u8g2.drawBitmap(0, dh - 8, 1, 8, Icono_sensor_live);
+    u8g2.drawBitmap(dw - 18, dh - 8, 1, 8, Icono_bt_on);
   toggleLive = !toggleLive;
   pageEnd();
 }
@@ -2819,6 +2822,7 @@ void print_reset_reason(RESET_REASON reason)
 
 void displayInit()
 {
+  u8g2.setBusClock(100000);
   u8g2.begin();
   u8g2.setFont(u8g2_font_6x10_tf);
   u8g2.setContrast(255);
@@ -2875,7 +2879,7 @@ void displayCenterBig(String msg)
   }
   else
   {
-    u8g2.setCursor(dw - 28, 7);
+    u8g2.setCursor(dw - 28, 9);
     u8g2.setFont(u8g2_font_9x18B_tf);
   }
   u8g2.print(msg.c_str());
@@ -2904,14 +2908,14 @@ void displayEmoticonLabel(int cursor, String msg)
 void displayTextLevel(String msg)
 {
   u8g2.setFont(u8g2_font_5x7_tf); // 5x7 5x7 6x10 4x6 5x7
-  u8g2.setCursor(29, 28);         //(35, 26);; (25, 29); (30, 29); (29, 28); (25, 30)(30, 29)
+  u8g2.setCursor(29, 31);         //(35, 26);; (25, 29); (30, 29); (29, 28); (25, 30)(30, 29)
   u8g2.print(msg);                // 4 8 7 6 7 6
 }
 
 void displayColorLevel(int cursor, String msg)
 {
   u8g2.setFont(u8g2_font_4x6_tf);
-  u8g2.setCursor(35, 20);
+  u8g2.setCursor(35, 22);
   u8g2.print(msg);
 }
 
@@ -2919,39 +2923,39 @@ void displaySensorAverage(int average)
 {
   if (average < 13)
   {
-    u8g2.drawXBM(0, 1, 32, 32, SmileFaceGood);
-    displayTextLevel("  GOOD");
+    u8g2.drawXBM(1, 6, 32, 32, SmileFaceGood);
     displayColorLevel(0, " green");
+    displayTextLevel("  GOOD");
   }
   else if (average < 36)
   {
-    u8g2.drawXBM(0, 1, 32, 32, SmileFaceModerate);
-    displayTextLevel("MODERATE");
+    u8g2.drawXBM(1, 6, 32, 32, SmileFaceModerate);
     displayColorLevel(0, "yellow");
+    displayTextLevel("MODERATE");
   }
   else if (average < 56)
   {
-    u8g2.drawXBM(0, 1, 32, 32, SmileFaceUnhealthySGroups);
-    displayTextLevel("UNH SEN");
+    u8g2.drawXBM(1, 6, 32, 32, SmileFaceUnhealthySGroups);
     displayColorLevel(0, "orange");
+    displayTextLevel("UNH SEN");
   }
   else if (average < 151)
   {
-    u8g2.drawXBM(0, 1, 32, 32, SmileFaceUnhealthy);
-    displayTextLevel("UNHEALT");
+    u8g2.drawXBM(1, 6, 32, 32, SmileFaceUnhealthy);
     displayColorLevel(0, "  red");
+    displayTextLevel("UNHEALT");
   }
   else if (average < 251)
   {
-    u8g2.drawXBM(0, 1, 32, 32, SmileFaceVeryUnhealthy);
-    displayTextLevel("V UNHEA");
+    u8g2.drawXBM(1, 6, 32, 32, SmileFaceVeryUnhealthy);
     displayColorLevel(0, "violet");
+    displayTextLevel("V UNHEA");
   }
   else
   {
-    u8g2.drawXBM(0, 1, 32, 32, SmileFaceHazardous);
-    displayTextLevel("HAZARD");
+    u8g2.drawXBM(1, 6, 32, 32, SmileFaceHazardous);
     displayColorLevel(0, " brown");
+    displayTextLevel(" HAZARD");
   }
   char output[4];
   sprintf(output, "%03d", average);
@@ -2969,8 +2973,8 @@ void displaySensorData(int pm25, int humi, int temp, int rssi)
   //  Serial.print(output);
 
   u8g2.setFont(u8g2_font_4x6_tf);
-  u8g2.setCursor(51, 0);
-  sprintf(output, "%04d", pm25);
+  u8g2.setCursor(44, 1);
+  sprintf(output, "%04d", pm25);        // PM25 instantaneo fuente pequeña
   u8g2.print(output);
 
   u8g2.setFont(u8g2_font_6x12_tf);

@@ -48,10 +48,10 @@ bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring o
 // Para uso de Bluetooth:
 #define Bluetooth true      // Set to true in case bluetooth is desired
 
-// Solo se define cuando Bluetooth es true, no escoger ninguna o la que corresponda:
-#define Tdisplaydisplay false;
-#define OLED66display false;
-#define OLEDdisplay false;
+// Solo para versión Bluetooth: escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
+#define Tdisplaydisp false
+#define OLED66display false
+#define OLED96display false
 
 // Fin definiciones de Bluetooth
 ////////////////////////////////
@@ -79,9 +79,6 @@ struct MyConfigStruct
 {
 #if Bluetooth
   uint16_t BluetoothTime = 5; // Bluetooth Time
-  //char ConfigValues[10] = "000010121";
-    char ConfigValues[10] = "000010311";
-  //char ConfigValues[10] = "000000000";
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #else
   uint16_t PublicTime = 1;                           // Publication Time
@@ -193,14 +190,16 @@ bool toggleLive;
 int dw = 0; // display width
 int dh = 0; // display height
 
-// if (OLED96 == true)
-// U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
-// else // display via i2c for TTGO_T7 (old D1MINI) board
-
+#if Bluetooth
+#if OLED66display
 U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
-// U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
+#endif
+#if OLED96display
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
+#endif
 
-// U8G2 u8g2;
+U8G2 u8g2;
+#endif
 
 // Display and fonts
 #include <TFT_eSPI.h>
@@ -373,8 +372,20 @@ void setup()
   Serial.println();
   Serial.println("##### Inicializando Medidor Aire Ciudadano #####");
 
-//  Serial.print("eepromConfig.BluetoothTime0: ");
-//  Serial.println(eepromConfig.BluetoothTime);
+#if Bluetooth
+ TDisplay = false;
+ OLED66 = false;
+ OLED96 = false;
+#if Tdisplaydisp
+ TDisplay = true;
+#endif
+#if OLED66display
+ OLED66 = true;
+#endif
+#if OLED96display
+ OLED96 = true;
+#endif
+#endif
 
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
@@ -471,6 +482,13 @@ void setup()
 
   // Initialize and warm up PM25 sensor
   Setup_Sensor();
+
+#if Bluetooth
+
+/////////////NO SE SI SE NECESITA
+
+
+#endif
 
   // Init control loops
   measurements_loop_start = millis();
@@ -1675,9 +1693,10 @@ void Setup_Sensor()
 
   // Test PM2.5 SPS30
 
+#if !Bluetooth
   if (SPS30sen == true)
   {
-
+#endif
     Serial.println("Test Sensirion SPS30 sensor");
     Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
 
@@ -1695,7 +1714,8 @@ void Setup_Sensor()
     {
       Serial.println("Detected SPS30.");
       pm25_sensor = sps30_sensor;
-      // SPS30flag = true;
+      //SPS30enflag = true;
+      SPS30sen = true;
       //  read device info
       GetDeviceInfo();
     }
@@ -1704,14 +1724,16 @@ void Setup_Sensor()
       Serial.println("Measurement started");
     else
       Errorloop((char *)"Could NOT start measurement", 0);
+#if !Bluetooth
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   // Test PM2.5 SEN5X
 
   if (SEN5Xsen == true)
-  {
 
+  {
+#endif
     Serial.println("Test Sensirion SEN5X sensor");
     Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
     delay(10);
@@ -1732,7 +1754,8 @@ void Setup_Sensor()
       // Print SEN55 module information if i2c buffers are large enough
       Serial.println("SEN5X sensor found!");
       pm25_sensor = sen5x_sensor;
-      // SEN5Xflag = true;
+      //SEN5Xflag = true;
+      SEN5Xsen = true;
       printSerialNumber();
       printModuleVersions();
 
@@ -1748,6 +1771,7 @@ void Setup_Sensor()
       else
         Serial.println("SEN5X measurement OK");
     }
+#if !Bluetooth
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1755,7 +1779,7 @@ void Setup_Sensor()
   // PMS7003 PMSA003
   if (PMSsen == true)
   {
-
+#endif
     Serial.println("Test Plantower Sensor");
     Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
     delay(1000);
@@ -1769,17 +1793,20 @@ void Setup_Sensor()
     {
       Serial.println("Plantower sensor found!");
       pm25_sensor = pms_sensor;
-      // PMSflag = true;
+      //PMSflag = true;
+      PMSsen = true;
     }
     else
     {
       Serial.println("Could not find Plantower sensor!");
     }
+
+#if !Bluetooth
   }
 
   if (SHT31sen == true)
   {
-
+#endif
     Serial.print("SHT31 test: ");
     if (!sht31.begin(0x44))
     { // Set to 0x45 for alternate i2c addr
@@ -1788,7 +1815,8 @@ void Setup_Sensor()
     else
     {
       Serial.println("OK");
-      SHT31flag = true;
+      //SHT31flag = true;
+      SHT31sen = true;
     }
 
     Serial.print("Heater Enabled State: ");
@@ -1796,11 +1824,12 @@ void Setup_Sensor()
       Serial.println("ENABLED");
     else
       Serial.println("DISABLED");
+#if !Bluetooth
   }
 
   if (AM2320sen == true)
   {
-
+#endif
     Serial.print("AM2320 test: ");
     am2320.begin();
     humidity = am2320.readHumidity();
@@ -1808,11 +1837,14 @@ void Setup_Sensor()
     if (!isnan(humidity))
     {
       Serial.println("OK");
-      AM2320flag = true;
+      //AM2320flag = true;
+      AM2320sen = true;
     }
     else
       Serial.println("none");
+#if !Bluetooth
   }
+#endif
 }
 
 void Read_Sensor()
@@ -2175,9 +2207,9 @@ void Print_Config()
   Serial.println(eepromConfig.sensor_lat);
   Serial.print("Sensor longitude: ");
   Serial.println(eepromConfig.sensor_lon);
-#endif
   Serial.print("Configuration values: ");
   Serial.println(eepromConfig.ConfigValues);
+#endif
   Serial.println("#######################################");
 }
 
@@ -2396,7 +2428,9 @@ void Get_AireCiudadano_DeviceId()
   }
   chipIdHEX = String(chipId, HEX);
   strncpy(aireciudadano_device_id_endframe, chipIdHEX.c_str(), sizeof(aireciudadano_device_id_endframe));
+#if !Bluetooth
   Aireciudadano_Characteristics();
+#endif
   Serial.printf("ESP32 Chip model = %s Rev %d.\t", ESP.getChipModel(), ESP.getChipRevision());
   Serial.printf("This chip has %d cores and %dMB Flash.\n", ESP.getChipCores(), ESP.getFlashChipSize() / (1024 * 1024));
   Serial.print("AireCiudadano Device ID: ");
@@ -2407,6 +2441,8 @@ void Get_AireCiudadano_DeviceId()
   // aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + aireciudadano_device_id_endframe;
   Serial.println(aireciudadano_device_id);
 }
+
+#if !Bluetooth
 
 void Aireciudadano_Characteristics()
 {
@@ -2541,6 +2577,8 @@ void Aireciudadano_Characteristics()
   // aireciudadano_charac_id = String(IDn, HEX);
   // Serial.println(aireciudadano_charac_id);
 }
+
+#endif
 
 void Read_EEPROM()
 { // Read AireCiudadano device persistent info

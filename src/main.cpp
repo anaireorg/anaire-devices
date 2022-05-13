@@ -59,24 +59,22 @@ char CustomValTotalString[9] = "00000000";
 uint16_t IDn = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "v1.1";
+String sw_version = "1.1";
 String aireciudadano_device_id;
 // String aireciudadano_charac_id;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
 {
-  uint16_t PM25_warning_threshold = 700;             // Warning threshold; default to 700ppm
-  uint16_t PM25_alarm_threshold = 1000;              // Alarm threshold; default to 1000ppm
   uint16_t PublicTime = 1;                           // Publication Time
   uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
   char MQTT_server[30] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
 #if !PreProgSensor
   char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
   char sensor_lon[10] = "0.0"; // Sensor longitude GPS
-    char ConfigValues[10] = "000010121";
-//  char ConfigValues[10] = "000010311";
-//  char ConfigValues[10] = "000000000";
+  char ConfigValues[10] = "000010121";
+  //  char ConfigValues[10] = "000010311";
+  //  char ConfigValues[10] = "000000000";
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #else
   char sensor_lat[10] = "4.69375";   // Aquí colocar la Latitud del sensor
@@ -149,7 +147,7 @@ boolean err_sensor = false;
 unsigned int measurements_loop_duration = 1000; // 1 second
 unsigned long measurements_loop_start;          // holds a timestamp for each control loop start
 
-unsigned int Bluetooth_loop_times = 10; // 5 seconds
+unsigned int Bluetooth_loop_times = 5; // 5 seconds
 unsigned int Con_loop_times = 0;
 
 // MQTT loop: time between MQTT measurements sent to the cloud
@@ -191,24 +189,26 @@ int dh = 0; // display height
 // else // display via i2c for TTGO_T7 (old D1MINI) board
 
 U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
-//U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
+// U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 22, 21);
 
 // U8G2 u8g2;
 
 // Display and fonts
 #include <TFT_eSPI.h>
 #include <SPI.h>
-//#include "SensirionSimple25pt7b.h"
-#include "ArchivoNarrow_Regular10pt7b.h"
+//#include "ArchivoNarrow_Regular10pt7b.h"
 #include "ArchivoNarrow_Regular50pt7b.h"
+#include "ArimoBoldFont16.h"
+#include "ArimoBoldFont20.h"
 #define GFXFF 1
-//#define FF99  &SensirionSimple25pt7b
-#define FF90 &ArchivoNarrow_Regular10pt7b
+//#define FF90 &ArchivoNarrow_Regular10pt7b
+#define FF90 &ArimoBoldFont16
+#define FF92 &ArimoBoldFont20
 #define FF95 &ArchivoNarrow_Regular50pt7b
 TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup.h
 
 // Customized AireCiudadano splash screen
-#include "Icono_AireCiudadano.h"
+#include "Icono_AC_splash.h"
 
 // Buttons: Top and bottom considered when USB connector is positioned on the right of the board
 #include "Button2.h"
@@ -470,8 +470,11 @@ void setup()
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString("Medidor AireCiudadano", tft.width() / 2, tft.height() / 2);
-    delay(1000);
+    tft.drawString("Medidor", tft.width() / 2, (tft.height() / 2) - 30);
+    tft.drawString("AireCiudadano", tft.width() / 2, tft.height() / 2);
+    tft.drawString("ver: " + String(), tft.width() / 2 - 20, (tft.height() / 2) + 30);
+    tft.drawString(sw_version.c_str(), tft.width() / 2 + 20, (tft.height() / 2) + 30);
+    delay(2000);
     // Update display with new values
     Update_Display();
   }
@@ -516,8 +519,6 @@ void loop()
 
     if (PM25_value >= 0) // REVISAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     {
-      // Evaluate PM25 value
-      Evaluate_PM25_Value();
 
       // Update display with new values
       if (TDisplay == true)
@@ -539,24 +540,24 @@ void loop()
 
 #if Bluetooth
 
-    // Bluetooth loop
-    if (Con_loop_times >= Bluetooth_loop_times)
-    {
-      float PM25f;
-      Serial.println(PM25_accumulated);
-      Serial.println(PM25_samples);
-      PM25f = PM25_accumulated / PM25_samples;
-      pm25int = round(PM25f);
-      Serial.println(pm25int);
-      Serial.print("PM25: ");
-      Serial.print(pm25int);
-      ReadHyT();
-//      displaySensorAverage(pm25int);
-      Write_Bluetooth();
-      PM25_accumulated = 0.0;
-      PM25_samples = 0.0;
-      Con_loop_times = 0;
-    }
+  // Bluetooth loop
+  if (Con_loop_times >= Bluetooth_loop_times)
+  {
+    float PM25f;
+    Serial.println(PM25_accumulated);
+    Serial.println(PM25_samples);
+    PM25f = PM25_accumulated / PM25_samples;
+    pm25int = round(PM25f);
+    Serial.println(pm25int);
+    Serial.print("PM25: ");
+    Serial.print(pm25int);
+    ReadHyT();
+    //      displaySensorAverage(pm25int);
+    Write_Bluetooth();
+    PM25_accumulated = 0.0;
+    PM25_samples = 0.0;
+    Con_loop_times = 0;
+  }
 #else
   // MQTT loop
   if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
@@ -641,7 +642,6 @@ void loop()
   Check_WiFi_Server();
 
 #endif
-
 
 // Process bluetooth events
 #if Bluetooth
@@ -1627,15 +1627,6 @@ void displayWifi(int colour_1, int colour_2, boolean active)
 
 #endif
 
-void Interrupt_Restart(Button2 &btn)
-{ // Restarts the device if any button is pressed while calibrating or in captive portal
-  Serial.println("Any button click");
-  if ((InCaptivePortal) || (Calibrating))
-  {
-    ESP.restart();
-  }
-}
-
 void saveParamCallback()
 {
   Serial.println("[CALLBACK] saveParamCallback fired");
@@ -1828,8 +1819,6 @@ void Read_Sensor()
     } while (ret != ERR_OK);
 
     PM25_value = val.MassPM2;
-//    Serial.print("val.MassPM2: ");
-//    Serial.println(val.MassPM2);
 
     if (!err_sensor)
     {
@@ -2056,50 +2045,6 @@ void printSerialNumber()
   }
 }
 
-void Evaluate_PM25_Value()
-{ // Evaluate measured PM25 value against warning and alarm thresholds
-
-  // Status: ok
-  if (PM25_value == 0)
-  {
-    pm25_device_status = pm25_no; // Update PM25 status
-  }
-
-  else if (PM25_value < eepromConfig.PM25_warning_threshold)
-  {
-    pm25_device_status = pm25_ok; // Update PM25 status
-  }
-
-  // Status: warning
-  else if ((PM25_value >= eepromConfig.PM25_warning_threshold) && (PM25_value < eepromConfig.PM25_alarm_threshold))
-  {
-    pm25_device_status = pm25_warning; // update PM25 status
-  }
-
-  // Status: alarm
-  else
-  {
-    pm25_device_status = pm25_alarm; // update PM25 status
-  }
-
-  // Print info on serial monitor
-  switch (pm25_device_status)
-  {
-  case pm25_no:
-    Serial.println("No initialized or connected sensor");
-    break;
-  case pm25_ok:
-    Serial.println("STATUS: PM2.5 level OK");
-    break;
-  case pm25_warning:
-    Serial.println("STATUS: PM2.5 level WARNING");
-    break;
-  case pm25_alarm:
-    Serial.println("STATUS: PM2.5 levelALARM");
-    break;
-  }
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 void ReadHyT()
 {
@@ -2190,10 +2135,6 @@ void Print_Config()
   Serial.println(eepromConfig.aireciudadano_device_name);
   Serial.print("SW version: ");
   Serial.println(sw_version);
-  Serial.print("PM25 Warning threshold: ");
-  Serial.println(eepromConfig.PM25_warning_threshold);
-  Serial.print("PM25 Alarm threshold: ");
-  Serial.println(eepromConfig.PM25_alarm_threshold);
 #if !Bluetooth
   Serial.print("Publication Time: ");
   Serial.println(eepromConfig.PublicTime);
@@ -2223,20 +2164,13 @@ void Button_Init()
 
   // Buttons design:
   //   - Top button short click: info about the device
-  //   - Top button long click: toggles acoustic alarm; enabled by default
-  //   - Top button double click: sleep; click a button to wake up
-  //   - Top button triple click: starts captive portal
+  //   - Top button long click: sleep
   //   - Bottom button short click: buttons usage
-  //   - Bottom button double click: restart device
-  //   - Bottom button triple click: enables auto self calibration
+  //   - Bottom button long click: config device
 
-  // Long clicks: keep pressing more than 1 second
-  button_top.setLongClickTime(1000);
-  button_bottom.setLongClickTime(1000);
-
-  // If any button is pressed run the following function. Intended to interrupt calibration or captive portal and restart the device. Not yet implemented.
-  button_top.setTapHandler(Interrupt_Restart);
-  button_bottom.setTapHandler(Interrupt_Restart);
+  // Long clicks: keep pressing more than 2 second
+  button_top.setLongClickTime(2000);
+  button_bottom.setLongClickTime(2000);
 
   // Top button short click: show info about the device
   button_top.setClickHandler([](Button2 &b)
@@ -2250,11 +2184,14 @@ void Button_Init()
     tft.drawString("ID " + aireciudadano_device_id, 10, 5);         //!!!Arreglar por nuevo tamaño String
     tft.drawString("SW " + sw_version, 10, 21);
 
-#if !Bluetooth
-    tft.drawString("SSID " + String(WiFi.SSID()), 10, 37);
-    tft.drawString("IP " + WiFi.localIP().toString(), 10, 53);
-    tft.drawString("MAC " + String(WiFi.macAddress()), 10, 69);
-    tft.drawString("RSSI " + String(WiFi.RSSI()), 10, 85);
+#if Bluetooth
+    tft.drawString("Bluetooth ver", 10, 37);
+#else
+    tft.drawString("Wifi ver", 10, 37);
+    tft.drawString("SSID " + String(WiFi.SSID()), 10, 53);
+    tft.drawString("IP " + WiFi.localIP().toString(), 10, 69);
+    tft.drawString("MAC " + String(WiFi.macAddress()), 10, 85);
+    tft.drawString("RSSI " + String(WiFi.RSSI()), 10, 101);
 #endif
 
     delay(5000); // keep the info in the display for 5s
@@ -2264,33 +2201,7 @@ void Button_Init()
   button_top.setLongClickDetectedHandler([](Button2 &b)
                                          {
     Serial.println("Top button long click");
-    tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_RED, TFT_WHITE);
-    tft.setTextSize(1);
-    tft.setFreeFont(FF90);
-    tft.setTextDatum(MC_DATUM);
 
-    Write_EEPROM();
-    delay(5000); // keep the info in the display for 5s
-    Update_Display(); });
-
-  // Top button double click: sleep
-  button_top.setDoubleClickHandler([](Button2 &b)
-                                   {
-    Serial.println("Top button double click");
-#if !Bluetooth
-    PortalFlag = true;
-    Start_Captive_Portal();
-#else
-    Serial.println("No function");
-#endif
-     });
-
-
-  // Top button triple click: launch captive portal to configure WiFi and MQTT sleep
-  button_top.setTripleClickHandler([](Button2 &b)
-                                   {
-    Serial.println("Top button triple click");
     Suspend_Device(); });
 
   // Bottom button short click: show buttons info
@@ -2302,74 +2213,59 @@ void Button_Init()
     tft.setTextDatum(TL_DATUM); // top left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
-    tft.drawString("Arriba Corto: Status", 10, 5);
-    tft.drawString("  Largo: Alarma", 10, 21);
-    tft.drawString("  Doble: Dormir", 10, 37);
-    tft.drawString("  Triple: Config Portal", 10, 53);
-    tft.drawString("Abajo Corto: Info", 10, 69);
-    tft.drawString("  Largo: Calibrar", 10, 85);
-    tft.drawString("  Doble: Reiniciar", 10, 101);
-//    tft.drawString("  Triple: Autocalibración", 10, 117);
+    tft.drawString("Der Corto: Info", 3, 5);
+    tft.drawString(" Largo: Dormir", 3, 21);
+    tft.drawString("Izq Corto:Menu", 3, 69);
+    tft.drawString(" Largo: Tiempo", 3, 85);
     delay(5000);
     Update_Display(); });
 
   // Bottom button long click: deactivate self calibration and perform sensor forced recalibration
   button_bottom.setLongClickDetectedHandler([](Button2 &b)
                                             {
-                                              Serial.println("Bottom button long click");
-//                                              eepromConfig.self_calibration = false;
-                                              tft.fillScreen(TFT_WHITE);
-                                              tft.setTextColor(TFT_RED, TFT_WHITE);
-                                              tft.setTextSize(1);
-                                              tft.setFreeFont(FF90);
-                                              tft.setTextDatum(MC_DATUM);
-//                                              tft.drawString("CALIBRACION: FORZADA", tft.width() / 2, tft.height() / 2);
-                                              delay(1000);
-//                                              Set_AutoSelfCalibration();
-//                                              Do_Calibrate_Sensor();
-                                              Write_EEPROM(); });
-
-  // Bottom button double click: restart
-  button_bottom.setDoubleClickHandler([](Button2 &b)
-                                      {
-    Serial.println("Bottom button double click");
+    Serial.println("Bottom button long click");
     tft.fillScreen(TFT_WHITE);
     tft.setTextColor(TFT_RED, TFT_WHITE);
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString("REINICIO", tft.width()/2, tft.height()/2);
+    tft.drawString("Tiempo eval:", tft.width() / 2, tft.height() / 2 - 15);
+    tft.drawString(String(Bluetooth_loop_times) + " seg", tft.width() / 2, tft.height() / 2 + 15);
     delay(1000);
-    ESP.restart(); });
-
-  // Bottom button triple click: activate sensor self calibration
-  button_bottom.setTripleClickHandler([](Button2 &b)
-                                      {
-//    Serial.println("Bottom button triple click");
-//    eepromConfig.self_calibration = true;
-    tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_RED, TFT_WHITE);
-    tft.setTextSize(1);
-    tft.setFreeFont(FF90);
-    tft.setTextDatum(MC_DATUM);
-//    tft.drawString("CALIBRACION: AUTO", tft.width()/2, tft.height()/2);
-    delay(1000);
-//    Set_AutoSelfCalibration(); 
-    Write_EEPROM();
-    Update_Display(); });
+    
+    while (digitalRead(BUTTON_BOTTOM) == false){
+      if (Bluetooth_loop_times == 2)
+         Bluetooth_loop_times = 5;
+      else if (Bluetooth_loop_times == 5)
+         Bluetooth_loop_times = 10;
+      else if (Bluetooth_loop_times == 10)
+         Bluetooth_loop_times = 30;
+      else if (Bluetooth_loop_times == 30)
+         Bluetooth_loop_times = 60;
+      else if (Bluetooth_loop_times == 60)
+         Bluetooth_loop_times = 120;
+      else if (Bluetooth_loop_times == 120)
+         Bluetooth_loop_times = 300;
+      else
+         Bluetooth_loop_times = 2;
+      tft.drawString("                    ", tft.width() / 2, tft.height() / 2 + 15);
+      tft.drawString(String(Bluetooth_loop_times) + " seg", tft.width() / 2, tft.height() / 2 + 15);
+      delay(1000);
+    }
+      tft.drawString(String(Bluetooth_loop_times) + " seg", tft.width() / 2, tft.height() / 2 + 15); });
+      delay(1000);
 }
 
 void Display_Init()
 { // TTGO T-Display init
   tft.init();
-  //tft.setRotation(1); ///////////////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  tft.setRotation(0); ///////////////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  tft.setRotation(0);
 }
 
 void Display_Splash_Screen()
 { // Display AireCiudadano splash screen
   tft.setSwapBytes(true);
-  tft.pushImage(0, 0, 240, 135, Icono_AireCiudadano);
+  tft.pushImage(0, 0, 135, 240, Icono_AC_splash);
 }
 
 void Update_Display()
@@ -2378,60 +2274,8 @@ void Update_Display()
   tft.setTextDatum(TL_DATUM); // top left
 
   // Set screen and text colours based on PM25 value
-  if (pm25_device_status == pm25_ok)
-  {
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextColor(TFT_GREEN, TFT_BLACK);
-#if !Bluetooth
-    displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
-#endif
 
-#if Bluetooth
-    displayBatteryLevel(TFT_GREEN);
-#endif
-  }
-
-  else if (pm25_device_status == pm25_warning)
-  {
-    tft.fillScreen(TFT_YELLOW);
-    tft.setTextColor(TFT_RED, TFT_YELLOW);
-    delay(50);
-#if !Bluetooth
-    displayWifi(TFT_RED, TFT_YELLOW, (WiFi.status() == WL_CONNECTED));
-#endif
-
-#if Bluetooth
-    displayBatteryLevel(TFT_RED);
-#endif
-  }
-
-  else if (pm25_device_status == pm25_alarm)
-  {
-    tft.fillScreen(TFT_RED);
-    tft.setTextColor(TFT_WHITE, TFT_RED);
-#if !Bluetooth
-    displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
-    //    displayBuzzer(TFT_WHITE, eepromConfig.acoustic_alarm);
-#else
-    displayBatteryLevel(TFT_WHITE);
-#endif
-  }
-
-  // Draw PM25 number
-  tft.setTextSize(1);
-  tft.setFreeFont(FF95);
-  tft.drawString(String(round(PM25_value), 0), 60, 30);
-
-  // Draw PM25 units
-  tft.setTextSize(1);
-  tft.setFreeFont(FF90);
-  tft.drawString("PPM", 200, 115);
-
-  // Draw temperature
-  tft.drawString(String(temperature, 1) + "C", 80, 115);
-
-  // Draw humidity
-  tft.drawString(String(humidity, 1) + "%", 140, 115);
+  displayAverage(pm25int);
 
   // Draw bluetooth device id
 #if Bluetooth
@@ -2443,7 +2287,7 @@ void Update_Display()
 void UpdateOLED()
 {
 
-//  Serial.println("Sensor Read Update OLED");
+  //  Serial.println("Sensor Read Update OLED");
 
   pageStart();
   displaySensorAverage(pm25int);
@@ -2452,7 +2296,7 @@ void UpdateOLED()
 #else
   displaySensorData(round(PM25_value), humi, temp, 0);
 #endif
-//  u8g2.drawBitmap(dw - 15, dh - 8, 1, 8, Icono_bt_on);
+  //  u8g2.drawBitmap(dw - 15, dh - 8, 1, 8, Icono_bt_on);
   if (toggleLive)
     u8g2.drawBitmap(dw - 18, dh - 8, 1, 8, Icono_bt_on);
   toggleLive = !toggleLive;
@@ -2677,51 +2521,53 @@ void displayBatteryLevel(int colour)
   // If battery voltage is up 4.5 then external power supply is working and battery is charging
   if (battery_voltage > USB_Voltage)
   {
-    tft.drawRect(5, 110, 30, 18, colour);
-    // tft.fillRect(35, 113, 5, 9, colour);
-    tft.fillRect(35, 114, 5, 9, colour);
-    tft.fillRect(7, 112, 5, 14, colour);
-    // delay(2500);
-    tft.fillRect(14, 112, 5, 14, colour);
-    // delay(2500);
-    tft.fillRect(21, 112, 5, 14, colour);
-    // delay(2500);
-    tft.fillRect(28, 112, 5, 14, colour);
+    tft.drawRect(3, 216, 34, 22, colour);
+    tft.drawRect(4, 217, 32, 20, colour);
+    tft.fillRect(35, 223, 5, 8, colour);
+    tft.fillRect(7, 220, 5, 14, colour);
+    tft.fillRect(14, 220, 5, 14, colour);
+    tft.fillRect(21, 220, 5, 14, colour);
+    tft.fillRect(28, 220, 5, 14, colour);
   }
   else if (battery_voltage >= Voltage_Threshold_1)
   {
-    tft.drawRect(5, 110, 30, 18, colour);
-    tft.fillRect(35, 113, 5, 9, colour);
-    tft.fillRect(7, 112, 5, 14, colour);
-    tft.fillRect(14, 112, 5, 14, colour);
-    tft.fillRect(21, 112, 5, 14, colour);
-    tft.fillRect(28, 112, 5, 14, colour);
+    tft.drawRect(5, 218, 30, 18, colour);
+    tft.drawRect(4, 217, 32, 20, colour);
+    tft.fillRect(35, 223, 5, 8, colour);
+    tft.fillRect(7, 220, 5, 14, colour);
+    tft.fillRect(14, 220, 5, 14, colour);
+    tft.fillRect(21, 220, 5, 14, colour);
+    tft.fillRect(28, 220, 5, 14, colour);
   }
   else if (battery_voltage >= Voltage_Threshold_2)
   {
-    tft.drawRect(5, 110, 30, 18, colour);
-    tft.fillRect(35, 113, 5, 9, colour);
-    tft.fillRect(7, 112, 5, 14, colour);
-    tft.fillRect(14, 112, 5, 14, colour);
-    tft.fillRect(21, 112, 5, 14, colour);
+    tft.drawRect(5, 218, 30, 18, colour);
+    tft.drawRect(4, 217, 32, 20, colour);
+    tft.fillRect(35, 223, 5, 8, colour);
+    tft.fillRect(7, 220, 5, 14, colour);
+    tft.fillRect(14, 220, 5, 14, colour);
+    tft.fillRect(21, 220, 5, 14, colour);
   }
   else if (battery_voltage >= Voltage_Threshold_3)
   {
-    tft.drawRect(5, 110, 30, 18, colour);
-    tft.fillRect(35, 113, 5, 9, colour);
-    tft.fillRect(7, 112, 5, 14, colour);
-    tft.fillRect(14, 112, 5, 14, colour);
+    tft.drawRect(5, 218, 30, 18, colour);
+    tft.drawRect(4, 217, 32, 20, colour);
+    tft.fillRect(35, 223, 5, 8, colour);
+    tft.fillRect(7, 220, 5, 14, colour);
+    tft.fillRect(14, 220, 5, 14, colour);
   }
   else if (battery_voltage >= Voltage_Threshold_4)
   {
-    tft.drawRect(5, 110, 30, 18, colour);
-    tft.fillRect(35, 113, 5, 9, colour);
-    tft.fillRect(7, 112, 5, 14, colour);
+    tft.drawRect(5, 218, 30, 18, colour);
+    tft.drawRect(4, 217, 32, 20, colour);
+    tft.fillRect(35, 223, 5, 8, colour);
+    tft.fillRect(7, 220, 5, 14, colour);
   }
   else
   {
-    tft.drawRect(5, 110, 30, 18, colour);
-    tft.fillRect(35, 113, 5, 9, colour);
+    tft.drawRect(5, 218, 30, 18, colour);
+    tft.drawRect(4, 217, 32, 20, colour);
+    tft.fillRect(35, 223, 5, 8, colour);
 
     // Measurements are not trustable with this battery level
     Serial.println("Battery level too low");
@@ -2731,7 +2577,7 @@ void displayBatteryLevel(int colour)
 
 void Suspend_Device()
 {
-  Serial.println("Presione un boton para despertar");
+  Serial.println("Presiona un boton para despertar");
   // Off sensors
   digitalWrite(OUT_EN, LOW); // step-up off
 
@@ -2741,7 +2587,8 @@ void Suspend_Device()
     tft.fillScreen(TFT_BLACK);
     tft.setTextColor(TFT_GREEN, TFT_BLACK);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString(" Presione un boton para despertar", tft.width() / 2, tft.height() / 2);
+    tft.drawString("Presiona boton", tft.width() / 2, tft.height() / 2 - 15);
+    tft.drawString("para despertar", tft.width() / 2, tft.height() / 2 + 15);
     espDelay(3000);
     // digitalWrite(TFT_BL, !r);
     tft.writecommand(TFT_DISPOFF);
@@ -2844,11 +2691,7 @@ void showWelcome()
   u8g2.sendBuffer();
   u8g2.drawStr(0, 9, "ver: ");
   u8g2.sendBuffer();
-  // String version = String(VERSION_CODE + VCODE);
-  String version = String(VCODE);
-  //  u8g2.setFont(u8g2_font_4x6_tf);
-  u8g2.drawStr(22, 9, version.c_str());
-  //  u8g2.drawLine(0, 20, 63, 20);
+  u8g2.drawStr(22, 9, sw_version.c_str());
   u8g2.sendBuffer();
   lastDrawedLine = 10;
   Serial.println("OLED display ready");
@@ -2919,6 +2762,124 @@ void displayColorLevel(int cursor, String msg)
   u8g2.print(msg);
 }
 
+void displayAverage(int average)
+{
+  tft.setTextSize(1);
+
+  if (average < 13)
+  {
+
+    tft.fillScreen(TFT_GREEN);
+    tft.setTextColor(TFT_BLACK, TFT_GREEN);
+#if !Bluetooth
+    displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
+#endif
+
+#if Bluetooth
+    displayBatteryLevel(TFT_BLACK);
+#endif
+    tft.drawXBitmap(27, 10, SmileFaceGoodBig, 80, 80, TFT_BLACK);
+    tft.setFreeFont(FF92);
+    tft.drawString("GOOD", 34, 97);
+  }
+  else if (average < 36)
+  {
+
+    tft.fillScreen(TFT_YELLOW);
+    tft.setTextColor(TFT_BLACK, TFT_YELLOW);
+    delay(50);
+#if !Bluetooth
+    displayWifi(TFT_RED, TFT_YELLOW, (WiFi.status() == WL_CONNECTED));
+#endif
+
+#if Bluetooth
+    displayBatteryLevel(TFT_BLACK);
+#endif
+    tft.drawXBitmap(27, 10, SmileFaceModerateBig, 80, 80, TFT_BLACK);
+    tft.setFreeFont(FF90);
+    tft.drawString("MODERATE", 18, 97);
+  }
+  else if (average < 56)
+  {
+
+    tft.fillScreen(TFT_ORANGE);
+    tft.setTextColor(TFT_BLACK, TFT_ORANGE);
+#if !Bluetooth
+    displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
+#else
+    displayBatteryLevel(TFT_BLACK);
+#endif
+    tft.drawXBitmap(27, 10, SmileFaceUnhealthySGroupsBig, 80, 80, TFT_BLACK);
+    tft.setFreeFont(FF90);
+    tft.drawString("UNHEALT SEN", 5, 97);
+  }
+  else if (average < 151)
+  {
+
+    tft.fillScreen(TFT_RED);
+    tft.setTextColor(TFT_WHITE, TFT_RED);
+#if !Bluetooth
+    displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
+#else
+    displayBatteryLevel(TFT_WHITE);
+#endif
+    tft.drawXBitmap(27, 10, SmileFaceUnhealthyBig, 80, 80, TFT_WHITE);
+    tft.setFreeFont(FF90);
+    tft.drawString("UNHEALTHY", 13, 97);
+  }
+  else if (average < 251)
+  {
+    tft.fillScreen(TFT_VIOLET);
+    tft.setTextColor(TFT_WHITE, TFT_VIOLET);
+#if !Bluetooth
+    displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
+#else
+    displayBatteryLevel(TFT_WHITE);
+#endif
+    tft.drawXBitmap(27, 10, SmileFaceVeryUnhealthyBig, 80, 80, TFT_WHITE);
+    tft.setFreeFont(FF90);
+    tft.drawString("VERY UNHEAL", 5, 97);
+  }
+  else
+  {
+    tft.fillScreen(TFT_BROWN);
+    tft.setTextColor(TFT_WHITE, TFT_BROWN);
+#if !Bluetooth
+    displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
+#else
+    displayBatteryLevel(TFT_WHITE);
+#endif
+    tft.drawXBitmap(27, 10, SmileFaceHazardousBig, 80, 80, TFT_WHITE);
+    tft.setFreeFont(FF90);
+    tft.drawString("HAZARDOUS", 13, 97);
+  }
+
+  // Draw PM25 number
+  tft.setTextSize(1);
+  tft.setFreeFont(FF95);
+  // uint16_t PM25round = 0;
+  // PM25round = round(PM25_value);
+
+  if (average < 10)
+    tft.drawString(String(average), 45, 116);
+  else if (average < 100)
+    tft.drawString(String(average), 21, 116);
+  else
+    tft.drawString(String(average), 0, 116);
+
+  // Draw PM25 units
+  tft.setTextSize(1);
+  tft.setFreeFont(FF90);
+  tft.drawString("PM2.5: ", 22, 197);
+  tft.drawString(String(round(PM25_value), 0), 87, 198);
+
+  // Draw temperature
+  tft.drawString(String(temp) + "C", 52, 220);
+
+  // Draw humidity
+  tft.drawString(String(humi) + "%", 92, 220);
+}
+
 void displaySensorAverage(int average)
 {
   if (average < 13)
@@ -2974,7 +2935,7 @@ void displaySensorData(int pm25, int humi, int temp, int rssi)
 
   u8g2.setFont(u8g2_font_4x6_tf);
   u8g2.setCursor(44, 1);
-  sprintf(output, "%04d", pm25);        // PM25 instantaneo fuente pequeña
+  sprintf(output, "%04d", pm25); // PM25 instantaneo fuente pequeña
   u8g2.print(output);
 
   u8g2.setFont(u8g2_font_6x12_tf);
@@ -2998,7 +2959,6 @@ void displaySensorData(int pm25, int humi, int temp, int rssi)
     //    pageEnd();
   }
 #endif
-
 }
 
 void pageStart()

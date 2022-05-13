@@ -55,6 +55,7 @@ String getParam(String name);
   void displayEmoticonLabel(int numsmle, String msg);
   void displayTextLevel(String msg);
   void displayColorLevel(int cursor, String msg);
+  void displayAverage(int average);
   void displaySensorAverage(int average);
   void displaySensorData(int pm25, int humi, int temp, int rssi);
   void displayLiveIcon();  

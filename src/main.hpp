@@ -10,6 +10,8 @@ void Init_MQTT();
 void Setup_Sensor();
 void Update_Display();
 void UpdateOLED();
+void TimeConfig();
+void FlashBluetoothTime();
 void Read_Sensor();
 void Evaluate_PM25_Value();
 void Send_Message_Cloud_App_MQTT();

@@ -32,6 +32,29 @@
 #include <Arduino.h>
 #include "main.hpp"
 
+////////////////////////////////
+// Obligatorio para version Bluetooth:
+#define Bluetooth true // Set to true in case bluetooth is desired
+
+// Solo para versión Bluetooth: escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
+#define Tdisplaydisp true
+#define OLED66display false
+#define OLED96display false
+
+// Fin definiciones de Bluetooth
+////////////////////////////////
+
+// Definiciones opcionales para version Wifi
+#define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
+#define WPA2 false          // Colocar en true para redes con WPA2
+#define PreProgSensor false // Variables de sensor preprogramadas:
+                            // Latitude: char sensor_lat[10] = "xx.xxxx";
+                            // Longitude: char sensor_lon[10] = "xx.xxxx";
+                            // Valores de configuración: char ConfigValues[9] = "000xxxxx";
+                            // Nombre estación: char aireciudadano_device_name[36] = "xxxxxxxxxxxxxx";
+
+// Fin definiciones opcionales Wifi
+
 bool SPS30sen = false;      // Sensor Sensirion SPS30
 bool SEN5Xsen = false;      // Sensor Sensirion SEN5X
 bool PMSsen = false;        // Sensor Plantower PMS
@@ -43,26 +66,6 @@ bool OLED66 = false;        // Set to true if you use a OLED Diplay 0.66 inch 64
 bool OLED96 = false;        // Set to true if you use a OLED Diplay 0.96 inch 128x64
 bool ExtAnt = false;        // External antenna
 bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring outside environment, false if is outdoors
-
-////////////////////////////////
-// Para uso de Bluetooth:
-#define Bluetooth true      // Set to true in case bluetooth is desired
-
-// Solo para versión Bluetooth: escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
-#define Tdisplaydisp false
-#define OLED66display false
-#define OLED96display false
-
-// Fin definiciones de Bluetooth
-////////////////////////////////
-
-#define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define WPA2 false          // Colocar en true para redes con WPA2
-#define PreProgSensor false // Variables de sensor preprogramadas:
-                            // Latitude: char sensor_lat[10] = "xx.xxxx";
-                            // Longitude: char sensor_lon[10] = "xx.xxxx";
-                            // Valores de configuración: char ConfigValues[9] = "000xxxxx";
-                            // Nombre estación: char aireciudadano_device_name[36] = "xxxxxxxxxxxxxx";
 
 uint8_t CustomValue = 0;
 uint16_t CustomValtotal = 0;
@@ -78,7 +81,7 @@ String aireciudadano_device_id;
 struct MyConfigStruct
 {
 #if Bluetooth
-  uint16_t BluetoothTime = 5; // Bluetooth Time
+  uint16_t BluetoothTime = 5;         // Bluetooth Time
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #else
   uint16_t PublicTime = 1;                           // Publication Time
@@ -133,15 +136,14 @@ int humi;
 float latitudef = 0.0;
 float longitudef = 0.0;
 
-// PM25 sensors
-enum PM25_sensors
-{
-  none,
-  sen5x_sensor,
-  sps30_sensor,
-  pms_sensor
-}; // possible sensors integrated in the SW
-PM25_sensors pm25_sensor = none;
+// enum PM25_sensors
+//{
+//  none,
+//  sen5x_sensor,
+//  sps30_sensor,
+//  pms_sensor
+//}; // possible sensors integrated in the SW
+// PM25_sensors pm25_sensor = none;
 
 // device status
 boolean err_global = false;
@@ -193,12 +195,11 @@ int dh = 0; // display height
 #if Bluetooth
 #if OLED66display
 U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
-#endif
-#if OLED96display
+#elif OLED96display
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
-#endif
-
+#else
 U8G2 u8g2;
+#endif
 #endif
 
 // Display and fonts
@@ -373,17 +374,17 @@ void setup()
   Serial.println("##### Inicializando Medidor Aire Ciudadano #####");
 
 #if Bluetooth
- TDisplay = false;
- OLED66 = false;
- OLED96 = false;
+  TDisplay = false;
+  OLED66 = false;
+  OLED96 = false;
 #if Tdisplaydisp
- TDisplay = true;
+  TDisplay = true;
 #endif
 #if OLED66display
- OLED66 = true;
+  OLED66 = true;
 #endif
 #if OLED96display
- OLED96 = true;
+  OLED96 = true;
 #endif
 #endif
 
@@ -402,8 +403,8 @@ void setup()
   Serial.println(eepromConfig.aireciudadano_device_name);
 #endif
 
-//  Serial.print("eepromConfig.BluetoothTime01: ");
-//  Serial.println(eepromConfig.BluetoothTime);
+  //  Serial.print("eepromConfig.BluetoothTime01: ");
+  //  Serial.println(eepromConfig.BluetoothTime);
 
   aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
 
@@ -483,13 +484,6 @@ void setup()
   // Initialize and warm up PM25 sensor
   Setup_Sensor();
 
-#if Bluetooth
-
-/////////////NO SE SI SE NECESITA
-
-
-#endif
-
   // Init control loops
   measurements_loop_start = millis();
   errors_loop_start = millis();
@@ -525,8 +519,8 @@ void setup()
     pageEnd();
   }
   delay(1000);
-//  Serial.print("eepromConfig.BluetoothTime1: ");
-//  Serial.println(eepromConfig.BluetoothTime);
+  //  Serial.print("eepromConfig.BluetoothTime1: ");
+  //  Serial.println(eepromConfig.BluetoothTime);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -579,10 +573,10 @@ void loop()
 #if Bluetooth
 
   // Bluetooth loop
-//  Serial.print("Con_loop_times: ");
-//  Serial.println(Con_loop_times);
-//  Serial.print("eepromConfig.BluetoothTime: ");
-//  Serial.println(eepromConfig.BluetoothTime);
+  //  Serial.print("Con_loop_times: ");
+  //  Serial.println(Con_loop_times);
+  //  Serial.print("eepromConfig.BluetoothTime: ");
+  //  Serial.println(eepromConfig.BluetoothTime);
 
   if (Con_loop_times >= eepromConfig.BluetoothTime)
   {
@@ -597,6 +591,7 @@ void loop()
     ///// END DEBUG Samples
     Serial.print("PM25: ");
     Serial.print(pm25int);
+    Serial.print("   ");
     ReadHyT();
     Write_Bluetooth();
     PM25_accumulated = 0.0;
@@ -1712,18 +1707,17 @@ void Setup_Sensor()
       Errorloop((char *)"could not probe / connect with SPS30.", 0);
     else
     {
-      Serial.println("Detected SPS30.");
-      pm25_sensor = sps30_sensor;
-      //SPS30enflag = true;
-      SPS30sen = true;
-      //  read device info
+      Serial.println("Detected I2C Sensirion Sensor");
       GetDeviceInfo();
     }
-    // start measurement
-    if (sps30.start())
-      Serial.println("Measurement started");
-    else
-      Errorloop((char *)"Could NOT start measurement", 0);
+    if (SPS30sen == true)
+    {
+      // start measurement
+      if (sps30.start())
+        Serial.println("Measurement started");
+      else
+        Errorloop((char *)"Could NOT start measurement", 0);
+    }
 #if !Bluetooth
   }
 
@@ -1734,51 +1728,55 @@ void Setup_Sensor()
 
   {
 #endif
-    Serial.println("Test Sensirion SEN5X sensor");
-    Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
-    delay(10);
-    sen5x.begin(Wire);
-    delay(10);
-
-    uint16_t error;
-    char errorMessage[256];
-    error = sen5x.deviceReset();
-    if (error)
+#if Bluetooth
+    if (SPS30sen == false)
     {
-      Serial.print("Error trying to execute deviceReset(): ");
-      errorToString(error, errorMessage, 256);
-      Serial.println(errorMessage);
-    }
-    else
-    {
-      // Print SEN55 module information if i2c buffers are large enough
-      Serial.println("SEN5X sensor found!");
-      pm25_sensor = sen5x_sensor;
-      //SEN5Xflag = true;
-      SEN5Xsen = true;
-      printSerialNumber();
-      printModuleVersions();
+#endif
+      Serial.println("Test Sensirion SEN5X sensor");
+      Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
+      delay(10);
+      sen5x.begin(Wire);
+      delay(10);
 
-      // Start Measurement
-      error = sen5x.startMeasurement();
+      uint16_t error;
+      char errorMessage[256];
+      error = sen5x.deviceReset();
       if (error)
       {
-        Serial.print("Error trying to execute startMeasurement(): ");
+        Serial.print("Error trying to execute deviceReset(): ");
         errorToString(error, errorMessage, 256);
         Serial.println(errorMessage);
-        // ESP.restart();
       }
       else
-        Serial.println("SEN5X measurement OK");
+      {
+        // Print SEN55 module information if i2c buffers are large enough
+        Serial.println("SEN5X sensor found!");
+        SEN5Xsen = true;
+        printSerialNumber();
+        printModuleVersions();
+
+        // Start Measurement
+        error = sen5x.startMeasurement();
+        if (error)
+        {
+          Serial.print("Error trying to execute startMeasurement(): ");
+          errorToString(error, errorMessage, 256);
+          Serial.println(errorMessage);
+          // ESP.restart();
+        }
+        else
+          Serial.println("SEN5X measurement OK");
+      }
+#if Bluetooth
     }
-#if !Bluetooth
-  }
+#else
+}
 
-  ///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 
-  // PMS7003 PMSA003
-  if (PMSsen == true)
-  {
+// PMS7003 PMSA003
+if (PMSsen == true)
+{
 #endif
     Serial.println("Test Plantower Sensor");
     Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
@@ -1792,8 +1790,6 @@ void Setup_Sensor()
     if (pms.readUntil(data))
     {
       Serial.println("Plantower sensor found!");
-      pm25_sensor = pms_sensor;
-      //PMSflag = true;
       PMSsen = true;
     }
     else
@@ -1815,7 +1811,6 @@ void Setup_Sensor()
     else
     {
       Serial.println("OK");
-      //SHT31flag = true;
       SHT31sen = true;
     }
 
@@ -1837,7 +1832,6 @@ void Setup_Sensor()
     if (!isnan(humidity))
     {
       Serial.println("OK");
-      //AM2320flag = true;
       AM2320sen = true;
     }
     else
@@ -1979,11 +1973,28 @@ void GetDeviceInfo()
   ret = sps30.GetProductName(buf, 32);
   if (ret == ERR_OK)
   {
-    Serial.print("Product name  : ");
-    if (strlen(buf) > 0)
-      Serial.println(buf);
+    Serial.print("Product name  : "); //     !!!!!!!!!!!!!!!!!!debe compararse con “00080000”
+
+    if (buf[7] == '0')
+      if (buf[6] == '0')
+        if (buf[5] == '0')
+          if (buf[4] == '0')
+            if (buf[3] == '8')
+            {
+              Serial.println(buf);
+              Serial.println("Detected SPS30");
+              SPS30sen = true;
+            }
+            else
+              NotAvailableSPS30();
+          else
+            NotAvailableSPS30();
+        else
+          NotAvailableSPS30();
+      else
+        NotAvailableSPS30();
     else
-      Serial.println("not available");
+      NotAvailableSPS30();
   }
   else
     ErrtoMess((char *)"could not get product name. ", ret);
@@ -1994,15 +2005,25 @@ void GetDeviceInfo()
     Serial.println("Can not read version info.");
     return;
   }
-  Serial.print("Firmware level: ");
-  Serial.print(v.major);
-  Serial.print(".");
-  Serial.println(v.minor);
 
-  Serial.print("Library level : ");
-  Serial.print(v.DRV_major);
-  Serial.print(".");
-  Serial.println(v.DRV_minor);
+  if (SPS30sen == true)
+  {
+    Serial.print("Firmware level: ");
+    Serial.print(v.major);
+    Serial.print(".");
+    Serial.println(v.minor);
+
+    Serial.print("Library level : ");
+    Serial.print(v.DRV_major);
+    Serial.print(".");
+    Serial.println(v.DRV_minor);
+  }
+}
+
+void NotAvailableSPS30()
+{
+  Serial.println("NO SPS30");
+  SPS30sen = false;
 }
 
 void Errorloop(char *mess, uint8_t r)
@@ -2046,7 +2067,7 @@ void printModuleVersions()
   }
   else
   {
-    Serial.print("ProductName:");
+    Serial.print("ProductName: ");
     Serial.println((char *)productName);
   }
 
@@ -2098,7 +2119,7 @@ void printSerialNumber()
   }
   else
   {
-    Serial.print("SerialNumber:");
+    Serial.print("SerialNumber: ");
     Serial.println((char *)serialNumber);
   }
 }
@@ -2117,7 +2138,7 @@ void ReadHyT()
     if (!isnan(humidity))
     { // check if 'is not a number'
       failh = 0;
-      Serial.print("   SHT31 Humi % = ");
+      Serial.print("SHT31 Humi % = ");
       Serial.print(humidity);
       humi = round(humidity);
     }
@@ -2154,7 +2175,7 @@ void ReadHyT()
     if (!isnan(humidity))
     {
       failh = 0;
-      Serial.print("   AM2320 Humi % = ");
+      Serial.print("AM2320 Humi % = ");
       Serial.print(humidity);
       humi = round(humidity);
     }
@@ -2317,7 +2338,7 @@ void Button_Init()
     }
       tft.drawString(String(Bluetooth_loop_time) + " seg", tft.width() / 2, tft.height() / 2 + 15);
       delay(1000);
-      FlashBluetoothTime(); });           ///////////////////TEST ERROR 
+      FlashBluetoothTime(); });
 }
 
 void Display_Init()
@@ -2991,11 +3012,16 @@ void displayAverage(int average)
   tft.drawString("PM2.5: ", 22, 197);
   tft.drawString(String(round(PM25_value), 0), 87, 198);
 
-  // Draw temperature
-  tft.drawString(String(temp) + "C", 52, 220);
+  if (temp != 0 || humi != 0)
+  {
+    // Draw temperature
+    tft.drawString(String(temp) + "C", 52, 220);
 
-  // Draw humidity
-  tft.drawString(String(humi) + "%", 92, 220);
+    // Draw humidity
+    tft.drawString(String(humi) + "%", 92, 220);
+  }
+  else
+    tft.drawString("ug/m3", 72, 218);
 }
 
 void displaySensorAverage(int average)

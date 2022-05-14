@@ -35,6 +35,7 @@ void saveParamCallback();
 void ErrtoMess(char *mess, uint8_t r);
 void Errorloop(char *mess, uint8_t r);
 void GetDeviceInfo();
+void NotAvailableSPS30();
 void printSerialNumber();
 void printModuleVersions();
 void ReadHyT();

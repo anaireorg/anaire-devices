@@ -20,6 +20,28 @@ static const unsigned char PROGMEM Icono_sensor_live[] = {
     B00000000,
 };
 
+static const unsigned char PROGMEM Icono_wifi_on[] = {
+    B00000000,
+    B00011000,
+    B00111100,
+    B01000010,
+    B10011001,
+    B00100100,
+    B01000010,
+    B00011000,
+};
+
+static const unsigned char PROGMEM Icono_data_on[] = {
+    B00000000,
+    B01100110,
+    B11110110,
+    B01100110,
+    B01100110,
+    B01101111,
+    B01100110,
+    B00000000,
+};
+
 static unsigned char SmileFaceGood[] = {                                     //32x32
   0x00, 0xf0, 0x0f, 0x00, 0x00, 0x0e, 0x70, 0x00, 0x00, 0x01, 0x80, 0x00,
   0xc0, 0x00, 0x00, 0x03, 0x20, 0x00, 0x00, 0x04, 0x10, 0x00, 0x00, 0x08,

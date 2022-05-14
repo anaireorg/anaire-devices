@@ -34,11 +34,11 @@
 
 ////////////////////////////////
 // Obligatorio para version Bluetooth:
-#define Bluetooth true // Set to true in case bluetooth is desired
+#define Bluetooth false // Set to true in case bluetooth is desired
 
 // Solo para versión Bluetooth: escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
-#define Tdisplaydisp true
-#define OLED66display false
+#define Tdisplaydisp false
+#define OLED66display true
 #define OLED96display false
 
 // Fin definiciones de Bluetooth
@@ -90,7 +90,7 @@ struct MyConfigStruct
 #if !PreProgSensor
   char sensor_lat[10] = "0.0";                       // Sensor latitude  GPS
   char sensor_lon[10] = "0.0";                       // Sensor longitude GPS
-  char ConfigValues[10] = "000010121";
+  char ConfigValues[10] = "000000000";
   //  char ConfigValues[10] = "000010311";
   //  char ConfigValues[10] = "000000000";
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
@@ -192,7 +192,7 @@ bool toggleLive;
 int dw = 0; // display width
 int dh = 0; // display height
 
-#if Bluetooth
+//#if Bluetooth
 #if OLED66display
 U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
 #elif OLED96display
@@ -200,7 +200,7 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, 
 #else
 U8G2 u8g2;
 #endif
-#endif
+//#endif
 
 // Display and fonts
 #include <TFT_eSPI.h>
@@ -403,13 +403,25 @@ void setup()
   Serial.println(eepromConfig.aireciudadano_device_name);
 #endif
 
-  //  Serial.print("eepromConfig.BluetoothTime01: ");
-  //  Serial.println(eepromConfig.BluetoothTime);
-
   aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
 
   // Get device id
   Get_AireCiudadano_DeviceId();
+
+#if !Bluetooth
+  TDisplay = false;
+  OLED66 = false;
+  OLED96 = false;
+#if Tdisplaydisp
+  TDisplay = true;
+#endif
+#if OLED66display
+  OLED66 = true;
+#endif
+#if OLED96display
+  OLED96 = true;
+#endif
+#endif
 
 #if BrownoutOFF
   // OFF BROWNOUT/////////////////////
@@ -432,7 +444,7 @@ void setup()
     showWelcome();
     delay(1000);
     u8g2.drawXBM(16, 18, 32, 32, IconoAC);
-    delay(2000);
+    delay(3000);
     pageEnd();
   }
 
@@ -916,7 +928,7 @@ void Print_WiFi_Status()
   Serial.println(WiFi.macAddress());
 
   // Print the received signal strength:
-  Serial.print("Signal strength (RSSI):");
+  Serial.print("Signal strength (RSSI): ");
   Serial.print(WiFi.RSSI());
   Serial.println(" dBm");
 }
@@ -974,12 +986,6 @@ void Check_WiFi_Server()
             client.println("<br>");
             client.println("------");
             client.println("<br>");
-            client.print("PM25_warning_threshold: ");
-            client.print(eepromConfig.PM25_warning_threshold);
-            client.println("<br>");
-            client.print("PM25_alarm_threshold: ");
-            client.print(eepromConfig.PM25_alarm_threshold);
-            client.println("<br>");
             client.print("Publication Time: ");
             client.print(eepromConfig.PublicTime);
             client.print("MQTT Server: ");
@@ -1007,23 +1013,6 @@ void Check_WiFi_Server()
             client.println("<br>");
             client.print("Humidity: ");
             client.print(humi);
-            client.println("<br>");
-            client.print("PM2.5 STATUS: ");
-            switch (pm25_device_status)
-            {
-            case pm25_no:
-              client.print("No initialized or connected sensor");
-              break;
-            case pm25_ok:
-              client.print("OK");
-              break;
-            case pm25_warning:
-              client.print("WARNING");
-              break;
-            case pm25_alarm:
-              client.print("ALARM");
-              break;
-            }
             client.println("<br>");
             client.println("------");
             client.println("<br>");
@@ -1104,7 +1093,8 @@ void Start_Captive_Portal()
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
     tft.setTextDatum(MC_DATUM);
-    tft.drawString(wifiAP, tft.width() / 2, tft.height() / 2);
+    tft.drawString("Portal Cautivo", tft.width() / 2, (tft.height() / 2 - 20));
+    tft.drawString(wifiAP, tft.width() / 2, tft.height() / 2 + 10);
   }
 
   if (OLED66 == true || OLED96 == true)
@@ -1451,11 +1441,11 @@ void Send_Message_Cloud_App_MQTT()
       nox = 0;
     else
       nox = round(noxIndex);
-    sprintf(MQTT_message, "{id: %s,PM25: %d,VOC: %d,NOx: %d,humidity: %d,temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn);
+    sprintf(MQTT_message, "{id: %s, PM25: %d, VOC: %d, NOx: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn);
   }
   else
   {
-    sprintf(MQTT_message, "{id: %s,PM25: %d,humidity: %d,temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn);
+    sprintf(MQTT_message, "{id: %s, PM25: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn);
   }
   Serial.print(MQTT_message);
   Serial.println();
@@ -1494,26 +1484,6 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
     Serial.print("AireCiudadano custom name (json buffer): ");
     Serial.println(eepromConfig.aireciudadano_device_name);
-    write_eeprom = true;
-  }
-
-  // Update warning threshold
-  if ((jsonBuffer["warning"]) && (eepromConfig.PM25_warning_threshold != (int)jsonBuffer["warning"]))
-  {
-    eepromConfig.PM25_warning_threshold = (int)jsonBuffer["warning"];
-    Evaluate_PM25_Value();
-    Serial.print("New warning threshold: ");
-    Serial.println(eepromConfig.PM25_warning_threshold);
-    write_eeprom = true;
-  }
-
-  // Update alarm threshold
-  if ((jsonBuffer["caution"]) && (eepromConfig.PM25_alarm_threshold != (int)jsonBuffer["caution"]))
-  {
-    eepromConfig.PM25_alarm_threshold = (int)jsonBuffer["caution"];
-    Evaluate_PM25_Value();
-    Serial.print("New alarm threshold: ");
-    Serial.println(eepromConfig.PM25_alarm_threshold);
     write_eeprom = true;
   }
 
@@ -1939,7 +1909,7 @@ void Read_Sensor()
       PM25_value = data.PM_AE_UG_2_5;
       Serial.print("PMS PM2.5: ");
       Serial.print(PM25_value);
-      Serial.print(" ug/m3   ");
+      Serial.println(" ug/m3   ");
     }
     else
     {
@@ -2305,40 +2275,49 @@ void Button_Init()
   // Bottom button long click: deactivate self calibration and perform sensor forced recalibration
   button_bottom.setLongClickDetectedHandler([](Button2 &b)
                                             {
-    Serial.println("Bottom button long click");
-    tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_RED, TFT_WHITE);
-    tft.setTextSize(1);
-    tft.setFreeFont(FF90);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("Tiempo eval:", tft.width() / 2, tft.height() / 2 - 15);
-    tft.drawString(String(eepromConfig.BluetoothTime) + " seg", tft.width() / 2, tft.height() / 2 + 15);
-    delay(1000);
+                                              Serial.println("Bottom button long click");
 
-    Bluetooth_loop_time = eepromConfig.BluetoothTime;
-    
-    while (digitalRead(BUTTON_BOTTOM) == false){
-      if (Bluetooth_loop_time == 2)
-         Bluetooth_loop_time = 5;
-      else if (Bluetooth_loop_time == 5)
-         Bluetooth_loop_time = 10;
-      else if (Bluetooth_loop_time == 10)
-         Bluetooth_loop_time = 30;
-      else if (Bluetooth_loop_time == 30)
-         Bluetooth_loop_time = 60;
-      else if (Bluetooth_loop_time == 60)
-         Bluetooth_loop_time = 120;
-      else if (Bluetooth_loop_time == 120)
-         Bluetooth_loop_time = 300;
-      else
-         Bluetooth_loop_time = 2;
-      tft.drawString("                    ", tft.width() / 2, tft.height() / 2 + 15);
-      tft.drawString(String(Bluetooth_loop_time) + " seg", tft.width() / 2, tft.height() / 2 + 15);
-      delay(1000);
-    }
-      tft.drawString(String(Bluetooth_loop_time) + " seg", tft.width() / 2, tft.height() / 2 + 15);
-      delay(1000);
-      FlashBluetoothTime(); });
+                                              tft.fillScreen(TFT_WHITE);
+                                              tft.setTextColor(TFT_RED, TFT_WHITE);
+                                              tft.setTextSize(1);
+                                              tft.setFreeFont(FF90);
+                                              tft.setTextDatum(MC_DATUM);
+#if Bluetooth
+                                              tft.drawString("Tiempo eval:", tft.width() / 2, tft.height() / 2 - 15);
+                                              tft.drawString(String(eepromConfig.BluetoothTime) + " seg", tft.width() / 2, tft.height() / 2 + 15);
+                                              delay(1000);
+
+                                              Bluetooth_loop_time = eepromConfig.BluetoothTime;
+
+                                              while (digitalRead(BUTTON_BOTTOM) == false)
+                                              {
+                                                if (Bluetooth_loop_time == 2)
+                                                  Bluetooth_loop_time = 5;
+                                                else if (Bluetooth_loop_time == 5)
+                                                  Bluetooth_loop_time = 10;
+                                                else if (Bluetooth_loop_time == 10)
+                                                  Bluetooth_loop_time = 30;
+                                                else if (Bluetooth_loop_time == 30)
+                                                  Bluetooth_loop_time = 60;
+                                                else if (Bluetooth_loop_time == 60)
+                                                  Bluetooth_loop_time = 120;
+                                                else if (Bluetooth_loop_time == 120)
+                                                  Bluetooth_loop_time = 300;
+                                                else
+                                                  Bluetooth_loop_time = 2;
+                                                tft.drawString("                    ", tft.width() / 2, tft.height() / 2 + 15);
+                                                tft.drawString(String(Bluetooth_loop_time) + " seg", tft.width() / 2, tft.height() / 2 + 15);
+                                                delay(1000);
+                                              }
+                                              tft.drawString(String(Bluetooth_loop_time) + " seg", tft.width() / 2, tft.height() / 2 + 15);
+                                              delay(1000);
+                                              FlashBluetoothTime();
+#else
+                                              tft.drawString("Reiniciando", tft.width() / 2, tft.height() / 2 - 5);
+                                              delay(2000);
+                                              ESP.restart();
+#endif
+                                            });
 }
 
 void Display_Init()
@@ -2380,6 +2359,7 @@ void UpdateOLED()
   pageEnd();
 }
 
+#if Bluetooth
 void TimeConfig()
 {
   if (digitalRead(BUTTON_BOTTOM) == false)
@@ -2437,6 +2417,8 @@ void FlashBluetoothTime()
     Write_EEPROM();
   }
 }
+
+#endif
 
 void Get_AireCiudadano_DeviceId()
 { // Get TTGO T-Display info and fill up aireciudadano_device_id with last 6 digits (in HEX) of WiFi mac address or Custom_Name + 6 digits
@@ -2913,7 +2895,8 @@ void displayAverage(int average)
     tft.fillScreen(TFT_GREEN);
     tft.setTextColor(TFT_BLACK, TFT_GREEN);
 #if !Bluetooth
-    displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
+    //displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
+    displayWifi(TFT_GREEN, TFT_RED, (WiFi.status() == WL_CONNECTED));    //////////////////////// WIFI ICONO EN ROJO
 #endif
 
 #if Bluetooth

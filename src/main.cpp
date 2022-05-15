@@ -37,8 +37,8 @@
 #define Bluetooth false // Set to true in case bluetooth is desired
 
 // Solo para versión Bluetooth: escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
-#define Tdisplaydisp false
-#define OLED66display true
+#define Tdisplaydisp true
+#define OLED66display false
 #define OLED96display false
 
 // Fin definiciones de Bluetooth
@@ -146,10 +146,12 @@ float longitudef = 0.0;
 // PM25_sensors pm25_sensor = none;
 
 // device status
-boolean err_global = false;
-boolean err_wifi = false;
-boolean err_MQTT = false;
-boolean err_sensor = false;
+// bool err_global = false;
+bool err_wifi = false;
+bool err_MQTT = false;
+bool err_sensor = false;
+bool FlagDATAicon = false;
+bool NoSensor = false;
 
 // Measurements loop: time between measurements
 unsigned int measurements_loop_duration = 1000; // 1 second
@@ -444,8 +446,8 @@ void setup()
     showWelcome();
     delay(1000);
     u8g2.drawXBM(16, 18, 32, 32, IconoAC);
-    delay(3000);
     pageEnd();
+    delay(3000);
   }
 
 #if !Bluetooth
@@ -526,13 +528,11 @@ void setup()
     pageStart();
     u8g2.setFont(u8g2_font_5x8_tf);
     u8g2.setCursor(0, (dh / 2 - 4));
-    u8g2.print("Medidor Listo"); // aireciudadano_device_id
+    u8g2.print("Medidor Listo");
     delay(2000);
     pageEnd();
   }
   delay(1000);
-  //  Serial.print("eepromConfig.BluetoothTime1: ");
-  //  Serial.println(eepromConfig.BluetoothTime);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -562,23 +562,50 @@ void loop()
     // Read sensors
     Read_Sensor();
 
-    if (PM25_value >= 0) // REVISAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (NoSensor == false)
     {
-      // Update display with new values
+      if (PM25_value >= 0) // REVISAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      {
+        // Update display with new values
+        if (TDisplay == true)
+        {
+          Update_Display();
+        }
+        else if (OLED66 == true || OLED96 == true)
+        {
+          UpdateOLED();
+        }
+        // Accumulates samples
+        PM25_accumulated += PM25_value;
+        PM25_samples++;
+        Con_loop_times++;
+      }
+    }
+    else
+    {
       if (TDisplay == true)
       {
-        Update_Display();
+        tft.fillScreen(TFT_BLUE);
+        tft.setTextColor(TFT_WHITE, TFT_BLUE);
+        tft.setTextDatum(6); // bottom left
+        tft.setTextSize(1);
+        tft.setFreeFont(FF90);
+        tft.setTextDatum(MC_DATUM);
+        tft.drawString("Medidor", tft.width() / 2, (tft.height() / 2) - 30);
+        tft.drawString("No configurado", tft.width() / 2, (tft.height() / 2) + 20);
+        delay(1000);
       }
-
       else if (OLED66 == true || OLED96 == true)
       {
-        UpdateOLED();
+        pageStart();
+        u8g2.setFont(u8g2_font_5x8_tf);
+        u8g2.setCursor(8, (dh / 2 - 7));
+        u8g2.print("Medidor No");
+        u8g2.setCursor(5, (dh / 2 + 7));
+        u8g2.print("configurado");
+        delay(2000);
+        pageEnd();
       }
-
-      // Accumulates samples
-      PM25_accumulated += PM25_value;
-      PM25_samples++;
-      Con_loop_times++;
     }
   }
 
@@ -655,11 +682,6 @@ void loop()
     else
     {
       err_wifi = false;
-      if (OLED66 == true || OLED96 == true)
-      {
-        u8g2.drawBitmap(dw - 20, dh - 8, 1, 8, Icono_wifi_on);
-        u8g2.drawLine(0, 38, 63, 38);
-      }
     }
 
     // Reconnect MQTT if needed
@@ -667,6 +689,7 @@ void loop()
     {
       Serial.println("--- err_mqtt");
       err_MQTT = true;
+      FlagDATAicon = false;
     }
 
     // Reconnect MQTT if needed
@@ -1102,12 +1125,12 @@ void Start_Captive_Portal()
     pageStart();
     u8g2.setFont(u8g2_font_4x6_tf);
     u8g2.setCursor(2, (dh / 2) - 10);
-    u8g2.print("Portal cautivo"); // aireciudadano_device_id
+    u8g2.print("Portal cautivo");
 
     u8g2.setFont(u8g2_font_5x7_tf);
-    u8g2.setCursor(2, dh / 2);
+    u8g2.setCursor(5, dh / 2);
     u8g2.print(captiveportaltime);
-    u8g2.setCursor(13, dh / 2);
+    u8g2.setCursor(20, dh / 2);
     u8g2.print(" segundos");
     //    delay(2000);
     pageEnd();
@@ -1451,10 +1474,8 @@ void Send_Message_Cloud_App_MQTT()
   Serial.println();
 
   if (OLED66 == true || OLED96 == true)
-  {
-    u8g2.drawBitmap(dw - 30, dh - 8, 1, 8, Icono_data_on);
-    u8g2.drawLine(0, 38, 63, 38);
-  }
+    FlagDATAicon = true;
+
   // send message, the Print interface can be used to set the message contents
   MQTT_client.publish(MQTT_send_topic.c_str(), MQTT_message);
 }
@@ -1618,6 +1639,7 @@ void Firmware_Update()
   }
 }
 
+/*
 void displayWifi(int colour_1, int colour_2, boolean active)
 { // Draw WiFi icon
   tft.drawCircle(20, 30, 14, colour_1);
@@ -1633,6 +1655,8 @@ void displayWifi(int colour_1, int colour_2, boolean active)
     tft.drawLine(34, 16, 6, 46, colour_1);
   }
 }
+
+*/
 
 #endif
 
@@ -1850,10 +1874,8 @@ void Read_Sensor()
       Serial.println(" ug/m3   ");
     }
   }
-
-  if (SEN5Xsen == true)
+  else if (SEN5Xsen == true)
   {
-
     uint16_t error;
     char errorMessage[256];
 
@@ -1896,8 +1918,7 @@ void Read_Sensor()
         Serial.println(noxIndex);
     }
   }
-
-  if (PMSsen == true)
+  else if (PMSsen == true)
   {
     while (Serial1.available())
     {
@@ -1916,6 +1937,8 @@ void Read_Sensor()
       Serial.println("No data by Plantower sensor!");
     }
   }
+  else
+    NoSensor = true;
 }
 
 /**
@@ -2349,12 +2372,21 @@ void UpdateOLED()
   displaySensorAverage(pm25int);
 #if !Bluetooth
   displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
+  if (FlagDATAicon == true)
+  {
+    u8g2.drawBitmap(dw - 25, dh - 7, 1, 8, Icono_data_on);
+    FlagDATAicon = false;
+  }
 #else
   displaySensorData(round(PM25_value), humi, temp, 0);
   TimeConfig();
 #endif
   if (toggleLive)
-    u8g2.drawBitmap(dw - 18, dh - 8, 1, 8, Icono_bt_on);
+#if Bluetooth
+    u8g2.drawBitmap(dw - 19, dh - 8, 1, 8, Icono_bt_on);
+#else
+    u8g2.drawBitmap(dw - 15, dh - 7, 1, 8, Icono_sensor_live);
+#endif
   toggleLive = !toggleLive;
   pageEnd();
 }
@@ -2895,11 +2927,11 @@ void displayAverage(int average)
     tft.fillScreen(TFT_GREEN);
     tft.setTextColor(TFT_BLACK, TFT_GREEN);
 #if !Bluetooth
-    //displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
-    displayWifi(TFT_GREEN, TFT_RED, (WiFi.status() == WL_CONNECTED));    //////////////////////// WIFI ICONO EN ROJO
-#endif
-
-#if Bluetooth
+    // displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
+    // displayWifi(TFT_BLACK, TFT_GREEN, (WiFi.status() == WL_CONNECTED)); //////////////////////// WIFI ICONO EN ROJO
+    tft.drawXBitmap(32, 220, Icono_data_on_BIG, 19, 19, TFT_BLACK);
+    tft.drawXBitmap(2, 215, Icono_wifi_on_BIG, 20, 20, TFT_BLACK);
+#else
     displayBatteryLevel(TFT_BLACK);
 #endif
     tft.drawXBitmap(27, 10, SmileFaceGoodBig, 80, 80, TFT_BLACK);
@@ -2913,7 +2945,8 @@ void displayAverage(int average)
     tft.setTextColor(TFT_BLACK, TFT_YELLOW);
     delay(50);
 #if !Bluetooth
-    displayWifi(TFT_RED, TFT_YELLOW, (WiFi.status() == WL_CONNECTED));
+    //displayWifi(TFT_RED, TFT_YELLOW, (WiFi.status() == WL_CONNECTED));
+    //tft.drawXBitmap(2, 215, Icono_wifi_on_BIG, 20, 20, TFT_BLACK);
 #endif
 
 #if Bluetooth
@@ -2929,7 +2962,7 @@ void displayAverage(int average)
     tft.fillScreen(TFT_ORANGE);
     tft.setTextColor(TFT_BLACK, TFT_ORANGE);
 #if !Bluetooth
-    displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
+    //displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
 #else
     displayBatteryLevel(TFT_BLACK);
 #endif
@@ -2943,7 +2976,7 @@ void displayAverage(int average)
     tft.fillScreen(TFT_RED);
     tft.setTextColor(TFT_WHITE, TFT_RED);
 #if !Bluetooth
-    displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
+    //displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
 #else
     displayBatteryLevel(TFT_WHITE);
 #endif
@@ -2956,7 +2989,7 @@ void displayAverage(int average)
     tft.fillScreen(TFT_VIOLET);
     tft.setTextColor(TFT_WHITE, TFT_VIOLET);
 #if !Bluetooth
-    displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
+    //displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
 #else
     displayBatteryLevel(TFT_WHITE);
 #endif
@@ -2969,7 +3002,7 @@ void displayAverage(int average)
     tft.fillScreen(TFT_BROWN);
     tft.setTextColor(TFT_WHITE, TFT_BROWN);
 #if !Bluetooth
-    displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
+    //displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
 #else
     displayBatteryLevel(TFT_WHITE);
 #endif
@@ -3005,43 +3038,65 @@ void displayAverage(int average)
   }
   else
     tft.drawString("ug/m3", 72, 218);
+
+
+#if !Bluetooth
+//  u8g2.setCursor(20, 42);
+  int rssi;
+  rssi = WiFi.RSSI();
+
+  if (rssi == 0)
+  {
+    //////////////// NO SE QUE PONER
+  }
+  else
+  {
+    tft.drawXBitmap(5, 215, Icono_wifi_on_BIG, 20, 20, TFT_BLACK);
+    Serial.print(" RSSI: ");
+    Serial.println(rssi);
+    rssi = rssi + 130;
+    tft.drawString(String(rssi), 30, 223);
+  }
+#endif
+
+
 }
 
 void displaySensorAverage(int average)
 {
   if (average < 13)
   {
-    u8g2.drawXBM(1, 6, 32, 32, SmileFaceGood);
+    u8g2.drawXBM(1, 5, 32, 32, SmileFaceGood);
     displayColorLevel(0, " green");
     displayTextLevel("  GOOD");
   }
   else if (average < 36)
   {
-    u8g2.drawXBM(1, 6, 32, 32, SmileFaceModerate);
+    u8g2.drawXBM(1, 5, 32, 32, SmileFaceModerate);
     displayColorLevel(0, "yellow");
     displayTextLevel("MODERATE");
   }
   else if (average < 56)
   {
-    u8g2.drawXBM(1, 6, 32, 32, SmileFaceUnhealthySGroups);
+    u8g2.drawXBM(1, 5, 32, 32, SmileFaceUnhealthySGroups);
     displayColorLevel(0, "orange");
     displayTextLevel("UNH SEN");
   }
   else if (average < 151)
   {
-    u8g2.drawXBM(1, 6, 32, 32, SmileFaceUnhealthy);
+    u8g2.drawXBM(1, 5, 32, 32, SmileFaceUnhealthy);
     displayColorLevel(0, "  red");
     displayTextLevel("UNHEALT");
   }
   else if (average < 251)
   {
-    u8g2.drawXBM(1, 6, 32, 32, SmileFaceVeryUnhealthy);
+    u8g2.drawXBM(1, 5, 32, 32, SmileFaceVeryUnhealthy);
     displayColorLevel(0, "violet");
     displayTextLevel("V UNHEA");
   }
   else
   {
-    u8g2.drawXBM(1, 6, 32, 32, SmileFaceHazardous);
+    u8g2.drawXBM(1, 5, 32, 32, SmileFaceHazardous);
     displayColorLevel(0, " brown");
     displayTextLevel(" HAZARD");
   }
@@ -3053,23 +3108,17 @@ void displaySensorAverage(int average)
 // TODO: separate this function, format/display
 void displaySensorData(int pm25, int humi, int temp, int rssi)
 {
-  //  pageStart();
   char output[22];
   sprintf(output, "%03d H%02d%% T%02d%°C", pm25, inthumi, inttemp); // 000 E00 H00% T00°C
   displayBottomLine(String(output));
-  //  Serial.print(" PM2.5:");
-  //  Serial.print(output);
 
   u8g2.setFont(u8g2_font_4x6_tf);
-  u8g2.setCursor(44, 1);
+  u8g2.setCursor(43, 1);
   sprintf(output, "%04d", pm25); // PM25 instantaneo fuente pequeña
   u8g2.print(output);
 
-  u8g2.setFont(u8g2_font_6x12_tf);
-
-  u8g2.setCursor(20, 39);
-
 #if !Bluetooth
+  u8g2.setCursor(20, 42);
 
   if (rssi == 0)
   {
@@ -3078,12 +3127,13 @@ void displaySensorData(int pm25, int humi, int temp, int rssi)
   }
   else
   {
+    u8g2.drawBitmap(5, dh - 8, 1, 8, Icono_wifi_on);
     Serial.print(" RSSI: ");
     Serial.println(rssi);
-    rssi = abs(rssi);
+    //    rssi = abs(rssi);
     sprintf(output, "%02d", rssi);
+    rssi = rssi + 130;
     u8g2.print(rssi);
-    //    pageEnd();
   }
 #endif
 }

@@ -178,12 +178,12 @@ unsigned long errors_loop_start;           // holds a timestamp for each error l
 #include "Iconos.h"
 
 // Firmware version from git rev-list command
-String VERSION_CODE = "rev ";
-#ifdef SRC_REV
-int VCODE = SRC_REV;
-#else
-int VCODE = 0;
-#endif
+//String VERSION_CODE = "rev ";
+//#ifdef SRC_REV
+//int VCODE = SRC_REV;
+//#else
+//int VCODE = 0;
+//#endif
 
 unsigned int mcount, ecode = 0;
 int lastDrawedLine = 0;

@@ -38,7 +38,7 @@
 
 // Solo para versión Bluetooth: escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
-#define OLED66display true
+#define OLED66display false
 #define OLED96display false
 
 // Fin definiciones de Bluetooth

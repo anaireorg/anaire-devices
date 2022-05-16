@@ -37,8 +37,8 @@
 #define Bluetooth false // Set to true in case bluetooth is desired
 
 // Solo para versión Bluetooth: escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
-#define Tdisplaydisp true
-#define OLED66display false
+#define Tdisplaydisp false
+#define OLED66display true
 #define OLED96display false
 
 // Fin definiciones de Bluetooth
@@ -2892,10 +2892,10 @@ void displayCenterBig(String msg)
   }
   u8g2.print(msg.c_str());
 
-  u8g2.setCursor(94, 36);
+  u8g2.setCursor(100, 36);
   // u8g2.setFont(u8g2_font_4x6_tf);
-  u8g2.setFont(u8g2_font_6x13_tf);
-  u8g2.print(" ug/m3");
+  u8g2.setFont(u8g2_font_5x7_tf);
+  u8g2.print("ug/m3");
 }
 
 void displayBottomLine(String msg)
@@ -3098,7 +3098,8 @@ void displaySensorAverage(int average)
 void displaySensorData(int pm25, int humi, int temp, int rssi)
 {
   char output[22];
-  sprintf(output, "%03d H%02d%% T%02d%°C", pm25, inthumi, inttemp); // 000 E00 H00% T00°C
+  sprintf(output, "%03d H%02d T%02d", pm25, inthumi, inttemp); // 000 E00 H00% T00°C
+  u8g2.setCursor(dw / 2 + 16, 48);
   displayBottomLine(String(output));
 
   u8g2.setFont(u8g2_font_4x6_tf);
@@ -3107,7 +3108,7 @@ void displaySensorData(int pm25, int humi, int temp, int rssi)
   u8g2.print(output);
 
 #if !Bluetooth
-  u8g2.setCursor(20, 42);
+  u8g2.setCursor(20, dh - 6);
 
   if (rssi == 0)
   {

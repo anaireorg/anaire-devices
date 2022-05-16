@@ -1141,6 +1141,7 @@ void Start_Captive_Portal()
 
   // Local intialization. Once its business is done, there is no need to keep it around
   // WiFiManager wifiManager;
+  wifiManager.setShowPassword(true);
   wifiManager.setDebugOutput(true);
   wifiManager.disconnect();
 

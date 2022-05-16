@@ -73,7 +73,7 @@ char CustomValTotalString[9] = "00000000";
 uint16_t IDn = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "1.1";
+String sw_version = "1.2";
 String aireciudadano_device_id;
 // String aireciudadano_charac_id;
 
@@ -1099,7 +1099,8 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-  const int captiveportaltime = 90;
+  //  const int captiveportaltime = 90;
+  const int captiveportaltime = 60;
 
   wifiAP = String(eepromConfig.aireciudadano_device_name);
 
@@ -1473,7 +1474,7 @@ void Send_Message_Cloud_App_MQTT()
   Serial.print(MQTT_message);
   Serial.println();
 
-  if (OLED66 == true || OLED96 == true)
+  if (OLED66 == true || OLED96 == true || TDisplay == true)
     FlagDATAicon = true;
 
   // send message, the Print interface can be used to set the message contents
@@ -2363,6 +2364,15 @@ void Update_Display()
   // Set screen and text colours based on PM25 value
 
   displayAverage(pm25int);
+
+  if (FlagDATAicon == true)
+  {
+    if (pm25int < 57)
+      tft.drawXBitmap(5, 194, Icono_data_on_BIG, 19, 19, TFT_BLACK);
+    else
+      tft.drawXBitmap(5, 194, Icono_data_on_BIG, 19, 19, TFT_WHITE);
+    FlagDATAicon = false;
+  }
 }
 
 void UpdateOLED()
@@ -2926,12 +2936,7 @@ void displayAverage(int average)
 
     tft.fillScreen(TFT_GREEN);
     tft.setTextColor(TFT_BLACK, TFT_GREEN);
-#if !Bluetooth
-    // displayWifi(TFT_GREEN, TFT_BLACK, (WiFi.status() == WL_CONNECTED));
-    // displayWifi(TFT_BLACK, TFT_GREEN, (WiFi.status() == WL_CONNECTED)); //////////////////////// WIFI ICONO EN ROJO
-    tft.drawXBitmap(32, 220, Icono_data_on_BIG, 19, 19, TFT_BLACK);
-    tft.drawXBitmap(2, 215, Icono_wifi_on_BIG, 20, 20, TFT_BLACK);
-#else
+#if Bluetooth
     displayBatteryLevel(TFT_BLACK);
 #endif
     tft.drawXBitmap(27, 10, SmileFaceGoodBig, 80, 80, TFT_BLACK);
@@ -2944,11 +2949,6 @@ void displayAverage(int average)
     tft.fillScreen(TFT_YELLOW);
     tft.setTextColor(TFT_BLACK, TFT_YELLOW);
     delay(50);
-#if !Bluetooth
-    //displayWifi(TFT_RED, TFT_YELLOW, (WiFi.status() == WL_CONNECTED));
-    //tft.drawXBitmap(2, 215, Icono_wifi_on_BIG, 20, 20, TFT_BLACK);
-#endif
-
 #if Bluetooth
     displayBatteryLevel(TFT_BLACK);
 #endif
@@ -2961,9 +2961,7 @@ void displayAverage(int average)
 
     tft.fillScreen(TFT_ORANGE);
     tft.setTextColor(TFT_BLACK, TFT_ORANGE);
-#if !Bluetooth
-    //displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
-#else
+#if Bluetooth
     displayBatteryLevel(TFT_BLACK);
 #endif
     tft.drawXBitmap(27, 10, SmileFaceUnhealthySGroupsBig, 80, 80, TFT_BLACK);
@@ -2975,9 +2973,7 @@ void displayAverage(int average)
 
     tft.fillScreen(TFT_RED);
     tft.setTextColor(TFT_WHITE, TFT_RED);
-#if !Bluetooth
-    //displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
-#else
+#if Bluetooth
     displayBatteryLevel(TFT_WHITE);
 #endif
     tft.drawXBitmap(27, 10, SmileFaceUnhealthyBig, 80, 80, TFT_WHITE);
@@ -2988,9 +2984,7 @@ void displayAverage(int average)
   {
     tft.fillScreen(TFT_VIOLET);
     tft.setTextColor(TFT_WHITE, TFT_VIOLET);
-#if !Bluetooth
-    //displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
-#else
+#if Bluetooth
     displayBatteryLevel(TFT_WHITE);
 #endif
     tft.drawXBitmap(27, 10, SmileFaceVeryUnhealthyBig, 80, 80, TFT_WHITE);
@@ -3001,9 +2995,7 @@ void displayAverage(int average)
   {
     tft.fillScreen(TFT_BROWN);
     tft.setTextColor(TFT_WHITE, TFT_BROWN);
-#if !Bluetooth
-    //displayWifi(TFT_WHITE, TFT_RED, (WiFi.status() == WL_CONNECTED));
-#else
+#if Bluetooth
     displayBatteryLevel(TFT_WHITE);
 #endif
     tft.drawXBitmap(27, 10, SmileFaceHazardousBig, 80, 80, TFT_WHITE);
@@ -3025,41 +3017,38 @@ void displayAverage(int average)
   // Draw PM25 units
   tft.setTextSize(1);
   tft.setFreeFont(FF90);
-  tft.drawString("PM2.5: ", 22, 197);
-  tft.drawString(String(round(PM25_value), 0), 87, 198);
+  tft.drawString("PM2.5: ", 30, 197);
+  tft.drawString(String(round(PM25_value), 0), 90, 197);
 
   if (temp != 0 || humi != 0)
   {
     // Draw temperature
-    tft.drawString(String(temp) + "C", 52, 220);
+    tft.drawString("T" + String(temp), 60, 220);
 
     // Draw humidity
-    tft.drawString(String(humi) + "%", 92, 220);
+    tft.drawString("H" + String(humi), 95, 220);
   }
   else
     tft.drawString("ug/m3", 72, 218);
 
-
 #if !Bluetooth
-//  u8g2.setCursor(20, 42);
   int rssi;
   rssi = WiFi.RSSI();
 
-  if (rssi == 0)
+  if (rssi != 0)
   {
-    //////////////// NO SE QUE PONER
-  }
-  else
-  {
-    tft.drawXBitmap(5, 215, Icono_wifi_on_BIG, 20, 20, TFT_BLACK);
+    if (pm25int < 57)
+      tft.drawXBitmap(5, 215, Icono_wifi_on_BIG, 20, 20, TFT_BLACK);
+    else
+      tft.drawXBitmap(5, 215, Icono_wifi_on_BIG, 20, 20, TFT_WHITE);
     Serial.print(" RSSI: ");
-    Serial.println(rssi);
+    Serial.print(rssi);
     rssi = rssi + 130;
-    tft.drawString(String(rssi), 30, 223);
+    Serial.print("  norm: ");
+    Serial.println(rssi);
+    tft.drawString(String(rssi), 30, 220);
   }
 #endif
-
-
 }
 
 void displaySensorAverage(int average)
@@ -3129,10 +3118,12 @@ void displaySensorData(int pm25, int humi, int temp, int rssi)
   {
     u8g2.drawBitmap(5, dh - 8, 1, 8, Icono_wifi_on);
     Serial.print(" RSSI: ");
-    Serial.println(rssi);
+    Serial.print(rssi);
     //    rssi = abs(rssi);
     sprintf(output, "%02d", rssi);
     rssi = rssi + 130;
+    Serial.print("  norm: ");
+    Serial.println(rssi);
     u8g2.print(rssi);
   }
 #endif

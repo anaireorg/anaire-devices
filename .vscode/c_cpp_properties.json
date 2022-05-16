@@ -242,7 +242,6 @@
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src",
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/USB/src",
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
-                "C:/Users/DBB/.platformio/packages/tool-unity",
                 ""
             ],
             "browse": {
@@ -482,12 +481,11 @@
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src",
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/USB/src",
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src",
-                    "C:/Users/DBB/.platformio/packages/tool-unity",
                     ""
                 ]
             },
             "defines": [
-                "PLATFORMIO=50205",
+                "PLATFORMIO=60000",
                 "ARDUINO_ESP32_DEV",
                 "SRC_REV=1",
                 "HAVE_CONFIG_H",

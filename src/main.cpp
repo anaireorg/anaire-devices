@@ -36,7 +36,7 @@
 // Obligatorio para version Bluetooth:
 #define Bluetooth false // Set to true in case bluetooth is desired
 
-// Solo para versión Bluetooth: escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
+// Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
 #define OLED66display false
 #define OLED96display false
@@ -91,8 +91,6 @@ struct MyConfigStruct
   char sensor_lat[10] = "0.0";                       // Sensor latitude  GPS
   char sensor_lon[10] = "0.0";                       // Sensor longitude GPS
   char ConfigValues[10] = "000000000";
-  //  char ConfigValues[10] = "000010311";
-  //  char ConfigValues[10] = "000000000";
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #else
   char sensor_lat[10] = "4.69375";   // Aquí colocar la Latitud del sensor
@@ -176,14 +174,6 @@ unsigned long errors_loop_start;           // holds a timestamp for each error l
 // OLED display
 #include <U8g2lib.h>
 #include "Iconos.h"
-
-// Firmware version from git rev-list command
-//String VERSION_CODE = "rev ";
-//#ifdef SRC_REV
-//int VCODE = SRC_REV;
-//#else
-//int VCODE = 0;
-//#endif
 
 unsigned int mcount, ecode = 0;
 int lastDrawedLine = 0;
@@ -375,20 +365,20 @@ void setup()
   Serial.println();
   Serial.println("##### Inicializando Medidor Aire Ciudadano #####");
 
-#if Bluetooth
-  TDisplay = false;
-  OLED66 = false;
-  OLED96 = false;
-#if Tdisplaydisp
-  TDisplay = true;
-#endif
-#if OLED66display
-  OLED66 = true;
-#endif
-#if OLED96display
-  OLED96 = true;
-#endif
-#endif
+  //#if Bluetooth
+  //  TDisplay = false;
+  //  OLED66 = false;
+  //  OLED96 = false;
+  //#if Tdisplaydisp
+  //  TDisplay = true;
+  //#endif
+  //#if OLED66display
+  //  OLED66 = true;
+  //#endif
+  //#if OLED96display
+  //  OLED96 = true;
+  //#endif
+  //#endif
 
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
@@ -410,7 +400,6 @@ void setup()
   // Get device id
   Get_AireCiudadano_DeviceId();
 
-#if !Bluetooth
   TDisplay = false;
   OLED66 = false;
   OLED96 = false;
@@ -422,7 +411,6 @@ void setup()
 #endif
 #if OLED96display
   OLED96 = true;
-#endif
 #endif
 
 #if BrownoutOFF
@@ -437,8 +425,7 @@ void setup()
     Display_Splash_Screen();
     delay(5000);
   }
-
-  if (OLED66 == true || OLED96 == true)
+  else if (OLED66 == true || OLED96 == true)
   {
     pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
     displayInit();
@@ -448,6 +435,11 @@ void setup()
     u8g2.drawXBM(16, 18, 32, 32, IconoAC);
     pageEnd();
     delay(3000);
+  }
+  else
+  {
+    pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
+    delay(1000);
   }
 
 #if !Bluetooth
@@ -2507,10 +2499,12 @@ void Aireciudadano_Characteristics()
 
   if (eepromConfig.ConfigValues[5] == '0')
   {
+    ExtAnt = false;
     Serial.println("Normal board");
   }
   else
   {
+    ExtAnt = true;
     Serial.println("Board with externa antenna");
   }
   Serial.print("eepromConfig.ConfigValues[6]: ");
@@ -2592,7 +2586,8 @@ void Aireciudadano_Characteristics()
   // TDisplay = 256
   // OLED66 = 512
   // OLED96 = 1024
-  // AmbInOutdoors = 2048
+  // ExtAnt (External Antenna)= 2048
+  // AmbInOutdoors (Indoors) = 4096
 
   if (SPS30sen)
     IDn = IDn + 1;
@@ -2613,13 +2608,13 @@ void Aireciudadano_Characteristics()
     IDn = IDn + 512;
   if (OLED96)
     IDn = IDn + 1024;
-  if (AmbInOutdoors)
+  if (ExtAnt)
     IDn = IDn + 2048;
+  if (AmbInOutdoors)
+    IDn = IDn + 4096;
 
   Serial.print("IDn: ");
   Serial.println(IDn);
-  // aireciudadano_charac_id = String(IDn, HEX);
-  // Serial.println(aireciudadano_charac_id);
 }
 
 #endif

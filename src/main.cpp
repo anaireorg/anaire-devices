@@ -27,7 +27,7 @@
 // Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:
 // _configPortalTimeout = 300000;   // New Config Portal Timeout
 //  DEBUG_WM(DEBUG_VERBOSE,F("New Config Portal Timeout: 300 seconds"));
-// Modificado WiFiManager.template.htlm y template.h en texto: Configure WiFi por Configure WiFi and Sensor
+// Modificado template.h en texto: Configure WiFi por Configure WiFi and Sensor & Show Password
 
 #include <Arduino.h>
 #include "main.hpp"
@@ -2364,6 +2364,16 @@ void Update_Display()
       tft.drawXBitmap(5, 194, Icono_data_on_BIG, 19, 19, TFT_WHITE);
     FlagDATAicon = false;
   }
+  if (toggleLive)
+  {
+#if Bluetooth
+    if (pm25int < 57)
+      tft.drawXBitmap(6, 192, Icono_bt_on_BIG, 19, 19, TFT_BLACK);
+    else
+      tft.drawXBitmap(6, 192, Icono_bt_on_BIG, 19, 19, TFT_WHITE);
+#endif
+  }
+  toggleLive = !toggleLive;
 }
 
 void UpdateOLED()

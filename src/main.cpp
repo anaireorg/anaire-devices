@@ -584,20 +584,38 @@ void loop()
         tft.setTextSize(1);
         tft.setFreeFont(FF90);
         tft.setTextDatum(MC_DATUM);
-        tft.drawString("Medidor", tft.width() / 2, (tft.height() / 2) - 30);
-        tft.drawString("No configurado", tft.width() / 2, (tft.height() / 2) + 20);
+        if (Bluetooth == true)
+        {
+          tft.drawString("Sensores", tft.width() / 2, (tft.height() / 2) - 30);
+          tft.drawString("No conectados", tft.width() / 2, (tft.height() / 2) + 20);
+        }
+        else
+        {
+          tft.drawString("Medidor", tft.width() / 2, (tft.height() / 2) - 30);
+          tft.drawString("No configurado", tft.width() / 2, (tft.height() / 2) + 20);
+        }
         delay(1000);
       }
       else if (OLED66 == true || OLED96 == true)
       {
         pageStart();
         u8g2.setFont(u8g2_font_5x8_tf);
-        u8g2.setCursor(8, (dh / 2 - 7));
-        u8g2.print("Medidor No");
-        u8g2.setCursor(5, (dh / 2 + 7));
-        u8g2.print("configurado");
-        delay(2000);
+        if (Bluetooth == true)
+        {
+          u8g2.setCursor(4, (dh / 2 - 7));
+          u8g2.print("Sensores No");
+          u8g2.setCursor(8, (dh / 2 + 7));
+          u8g2.print("conectados");
+        }
+        else
+        {
+          u8g2.setCursor(8, (dh / 2 - 7));
+          u8g2.print("Medidor No");
+          u8g2.setCursor(5, (dh / 2 + 7));
+          u8g2.print("configurado");
+        }
         pageEnd();
+        delay(2000);
       }
     }
   }

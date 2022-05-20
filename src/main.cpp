@@ -209,7 +209,8 @@ U8G2 u8g2;
 TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup.h
 
 // Customized AireCiudadano splash screen
-#include "Icono_AC_splash.h"
+//#include "Icono_AC_splash.h"
+#include "Icono_AireCiudadano.h"
 
 // Buttons: Top and bottom considered when USB connector is positioned on the right of the board
 
@@ -2362,7 +2363,7 @@ void Display_Init()
 void Display_Splash_Screen()
 { // Display AireCiudadano splash screen
   tft.setSwapBytes(true);
-  tft.pushImage(0, 0, 135, 240, Icono_AC_splash);
+  tft.pushImage(0, 0, 135, 240, Icono_AireCiudadano);
 }
 
 void Update_Display()

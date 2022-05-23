@@ -2,7 +2,7 @@
 // AireCiudadano medidor Fijo - Medidor de PM2.5 abierto, medición opcional de humedad y temperatura.
 // Más información en: aireciudadano.com
 // Este firmware es un fork del proyecto Anaire (https://www.anaire.org/) recomendado para la medición de CO2.
-// 11/05/2022 info@aireciudadano.com
+// 22/05/2022 info@aireciudadano.com
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pendientes:
@@ -73,7 +73,7 @@ char CustomValTotalString[9] = "00000000";
 uint16_t IDn = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "1.2";
+String sw_version = "1.3";
 String aireciudadano_device_id;
 // String aireciudadano_charac_id;
 
@@ -134,17 +134,6 @@ int humi;
 float latitudef = 0.0;
 float longitudef = 0.0;
 
-// enum PM25_sensors
-//{
-//  none,
-//  sen5x_sensor,
-//  sps30_sensor,
-//  pms_sensor
-//}; // possible sensors integrated in the SW
-// PM25_sensors pm25_sensor = none;
-
-// device status
-// bool err_global = false;
 bool err_wifi = false;
 bool err_MQTT = false;
 bool err_sensor = false;

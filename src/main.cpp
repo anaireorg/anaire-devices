@@ -22,6 +22,9 @@
 //          OK: Revisar diferencia entre Sensor characteristics y Numero ID de la configuracion del sensor
 //          OK: Revisar Update por Portal Cautivo
 // Guardar configuracion de sensores, board, display y demás en el Portal Cautivo
+//          OK: Revisar como saber si una board tiene Brownout, si por config values
+// Revision de Teclas para dormir en el Splash Screen!!!!!!!!!!!!!!!!!
+// Revisión de Teclas para despertar, ojala fuera mas de 1 segundo por posibles ruidos de tecla
 //
 // MODIFICACIONES EXTERNAS:
 // Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:
@@ -45,7 +48,7 @@
 ////////////////////////////////
 
 // Definiciones opcionales para version Wifi
-#define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
+#define BrownoutOFF true   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define WPA2 false          // Colocar en true para redes con WPA2
 #define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";
@@ -2606,6 +2609,7 @@ void Aireciudadano_Characteristics()
   // OLED96 = 1024
   // ExtAnt (External Antenna)= 2048
   // AmbInOutdoors (Indoors) = 4096
+  // Brownout trick (true) = 8192
 
   if (SPS30sen)
     IDn = IDn + 1;
@@ -2630,7 +2634,9 @@ void Aireciudadano_Characteristics()
     IDn = IDn + 2048;
   if (AmbInOutdoors)
     IDn = IDn + 4096;
-
+#if BrownoutOFF
+    IDn = IDn + 8192;
+#endif
   Serial.print("IDn: ");
   Serial.println(IDn);
 }

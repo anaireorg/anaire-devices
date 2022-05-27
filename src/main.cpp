@@ -25,7 +25,7 @@
 //          OK: Revisar como saber si una board tiene Brownout, si por config values
 //          OK: Revision de Teclas para dormir en el Splash Screen!!!!!!!!!!!!!!!!!
 //          OK: Revisión de Teclas para despertar, ojala fuera mas de 1 segundo por posibles ruidos de tecla
-// Revisar la funcion de la APP de sample time a ver como se maneja desde el micro, investigar eso bien
+//          OK seguir revisando: Revisar la funcion de la APP de sample time a ver como se maneja desde el micro, investigar eso bien
 //
 // MODIFICACIONES EXTERNAS:
 // Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:
@@ -2289,18 +2289,18 @@ void Button_Init()
     tft.setTextDatum(TL_DATUM); // top left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
-    tft.drawString("ID " + aireciudadano_device_id, 10, 5);         //!!!Arreglar por nuevo tamaño String
-    tft.drawString("SW " + sw_version, 10, 21);
-
+    tft.drawString("ID " + aireciudadano_device_id, 8, 5);         //!!!Arreglar por nuevo tamaño String
+    tft.drawString("SW " + sw_version, 8, 22);
 #if Bluetooth
-    tft.drawString("Bluetooth ver", 10, 37);
-    tft.drawString("Log int: " + Bluetooth_loop_time, 10, 53);
+    tft.drawString("Bluetooth ver", 8, 39);
+    tft.drawString("Log int: " + String(Bluetooth_loop_time), 8, 56);
 #else
-    tft.drawString("Wifi ver", 10, 37);
-    tft.drawString("SSID " + String(WiFi.SSID()), 10, 53);
-    tft.drawString("IP " + WiFi.localIP().toString(), 10, 69);
-    tft.drawString("MAC " + String(WiFi.macAddress()), 10, 85);
-    tft.drawString("RSSI " + String(WiFi.RSSI()), 10, 101);
+    tft.drawString("Wifi ver", 8, 39);
+    tft.drawString("Pubtime min: " + String(eepromConfig.PublicTime), 8, 56);
+    tft.drawString("SSID " + String(WiFi.SSID()), 8, 73);
+    tft.drawString("IP " + WiFi.localIP().toString(), 8, 90);
+    tft.drawString("MAC " + String(WiFi.macAddress()), 8, 107);
+    tft.drawString("RSSI " + String(WiFi.RSSI()), 8, 124);
 #endif
 
     delay(5000); // keep the info in the display for 5s

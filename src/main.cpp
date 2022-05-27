@@ -23,8 +23,9 @@
 //          OK: Revisar Update por Portal Cautivo
 // Guardar configuracion de sensores, board, display y demás en el Portal Cautivo
 //          OK: Revisar como saber si una board tiene Brownout, si por config values
-// Revision de Teclas para dormir en el Splash Screen!!!!!!!!!!!!!!!!!
-// Revisión de Teclas para despertar, ojala fuera mas de 1 segundo por posibles ruidos de tecla
+//          OK: Revision de Teclas para dormir en el Splash Screen!!!!!!!!!!!!!!!!!
+//          OK: Revisión de Teclas para despertar, ojala fuera mas de 1 segundo por posibles ruidos de tecla
+// Revisar la funcion de la APP de sample time a ver como se maneja desde el micro, investigar eso bien
 //
 // MODIFICACIONES EXTERNAS:
 // Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:
@@ -37,10 +38,10 @@
 
 ////////////////////////////////
 // Obligatorio para version Bluetooth:
-#define Bluetooth false // Set to true in case bluetooth is desired
+#define Bluetooth true // Set to true in case bluetooth is desired
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
-#define Tdisplaydisp false
+#define Tdisplaydisp true
 #define OLED66display false
 #define OLED96display false
 
@@ -48,7 +49,7 @@
 ////////////////////////////////
 
 // Definiciones opcionales para version Wifi
-#define BrownoutOFF true   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
+#define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define WPA2 false          // Colocar en true para redes con WPA2
 #define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";
@@ -84,7 +85,7 @@ String aireciudadano_device_id;
 struct MyConfigStruct
 {
 #if Bluetooth
-  uint16_t BluetoothTime = 5;         // Bluetooth Time
+  uint16_t BluetoothTime = 10;        // Bluetooth Time
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #else
   uint16_t PublicTime = 1;                           // Publication Time
@@ -320,6 +321,8 @@ StaticJsonDocument<384> jsonBuffer;
 
 #include "rom/rtc.h"
 bool ResetFlag = false;
+bool DeepSleepFlag = false;
+bool NoiseBUTTONFlag = false;
 // int reason;
 void print_reset_reason(RESET_REASON reason);
 
@@ -348,30 +351,37 @@ void setup()
   Serial.println("CPU0 reset reason:");
   print_reset_reason(rtc_get_reset_reason(0));
 
-  // Out for power on and off sensors
-  pinMode(OUT_EN, OUTPUT);
-  // On sensors
-  digitalWrite(OUT_EN, HIGH); // step-up on
-  delay(1000);
+#if Bluetooth
+  if (DeepSleepFlag == true)
+  {
+    delay(100);
+    if (digitalRead(BUTTON_TOP) == false)
+    {
+      delay(900);
+      if (digitalRead(BUTTON_TOP) == false)
+      {
+        NoiseBUTTONFlag = false;
+        Serial.println("NoiseBUTTONFlag = false");
+      }
+      else
+      {
+        NoiseBUTTONFlag = true;
+        Serial.println("NoiseBUTTONFlag = true");
+        Suspend_Device();
+      }
+    }
+    else
+    {
+      NoiseBUTTONFlag = true;
+      Serial.println("NoiseBUTTONFlag = true");
+      Suspend_Device();
+    }
+  }
+#endif
 
   // print info
   Serial.println();
   Serial.println("##### Inicializando Medidor Aire Ciudadano #####");
-
-  //#if Bluetooth
-  //  TDisplay = false;
-  //  OLED66 = false;
-  //  OLED96 = false;
-  //#if Tdisplaydisp
-  //  TDisplay = true;
-  //#endif
-  //#if OLED66display
-  //  OLED66 = true;
-  //#endif
-  //#if OLED96display
-  //  OLED96 = true;
-  //#endif
-  //#endif
 
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
@@ -392,6 +402,11 @@ void setup()
 
   // Get device id
   Get_AireCiudadano_DeviceId();
+
+#if Bluetooth
+  Bluetooth_loop_time = eepromConfig.BluetoothTime;
+  gadgetBle.setSampleIntervalMs(Bluetooth_loop_time * 1000); // Valor de muestreo de APP y de Sensor
+#endif
 
   TDisplay = false;
   OLED66 = false;
@@ -414,9 +429,15 @@ void setup()
   if (TDisplay == true)
   {
     // Initialize TTGO Display and show AireCiudadano splash screen
+    Button_Init();
     Display_Init();
     Display_Splash_Screen();
-    delay(5000);
+
+    for (int i = 0; i < 10; i++)
+    {
+      button_top.loop();
+      delay(500);
+    }
   }
   else if (OLED66 == true || OLED96 == true)
   {
@@ -434,6 +455,12 @@ void setup()
     pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
     delay(1000);
   }
+
+  // Out for power on and off sensors
+  pinMode(OUT_EN, OUTPUT);
+  // On sensors
+  digitalWrite(OUT_EN, HIGH); // step-up on
+  delay(1000);
 
 #if !Bluetooth
   // Set MQTT topics
@@ -456,11 +483,11 @@ void setup()
   Serial.println(gadgetBle.getDeviceIdString());
 #endif
 
-  if (TDisplay == true)
-  {
-    // Initialize TTGO board buttons
-    Button_Init();
-  }
+  //  if (TDisplay == true)
+  //  {
+  //    // Initialize TTGO board buttons
+  //    Button_Init();
+  //  }
 
 #if !Bluetooth
   // Start Captive Portal for 30 seconds
@@ -626,11 +653,12 @@ void loop()
     float PM25f;
 
     ///// DEBUG Samples
-    Serial.println(PM25_accumulated);
+    // Serial.println(PM25_accumulated);
+    Serial.print("#samples: ");
     Serial.println(PM25_samples);
     PM25f = PM25_accumulated / PM25_samples;
     pm25int = round(PM25f);
-    Serial.println(pm25int);
+    // Serial.println(pm25int);
     ///// END DEBUG Samples
     Serial.print("PM25: ");
     Serial.print(pm25int);
@@ -725,6 +753,7 @@ void loop()
 // Process bluetooth events
 #if Bluetooth
   gadgetBle.handleEvents();
+  delay(3);
 #endif
 
   if (TDisplay == true)
@@ -2249,6 +2278,7 @@ void Button_Init()
   // Long clicks: keep pressing more than 2 second
   button_top.setLongClickTime(2000);
   button_bottom.setLongClickTime(2000);
+  //  Serial.println("Button_Init");
 
   // Top button short click: show info about the device
   button_top.setClickHandler([](Button2 &b)
@@ -2264,6 +2294,7 @@ void Button_Init()
 
 #if Bluetooth
     tft.drawString("Bluetooth ver", 10, 37);
+    tft.drawString("Log int: " + Bluetooth_loop_time, 10, 53);
 #else
     tft.drawString("Wifi ver", 10, 37);
     tft.drawString("SSID " + String(WiFi.SSID()), 10, 53);
@@ -2318,17 +2349,19 @@ void Button_Init()
                                               while (digitalRead(BUTTON_BOTTOM) == false)
                                               {
                                                 if (Bluetooth_loop_time == 2)
-                                                  Bluetooth_loop_time = 5;
-                                                else if (Bluetooth_loop_time == 5)
                                                   Bluetooth_loop_time = 10;
                                                 else if (Bluetooth_loop_time == 10)
-                                                  Bluetooth_loop_time = 30;
-                                                else if (Bluetooth_loop_time == 30)
                                                   Bluetooth_loop_time = 60;
                                                 else if (Bluetooth_loop_time == 60)
                                                   Bluetooth_loop_time = 120;
                                                 else if (Bluetooth_loop_time == 120)
                                                   Bluetooth_loop_time = 300;
+                                                else if (Bluetooth_loop_time == 300)
+                                                  Bluetooth_loop_time = 600;
+                                                else if (Bluetooth_loop_time == 600)
+                                                  Bluetooth_loop_time = 3600;
+                                                else if (Bluetooth_loop_time == 3600)
+                                                  Bluetooth_loop_time = 10800;
                                                 else
                                                   Bluetooth_loop_time = 2;
                                                 tft.drawString("                    ", tft.width() / 2, tft.height() / 2 + 15);
@@ -2435,17 +2468,19 @@ void TimeConfig()
       while (digitalRead(BUTTON_BOTTOM) == false)
       {
         if (Bluetooth_loop_time == 2)
-          Bluetooth_loop_time = 5;
-        else if (Bluetooth_loop_time == 5)
           Bluetooth_loop_time = 10;
         else if (Bluetooth_loop_time == 10)
-          Bluetooth_loop_time = 30;
-        else if (Bluetooth_loop_time == 30)
           Bluetooth_loop_time = 60;
         else if (Bluetooth_loop_time == 60)
           Bluetooth_loop_time = 120;
         else if (Bluetooth_loop_time == 120)
           Bluetooth_loop_time = 300;
+        else if (Bluetooth_loop_time == 300)
+          Bluetooth_loop_time = 600;
+        else if (Bluetooth_loop_time == 600)
+          Bluetooth_loop_time = 3600;
+        else if (Bluetooth_loop_time == 3600)
+          Bluetooth_loop_time = 10800;
         else
           Bluetooth_loop_time = 2;
         pageStart();
@@ -2463,6 +2498,8 @@ void TimeConfig()
 
 void FlashBluetoothTime()
 {
+  gadgetBle.setSampleIntervalMs(Bluetooth_loop_time * 1000); // Rutina para configurar el tiempo de muestreo del sensor y la app
+
   if (eepromConfig.BluetoothTime != Bluetooth_loop_time)
   {
     eepromConfig.BluetoothTime = Bluetooth_loop_time;
@@ -2635,7 +2672,7 @@ void Aireciudadano_Characteristics()
   if (AmbInOutdoors)
     IDn = IDn + 4096;
 #if BrownoutOFF
-    IDn = IDn + 8192;
+  IDn = IDn + 8192;
 #endif
   Serial.print("IDn: ");
   Serial.println(IDn);
@@ -2701,6 +2738,8 @@ void displayBatteryLevel(int colour)
   Serial.print("battery voltage: ");
   Serial.println(battery_voltage);
 
+  //  tft.drawString(String(battery_voltage), 42, 218);
+
   // If battery voltage is up 4.5 then external power supply is working and battery is charging
   if (battery_voltage > USB_Voltage)
   {
@@ -2760,30 +2799,38 @@ void displayBatteryLevel(int colour)
 
 void Suspend_Device()
 {
-  Serial.println("Presiona de nuevo el boton para despertar");
-  // Off sensors
-  digitalWrite(OUT_EN, LOW); // step-up off
-
-  if (TDisplay == true)
+  if (NoiseBUTTONFlag == false)
   {
-    // int r = digitalRead(TFT_BL);
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextColor(TFT_GREEN, TFT_BLACK);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("Presiona boton", tft.width() / 2, tft.height() / 2 - 15);
-    tft.drawString("para despertar", tft.width() / 2, tft.height() / 2 + 15);
-    espDelay(3000);
-    // digitalWrite(TFT_BL, !r);
-    tft.writecommand(TFT_DISPOFF);
-    tft.writecommand(TFT_SLPIN);
+    Serial.println("Presiona de nuevo el boton para despertar");
+    // Off sensors
+    digitalWrite(OUT_EN, LOW); // step-up off
+
+    if (TDisplay == true)
+    {
+      // int r = digitalRead(TFT_BL);
+      tft.fillScreen(TFT_BLACK);
+      tft.setTextColor(TFT_GREEN, TFT_BLACK);
+      tft.setTextDatum(MC_DATUM);
+      tft.drawString("Presiona boton", tft.width() / 2, tft.height() / 2 - 15);
+      tft.drawString("para despertar", tft.width() / 2, tft.height() / 2 + 15);
+      espDelay(3000);
+      // digitalWrite(TFT_BL, !r);
+      tft.writecommand(TFT_DISPOFF);
+      tft.writecommand(TFT_SLPIN);
+    }
+    else
+    {
+      espDelay(3000);
+    }
+    // After using light sleep, you need to disable timer wake, because here use external IO port to wake up
+    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+    // esp_sleep_enable_ext1_wakeup(GPIO_SEL_0, ESP_EXT1_WAKEUP_ALL_LOW);
   }
   else
-  {
-    espDelay(3000);
-  }
+    Serial.println("Tecla fallida, presione 1 segundo para despertar");
 
   // After using light sleep, you need to disable timer wake, because here use external IO port to wake up
-  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
+  //  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
   // esp_sleep_enable_ext1_wakeup(GPIO_SEL_0, ESP_EXT1_WAKEUP_ALL_LOW);
 
   // set top button for wake up
@@ -2801,6 +2848,7 @@ void print_reset_reason(RESET_REASON reason)
   case 1:
     Serial.println("POWERON_RESET");
     ResetFlag = true;
+    DeepSleepFlag = false;
     break; /**<1,  Vbat power on reset*/
   case 3:
     Serial.println("SW_RESET");
@@ -2810,6 +2858,8 @@ void print_reset_reason(RESET_REASON reason)
     break; /**<4,  Legacy watch dog reset digital core*/
   case 5:
     Serial.println("DEEPSLEEP_RESET");
+    DeepSleepFlag = true;
+    ResetFlag = false;
     break; /**<5,  Deep Sleep reset digital core*/
   case 6:
     Serial.println("SDIO_RESET");
@@ -2832,6 +2882,7 @@ void print_reset_reason(RESET_REASON reason)
   case 12:
     Serial.println("SW_CPU_RESET");
     ResetFlag = false;
+    DeepSleepFlag = false;
     break; /**<12, Software reset CPU*/
   case 13:
     Serial.println("RTCWDT_CPU_RESET");
@@ -3048,6 +3099,7 @@ void displayAverage(int average)
   }
   else
     tft.drawString("ug/m3", 72, 218);
+    // tft.drawString("ug/m3", 72, 268);
 
 #if !Bluetooth
   int rssi;
@@ -3161,10 +3213,25 @@ void pageEnd()
 #if Bluetooth
 void Write_Bluetooth()
 { // Write measurements to bluetooth
+
+  uint32_t ValSampleIntervals;
+
   gadgetBle.writePM2p5(pm25int);
   gadgetBle.writeTemperature(temp);
   gadgetBle.writeHumidity(humi);
   Serial.println("Bluetooth frame: PM25, humidity and temperature");
   gadgetBle.commit();
+
+  ValSampleIntervals = gadgetBle.getSampleInterval();
+  //  Serial.print("ValSampleIntervals: ");
+  //  Serial.println(ValSampleIntervals);
+
+  //  Serial.print("Bluetooth_loop_time: ");
+  //  Serial.println(Bluetooth_loop_time);
+
+  Bluetooth_loop_time = ValSampleIntervals;
+
+  if (eepromConfig.BluetoothTime != Bluetooth_loop_time)
+    FlashBluetoothTime();
 }
 #endif

@@ -77,9 +77,8 @@ char CustomValTotalString[9] = "00000000";
 uint16_t IDn = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "1.3";
+String sw_version = "1.4";
 String aireciudadano_device_id;
-// String aireciudadano_charac_id;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct

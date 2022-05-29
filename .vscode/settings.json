@@ -13,5 +13,6 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "utility": "cpp"
-    }
+    },
+    "idf.portWin": "COM56"
 }

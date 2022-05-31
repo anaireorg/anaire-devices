@@ -74,11 +74,12 @@ bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring o
 uint8_t CustomValue = 0;
 uint16_t CustomValtotal = 0;
 char CustomValTotalString[9] = "00000000";
-uint16_t IDn = 0;
+uint32_t IDn = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "1.4";
 String aireciudadano_device_id;
+uint8_t Swver; 
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
@@ -398,6 +399,9 @@ void setup()
 #endif
 
   aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
+
+  float Floatver = sw_version.toFloat();
+  Swver = Floatver * 10;
 
   // Get device id
   Get_AireCiudadano_DeviceId();
@@ -1179,7 +1183,7 @@ void Start_Captive_Portal()
   // Captive portal parameters
 
   WiFiManagerParameter custom_id_html("<p>Set Station Custom Name:</p>"); // only custom html
-  WiFiManagerParameter custom_id_name("CustomName", "30 characters max", eepromConfig.aireciudadano_device_name, 30);
+  WiFiManagerParameter custom_id_name("CustomName", "29 characters max", eepromConfig.aireciudadano_device_name, 29);
   WiFiManagerParameter custom_ptime_html("<p>Set Publication Server Time in minutes:</p>"); // only custom html
   char Ptime[5];
   itoa(eepromConfig.PublicTime, Ptime, 10);
@@ -2673,6 +2677,7 @@ void Aireciudadano_Characteristics()
 #if BrownoutOFF
   IDn = IDn + 8192;
 #endif
+  IDn = IDn + (Swver * 65536);
   Serial.print("IDn: ");
   Serial.println(IDn);
 }

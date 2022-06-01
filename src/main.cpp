@@ -26,6 +26,7 @@
 //          OK: Revision de Teclas para dormir en el Splash Screen!!!!!!!!!!!!!!!!!
 //          OK: Revisión de Teclas para despertar, ojala fuera mas de 1 segundo por posibles ruidos de tecla
 //          OK seguir revisando: Revisar la funcion de la APP de sample time a ver como se maneja desde el micro, investigar eso bien
+//          OK: Version de firmware incluida en el valor IDn que se envia por la trama mqtt
 //
 // MODIFICACIONES EXTERNAS:
 // Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:

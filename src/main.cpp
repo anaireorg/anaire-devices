@@ -78,9 +78,9 @@ char CustomValTotalString[9] = "00000000";
 uint32_t IDn = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "1.4";
+String sw_version = "1.5";
 String aireciudadano_device_id;
-uint8_t Swver; 
+uint8_t Swver;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
@@ -127,12 +127,16 @@ char aireciudadano_device_nameTemp[30] = {0};
 Preferences preferences;
 
 // Measurements
-float PM25_value = 0;       // PM25 measured value
-float PM25_accumulated = 0; // Accumulates pm25 measurements for a MQTT period
-float temperature;          // Read temperature as Celsius
-float humidity;             // Read humidity in %
-int PM25_samples = 0;       // Counts de number of samples for a MQTT period
-int pm25int;                // PM25 publicado
+float PM25_value = 0;           // PM25 measured value
+float PM25_value_ori = 0;       // PM25 original measured value in PMS adjust TRUE
+float PM25_accumulated = 0;     // Accumulates pm25 measurements for a MQTT period
+float PM25_accumulated_ori = 0; // Accumulates pm25 measurements for a MQTT period in PMS Adjust TRUE
+float temperature;              // Read temperature as Celsius
+float humidity;                 // Read humidity in %
+int PM25_samples = 0;           // Counts de number of samples for a MQTT period
+int pm25int;                    // PM25 publicado
+int pm25intori;
+
 int temp;
 int humi;
 
@@ -580,7 +584,7 @@ void loop()
 
     if (NoSensor == false)
     {
-      if (PM25_value >= 0) // REVISAR!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      if (PM25_value >= 0)
       {
         // Update display with new values
         if (TDisplay == true)
@@ -593,6 +597,8 @@ void loop()
         }
         // Accumulates samples
         PM25_accumulated += PM25_value;
+        if (AdjPMS == true)
+          PM25_accumulated_ori += PM25_value_ori;
         PM25_samples++;
         Con_loop_times++;
       }
@@ -689,6 +695,7 @@ void loop()
 
     // Reset samples after sending them to the MQTT server
     PM25_accumulated = 0.0;
+    PM25_accumulated_ori = 0.0;
     PM25_samples = 0.0;
   }
 #endif
@@ -1465,6 +1472,7 @@ void Send_Message_Cloud_App_MQTT()
 { // Send measurements to the cloud application by MQTT
   // Print info
   float pm25f;
+  float pm25fori;
   int8_t RSSI;
   int8_t inout;
 
@@ -1475,7 +1483,10 @@ void Send_Message_Cloud_App_MQTT()
   Serial.println(PM25_samples);
   pm25f = PM25_accumulated / PM25_samples;
   pm25int = round(pm25f);
+  pm25fori = PM25_accumulated_ori / PM25_samples;
+  pm25intori = round(pm25fori);
   Serial.println(pm25int);
+  Serial.println(pm25intori);
   ///// END DEBUG Samples
   ReadHyT();
   RSSI = WiFi.RSSI();
@@ -1504,7 +1515,10 @@ void Send_Message_Cloud_App_MQTT()
   }
   else
   {
-    sprintf(MQTT_message, "{id: %s, PM25: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn);
+    if (AdjPMS == true)
+      sprintf(MQTT_message, "{id: %s, PM25: %d, PM25raw: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn);
+    else
+      sprintf(MQTT_message, "{id: %s, PM25: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn);
   }
   Serial.print(MQTT_message);
   Serial.println();
@@ -1821,6 +1835,9 @@ if (PMSsen == true)
     {
       Serial.println("Plantower sensor found!");
       PMSsen = true;
+#if Bluetooth
+      AdjPMS = true; // Por defecto se deja con ajuste, REVISAR!!!!!!
+#endif
     }
     else
     {
@@ -1966,7 +1983,18 @@ void Read_Sensor()
       PM25_value = data.PM_AE_UG_2_5;
       Serial.print("PMS PM2.5: ");
       Serial.print(PM25_value);
-      Serial.println(" ug/m3   ");
+      Serial.print(" ug/m3   ");
+      if (AdjPMS == true)
+      {
+        PM25_value_ori = PM25_value;
+        // PM25_value = ((562 * PM25_value_ori) / 1000) - 1; // Ecuación de ajuste resultado de 13 intercomparaciones entre PMS7003 y SPS30 por meses
+        PM25_value = ((553 * PM25_value_ori) / 1000) + 1; // Segundo ajuste
+        Serial.print("Adjust: ");
+        Serial.print(PM25_value);
+        Serial.println(" ug/m3");
+      }
+      else
+        Serial.println("");
     }
     else
     {
@@ -2636,6 +2664,7 @@ void Aireciudadano_Characteristics()
   else if (eepromConfig.ConfigValues[8] == '4')
   {
     AdjPMS = true;
+    PMSsen = true;
     Serial.println("PMS sensor with stadistical adjust");
   }
 

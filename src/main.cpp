@@ -415,10 +415,9 @@ void setup()
   Bluetooth_loop_time = eepromConfig.BluetoothTime;
   gadgetBle.setSampleIntervalMs(Bluetooth_loop_time * 1000); // Valor de muestreo de APP y de Sensor
 #endif
-
-  TDisplay = false;
-  OLED66 = false;
-  OLED96 = false;
+//  TDisplay = false;
+//  OLED66 = false;
+//  OLED96 = false;
 #if Tdisplaydisp
   TDisplay = true;
 #endif

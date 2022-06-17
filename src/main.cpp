@@ -1212,7 +1212,7 @@ void Start_Captive_Portal()
   WiFiManagerParameter custom_board_type;
   WiFiManagerParameter custom_outin_type;
 
-  const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM type:</label><br/><input type='radio' name='customSenPM' value='0' checked> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw data<br><input type='radio' name='customSenPM' value='4'> Plantower PMS with PM formula data adjust";
+  const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM type:</label><br/><input type='radio' name='customSenPM' value='0' checked> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw data (NOT recommended)<br><input type='radio' name='customSenPM' value='4'> Plantower PMS RECOMMENDED with data adjust (explained in the guides)";
   new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str); // custom html input
 
   const char *custom_senHYT_str = "<br/><br/><label for='customSenHYT'>Sensor HYT type:</label><br/><input type='radio' name='customSenHYT' value='0' checked> None<br><input type='radio' name='customSenHYT' value='1'> Sensirion SHT31<br><input type='radio' name='customSenHYT' value='2'> AM2320";

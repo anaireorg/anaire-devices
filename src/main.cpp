@@ -46,6 +46,8 @@
 #define OLED66display false
 #define OLED96display false
 
+#define ESP8266 true
+
 // Fin definiciones de Bluetooth
 ////////////////////////////////
 
@@ -182,7 +184,6 @@ bool toggleLive;
 int dw = 0; // display width
 int dh = 0; // display height
 
-//#if Bluetooth
 #if OLED66display
 U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
 #elif OLED96display
@@ -190,12 +191,11 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, 
 #else
 U8G2 u8g2;
 #endif
-//#endif
 
+#if !ESP8266
 // Display and fonts
 #include <TFT_eSPI.h>
 #include <SPI.h>
-//#include "ArchivoNarrow_Regular10pt7b.h"
 #include "ArchivoNarrow_Regular50pt7b.h"
 #include "ArimoBoldFont16.h"
 #include "ArimoBoldFont20.h"
@@ -207,7 +207,6 @@ U8G2 u8g2;
 TFT_eSPI tft = TFT_eSPI(135, 240); // Invoke library, pins defined in User_Setup.h
 
 // Customized AireCiudadano splash screen
-//#include "Icono_AC_splash.h"
 #include "Icono_AireCiudadano.h"
 
 // Buttons: Top and bottom considered when USB connector is positioned on the right of the board
@@ -229,6 +228,11 @@ int vref = 1100;
 #define Voltage_Threshold_2 3.7
 #define Voltage_Threshold_3 3.5
 #define Voltage_Threshold_4 3.3
+
+#else
+#define BUTTON_TOP 35   // ??????????
+#define BUTTON_BOTTOM 0 // ??????????
+#endif
 
 #define Sensor_SDA_pin 21 // Define the SDA pin used for the SCD30
 #define Sensor_SCL_pin 22 // Define the SCL pin used for the SCD30
@@ -435,6 +439,7 @@ void setup()
 
   if (TDisplay == true)
   {
+#if !ESP8266
     // Initialize TTGO Display and show AireCiudadano splash screen
     Button_Init();
     Display_Init();
@@ -445,6 +450,7 @@ void setup()
       button_top.loop();
       delay(500);
     }
+#endif
   }
   else if (OLED66 == true || OLED96 == true)
   {
@@ -490,12 +496,6 @@ void setup()
   Serial.println(gadgetBle.getDeviceIdString());
 #endif
 
-  //  if (TDisplay == true)
-  //  {
-  //    // Initialize TTGO board buttons
-  //    Button_Init();
-  //  }
-
 #if !Bluetooth
   // Start Captive Portal for 30 seconds
   if (ResetFlag == true)
@@ -528,6 +528,7 @@ void setup()
   Serial.println("### Configuración del medidor AireCiudadano finalizada ###\n");
   if (TDisplay == true)
   {
+#if !ESP8266
     tft.fillScreen(TFT_BLUE);
     tft.setTextColor(TFT_WHITE, TFT_BLUE);
     tft.setTextDatum(6); // bottom left
@@ -541,6 +542,7 @@ void setup()
     delay(2000);
     // Update display with new values
     Update_Display();
+#endif
   }
   else if (OLED66 == true || OLED96 == true)
   {
@@ -588,7 +590,9 @@ void loop()
         // Update display with new values
         if (TDisplay == true)
         {
+#if !ESP8266
           Update_Display();
+#endif
         }
         else if (OLED66 == true || OLED96 == true)
         {
@@ -607,6 +611,7 @@ void loop()
       Serial.println("Medidor No configurado");
       if (TDisplay == true)
       {
+#if !ESP8266
         tft.fillScreen(TFT_BLUE);
         tft.setTextColor(TFT_WHITE, TFT_BLUE);
         tft.setTextDatum(6); // bottom left
@@ -624,6 +629,7 @@ void loop()
           tft.drawString("No configurado", tft.width() / 2, (tft.height() / 2) + 20);
         }
         delay(1000);
+#endif
       }
       else if (OLED66 == true || OLED96 == true)
       {
@@ -766,12 +772,14 @@ void loop()
   delay(3);
 #endif
 
+#if !ESP8266
   if (TDisplay == true)
   {
     // Process buttons events
     button_top.loop();
     button_bottom.loop();
   }
+#endif
 
   // Serial.println("--- END LOOP");
 }
@@ -1153,6 +1161,7 @@ void Start_Captive_Portal()
     wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
 
+#if !ESP8266
   if (TDisplay == true)
   {
     tft.fillScreen(TFT_WHITE);
@@ -1163,6 +1172,7 @@ void Start_Captive_Portal()
     tft.drawString("Portal Cautivo", tft.width() / 2, (tft.height() / 2 - 20));
     tft.drawString(wifiAP, tft.width() / 2, tft.height() / 2 + 10);
   }
+#endif
 
   if (OLED66 == true || OLED96 == true)
   {
@@ -1643,6 +1653,7 @@ void Firmware_Update()
   UpdateClient.setTimeout(30); // timeout argument is defined in seconds for setTimeout
   Serial.println("ACTUALIZACION EN CURSO");
 
+#if !ESP8266
   if (TDisplay == true)
   {
     // Update display
@@ -1653,6 +1664,7 @@ void Firmware_Update()
     tft.setTextDatum(MC_DATUM);
     tft.drawString("ACTUALIZACION EN CURSO", tft.width() / 2, tft.height() / 2);
   }
+#endif
 
   // t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
   t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
@@ -1663,11 +1675,13 @@ void Firmware_Update()
   case HTTP_UPDATE_FAILED:
     Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
 
+#if !ESP8266
     if (TDisplay == true)
     {
       tft.fillScreen(TFT_ORANGE);
       tft.drawString("ACTUALIZACION FALLIDA", tft.width() / 2, tft.height() / 2);
     }
+#endif
 
     delay(1000);
     break;
@@ -1678,11 +1692,13 @@ void Firmware_Update()
 
   case HTTP_UPDATE_OK:
     Serial.println("HTTP_UPDATE_OK");
+#if !ESP8266
     if (TDisplay == true)
     {
       tft.fillScreen(TFT_ORANGE);
       tft.drawString("ACTUALIZACION COMPLETA", tft.width() / 2, tft.height() / 2);
     }
+#endif
     delay(1000);
     break;
   }
@@ -2840,6 +2856,7 @@ void Suspend_Device()
 
     if (TDisplay == true)
     {
+#if !ESP8266
       // int r = digitalRead(TFT_BL);
       tft.fillScreen(TFT_BLACK);
       tft.setTextColor(TFT_GREEN, TFT_BLACK);
@@ -2850,6 +2867,7 @@ void Suspend_Device()
       // digitalWrite(TFT_BL, !r);
       tft.writecommand(TFT_DISPOFF);
       tft.writecommand(TFT_SLPIN);
+#endif
     }
     else
     {

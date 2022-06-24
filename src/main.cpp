@@ -28,6 +28,13 @@
 //          OK seguir revisando: Revisar la funcion de la APP de sample time a ver como se maneja desde el micro, investigar eso bien
 //          OK: Version de firmware incluida en el valor IDn que se envia por la trama mqtt
 //
+// Version ESP8266: parece bien
+// Cambio en el archivo WifiEspClient.cpp:
+//size_t WiFiEspClient::print(const __FlashStringHelper *ifsh)
+//{
+//	return printFSH(ifsh, false);
+//}
+//
 // MODIFICACIONES EXTERNAS:
 // Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:
 // _configPortalTimeout = 300000;   // New Config Portal Timeout
@@ -46,7 +53,7 @@
 #define OLED66display false
 #define OLED96display false
 
-#define ESP8266 true
+#define ESP8266board true
 
 // Fin definiciones de Bluetooth
 ////////////////////////////////
@@ -80,7 +87,7 @@ char CustomValTotalString[9] = "00000000";
 uint32_t IDn = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "1.5";
+String sw_version = "1.6";
 String aireciudadano_device_id;
 uint8_t Swver;
 
@@ -124,9 +131,14 @@ char aireciudadano_device_nameTemp[30] = {0};
 #include "soc/rtc_cntl_reg.h"
 #endif
 
+#if ESP8266board
+// Save config values to EEPROM
+#include <ESP_EEPROM.h>
+#else
 // to store data on nvs partition
 #include <Preferences.h>
 Preferences preferences;
+#endif
 
 // Measurements
 float PM25_value = 0;           // PM25 measured value
@@ -166,10 +178,12 @@ unsigned long lastReconnectAttempt = 0; // MQTT reconnections
 unsigned int errors_loop_duration = 60000; // 60 seconds
 unsigned long errors_loop_start;           // holds a timestamp for each error loop start
 
+#if !ESP8266board
 // TTGO ESP32 board
 #include "esp_timer.h"
-#include <Wire.h>
 #include <esp_system.h>
+#endif
+#include <Wire.h>
 
 // OLED display
 #include <U8g2lib.h>
@@ -192,7 +206,7 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, 
 U8G2 u8g2;
 #endif
 
-#if !ESP8266
+#if !ESP8266board
 // Display and fonts
 #include <TFT_eSPI.h>
 #include <SPI.h>
@@ -230,6 +244,7 @@ int vref = 1100;
 #define Voltage_Threshold_4 3.3
 
 #else
+
 #define BUTTON_TOP 35   // ??????????
 #define BUTTON_BOTTOM 0 // ??????????
 #endif
@@ -265,11 +280,21 @@ float vocIndex;
 float noxIndex;
 
 #include "PMS.h"
+
+#if !ESP8266board
+
 PMS pms(Serial1);
 PMS::DATA data;
 // bool PMSflag = false;
-#define PMS_TX 17 // PMS TX pin
+#define PMS_TX 17 // PMS TX pin           // Serial software !!!!!!
 #define PMS_RX 15 // PMS RX pin
+
+#else
+PMS pms(Serial);
+PMS::DATA data;
+// bool PMSflag = false;
+
+#endif
 
 #include <Adafruit_SHT31.h>
 Adafruit_SHT31 sht31;
@@ -291,7 +316,13 @@ GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_VOC_PM25_V2);
 bool bluetooth_active = false;
 #endif
 
+#if !ESP8266board
 #define OUT_EN 26 // Enable del elevador de voltaje
+#else
+#define OUT_EN 12 // Enable del elevador de voltaje
+#endif
+
+#if !ESP8266board
 
 #if !Bluetooth
 // WiFi
@@ -310,6 +341,45 @@ bool PortalFlag = false;
 
 WiFiManager wifiManager;
 
+#endif
+
+#else
+
+#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
+
+WiFiManager wifiManager;
+
+// WiFi
+#include <ESP8266WiFi.h> // Wifi ESP8266
+extern "C"
+{
+#include "user_interface.h"
+
+#if WPA2
+#include "wpa2_enterprise.h"
+#endif
+
+#include "c_types.h"
+  bool PortalFlag = false;
+}
+
+#include <ESP8266WiFiMulti.h>
+#include <ESP8266mDNS.h> // to be reached on anaire_device_id.local in the local network
+WiFiClient wifi_client;
+const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
+int wifi_status = WL_IDLE_STATUS;
+WiFiServer wifi_server(80); // to check if it is alive
+                            // String wifi_ssid = WiFi.SSID();                  // your network SSID (name)
+                            // String wifi_password = WiFi.psk();               // your network psk password
+
+#include <ESP8266WebServer.h>
+#include <DNSServer.h> //?????????????????
+                       //#include <DoubleResetDetector.h>
+
+#endif
+
+#if !Bluetooth
+
 // MQTT
 #include <PubSubClient.h>
 char MQTT_message[256];
@@ -322,18 +392,30 @@ String MQTT_receive_topic;
 #include <ArduinoJson.h>
 StaticJsonDocument<384> jsonBuffer;
 
+#if !ESP8266board
 // OTA Update
 #include <HTTPClient.h>
 #include <HTTPUpdate.h>
+#else
+// For http binary updates
+#include <ESP8266HTTPClient.h>
+#include <ESP8266httpUpdate.h>
+#endif
 
 #endif
 
+#if !ESP8266board
 #include "rom/rtc.h"
+#endif
+
 bool ResetFlag = false;
 bool DeepSleepFlag = false;
 bool NoiseBUTTONFlag = false;
 // int reason;
-void print_reset_reason(RESET_REASON reason);
+
+//#if !ESP8266board
+// void print_reset_reason(RESET_REASON reason);
+//#endif
 
 // to know when there is an updating process in place
 bool updating = false;
@@ -357,8 +439,19 @@ void setup()
   }
   Serial.setDebugOutput(true);
 
+#if !ESP8266board
   Serial.println("CPU0 reset reason:");
   print_reset_reason(rtc_get_reset_reason(0));
+#else
+uint16_t Resetvar = 0;
+  Serial.print("CPU reset reason: ");
+  rst_info *rinfo = ESP.getResetInfoPtr();
+  Serial.println(rinfo->reason);
+  Resetvar = rinfo->reason;
+  ResetFlag = true;
+  if (Resetvar == 4)
+    ResetFlag = false;
+#endif
 
 #if Bluetooth
   if (DeepSleepFlag == true)
@@ -392,8 +485,11 @@ void setup()
   Serial.println();
   Serial.println("##### Inicializando Medidor Aire Ciudadano #####");
 
+#if !ESP8266board
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
+#endif
+
 #if PreProgSensor
   Serial.print("T1: ");
   Serial.println(eepromConfig.aireciudadano_device_name);
@@ -439,7 +535,7 @@ void setup()
 
   if (TDisplay == true)
   {
-#if !ESP8266
+#if !ESP8266board
     // Initialize TTGO Display and show AireCiudadano splash screen
     Button_Init();
     Display_Init();
@@ -497,7 +593,7 @@ void setup()
 #endif
 
 #if !Bluetooth
-  // Start Captive Portal for 30 seconds
+  // Start Captive Portal for 60 seconds
   if (ResetFlag == true)
   {
     Start_Captive_Portal();
@@ -528,7 +624,7 @@ void setup()
   Serial.println("### Configuración del medidor AireCiudadano finalizada ###\n");
   if (TDisplay == true)
   {
-#if !ESP8266
+#if !ESP8266board
     tft.fillScreen(TFT_BLUE);
     tft.setTextColor(TFT_WHITE, TFT_BLUE);
     tft.setTextDatum(6); // bottom left
@@ -590,7 +686,7 @@ void loop()
         // Update display with new values
         if (TDisplay == true)
         {
-#if !ESP8266
+#if !ESP8266board
           Update_Display();
 #endif
         }
@@ -611,7 +707,7 @@ void loop()
       Serial.println("Medidor No configurado");
       if (TDisplay == true)
       {
-#if !ESP8266
+#if !ESP8266board
         tft.fillScreen(TFT_BLUE);
         tft.setTextColor(TFT_WHITE, TFT_BLUE);
         tft.setTextDatum(6); // bottom left
@@ -772,7 +868,7 @@ void loop()
   delay(3);
 #endif
 
-#if !ESP8266
+#if !ESP8266board
   if (TDisplay == true)
   {
     // Process buttons events
@@ -789,6 +885,8 @@ void loop()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #if !Bluetooth
+
+#if !ESP8266board
 
 void WiFiEvent(WiFiEvent_t event)
 {
@@ -877,11 +975,57 @@ void WiFiEvent(WiFiEvent_t event)
   }
 }
 
+#else
+// Print wifi status on serial monitor
+// ESP8266
+
+void Print_WiFi_Status_ESP8266()
+{
+
+  // Get current status
+  //  WL_CONNECTED: assigned when connected to a WiFi network;
+  //  WL_NO_SHIELD: assigned when no WiFi shield is present;
+  //  WL_IDLE_STATUS: it is a temporary status assigned when WiFi.begin() is called and remains active until the number of attempts expires (resulting in WL_CONNECT_FAILED) or a connection is established (resulting in WL_CONNECTED);
+  //  WL_NO_SSID_AVAIL: assigned when no SSID are available;
+  //  WL_SCAN_COMPLETED: assigned when the scan networks is completed;
+  //  WL_CONNECT_FAILED: assigned when the connection fails for all the attempts;
+  //  WL_CONNECTION_LOST: assigned when the connection is lost;
+  //  WL_DISCONNECTED: assigned when disconnected from a network;
+
+  // wifi_status = WiFi.status();
+  Serial.print("wifi_status: ");
+  Serial.println(WiFi.status());
+
+  // Print the SSID of the network you're attached to:
+  Serial.print("SSID: ");
+  Serial.println(WiFi.SSID());
+
+  // Print your WiFi shield's IP address:
+  // ip_address = WiFi.localIP();
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  // Print your WiFi shield's MAC address:
+  Serial.print("MAC Adress: ");
+  Serial.println(WiFi.macAddress());
+
+  // Print the received signal strength:
+  // wifi_rssi_dbm = WiFi.RSSI();
+  Serial.print("signal strength (RSSI):");
+  Serial.print(WiFi.RSSI());
+  Serial.println(" dBm");
+}
+
+#endif
+
 void Connect_WiFi()
 { // Connect to WiFi
 
   WiFi.disconnect(true); // disconnect from wifi to set new wifi connection
   WiFi.mode(WIFI_STA);   // init wifi mode
+
+#if !ESP8266board
+
   WiFi.onEvent(WiFiEvent);
 
 #if !PreProgSensor
@@ -889,6 +1033,8 @@ void Connect_WiFi()
   esp_wifi_get_config(WIFI_IF_STA, &conf); // Get WiFi configuration
   Serial.print("Attempting to connect to WiFi network: ");
   Serial.println(String(reinterpret_cast<const char *>(conf.sta.ssid))); // WiFi.SSID() is not filled up until the connection is established
+#endif
+
 #endif
 
 #if WPA2
@@ -941,7 +1087,12 @@ void Connect_WiFi()
     // start the web server on port 80
     wifi_server.begin();
   }
+
+#if ESP8266board
+  Print_WiFi_Status_ESP8266();
+#else
   Print_WiFi_Status();
+#endif
 }
 
 void Print_WiFi_Status()
@@ -1125,12 +1276,13 @@ void Check_WiFi_Server()
           PortalFlag = true;
           Start_Captive_Portal();
         }
-
+#if !ESP8266board
         // Check to see if the client request was "GET /4" to suspend the device:
         if (currentLine.endsWith("GET /4"))
         {
           Suspend_Device();
         }
+#endif
 
         // Check to see if the client request was "GET /5" to restart the device:
         if (currentLine.endsWith("GET /5"))
@@ -1161,7 +1313,7 @@ void Start_Captive_Portal()
     wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
 
-#if !ESP8266
+#if !ESP8266board
   if (TDisplay == true)
   {
     tft.fillScreen(TFT_WHITE);
@@ -1643,6 +1795,8 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
 void Firmware_Update()
 {
 
+#if !ESP8266board
+
   Serial.println("### FIRMWARE UPDATE ###");
 
   // For remote firmware update
@@ -1653,7 +1807,6 @@ void Firmware_Update()
   UpdateClient.setTimeout(30); // timeout argument is defined in seconds for setTimeout
   Serial.println("ACTUALIZACION EN CURSO");
 
-#if !ESP8266
   if (TDisplay == true)
   {
     // Update display
@@ -1664,7 +1817,6 @@ void Firmware_Update()
     tft.setTextDatum(MC_DATUM);
     tft.drawString("ACTUALIZACION EN CURSO", tft.width() / 2, tft.height() / 2);
   }
-#endif
 
   // t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
   t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
@@ -1675,13 +1827,11 @@ void Firmware_Update()
   case HTTP_UPDATE_FAILED:
     Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
 
-#if !ESP8266
     if (TDisplay == true)
     {
       tft.fillScreen(TFT_ORANGE);
       tft.drawString("ACTUALIZACION FALLIDA", tft.width() / 2, tft.height() / 2);
     }
-#endif
 
     delay(1000);
     break;
@@ -1692,16 +1842,70 @@ void Firmware_Update()
 
   case HTTP_UPDATE_OK:
     Serial.println("HTTP_UPDATE_OK");
-#if !ESP8266
     if (TDisplay == true)
     {
       tft.fillScreen(TFT_ORANGE);
       tft.drawString("ACTUALIZACION COMPLETA", tft.width() / 2, tft.height() / 2);
     }
-#endif
     delay(1000);
     break;
   }
+
+#else
+
+  // For remote firmware update
+  BearSSL::WiFiClientSecure UpdateClient;
+  int freeheap = ESP.getFreeHeap();
+
+  Serial.println("### FIRMWARE UPGRADE ###");
+
+  // Add optional callback notifiers
+  ESPhttpUpdate.onStart(update_started);
+  ESPhttpUpdate.onEnd(update_finished);
+  ESPhttpUpdate.onProgress(update_progress);
+  ESPhttpUpdate.onError(update_error);
+  UpdateClient.setInsecure();
+
+  // Try to set a smaller buffer size for BearSSL update
+  bool mfln = UpdateClient.probeMaxFragmentLength("raw.githubusercontent.com", 443, 512);
+  Serial.printf("\nConnecting to https://raw.githubusercontent.com\n");
+  Serial.printf("MFLN supported: %s\n", mfln ? "yes" : "no");
+  if (mfln)
+  {
+    UpdateClient.setBufferSizes(512, 512);
+  }
+  UpdateClient.connect("raw.githubusercontent.com", 443);
+  if (UpdateClient.connected())
+  {
+    Serial.printf("MFLN status: %s\n", UpdateClient.getMFLNStatus() ? "true" : "false");
+    Serial.printf("Memory used: %d\n", freeheap - ESP.getFreeHeap());
+    freeheap -= ESP.getFreeHeap();
+  }
+  else
+  {
+    Serial.printf("Unable to connect\n");
+  }
+
+  // Run http update
+  // t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.30ppm-50ppm/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
+
+  switch (ret)
+  {
+  case HTTP_UPDATE_FAILED:
+    Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+    break;
+
+  case HTTP_UPDATE_NO_UPDATES:
+    Serial.println("HTTP_UPDATE_NO_UPDATES");
+    break;
+
+  case HTTP_UPDATE_OK:
+    Serial.println("HTTP_UPDATE_OK");
+    break;
+  }
+
+#endif
 }
 
 /*
@@ -1723,7 +1927,35 @@ void displayWifi(int colour_1, int colour_2, boolean active)
 
 */
 
+#if ESP8266board
+
+void update_started()
+{
+  Serial.println("CALLBACK:  HTTP update process started");
+  updating = true;
+}
+
+void update_finished()
+{
+  Serial.println("CALLBACK:  HTTP update process finished");
+  Serial.println("### FIRMWARE UPGRADE COMPLETED - REBOOT ###");
+  updating = false;
+}
+
+void update_progress(int cur, int total)
+{
+  Serial.printf("CALLBACK:  HTTP update process at %d of %d bytes...\n", cur, total);
+}
+
+void update_error(int err)
+{
+  Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
+  updating = false;
+}
+
 #endif
+
+#endif // Bluetooth linea 856
 
 void saveParamCallback()
 {
@@ -1752,7 +1984,12 @@ void Setup_Sensor()
   {
 #endif
     Serial.println("Test Sensirion SPS30 sensor");
-    Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
+
+#if ESP8266board
+    Wire.begin();
+#else
+  Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
+#endif
 
     sps30.EnableDebugging(DEBUG);
     // Begin communication channel
@@ -1792,7 +2029,13 @@ void Setup_Sensor()
     {
 #endif
       Serial.println("Test Sensirion SEN5X sensor");
-      Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
+
+#if ESP8266board
+      Wire.begin();
+#else
+  Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
+#endif
+
       delay(10);
       sen5x.begin(Wire);
       delay(10);
@@ -1838,7 +2081,13 @@ if (PMSsen == true)
 {
 #endif
     Serial.println("Test Plantower Sensor");
+
+#if !ESP8266board
     Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
+#else
+  Serial1.begin(9600);      // GPIO2 (D4 pin on ESP-12E Development Board)
+#endif
+
     delay(1000);
 
     while (Serial1.available())
@@ -2306,12 +2555,16 @@ void Print_Config()
   Serial.println("#######################################");
 }
 
+#if !ESP8266board
 void espDelay(int ms)
 { //! Long time delay, it is recommended to use shallow sleep, which can effectively reduce the current consumption
   esp_sleep_enable_timer_wakeup(ms * 1000);
   esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
   esp_light_sleep_start();
 }
+#endif
+
+#if !ESP8266board
 
 void Button_Init()
 { // Manage TTGO T-Display board buttons
@@ -2467,6 +2720,8 @@ void Update_Display()
   toggleLive = !toggleLive;
 }
 
+#endif
+
 void UpdateOLED()
 {
   //  Serial.println("Sensor Read Update OLED");
@@ -2563,6 +2818,9 @@ void Get_AireCiudadano_DeviceId()
   uint32_t chipId = 0;
   char aireciudadano_device_id_endframe[10];
   String chipIdHEX;
+
+#if !ESP8266board
+
   for (int i = 0; i < 17; i = i + 8)
   {
     chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
@@ -2574,6 +2832,15 @@ void Get_AireCiudadano_DeviceId()
 #endif
   Serial.printf("ESP32 Chip model = %s Rev %d.\t", ESP.getChipModel(), ESP.getChipRevision());
   Serial.printf("This chip has %d cores and %dMB Flash.\n", ESP.getChipCores(), ESP.getFlashChipSize() / (1024 * 1024));
+
+#else
+
+  chipIdHEX = String(ESP.getChipId(), HEX);
+  strncpy(aireciudadano_device_id_endframe, chipIdHEX.c_str(), sizeof(aireciudadano_device_id_endframe));
+  Aireciudadano_Characteristics();
+
+#endif
+
   Serial.print("AireCiudadano Device ID: ");
   if (String(aireciudadano_device_id).isEmpty())
     aireciudadano_device_id = aireciudadano_device_id_endframe;
@@ -2730,7 +2997,33 @@ void Aireciudadano_Characteristics()
 #endif
 
 void Read_EEPROM()
-{ // Read AireCiudadano device persistent info
+{
+#if ESP8266board
+
+  // The begin() call will find the data previously saved in EEPROM if the same size
+  // as was previously committed. If the size is different then the EEEPROM data is cleared.
+  // Note that this is not made permanent until you call commit();
+  EEPROM.begin(sizeof(MyConfigStruct));
+  // Check if the EEPROM contains valid data from another run
+  // If so, overwrite the 'default' values set up in our struct
+  if (EEPROM.percentUsed() >= 0)
+  {
+    Serial.println("EEPROM has data from a previous run.");
+    Serial.print(EEPROM.percentUsed());
+    Serial.println("% of ESP flash space currently used");
+
+    // Read saved data
+    EEPROM.get(0, eepromConfig);
+    Print_Config();
+  }
+  else
+  {
+    aireciudadano_device_id.toCharArray(eepromConfig.aireciudadano_device_name, sizeof(eepromConfig.aireciudadano_device_name)); // Initialize aireciudadano_device_name with aireciudadano_device_id
+    Serial.println("No EEPROM data - using default config values");
+  }
+
+#else
+  // Read AireCiudadano device persistent info
   if (preferences.getBytesLength("config") > 0)
   {
     boolean result = preferences.getBytes("config", &eepromConfig, sizeof(eepromConfig));
@@ -2748,10 +3041,28 @@ void Read_EEPROM()
     aireciudadano_device_id.toCharArray(eepromConfig.aireciudadano_device_name, sizeof(eepromConfig.aireciudadano_device_name)); // Initialize aireciudadano_device_name with aireciudadano_device_id
     Serial.println("No EEPROM data - using default config values");
   }
+
+#endif
 }
 
 void Write_EEPROM()
-{ // Write AireCiudadano device persistent info
+{
+
+#if ESP8266board
+  // The begin() call will find the data previously saved in EEPROM if the same size
+  // as was previously committed. If the size is different then the EEEPROM data is cleared.
+  // Note that this is not made permanent until you call commit();
+  EEPROM.begin(sizeof(MyConfigStruct));
+
+  // set the EEPROM data ready for writing
+  EEPROM.put(0, eepromConfig);
+
+  // write the data to EEPROM
+  boolean ok = EEPROM.commit();
+  Serial.println((ok) ? "EEPROM Commit OK" : "EEPROM Commit failed");
+
+#else
+  // Write AireCiudadano device persistent info
   boolean result = preferences.putBytes("config", &eepromConfig, sizeof(eepromConfig));
   if (result)
   {
@@ -2761,10 +3072,26 @@ void Write_EEPROM()
   {
     Serial.println("Config data could not be written to flash");
   }
+
+#endif
 }
 
 void Wipe_EEPROM()
 { // Wipe AireCiudadano device persistent info to reset config data
+
+#if ESP8266board
+  boolean result = EEPROM.wipe();
+  if (result)
+  {
+    Serial.println("All EEPROM data wiped");
+  }
+  else
+  {
+    Serial.println("EEPROM data could not be wiped from flash store");
+  }
+
+#else
+
   boolean result = preferences.clear();
   if (result)
   {
@@ -2774,6 +3101,8 @@ void Wipe_EEPROM()
   {
     Serial.println("EEPROM data could not be wiped from flash store");
   }
+
+#endif
 }
 
 // #if TDisplay
@@ -2846,6 +3175,8 @@ void displayBatteryLevel(int colour)
 }
 #endif
 
+#if !ESP8266board
+
 void Suspend_Device()
 {
   if (NoiseBUTTONFlag == false)
@@ -2856,7 +3187,7 @@ void Suspend_Device()
 
     if (TDisplay == true)
     {
-#if !ESP8266
+      //#if !ESP8266board
       // int r = digitalRead(TFT_BL);
       tft.fillScreen(TFT_BLACK);
       tft.setTextColor(TFT_GREEN, TFT_BLACK);
@@ -2867,7 +3198,7 @@ void Suspend_Device()
       // digitalWrite(TFT_BL, !r);
       tft.writecommand(TFT_DISPOFF);
       tft.writecommand(TFT_SLPIN);
-#endif
+      //#endif
     }
     else
     {
@@ -2951,6 +3282,8 @@ void print_reset_reason(RESET_REASON reason)
     Serial.println("NO_MEAN");
   }
 }
+
+#endif
 
 void displayInit()
 {
@@ -3046,6 +3379,8 @@ void displayColorLevel(int cursor, String msg)
   u8g2.setCursor(35, 22);
   u8g2.print(msg);
 }
+
+#if !ESP8266board
 
 void displayAverage(int average)
 {
@@ -3171,6 +3506,7 @@ void displayAverage(int average)
   }
 #endif
 }
+#endif
 
 void displaySensorAverage(int average)
 {

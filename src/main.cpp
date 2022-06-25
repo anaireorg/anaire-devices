@@ -30,7 +30,7 @@
 //
 // Version ESP8266: parece bien
 // Cambio en el archivo WifiEspClient.cpp:
-//size_t WiFiEspClient::print(const __FlashStringHelper *ifsh)
+// size_t WiFiEspClient::print(const __FlashStringHelper *ifsh)
 //{
 //	return printFSH(ifsh, false);
 //}
@@ -247,6 +247,7 @@ int vref = 1100;
 
 #define BUTTON_TOP 35   // ??????????
 #define BUTTON_BOTTOM 0 // ??????????
+
 #endif
 
 #define Sensor_SDA_pin 21 // Define the SDA pin used for the SCD30
@@ -286,11 +287,18 @@ float noxIndex;
 PMS pms(Serial1);
 PMS::DATA data;
 // bool PMSflag = false;
-#define PMS_TX 17 // PMS TX pin           // Serial software !!!!!!
+#define PMS_TX 17 // PMS TX pin
 #define PMS_RX 15 // PMS RX pin
 
 #else
-PMS pms(Serial);
+#include <SoftwareSerial.h>
+
+#define PMS_TX 14 // PMS TX pin
+#define PMS_RX 12 // PMS RX pin
+
+SoftwareSerial pmsSerial(PMS_TX, PMS_RX); // SoftwareSerial(rxPin, txPin)
+
+PMS pms(pmsSerial);
 PMS::DATA data;
 // bool PMSflag = false;
 
@@ -413,9 +421,9 @@ bool DeepSleepFlag = false;
 bool NoiseBUTTONFlag = false;
 // int reason;
 
-//#if !ESP8266board
-// void print_reset_reason(RESET_REASON reason);
-//#endif
+#if !ESP8266board
+void print_reset_reason(RESET_REASON reason);
+#endif
 
 // to know when there is an updating process in place
 bool updating = false;
@@ -443,14 +451,19 @@ void setup()
   Serial.println("CPU0 reset reason:");
   print_reset_reason(rtc_get_reset_reason(0));
 #else
-uint16_t Resetvar = 0;
+  uint16_t Resetvar = 0;
   Serial.print("CPU reset reason: ");
   rst_info *rinfo = ESP.getResetInfoPtr();
   Serial.println(rinfo->reason);
   Resetvar = rinfo->reason;
   ResetFlag = true;
   if (Resetvar == 4)
+  {
     ResetFlag = false;
+    Serial.print("Resetvar: false");
+  }
+  Serial.print("Resetvar: ");
+  Serial.println(Resetvar);
 #endif
 
 #if Bluetooth
@@ -551,12 +564,18 @@ uint16_t Resetvar = 0;
   else if (OLED66 == true || OLED96 == true)
   {
     pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
+//    Serial.println("ANTES1");
     displayInit();
+//    Serial.println("ANTES2");
     pageStart();
     showWelcome();
+//    Serial.println("ANTES3");
     delay(1000);
-    u8g2.drawXBM(16, 18, 32, 32, IconoAC);
+//    Serial.println("ANTES");
+//    u8g2.drawXBM(16, 18, 32, 32, IconoAC);
+//    Serial.println("DESPUES1");
     pageEnd();
+//    Serial.println("DESPUES2");
     delay(3000);
   }
   else
@@ -1908,25 +1927,6 @@ void Firmware_Update()
 #endif
 }
 
-/*
-void displayWifi(int colour_1, int colour_2, boolean active)
-{ // Draw WiFi icon
-  tft.drawCircle(20, 30, 14, colour_1);
-  tft.drawCircle(20, 30, 10, colour_1);
-  tft.fillCircle(20, 30, 6, colour_1);
-  tft.fillRect(6, 30, 30, 30, colour_2);
-  // tft.fillRect(18, 30, 4, 8, colour_1);
-  tft.fillRect(19, 30, 4, 8, colour_1);
-
-  if (!active)
-  { // draw an X over
-    tft.drawLine(6, 16, 34, 46, colour_1);
-    tft.drawLine(34, 16, 6, 46, colour_1);
-  }
-}
-
-*/
-
 #if ESP8266board
 
 void update_started()
@@ -2085,16 +2085,11 @@ if (PMSsen == true)
 #if !ESP8266board
     Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
 #else
-  Serial1.begin(9600);      // GPIO2 (D4 pin on ESP-12E Development Board)
+  pmsSerial.begin(9600); // Software serial begin for PMS sensor
 #endif
 
     delay(1000);
 
-    while (Serial1.available())
-    {
-      Serial1.read();
-    }
-    pms.requestRead();
     if (pms.readUntil(data))
     {
       Serial.println("Plantower sensor found!");
@@ -2237,11 +2232,6 @@ void Read_Sensor()
   }
   else if (PMSsen == true)
   {
-    while (Serial1.available())
-    {
-      Serial1.read();
-    }
-    pms.requestRead();
     if (pms.readUntil(data))
     {
       PM25_value = data.PM_AE_UG_2_5;

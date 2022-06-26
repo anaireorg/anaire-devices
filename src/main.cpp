@@ -51,8 +51,9 @@
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
 #define OLED66display false
-#define OLED96display false
+#define OLED96display true
 
+// Escoger ESP32(false) o ESP8266(true)
 #define ESP8266board true
 
 // Fin definiciones de Bluetooth
@@ -198,12 +199,26 @@ bool toggleLive;
 int dw = 0; // display width
 int dh = 0; // display height
 
+#if !ESP8266board
+
 #if OLED66display
 U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
 #elif OLED96display
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
 #else
 U8G2 u8g2;
+#endif
+
+#else
+
+#if OLED66display
+U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 5, 4);
+#elif OLED96display
+U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 5, 4);
+#else
+U8G2 u8g2;
+#endif
+
 #endif
 
 #if !ESP8266board
@@ -564,18 +579,12 @@ void setup()
   else if (OLED66 == true || OLED96 == true)
   {
     pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
-//    Serial.println("ANTES1");
     displayInit();
-//    Serial.println("ANTES2");
     pageStart();
     showWelcome();
-//    Serial.println("ANTES3");
     delay(1000);
-//    Serial.println("ANTES");
-//    u8g2.drawXBM(16, 18, 32, 32, IconoAC);
-//    Serial.println("DESPUES1");
+    u8g2.drawXBM(16, 18, 32, 32, IconoAC);
     pageEnd();
-//    Serial.println("DESPUES2");
     delay(3000);
   }
   else
@@ -1030,8 +1039,14 @@ void Print_WiFi_Status_ESP8266()
 
   // Print the received signal strength:
   // wifi_rssi_dbm = WiFi.RSSI();
-  Serial.print("signal strength (RSSI):");
+  Serial.print("Signal strength (RSSI):");
+
+#if !ESP8266board
   Serial.print(WiFi.RSSI());
+#else
+  Serial.print(WiFi.RSSI());
+#endif
+
   Serial.println(" dBm");
 }
 
@@ -1173,7 +1188,13 @@ void Print_WiFi_Status()
 
   // Print the received signal strength:
   Serial.print("Signal strength (RSSI): ");
+
+#if !ESP8266board
   Serial.print(WiFi.RSSI());
+#else
+  Serial.print(WiFi.RSSI());
+#endif
+
   Serial.println(" dBm");
 }
 
@@ -1226,7 +1247,13 @@ void Check_WiFi_Server()
             client.print(WiFi.macAddress());
             client.println("<br>");
             client.print("RSSI: ");
+
+#if !ESP8266board
             client.print(WiFi.RSSI());
+#else
+            client.print(WiFi.RSSI());
+#endif
+
             client.println("<br>");
             client.println("------");
             client.println("<br>");
@@ -1669,7 +1696,13 @@ void Send_Message_Cloud_App_MQTT()
   Serial.println(pm25intori);
   ///// END DEBUG Samples
   ReadHyT();
+
+#if !ESP8266board
   RSSI = WiFi.RSSI();
+#else
+  RSSI = WiFi.RSSI();
+#endif
+
   Serial.print("Signal strength (RSSI):");
   Serial.print(RSSI);
   Serial.println(" dBm");
@@ -2718,7 +2751,13 @@ void UpdateOLED()
   pageStart();
   displaySensorAverage(pm25int);
 #if !Bluetooth
+
+#if !ESP8266board
   displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
+#else
+  displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
+#endif
+
   if (FlagDATAicon == true)
   {
     u8g2.drawBitmap(dw - 25, dh - 7, 1, 8, Icono_data_on);
@@ -2859,6 +2898,8 @@ void Aireciudadano_Characteristics()
     Serial.println("Indoors");
   }
 
+  Serial.print("eepromConfig.ConfigValues[5]: ");
+  Serial.println(eepromConfig.ConfigValues[5]);
   if (eepromConfig.ConfigValues[5] == '0')
   {
     ExtAnt = false;
@@ -3335,8 +3376,7 @@ void displayCenterBig(String msg)
   }
   u8g2.print(msg.c_str());
 
-  u8g2.setCursor(100, 36);
-  // u8g2.setFont(u8g2_font_4x6_tf);
+  u8g2.setCursor(100, 37);
   u8g2.setFont(u8g2_font_5x7_tf);
   u8g2.print("ug/m3");
 }
@@ -3545,7 +3585,7 @@ void displaySensorAverage(int average)
 void displaySensorData(int pm25, int humi, int temp, int rssi)
 {
   char output[22];
-  sprintf(output, "%03d H%02d T%02d", pm25, inthumi, inttemp); // 000 E00 H00% T00°C
+  sprintf(output, "%03d H%02d T%02d", pm25, humi, temp); // 000 E00 H00% T00°C
   u8g2.setCursor(dw / 2 + 16, 48);
   displayBottomLine(String(output));
 

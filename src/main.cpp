@@ -28,7 +28,10 @@
 //          OK seguir revisando: Revisar la funcion de la APP de sample time a ver como se maneja desde el micro, investigar eso bien
 //          OK: Version de firmware incluida en el valor IDn que se envia por la trama mqtt
 //
-// Version ESP8266: parece bien
+// Version ESP8266:
+//          Revisar porque muchas veces no carga bien el portal cautivo, queda en blanco la pagina. Parece ser si hay mas de 20 router por mostrar paila:
+//          Aqui revisar: https://github.com/tzapu/WiFiManager/blob/master/WiFiManager.cpp
+//
 // Cambio en el archivo WifiEspClient.cpp:
 // size_t WiFiEspClient::print(const __FlashStringHelper *ifsh)
 //{
@@ -51,10 +54,12 @@
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
 #define OLED66display false
-#define OLED96display false
+#define OLED96display true
 
 // Escoger ESP32(false) o ESP8266(true)
-#define ESP8266board false
+#define ESP8266board true
+#define ESP8266
+//#define ESP32
 
 // Fin definiciones de Bluetooth
 ////////////////////////////////
@@ -387,7 +392,7 @@ extern "C"
 }
 
 #include <ESP8266WiFiMulti.h>
-#include <ESP8266mDNS.h> // to be reached on anaire_device_id.local in the local network
+#include <ESP8266mDNS.h>
 WiFiClient wifi_client;
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
 int wifi_status = WL_IDLE_STATUS;
@@ -396,8 +401,7 @@ WiFiServer wifi_server(80); // to check if it is alive
                             // String wifi_password = WiFi.psk();               // your network psk password
 
 #include <ESP8266WebServer.h>
-#include <DNSServer.h> //?????????????????
-                       //#include <DoubleResetDetector.h>
+#include <DNSServer.h> 
 
 #endif
 

@@ -49,17 +49,15 @@
 
 ////////////////////////////////
 // Obligatorio para version Bluetooth:
-#define Bluetooth true // Set to true in case bluetooth is desired
+#define Bluetooth false // Set to true in case bluetooth is desired
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
-#define OLED66display true
+#define OLED66display false
 #define OLED96display false
 
 // Escoger ESP32(false) o ESP8266(true)
 #define ESP8266board false
-//#define ESP8266
-#define ESP32
 
 // Fin definiciones de Bluetooth
 ////////////////////////////////

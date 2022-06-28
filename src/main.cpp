@@ -21,7 +21,7 @@
 //          OK: Tiempo de muestreo
 //          OK: Revisar diferencia entre Sensor characteristics y Numero ID de la configuracion del sensor
 //          OK: Revisar Update por Portal Cautivo
-// Guardar configuracion de sensores, board, display y demás en el Portal Cautivo
+//          OK: Guardar configuracion de sensores, board, display y demás en el Portal Cautivo
 //          OK: Revisar como saber si una board tiene Brownout, si por config values
 //          OK: Revision de Teclas para dormir en el Splash Screen!!!!!!!!!!!!!!!!!
 //          OK: Revisión de Teclas para despertar, ojala fuera mas de 1 segundo por posibles ruidos de tecla
@@ -49,17 +49,17 @@
 
 ////////////////////////////////
 // Obligatorio para version Bluetooth:
-#define Bluetooth false // Set to true in case bluetooth is desired
+#define Bluetooth true // Set to true in case bluetooth is desired
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
-#define OLED66display false
-#define OLED96display true
+#define OLED66display true
+#define OLED96display false
 
 // Escoger ESP32(false) o ESP8266(true)
-#define ESP8266board true
-#define ESP8266
-//#define ESP32
+#define ESP8266board false
+//#define ESP8266
+#define ESP32
 
 // Fin definiciones de Bluetooth
 ////////////////////////////////
@@ -401,7 +401,7 @@ WiFiServer wifi_server(80); // to check if it is alive
                             // String wifi_password = WiFi.psk();               // your network psk password
 
 #include <ESP8266WebServer.h>
-#include <DNSServer.h> 
+#include <DNSServer.h>
 
 #endif
 
@@ -1401,48 +1401,122 @@ void Start_Captive_Portal()
 
   // Captive portal parameters
 
-  WiFiManagerParameter custom_id_html("<p>Set Station Custom Name:</p>"); // only custom html
-  WiFiManagerParameter custom_id_name("CustomName", "29 characters max", eepromConfig.aireciudadano_device_name, 29);
-  WiFiManagerParameter custom_ptime_html("<p>Set Publication Server Time in minutes:</p>"); // only custom html
+  WiFiManagerParameter custom_id_name("CustomName", "Set Station Name (29 char max):", eepromConfig.aireciudadano_device_name, 29);
   char Ptime[5];
   itoa(eepromConfig.PublicTime, Ptime, 10);
-  WiFiManagerParameter custom_public_time("Ptime", "Publication Time", Ptime, 4);
-  WiFiManagerParameter custom_mqtt_html("<p>Set MQTT server:</p>"); // only custom html
-  WiFiManagerParameter custom_mqtt_server("Server", "MQTT server", eepromConfig.MQTT_server, 32);
+  WiFiManagerParameter custom_public_time("Ptime", "Set Publication Time in minutes:", Ptime, 4);
+  WiFiManagerParameter custom_mqtt_html("<p></p>"); // only custom html
+  WiFiManagerParameter custom_mqtt_server("Server", "MQTT server:", eepromConfig.MQTT_server, 32);
   char port[6];
   itoa(eepromConfig.MQTT_port, port, 10);
-  WiFiManagerParameter custom_mqtt_port("Port", "MQTT port", port, 6);
-  WiFiManagerParameter custom_sensor_html("<p>Set Sensor Latitude & Longitude (4 or 5 decimal digits):</p>"); // only custom html
-  WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor", eepromConfig.sensor_lat, 10);
+  WiFiManagerParameter custom_mqtt_port("Port", "MQTT port:", port, 6);
+  WiFiManagerParameter custom_sensor_html("<p></p>"); // only custom html
+  WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor (5 decimal digits filled zero)", eepromConfig.sensor_lat, 10);
   WiFiManagerParameter custom_sensor_longitude("Longitude", "Longitude sensor", eepromConfig.sensor_lon, 10);
-  //  WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise:</p>"); // only custom html
-  //  WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user", eepromConfig.wifi_user, 24);
-  //  WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
   WiFiManagerParameter custom_sensorPM_type;
   WiFiManagerParameter custom_sensorHYT_type;
   WiFiManagerParameter custom_display_type;
   WiFiManagerParameter custom_board_type;
   WiFiManagerParameter custom_outin_type;
+  WiFiManagerParameter custom_endhtml("<p></p>"); // only custom html
 
-  const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM type:</label><br/><input type='radio' name='customSenPM' value='0' checked> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw data (NOT recommended)<br><input type='radio' name='customSenPM' value='4'> Plantower PMS RECOMMENDED with data adjust (explained in the guides)";
-  new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str); // custom html input
+  // Sensor PM menu
 
-  const char *custom_senHYT_str = "<br/><br/><label for='customSenHYT'>Sensor HYT type:</label><br/><input type='radio' name='customSenHYT' value='0' checked> None<br><input type='radio' name='customSenHYT' value='1'> Sensirion SHT31<br><input type='radio' name='customSenHYT' value='2'> AM2320";
-  new (&custom_sensorHYT_type) WiFiManagerParameter(custom_senHYT_str); // custom html input
+  if (eepromConfig.ConfigValues[8] == '0')
+  {
+    const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM model:</label><br/><input type='radio' name='customSenPM' value='0' checked> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw NOT recommended<br><input type='radio' name='customSenPM' value='4'> Plantower PMS adjust RECOMMENDED";
+    new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str);
+  }
+  else if (eepromConfig.ConfigValues[8] == '1')
+  {
+    const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM model:</label><br/><input type='radio' name='customSenPM' value='0'> None<br><input type='radio' name='customSenPM' value='1' checked> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw NOT recommended<br><input type='radio' name='customSenPM' value='4'> Plantower PMS adjust RECOMMENDED";
+    new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str);
+  }
+  else if (eepromConfig.ConfigValues[8] == '2')
+  {
+    const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM model:</label><br/><input type='radio' name='customSenPM' value='0'> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2' checked> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw NOT recommended<br><input type='radio' name='customSenPM' value='4'> Plantower PMS adjust RECOMMENDED";
+    new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str);
+  }
+  else if (eepromConfig.ConfigValues[8] == '3')
+  {
+    const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM model:</label><br/><input type='radio' name='customSenPM' value='0'> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3' checked> Plantower PMS raw NOT recommended<br><input type='radio' name='customSenPM' value='4'> Plantower PMS adjust RECOMMENDED";
+    new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str);
+  }
+  else if (eepromConfig.ConfigValues[8] == '4')
+  {
+    const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM model:</label><br/><input type='radio' name='customSenPM' value='0'> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw NOT recommended<br><input type='radio' name='customSenPM' value='4' checked> Plantower PMS adjust RECOMMENDED";
+    new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str);
+  }
 
-  const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0' checked> Without display<br><input type='radio' name='customDisplay' value='1'> TTGO T-Display color display<br><input type='radio' name='customDisplay' value='2'> OLED 0.96-inch display with 128×64 pixels<br><input type='radio' name='customDisplay' value='3'> OLED 0.66-inch display with 64x48 pixels";
-  new (&custom_display_type) WiFiManagerParameter(custom_display_str); // custom html input
+  // Sensor HYT menu
 
-  const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0' checked> Normal<br><input type='radio' name='customBoard' value='1'> For use with external antenna";
-  new (&custom_board_type) WiFiManagerParameter(custom_board_str); // custom html input
+  if (eepromConfig.ConfigValues[7] == '0')
+  {
+    const char *custom_senHYT_str = "<br/><br/><label for='customSenHYT'>Sensor HYT type:</label><br/><input type='radio' name='customSenHYT' value='0' checked> None<br><input type='radio' name='customSenHYT' value='1'> Sensirion SHT31<br><input type='radio' name='customSenHYT' value='2'> AM2320";
+    new (&custom_sensorHYT_type) WiFiManagerParameter(custom_senHYT_str);
+  }
+  else if (eepromConfig.ConfigValues[7] == '1')
+  {
+    const char *custom_senHYT_str = "<br/><br/><label for='customSenHYT'>Sensor HYT type:</label><br/><input type='radio' name='customSenHYT' value='0'> None<br><input type='radio' name='customSenHYT' value='1' checked> Sensirion SHT31<br><input type='radio' name='customSenHYT' value='2'> AM2320";
+    new (&custom_sensorHYT_type) WiFiManagerParameter(custom_senHYT_str);
+  }
+  else if (eepromConfig.ConfigValues[7] == '2')
+  {
+    const char *custom_senHYT_str = "<br/><br/><label for='customSenHYT'>Sensor HYT type:</label><br/><input type='radio' name='customSenHYT' value='0'> None<br><input type='radio' name='customSenHYT' value='1'> Sensirion SHT31<br><input type='radio' name='customSenHYT' value='2' checked> AM2320";
+    new (&custom_sensorHYT_type) WiFiManagerParameter(custom_senHYT_str);
+  }
 
-  const char *custom_outin_str = "<br/><br/><label for='customOutIn'>IMPORTANT - Outdoors or indoors measurements:</label><br/><input type='radio' name='customOutIn' value='0' checked> Outdoors - the sensor measure outdoors air<br><input type='radio' name='customOutIn' value='1'> Indoors - the sensor measure indoors air";
-  new (&custom_outin_type) WiFiManagerParameter(custom_outin_str); // custom html input
+  // Sensor Display menu
+
+  if (eepromConfig.ConfigValues[6] == '0')
+  {
+    const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0' checked> Without display<br><input type='radio' name='customDisplay' value='1'> TTGO T-Display<br><input type='radio' name='customDisplay' value='2'> OLED 0.96 inch - 128x64p<br><input type='radio' name='customDisplay' value='3'> OLED 0.66 inch - 64x48p";
+        new (&custom_display_type) WiFiManagerParameter(custom_display_str);
+  }
+  else if (eepromConfig.ConfigValues[6] == '1')
+  {
+    const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0'> Without display<br><input type='radio' name='customDisplay' value='1' checked> TTGO T-Display<br><input type='radio' name='customDisplay' value='2'> OLED 0.96 inch - 128x64p<br><input type='radio' name='customDisplay' value='3'> OLED 0.66 inch - 64x48p";
+        new (&custom_display_type) WiFiManagerParameter(custom_display_str);
+  }
+  else if (eepromConfig.ConfigValues[6] == '2')
+  {
+    const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0'> Without display<br><input type='radio' name='customDisplay' value='1'> TTGO T-Display<br><input type='radio' name='customDisplay' value='2' checked> OLED 0.96 inch - 128x64p<br><input type='radio' name='customDisplay' value='3'> OLED 0.66 inch - 64x48p";
+        new (&custom_display_type) WiFiManagerParameter(custom_display_str);
+  }
+  else if (eepromConfig.ConfigValues[6] == '3')
+  {
+    const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0'> Without display<br><input type='radio' name='customDisplay' value='1'> TTGO T-Display<br><input type='radio' name='customDisplay' value='2'> OLED 0.96 inch - 128x64p<br><input type='radio' name='customDisplay' value='3' checked> OLED 0.66 inch - 64x48p";
+        new (&custom_display_type) WiFiManagerParameter(custom_display_str);
+  }
+
+  // Sensor Board menu
+
+  if (eepromConfig.ConfigValues[5] == '0')
+  {
+    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0' checked> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1'> Use with external antenna";
+        new (&custom_board_type) WiFiManagerParameter(custom_board_str);
+  }
+  else if (eepromConfig.ConfigValues[5] == '1')
+  {
+    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0'> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1' checked> Use with external antenna";
+        new (&custom_board_type) WiFiManagerParameter(custom_board_str);
+  }
+
+  // Sensor Location menu
+
+  if (eepromConfig.ConfigValues[4] == '0')
+  {
+    const char *custom_outin_str = "<br/><br/><label for='customOutIn'>IMPORTANT:</label><br/><input type='radio' name='customOutIn' value='0' checked> Outdoors - sensor measures outdoors air<br><input type='radio' name='customOutIn' value='1'> Indoors - sensor measures indoors air";
+        new (&custom_outin_type) WiFiManagerParameter(custom_outin_str);
+  }
+  else if (eepromConfig.ConfigValues[4] == '1')
+  {
+    const char *custom_outin_str = "<br/><br/><label for='customOutIn'>IMPORTANT:</label><br/><input type='radio' name='customOutIn' value='0'> Outdoors - sensor measures outdoors air<br><input type='radio' name='customOutIn' value='1' checked> Indoors - sensor measures indoors air";
+        new (&custom_outin_type) WiFiManagerParameter(custom_outin_str);
+  }
 
   // Add parameters
-  wifiManager.addParameter(&custom_id_html);
   wifiManager.addParameter(&custom_id_name);
-  wifiManager.addParameter(&custom_ptime_html);
   wifiManager.addParameter(&custom_public_time);
   wifiManager.addParameter(&custom_mqtt_html);
   wifiManager.addParameter(&custom_mqtt_server);
@@ -1450,14 +1524,12 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_sensor_html);
   wifiManager.addParameter(&custom_sensor_latitude);
   wifiManager.addParameter(&custom_sensor_longitude);
-  //  wifiManager.addParameter(&custom_wifi_html);
-  //  wifiManager.addParameter(&custom_wifi_user);
-  //  wifiManager.addParameter(&custom_wifi_password);
   wifiManager.addParameter(&custom_sensorPM_type);
   wifiManager.addParameter(&custom_sensorHYT_type);
   wifiManager.addParameter(&custom_display_type);
   wifiManager.addParameter(&custom_board_type);
   wifiManager.addParameter(&custom_outin_type);
+  wifiManager.addParameter(&custom_endhtml);
 
   wifiManager.setSaveParamsCallback(saveParamCallback);
 
@@ -1539,25 +1611,6 @@ void Start_Captive_Portal()
     Serial.println(eepromConfig.sensor_lon);
     longitudef = atof(eepromConfig.sensor_lon); // Cambiar de string a float
   }
-  /*
-    if (eepromConfig.wifi_user != custom_wifi_user.getValue())
-    {
-      strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
-      eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
-      write_eeprom = true;
-      Serial.print("WiFi user: ");
-      Serial.println(eepromConfig.wifi_user);
-    }
-
-    if (eepromConfig.wifi_password != custom_wifi_password.getValue())
-    {
-      strncpy(eepromConfig.wifi_password, custom_wifi_password.getValue(), sizeof(eepromConfig.wifi_password));
-      eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
-      write_eeprom = true;
-      Serial.print("WiFi password: ");
-      Serial.println(eepromConfig.wifi_password);
-    }
-  */
 
   CustomValTotalString[9] = {0};
   sprintf(CustomValTotalString, "%9d", CustomValtotal);
@@ -1610,7 +1663,7 @@ void Start_Captive_Portal()
 
 String getParam(String name)
 {
-  // read parameter from server, for customhmtl input
+  // read parameter from server, for custom hmtl input
   String value;
 
   if (wifiManager.server->hasArg(name))
@@ -2556,7 +2609,7 @@ void Print_Config()
 { // print AireCiudadano device settings
 
   Serial.println("#######################################");
-  Serial.print("device id: ");
+  Serial.print("Device id: ");
   Serial.println(aireciudadano_device_id);
   Serial.print("AireCiudadano custom name: ");
   Serial.println(eepromConfig.aireciudadano_device_name);

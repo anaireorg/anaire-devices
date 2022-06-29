@@ -57,7 +57,7 @@
 #define OLED96display false
 
 // Escoger ESP32(false) o ESP8266(true)
-#define ESP8266board false
+//#define ESP8266board false
 
 // Fin definiciones de Bluetooth
 ////////////////////////////////
@@ -91,7 +91,7 @@ char CustomValTotalString[9] = "00000000";
 uint32_t IDn = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "1.6";
+String sw_version = "1.7";
 String aireciudadano_device_id;
 uint8_t Swver;
 
@@ -135,7 +135,7 @@ char aireciudadano_device_nameTemp[30] = {0};
 #include "soc/rtc_cntl_reg.h"
 #endif
 
-#if ESP8266board
+#if ESP8266
 // Save config values to EEPROM
 #include <ESP_EEPROM.h>
 #else
@@ -182,7 +182,7 @@ unsigned long lastReconnectAttempt = 0; // MQTT reconnections
 unsigned int errors_loop_duration = 60000; // 60 seconds
 unsigned long errors_loop_start;           // holds a timestamp for each error loop start
 
-#if !ESP8266board
+#if !ESP8266
 // TTGO ESP32 board
 #include "esp_timer.h"
 #include <esp_system.h>
@@ -202,7 +202,7 @@ bool toggleLive;
 int dw = 0; // display width
 int dh = 0; // display height
 
-#if !ESP8266board
+#if !ESP8266
 
 #if OLED66display
 U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
@@ -224,7 +224,7 @@ U8G2 u8g2;
 
 #endif
 
-#if !ESP8266board
+#if !ESP8266
 // Display and fonts
 #include <TFT_eSPI.h>
 #include <SPI.h>
@@ -300,7 +300,7 @@ float noxIndex;
 
 #include "PMS.h"
 
-#if !ESP8266board
+#if !ESP8266
 
 PMS pms(Serial1);
 PMS::DATA data;
@@ -342,13 +342,13 @@ GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_VOC_PM25_V2);
 bool bluetooth_active = false;
 #endif
 
-#if !ESP8266board
+#if !ESP8266
 #define OUT_EN 26 // Enable del elevador de voltaje
 #else
 #define OUT_EN 12 // Enable del elevador de voltaje
 #endif
 
-#if !ESP8266board
+#if !ESP8266
 
 #if !Bluetooth
 // WiFi
@@ -417,7 +417,7 @@ String MQTT_receive_topic;
 #include <ArduinoJson.h>
 StaticJsonDocument<384> jsonBuffer;
 
-#if !ESP8266board
+#if !ESP8266
 // OTA Update
 #include <HTTPClient.h>
 #include <HTTPUpdate.h>
@@ -429,7 +429,7 @@ StaticJsonDocument<384> jsonBuffer;
 
 #endif
 
-#if !ESP8266board
+#if !ESP8266
 #include "rom/rtc.h"
 #endif
 
@@ -438,7 +438,7 @@ bool DeepSleepFlag = false;
 bool NoiseBUTTONFlag = false;
 // int reason;
 
-#if !ESP8266board
+#if !ESP8266
 void print_reset_reason(RESET_REASON reason);
 #endif
 
@@ -464,7 +464,7 @@ void setup()
   }
   Serial.setDebugOutput(true);
 
-#if !ESP8266board
+#if !ESP8266
   Serial.println("CPU0 reset reason:");
   print_reset_reason(rtc_get_reset_reason(0));
 #else
@@ -515,7 +515,7 @@ void setup()
   Serial.println();
   Serial.println("##### Inicializando Medidor Aire Ciudadano #####");
 
-#if !ESP8266board
+#if !ESP8266
   // init preferences to handle persitent config data
   preferences.begin("config"); // use "config" namespace
 #endif
@@ -565,7 +565,7 @@ void setup()
 
   if (TDisplay == true)
   {
-#if !ESP8266board
+#if !ESP8266
     // Initialize TTGO Display and show AireCiudadano splash screen
     Button_Init();
     Display_Init();
@@ -654,7 +654,7 @@ void setup()
   Serial.println("### Configuración del medidor AireCiudadano finalizada ###\n");
   if (TDisplay == true)
   {
-#if !ESP8266board
+#if !ESP8266
     tft.fillScreen(TFT_BLUE);
     tft.setTextColor(TFT_WHITE, TFT_BLUE);
     tft.setTextDatum(6); // bottom left
@@ -716,7 +716,7 @@ void loop()
         // Update display with new values
         if (TDisplay == true)
         {
-#if !ESP8266board
+#if !ESP8266
           Update_Display();
 #endif
         }
@@ -737,7 +737,7 @@ void loop()
       Serial.println("Medidor No configurado");
       if (TDisplay == true)
       {
-#if !ESP8266board
+#if !ESP8266
         tft.fillScreen(TFT_BLUE);
         tft.setTextColor(TFT_WHITE, TFT_BLUE);
         tft.setTextDatum(6); // bottom left
@@ -898,7 +898,7 @@ void loop()
   delay(3);
 #endif
 
-#if !ESP8266board
+#if !ESP8266
   if (TDisplay == true)
   {
     // Process buttons events
@@ -916,7 +916,7 @@ void loop()
 
 #if !Bluetooth
 
-#if !ESP8266board
+#if !ESP8266
 
 void WiFiEvent(WiFiEvent_t event)
 {
@@ -1043,11 +1043,11 @@ void Print_WiFi_Status_ESP8266()
   // wifi_rssi_dbm = WiFi.RSSI();
   Serial.print("Signal strength (RSSI):");
 
-#if !ESP8266board
+  //#if !ESP8266
   Serial.print(WiFi.RSSI());
-#else
-  Serial.print(WiFi.RSSI());
-#endif
+  //#else
+  //  Serial.print(WiFi.RSSI());
+  //#endif
 
   Serial.println(" dBm");
 }
@@ -1060,7 +1060,7 @@ void Connect_WiFi()
   WiFi.disconnect(true); // disconnect from wifi to set new wifi connection
   WiFi.mode(WIFI_STA);   // init wifi mode
 
-#if !ESP8266board
+#if !ESP8266
 
   WiFi.onEvent(WiFiEvent);
 
@@ -1124,7 +1124,7 @@ void Connect_WiFi()
     wifi_server.begin();
   }
 
-#if ESP8266board
+#if ESP8266
   Print_WiFi_Status_ESP8266();
 #else
   Print_WiFi_Status();
@@ -1191,11 +1191,11 @@ void Print_WiFi_Status()
   // Print the received signal strength:
   Serial.print("Signal strength (RSSI): ");
 
-#if !ESP8266board
+  //#if !ESP8266
   Serial.print(WiFi.RSSI());
-#else
-  Serial.print(WiFi.RSSI());
-#endif
+  //#else
+  //  Serial.print(WiFi.RSSI());
+  //#endif
 
   Serial.println(" dBm");
 }
@@ -1249,12 +1249,11 @@ void Check_WiFi_Server()
             client.print(WiFi.macAddress());
             client.println("<br>");
             client.print("RSSI: ");
-
-#if !ESP8266board
+            //#if !ESP8266
             client.print(WiFi.RSSI());
-#else
-            client.print(WiFi.RSSI());
-#endif
+            //#else
+            //            client.print(WiFi.RSSI());
+            //#endif
 
             client.println("<br>");
             client.println("------");
@@ -1324,7 +1323,7 @@ void Check_WiFi_Server()
           PortalFlag = true;
           Start_Captive_Portal();
         }
-#if !ESP8266board
+#if !ESP8266
         // Check to see if the client request was "GET /4" to suspend the device:
         if (currentLine.endsWith("GET /4"))
         {
@@ -1350,8 +1349,8 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-  //  const int captiveportaltime = 90;
   const int captiveportaltime = 60;
+  //  const int connectiontimeout = 5;
 
   wifiAP = String(eepromConfig.aireciudadano_device_name);
 
@@ -1361,7 +1360,7 @@ void Start_Captive_Portal()
     wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
 
-#if !ESP8266board
+#if !ESP8266
   if (TDisplay == true)
   {
     tft.fillScreen(TFT_WHITE);
@@ -1395,11 +1394,15 @@ void Start_Captive_Portal()
   wifiManager.setDebugOutput(true);
   wifiManager.disconnect();
 
+  //#if ESP8266
+  //  wifiManager.setMinimumSignalQuality(50);
+  //#endif
+
   WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
   // Captive portal parameters
 
-  WiFiManagerParameter custom_id_name("CustomName", "Set Station Name (29 char max):", eepromConfig.aireciudadano_device_name, 29);
+  WiFiManagerParameter custom_id_name("CustomName", "Set Station Name (29 characters max):", eepromConfig.aireciudadano_device_name, 29);
   char Ptime[5];
   itoa(eepromConfig.PublicTime, Ptime, 10);
   WiFiManagerParameter custom_public_time("Ptime", "Set Publication Time in minutes:", Ptime, 4);
@@ -1409,7 +1412,7 @@ void Start_Captive_Portal()
   itoa(eepromConfig.MQTT_port, port, 10);
   WiFiManagerParameter custom_mqtt_port("Port", "MQTT port:", port, 6);
   WiFiManagerParameter custom_sensor_html("<p></p>"); // only custom html
-  WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor (5 decimal digits filled zero)", eepromConfig.sensor_lat, 10);
+  WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor (5-4 dec digits are enough)", eepromConfig.sensor_lat, 10);
   WiFiManagerParameter custom_sensor_longitude("Longitude", "Longitude sensor", eepromConfig.sensor_lon, 10);
   WiFiManagerParameter custom_sensorPM_type;
   WiFiManagerParameter custom_sensorHYT_type;
@@ -1469,35 +1472,35 @@ void Start_Captive_Portal()
   if (eepromConfig.ConfigValues[6] == '0')
   {
     const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0' checked> Without display<br><input type='radio' name='customDisplay' value='1'> TTGO T-Display<br><input type='radio' name='customDisplay' value='2'> OLED 0.96 inch - 128x64p<br><input type='radio' name='customDisplay' value='3'> OLED 0.66 inch - 64x48p";
-        new (&custom_display_type) WiFiManagerParameter(custom_display_str);
+    new (&custom_display_type) WiFiManagerParameter(custom_display_str);
   }
   else if (eepromConfig.ConfigValues[6] == '1')
   {
     const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0'> Without display<br><input type='radio' name='customDisplay' value='1' checked> TTGO T-Display<br><input type='radio' name='customDisplay' value='2'> OLED 0.96 inch - 128x64p<br><input type='radio' name='customDisplay' value='3'> OLED 0.66 inch - 64x48p";
-        new (&custom_display_type) WiFiManagerParameter(custom_display_str);
+    new (&custom_display_type) WiFiManagerParameter(custom_display_str);
   }
   else if (eepromConfig.ConfigValues[6] == '2')
   {
     const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0'> Without display<br><input type='radio' name='customDisplay' value='1'> TTGO T-Display<br><input type='radio' name='customDisplay' value='2' checked> OLED 0.96 inch - 128x64p<br><input type='radio' name='customDisplay' value='3'> OLED 0.66 inch - 64x48p";
-        new (&custom_display_type) WiFiManagerParameter(custom_display_str);
+    new (&custom_display_type) WiFiManagerParameter(custom_display_str);
   }
   else if (eepromConfig.ConfigValues[6] == '3')
   {
     const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0'> Without display<br><input type='radio' name='customDisplay' value='1'> TTGO T-Display<br><input type='radio' name='customDisplay' value='2'> OLED 0.96 inch - 128x64p<br><input type='radio' name='customDisplay' value='3' checked> OLED 0.66 inch - 64x48p";
-        new (&custom_display_type) WiFiManagerParameter(custom_display_str);
+    new (&custom_display_type) WiFiManagerParameter(custom_display_str);
   }
 
   // Sensor Board menu
 
   if (eepromConfig.ConfigValues[5] == '0')
   {
-    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0' checked> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1'> Use with external antenna";
-        new (&custom_board_type) WiFiManagerParameter(custom_board_str);
+    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0' checked> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1'> Board for external antenna";
+    new (&custom_board_type) WiFiManagerParameter(custom_board_str);
   }
   else if (eepromConfig.ConfigValues[5] == '1')
   {
-    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0'> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1' checked> Use with external antenna";
-        new (&custom_board_type) WiFiManagerParameter(custom_board_str);
+    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0'> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1' checked> Board for external antenna";
+    new (&custom_board_type) WiFiManagerParameter(custom_board_str);
   }
 
   // Sensor Location menu
@@ -1505,12 +1508,12 @@ void Start_Captive_Portal()
   if (eepromConfig.ConfigValues[4] == '0')
   {
     const char *custom_outin_str = "<br/><br/><label for='customOutIn'>IMPORTANT:</label><br/><input type='radio' name='customOutIn' value='0' checked> Outdoors - sensor measures outdoors air<br><input type='radio' name='customOutIn' value='1'> Indoors - sensor measures indoors air";
-        new (&custom_outin_type) WiFiManagerParameter(custom_outin_str);
+    new (&custom_outin_type) WiFiManagerParameter(custom_outin_str);
   }
   else if (eepromConfig.ConfigValues[4] == '1')
   {
     const char *custom_outin_str = "<br/><br/><label for='customOutIn'>IMPORTANT:</label><br/><input type='radio' name='customOutIn' value='0'> Outdoors - sensor measures outdoors air<br><input type='radio' name='customOutIn' value='1' checked> Indoors - sensor measures indoors air";
-        new (&custom_outin_type) WiFiManagerParameter(custom_outin_str);
+    new (&custom_outin_type) WiFiManagerParameter(custom_outin_str);
   }
 
   // Add parameters
@@ -1535,9 +1538,18 @@ void Start_Captive_Portal()
   // If not specified device will remain in configuration mode until
   // switched off via webserver or device is restarted.
 
+  //#if ESP8266
+  //  wifiManager.setSaveConnectTimeout(connectiontimeout);
+  //  Serial.print("setSaveConnectTimeout ");
+  //  Serial.println(connectiontimeout);
+  //#endif
+
+  // wifiManager.setScanDispPerc(true);
+
   wifiManager.setConfigPortalTimeout(captiveportaltime);
-  // wifiManager.setConfigPortalTimeout(30);
-  //  wifiManager.setConfigPortalTimeout(3);   !!!TEST SEN5X
+
+  const char *menu[] = {"wifi", "wifinoscan", "info", "exit", "sep", "update"};
+  wifiManager.setMenu(menu, 6);
 
   // it starts an access point
   // and goes into a blocking loop awaiting configuration
@@ -1752,11 +1764,11 @@ void Send_Message_Cloud_App_MQTT()
   ///// END DEBUG Samples
   ReadHyT();
 
-#if !ESP8266board
+  //#if !ESP8266
   RSSI = WiFi.RSSI();
-#else
-  RSSI = WiFi.RSSI();
-#endif
+  //#else
+  //  RSSI = WiFi.RSSI();
+  //#endif
 
   Serial.print("Signal strength (RSSI):");
   Serial.print(RSSI);
@@ -1902,7 +1914,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
 void Firmware_Update()
 {
 
-#if !ESP8266board
+#if !ESP8266
 
   Serial.println("### FIRMWARE UPDATE ###");
 
@@ -2015,7 +2027,7 @@ void Firmware_Update()
 #endif
 }
 
-#if ESP8266board
+#if ESP8266
 
 void update_started()
 {
@@ -2073,7 +2085,7 @@ void Setup_Sensor()
 #endif
     Serial.println("Test Sensirion SPS30 sensor");
 
-#if ESP8266board
+#if ESP8266
     Wire.begin();
 #else
   Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
@@ -2118,7 +2130,7 @@ void Setup_Sensor()
 #endif
       Serial.println("Test Sensirion SEN5X sensor");
 
-#if ESP8266board
+#if ESP8266
       Wire.begin();
 #else
   Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
@@ -2170,7 +2182,7 @@ if (PMSsen == true)
 #endif
     Serial.println("Test Plantower Sensor");
 
-#if !ESP8266board
+#if !ESP8266
     Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
 #else
   pmsSerial.begin(9600); // Software serial begin for PMS sensor
@@ -2633,7 +2645,7 @@ void Print_Config()
   Serial.println("#######################################");
 }
 
-#if !ESP8266board
+#if !ESP8266
 void espDelay(int ms)
 { //! Long time delay, it is recommended to use shallow sleep, which can effectively reduce the current consumption
   esp_sleep_enable_timer_wakeup(ms * 1000);
@@ -2642,7 +2654,7 @@ void espDelay(int ms)
 }
 #endif
 
-#if !ESP8266board
+#if !ESP8266
 
 void Button_Init()
 { // Manage TTGO T-Display board buttons
@@ -2807,11 +2819,11 @@ void UpdateOLED()
   displaySensorAverage(pm25int);
 #if !Bluetooth
 
-#if !ESP8266board
+  //#if !ESP8266
   displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
-#else
-  displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
-#endif
+  //#else
+  //  displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
+  //#endif
 
   if (FlagDATAicon == true)
   {
@@ -2903,7 +2915,7 @@ void Get_AireCiudadano_DeviceId()
   char aireciudadano_device_id_endframe[10];
   String chipIdHEX;
 
-#if !ESP8266board
+#if !ESP8266
 
   for (int i = 0; i < 17; i = i + 8)
   {
@@ -3084,7 +3096,7 @@ void Aireciudadano_Characteristics()
 
 void Read_EEPROM()
 {
-#if ESP8266board
+#if ESP8266
 
   // The begin() call will find the data previously saved in EEPROM if the same size
   // as was previously committed. If the size is different then the EEEPROM data is cleared.
@@ -3134,7 +3146,7 @@ void Read_EEPROM()
 void Write_EEPROM()
 {
 
-#if ESP8266board
+#if ESP8266
   // The begin() call will find the data previously saved in EEPROM if the same size
   // as was previously committed. If the size is different then the EEEPROM data is cleared.
   // Note that this is not made permanent until you call commit();
@@ -3165,7 +3177,7 @@ void Write_EEPROM()
 void Wipe_EEPROM()
 { // Wipe AireCiudadano device persistent info to reset config data
 
-#if ESP8266board
+#if ESP8266
   boolean result = EEPROM.wipe();
   if (result)
   {
@@ -3261,7 +3273,7 @@ void displayBatteryLevel(int colour)
 }
 #endif
 
-#if !ESP8266board
+#if !ESP8266
 
 void Suspend_Device()
 {
@@ -3273,7 +3285,7 @@ void Suspend_Device()
 
     if (TDisplay == true)
     {
-      //#if !ESP8266board
+      //#if !ESP8266
       // int r = digitalRead(TFT_BL);
       tft.fillScreen(TFT_BLACK);
       tft.setTextColor(TFT_GREEN, TFT_BLACK);
@@ -3465,7 +3477,7 @@ void displayColorLevel(int cursor, String msg)
   u8g2.print(msg);
 }
 
-#if !ESP8266board
+#if !ESP8266
 
 void displayAverage(int average)
 {

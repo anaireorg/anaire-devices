@@ -48,26 +48,23 @@ void ReadHyT();
 void displayBatteryLevel(int colour);
 void displayWifi(int colour_1, int colour_2, boolean active);
 void displayBuzzer(int colour, boolean active);
-void Receive_Message_Cloud_App_MQTT(char* topic, byte* payload, unsigned int length);
+void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int length);
 String getParam(String name);
 
-//#define TFT_SLPIN   0x10
-//#define TFT_DISPOFF 0x28
-
-  void displayInit();
-  void showWelcome();
-  void welcomeAddMessage(String msg);
-  void AddMessage(String msg);
-  void displayCenterBig(String msg);
-  void displayBottomLine(String msg);
-  void displayEmoticonLabel(int numsmle, String msg);
-  void displayTextLevel(String msg);
-  void displayColorLevel(int cursor, String msg);
-  void displayAverage(int average);
-  void displaySensorAverage(int average);
-  void displaySensorData(int pm25, int humi, int temp, int rssi);
-  void displayLiveIcon();  
-  void displayPrefSaveIcon(bool enable);
-  void updateError(unsigned int error);
-  void pageStart();
-  void pageEnd();
+void displayInit();
+void showWelcome();
+void welcomeAddMessage(String msg);
+void AddMessage(String msg);
+void displayCenterBig(String msg);
+void displayBottomLine(String msg);
+void displayEmoticonLabel(int numsmle, String msg);
+void displayTextLevel(String msg);
+void displayColorLevel(int cursor, String msg);
+void displayAverage(int average);
+void displaySensorAverage(int average);
+void displaySensorData(int pm25, int humi, int temp, int rssi);
+void displayLiveIcon();
+void displayPrefSaveIcon(bool enable);
+void updateError(unsigned int error);
+void pageStart();
+void pageEnd();

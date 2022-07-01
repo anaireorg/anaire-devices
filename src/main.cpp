@@ -537,6 +537,8 @@ void setup()
 
   float Floatver = sw_version.toFloat();
   Swver = Floatver * 10;
+  Serial.print("SW version: ");
+  Serial.println(sw_version);
 
   // Get device id
   Get_AireCiudadano_DeviceId();
@@ -1352,12 +1354,12 @@ void Start_Captive_Portal()
   const int captiveportaltime = 60;
   //  const int connectiontimeout = 5;
 
-  wifiAP = String(eepromConfig.aireciudadano_device_name);
+  //  wifiAP = String(eepromConfig.aireciudadano_device_name);
 
-  if (wifiAP.isEmpty())
-    wifiAP = "AireCiudadano_" + aireciudadano_device_id;
-  else
-    wifiAP = aireciudadano_device_id;
+  //  if (wifiAP.isEmpty())
+  //    wifiAP = "AireCiudadano_" + aireciudadano_device_id;
+  //  else
+  wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
 
 #if !ESP8266
@@ -2939,7 +2941,7 @@ void Get_AireCiudadano_DeviceId()
 
   Serial.print("AireCiudadano Device ID: ");
   if (String(aireciudadano_device_id).isEmpty())
-    aireciudadano_device_id = aireciudadano_device_id_endframe;
+    aireciudadano_device_id = String("AireCiudadano_") + aireciudadano_device_id_endframe;
   else
     aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "_" + aireciudadano_device_id_endframe;
   // aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + aireciudadano_device_id_endframe;

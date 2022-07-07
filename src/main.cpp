@@ -55,9 +55,7 @@
 #define Tdisplaydisp false
 #define OLED66display false
 #define OLED96display false
-
-// Escoger ESP32(false) o ESP8266(true)
-//#define ESP8266board false
+#define TTGO_TQ false
 
 // Fin definiciones de Bluetooth
 ////////////////////////////////
@@ -190,9 +188,6 @@ unsigned long errors_loop_start;           // holds a timestamp for each error l
 #include <Wire.h>
 
 // OLED display
-#include <U8g2lib.h>
-#include "Iconos.h"
-
 unsigned int mcount, ecode = 0;
 int lastDrawedLine = 0;
 unsigned int inthumi = 0;
@@ -205,26 +200,32 @@ int dh = 0; // display height
 #if !ESP8266
 
 #if OLED66display
+#include <U8g2lib.h>
+#include "Iconos.h"
 U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
 #elif OLED96display
+#include <U8g2lib.h>
+#include "Iconos.h"
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
-#else
-U8G2 u8g2;
 #endif
 
 #else
 
 #if OLED66display
+#include <U8g2lib.h>
+#include "Iconos.h"
 U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 5, 4);
 #elif OLED96display
+#include <U8g2lib.h>
+#include "Iconos.h"
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 5, 4);
-#else
-U8G2 u8g2;
 #endif
 
 #endif
 
 #if !ESP8266
+
+#if Tdisplaydisp
 // Display and fonts
 #include <TFT_eSPI.h>
 #include <SPI.h>
@@ -268,6 +269,8 @@ int vref = 1100;
 
 #endif
 
+#endif
+
 #define Sensor_SDA_pin 21 // Define the SDA pin used for the SCD30
 #define Sensor_SCL_pin 22 // Define the SCL pin used for the SCD30
 
@@ -302,11 +305,23 @@ float noxIndex;
 
 #if !ESP8266
 
+#if !TTGO_TQ
+
 PMS pms(Serial1);
 PMS::DATA data;
 // bool PMSflag = false;
 #define PMS_TX 17 // PMS TX pin
 #define PMS_RX 15 // PMS RX pin
+
+#else
+
+PMS pms(Serial2);
+PMS::DATA data;
+// bool PMSflag = false;
+#define PMS_TX 19 // PMS TX pin
+#define PMS_RX 18 // PMS RX pin
+
+#endif
 
 #else
 #include <SoftwareSerial.h>
@@ -455,13 +470,13 @@ bool Calibrating = false;
 
 void setup()
 {
-
   // Initialize serial port for serial monitor in Arduino IDE
   Serial.begin(115200);
-  while (!Serial)
-  {
-    delay(500); // wait 0.5 seconds for connection
-  }
+  delay(500);
+//  while (!Serial)
+//  {
+//    delay(500); // wait 0.5 seconds for connection
+//  }
   Serial.setDebugOutput(true);
 
 #if !ESP8266
@@ -565,6 +580,8 @@ void setup()
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // disable   detector
 #endif
 
+#if (TDisplay || OLED96 || OLED66)
+
   if (TDisplay == true)
   {
 #if !ESP8266
@@ -591,11 +608,12 @@ void setup()
     pageEnd();
     delay(3000);
   }
-  else
-  {
+
+#else
     pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
     delay(1000);
-  }
+
+#endif
 
   // Out for power on and off sensors
   pinMode(OUT_EN, OUTPUT);
@@ -654,6 +672,9 @@ void setup()
 
   Serial.println("");
   Serial.println("### Configuración del medidor AireCiudadano finalizada ###\n");
+
+#if (TDisplay || OLED96 || OLED66)
+
   if (TDisplay == true)
   {
 #if !ESP8266
@@ -681,6 +702,9 @@ void setup()
     delay(2000);
     pageEnd();
   }
+
+#endif
+
   delay(1000);
 }
 
@@ -715,6 +739,9 @@ void loop()
     {
       if (PM25_value >= 0)
       {
+
+#if (TDisplay || OLED96 || OLED66)
+
         // Update display with new values
         if (TDisplay == true)
         {
@@ -726,6 +753,9 @@ void loop()
         {
           UpdateOLED();
         }
+
+#endif
+
         // Accumulates samples
         PM25_accumulated += PM25_value;
         if (AdjPMS == true)
@@ -737,6 +767,9 @@ void loop()
     else
     {
       Serial.println("Medidor No configurado");
+
+#if (TDisplay || OLED96 || OLED66)
+
       if (TDisplay == true)
       {
 #if !ESP8266
@@ -780,6 +813,9 @@ void loop()
         pageEnd();
         delay(2000);
       }
+
+#endif
+
     }
   }
 
@@ -901,12 +937,14 @@ void loop()
 #endif
 
 #if !ESP8266
+#if TDisplay
   if (TDisplay == true)
   {
     // Process buttons events
     button_top.loop();
     button_bottom.loop();
   }
+#endif
 #endif
 
   // Serial.println("--- END LOOP");
@@ -1362,7 +1400,10 @@ void Start_Captive_Portal()
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
 
+
+#if (TDisplay || OLED96 || OLED66)
 #if !ESP8266
+
   if (TDisplay == true)
   {
     tft.fillScreen(TFT_WHITE);
@@ -1390,6 +1431,8 @@ void Start_Captive_Portal()
     //    delay(2000);
     pageEnd();
   }
+
+#endif
 
   wifi_server.stop();
 
@@ -1928,6 +1971,8 @@ void Firmware_Update()
   UpdateClient.setTimeout(30); // timeout argument is defined in seconds for setTimeout
   Serial.println("ACTUALIZACION EN CURSO");
 
+#if TDisplay
+
   if (TDisplay == true)
   {
     // Update display
@@ -1939,6 +1984,8 @@ void Firmware_Update()
     tft.drawString("ACTUALIZACION EN CURSO", tft.width() / 2, tft.height() / 2);
   }
 
+#endif
+
   // t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
   t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
 
@@ -1948,11 +1995,15 @@ void Firmware_Update()
   case HTTP_UPDATE_FAILED:
     Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
 
+#if TDisplay
+
     if (TDisplay == true)
     {
       tft.fillScreen(TFT_ORANGE);
       tft.drawString("ACTUALIZACION FALLIDA", tft.width() / 2, tft.height() / 2);
     }
+
+#endif
 
     delay(1000);
     break;
@@ -1963,11 +2014,17 @@ void Firmware_Update()
 
   case HTTP_UPDATE_OK:
     Serial.println("HTTP_UPDATE_OK");
+
+#if TDisplay
+
     if (TDisplay == true)
     {
       tft.fillScreen(TFT_ORANGE);
       tft.drawString("ACTUALIZACION COMPLETA", tft.width() / 2, tft.height() / 2);
     }
+
+#endif
+
     delay(1000);
     break;
   }
@@ -2185,7 +2242,13 @@ if (PMSsen == true)
     Serial.println("Test Plantower Sensor");
 
 #if !ESP8266
+    
+#if !TTGO_TQ    
     Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
+#else 
+    Serial2.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
+#endif
+
 #else
   pmsSerial.begin(9600); // Software serial begin for PMS sensor
 #endif
@@ -2656,6 +2719,8 @@ void espDelay(int ms)
 }
 #endif
 
+#if (TDisplay || OLED96 || OLED66)
+
 #if !ESP8266
 
 void Button_Init()
@@ -2845,6 +2910,7 @@ void UpdateOLED()
   toggleLive = !toggleLive;
   pageEnd();
 }
+#endif
 
 #if Bluetooth
 void TimeConfig()
@@ -2854,6 +2920,9 @@ void TimeConfig()
     delay(10);
     if (digitalRead(BUTTON_BOTTOM) == false)
     {
+
+#if (OLED96 || OLED66)
+
       pageStart();
       u8g2.setFont(u8g2_font_6x10_tf);
       u8g2.setCursor(0, dh / 2 - 7);
@@ -2861,6 +2930,9 @@ void TimeConfig()
       u8g2.setCursor(10, dh / 2 + 7);
       u8g2.print(String(eepromConfig.BluetoothTime) + " seg");
       pageEnd();
+
+#endif
+
       delay(1000);
 
       Bluetooth_loop_time = eepromConfig.BluetoothTime;
@@ -2883,12 +2955,18 @@ void TimeConfig()
           Bluetooth_loop_time = 10800;
         else
           Bluetooth_loop_time = 2;
+
+#if (OLED96 || OLED66)
+
         pageStart();
         u8g2.setCursor(0, dh / 2 - 7);
         u8g2.print("Tiempo eval");
         u8g2.setCursor(15, dh / 2 + 7);
         u8g2.print(String(Bluetooth_loop_time) + " seg");
         pageEnd();
+
+#endif
+
         delay(1000);
       }
       FlashBluetoothTime();
@@ -2910,6 +2988,7 @@ void FlashBluetoothTime()
 }
 
 #endif
+
 
 void Get_AireCiudadano_DeviceId()
 { // Get TTGO T-Display info and fill up aireciudadano_device_id with last 6 digits (in HEX) of WiFi mac address or Custom_Name + 6 digits
@@ -3205,7 +3284,8 @@ void Wipe_EEPROM()
 #endif
 }
 
-// #if TDisplay
+#if TDisplay
+
 #if Bluetooth
 void displayBatteryLevel(int colour)
 { // Draw a battery showing the level of charge
@@ -3275,6 +3355,8 @@ void displayBatteryLevel(int colour)
 }
 #endif
 
+#endif
+
 #if !ESP8266
 
 void Suspend_Device()
@@ -3284,6 +3366,8 @@ void Suspend_Device()
     Serial.println("Presiona de nuevo el boton para despertar");
     // Off sensors
     digitalWrite(OUT_EN, LOW); // step-up off
+
+#if TDisplay
 
     if (TDisplay == true)
     {
@@ -3300,10 +3384,10 @@ void Suspend_Device()
       tft.writecommand(TFT_SLPIN);
       //#endif
     }
-    else
-    {
-      espDelay(3000);
-    }
+#else
+    espDelay(3000);
+#endif    
+
     // After using light sleep, you need to disable timer wake, because here use external IO port to wake up
     esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
     // esp_sleep_enable_ext1_wakeup(GPIO_SEL_0, ESP_EXT1_WAKEUP_ALL_LOW);
@@ -3384,6 +3468,8 @@ void print_reset_reason(RESET_REASON reason)
 }
 
 #endif
+
+#if (TDisplay || OLED96 || OLED66)
 
 void displayInit()
 {
@@ -3695,6 +3781,8 @@ void pageEnd()
 {
   u8g2.nextPage();
 }
+
+#endif
 
 #if Bluetooth
 void Write_Bluetooth()

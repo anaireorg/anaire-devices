@@ -28,6 +28,8 @@
 //          OK seguir revisando: Revisar la funcion de la APP de sample time a ver como se maneja desde el micro, investigar eso bien
 //          OK: Version de firmware incluida en el valor IDn que se envia por la trama mqtt
 //
+// Revisar Datos guardados en Bluetooth con cada sleep, se pueden generar muchos datos: opcion preguntar si borrar antes de apagar, revisar esas opciones
+//
 // Version ESP8266:
 //          Revisar porque muchas veces no carga bien el portal cautivo, queda en blanco la pagina. Parece ser si hay mas de 20 router por mostrar paila:
 //          Aqui revisar: https://github.com/tzapu/WiFiManager/blob/master/WiFiManager.cpp
@@ -49,7 +51,7 @@
 
 ////////////////////////////////
 // Obligatorio para version Bluetooth:
-#define Bluetooth false // Set to true in case bluetooth is desired
+#define Bluetooth false // Set to true in case Bluetooth is desired
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
@@ -207,6 +209,8 @@ U8G2_SSD1306_64X48_ER_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_
 #include <U8g2lib.h>
 #include "Iconos.h"
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, U8X8_PIN_NONE, U8X8_PIN_NONE);
+#elif Tdisplaydisp
+#include "Iconos.h"
 #endif
 
 #else
@@ -354,7 +358,7 @@ bool AM2320flag = false;
 #include "Sensirion_GadgetBle_Lib.h" // to connect to Sensirion MyAmbience Android App available on Google Play
 // GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
 GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_VOC_PM25_V2);
-bool bluetooth_active = false;
+// bool bluetooth_active = false;
 #endif
 
 #if !ESP8266
@@ -472,11 +476,11 @@ void setup()
 {
   // Initialize serial port for serial monitor in Arduino IDE
   Serial.begin(115200);
-  delay(500);
-//  while (!Serial)
-//  {
-//    delay(500); // wait 0.5 seconds for connection
-//  }
+  delay(100);
+  while (!Serial)
+  {
+    delay(500); // wait 0.5 seconds for connection
+  }
   Serial.setDebugOutput(true);
 
 #if !ESP8266
@@ -562,17 +566,23 @@ void setup()
   Bluetooth_loop_time = eepromConfig.BluetoothTime;
   gadgetBle.setSampleIntervalMs(Bluetooth_loop_time * 1000); // Valor de muestreo de APP y de Sensor
 #endif
-//  TDisplay = false;
-//  OLED66 = false;
-//  OLED96 = false;
+
 #if Tdisplaydisp
   TDisplay = true;
-#endif
-#if OLED66display
+  OLED66 = false;
+  OLED96 = false;
+#elif OLED66display
+  TDisplay = false;
   OLED66 = true;
-#endif
-#if OLED96display
+  OLED96 = false;
+#elif OLED96display
+  TDisplay = false;
+  OLED66 = false;
   OLED96 = true;
+#else
+  TDisplay = false;
+  OLED66 = false;
+  OLED96 = false;
 #endif
 
 #if BrownoutOFF
@@ -580,7 +590,7 @@ void setup()
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // disable   detector
 #endif
 
-#if (TDisplay || OLED96 || OLED66)
+#if (Tdisplaydisp || OLED96display || OLED66display)
 
   if (TDisplay == true)
   {
@@ -592,7 +602,9 @@ void setup()
 
     for (int i = 0; i < 10; i++)
     {
+#if Tdisplaydisp
       button_top.loop();
+#endif
       delay(500);
     }
 #endif
@@ -600,18 +612,20 @@ void setup()
   else if (OLED66 == true || OLED96 == true)
   {
     pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
+#if !Tdisplaydisp
     displayInit();
     pageStart();
     showWelcome();
     delay(1000);
     u8g2.drawXBM(16, 18, 32, 32, IconoAC);
     pageEnd();
+#endif
     delay(3000);
   }
 
 #else
-    pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
-    delay(1000);
+  pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
+  delay(1000);
 
 #endif
 
@@ -673,11 +687,12 @@ void setup()
   Serial.println("");
   Serial.println("### Configuración del medidor AireCiudadano finalizada ###\n");
 
-#if (TDisplay || OLED96 || OLED66)
+#if (Tdisplaydisp || OLED96display || OLED66display)
 
   if (TDisplay == true)
   {
 #if !ESP8266
+#if Tdisplaydisp
     tft.fillScreen(TFT_BLUE);
     tft.setTextColor(TFT_WHITE, TFT_BLUE);
     tft.setTextDatum(6); // bottom left
@@ -692,15 +707,18 @@ void setup()
     // Update display with new values
     Update_Display();
 #endif
+#endif
   }
   else if (OLED66 == true || OLED96 == true)
   {
+#if !Tdisplaydisp
     pageStart();
     u8g2.setFont(u8g2_font_5x8_tf);
     u8g2.setCursor(0, (dh / 2 - 4));
     u8g2.print("Medidor Listo");
     delay(2000);
     pageEnd();
+#endif
   }
 
 #endif
@@ -719,7 +737,7 @@ void loop()
     return;
   }
 #if Bluetooth
-#if TDisplay
+#if Tdisplaydisp
   // Measure the battery voltage
   battery_voltage = ((float)analogRead(ADC_PIN) / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
 #endif
@@ -740,20 +758,28 @@ void loop()
       if (PM25_value >= 0)
       {
 
-#if (TDisplay || OLED96 || OLED66)
+#if (Tdisplaydisp || OLED96display || OLED66display)
 
         // Update display with new values
         if (TDisplay == true)
         {
 #if !ESP8266
+#if Tdisplaydisp
           Update_Display();
+#endif
 #endif
         }
         else if (OLED66 == true || OLED96 == true)
         {
+#if !Tdisplaydisp
           UpdateOLED();
+#endif
         }
 
+#else
+#if Bluetooth
+        TimeConfig();
+#endif
 #endif
 
         // Accumulates samples
@@ -768,11 +794,12 @@ void loop()
     {
       Serial.println("Medidor No configurado");
 
-#if (TDisplay || OLED96 || OLED66)
+#if (Tdisplaydisp || OLED96display || OLED66display)
 
       if (TDisplay == true)
       {
 #if !ESP8266
+#if Tdisplaydisp
         tft.fillScreen(TFT_BLUE);
         tft.setTextColor(TFT_WHITE, TFT_BLUE);
         tft.setTextDatum(6); // bottom left
@@ -791,9 +818,12 @@ void loop()
         }
         delay(1000);
 #endif
+#endif
       }
       else if (OLED66 == true || OLED96 == true)
       {
+
+#if !Tdisplaydisp
         pageStart();
         u8g2.setFont(u8g2_font_5x8_tf);
         if (Bluetooth == true)
@@ -811,11 +841,11 @@ void loop()
           u8g2.print("configurado");
         }
         pageEnd();
+#endif
         delay(2000);
       }
 
 #endif
-
     }
   }
 
@@ -833,8 +863,8 @@ void loop()
 
     ///// DEBUG Samples
     // Serial.println(PM25_accumulated);
-    Serial.print("#samples: ");
-    Serial.println(PM25_samples);
+    // Serial.print("#samples: ");
+    // Serial.println(PM25_samples);
     PM25f = PM25_accumulated / PM25_samples;
     pm25int = round(PM25f);
     // Serial.println(pm25int);
@@ -930,14 +960,14 @@ void loop()
 
 #endif
 
-// Process bluetooth events
+// Process Bluetooth events
 #if Bluetooth
   gadgetBle.handleEvents();
   delay(3);
 #endif
 
 #if !ESP8266
-#if TDisplay
+#if Tdisplaydisp
   if (TDisplay == true)
   {
     // Process buttons events
@@ -1400,9 +1430,9 @@ void Start_Captive_Portal()
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
 
-
-#if (TDisplay || OLED96 || OLED66)
+#if (Tdisplaydisp || OLED96display || OLED66display)
 #if !ESP8266
+#if Tdisplaydisp
 
   if (TDisplay == true)
   {
@@ -1415,9 +1445,11 @@ void Start_Captive_Portal()
     tft.drawString(wifiAP, tft.width() / 2, tft.height() / 2 + 10);
   }
 #endif
+#endif
 
   if (OLED66 == true || OLED96 == true)
   {
+#if !Tdisplaydisp
     pageStart();
     u8g2.setFont(u8g2_font_4x6_tf);
     u8g2.setCursor(2, (dh / 2) - 10);
@@ -1430,6 +1462,8 @@ void Start_Captive_Portal()
     u8g2.print(" segundos");
     //    delay(2000);
     pageEnd();
+
+#endif
   }
 
 #endif
@@ -1971,7 +2005,7 @@ void Firmware_Update()
   UpdateClient.setTimeout(30); // timeout argument is defined in seconds for setTimeout
   Serial.println("ACTUALIZACION EN CURSO");
 
-#if TDisplay
+#if Tdisplaydisp
 
   if (TDisplay == true)
   {
@@ -1995,7 +2029,7 @@ void Firmware_Update()
   case HTTP_UPDATE_FAILED:
     Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
 
-#if TDisplay
+#if Tdisplaydisp
 
     if (TDisplay == true)
     {
@@ -2015,7 +2049,7 @@ void Firmware_Update()
   case HTTP_UPDATE_OK:
     Serial.println("HTTP_UPDATE_OK");
 
-#if TDisplay
+#if Tdisplaydisp
 
     if (TDisplay == true)
     {
@@ -2242,10 +2276,10 @@ if (PMSsen == true)
     Serial.println("Test Plantower Sensor");
 
 #if !ESP8266
-    
-#if !TTGO_TQ    
+
+#if !TTGO_TQ
     Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
-#else 
+#else
     Serial2.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
 #endif
 
@@ -2719,9 +2753,10 @@ void espDelay(int ms)
 }
 #endif
 
-#if (TDisplay || OLED96 || OLED66)
+#if (Tdisplaydisp || OLED96display || OLED66display)
 
 #if !ESP8266
+#if Tdisplaydisp
 
 void Button_Init()
 { // Manage TTGO T-Display board buttons
@@ -2878,6 +2913,9 @@ void Update_Display()
 }
 
 #endif
+#endif
+
+#if (OLED96display || OLED66display)
 
 void UpdateOLED()
 {
@@ -2911,6 +2949,7 @@ void UpdateOLED()
   pageEnd();
 }
 #endif
+#endif
 
 #if Bluetooth
 void TimeConfig()
@@ -2921,7 +2960,7 @@ void TimeConfig()
     if (digitalRead(BUTTON_BOTTOM) == false)
     {
 
-#if (OLED96 || OLED66)
+#if (OLED96display || OLED66display)
 
       pageStart();
       u8g2.setFont(u8g2_font_6x10_tf);
@@ -2956,17 +2995,19 @@ void TimeConfig()
         else
           Bluetooth_loop_time = 2;
 
-#if (OLED96 || OLED66)
+#if (OLED96display || OLED66display)
 
         pageStart();
         u8g2.setCursor(0, dh / 2 - 7);
         u8g2.print("Tiempo eval");
-        u8g2.setCursor(15, dh / 2 + 7);
+        u8g2.setCursor(8, dh / 2 + 7);
         u8g2.print(String(Bluetooth_loop_time) + " seg");
         pageEnd();
 
 #endif
-
+        Serial.print("Tiempo evaluacion: ");
+        Serial.print(Bluetooth_loop_time);
+        Serial.println(" seg");
         delay(1000);
       }
       FlashBluetoothTime();
@@ -2988,7 +3029,6 @@ void FlashBluetoothTime()
 }
 
 #endif
-
 
 void Get_AireCiudadano_DeviceId()
 { // Get TTGO T-Display info and fill up aireciudadano_device_id with last 6 digits (in HEX) of WiFi mac address or Custom_Name + 6 digits
@@ -3284,7 +3324,7 @@ void Wipe_EEPROM()
 #endif
 }
 
-#if TDisplay
+#if Tdisplaydisp
 
 #if Bluetooth
 void displayBatteryLevel(int colour)
@@ -3367,7 +3407,7 @@ void Suspend_Device()
     // Off sensors
     digitalWrite(OUT_EN, LOW); // step-up off
 
-#if TDisplay
+#if Tdisplaydisp
 
     if (TDisplay == true)
     {
@@ -3386,7 +3426,7 @@ void Suspend_Device()
     }
 #else
     espDelay(3000);
-#endif    
+#endif
 
     // After using light sleep, you need to disable timer wake, because here use external IO port to wake up
     esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
@@ -3469,7 +3509,7 @@ void print_reset_reason(RESET_REASON reason)
 
 #endif
 
-#if (TDisplay || OLED96 || OLED66)
+#if (OLED96display || OLED66display)
 
 void displayInit()
 {
@@ -3565,7 +3605,10 @@ void displayColorLevel(int cursor, String msg)
   u8g2.print(msg);
 }
 
+#endif
+
 #if !ESP8266
+#if Tdisplaydisp
 
 void displayAverage(int average)
 {
@@ -3692,6 +3735,9 @@ void displayAverage(int average)
 #endif
 }
 #endif
+#endif
+
+#if (OLED96display || OLED66display)
 
 void displaySensorAverage(int average)
 {
@@ -3786,7 +3832,7 @@ void pageEnd()
 
 #if Bluetooth
 void Write_Bluetooth()
-{ // Write measurements to bluetooth
+{ // Write measurements to Bluetooth
 
   uint32_t ValSampleIntervals;
 

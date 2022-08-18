@@ -27,6 +27,7 @@
 //          OK: Revisión de Teclas para despertar, ojala fuera mas de 1 segundo por posibles ruidos de tecla
 //          OK seguir revisando: Revisar la funcion de la APP de sample time a ver como se maneja desde el micro, investigar eso bien
 //          OK: Version de firmware incluida en el valor IDn que se envia por la trama mqtt
+//          OK: Arreglar problema con lectura Temperatura y Humedad SEN50 que generan errores por envio datos numericos altisimos (nan)
 //
 // Revisar Datos guardados en Bluetooth con cada sleep, se pueden generar muchos datos: opcion preguntar si borrar antes de apagar, revisar esas opciones
 //
@@ -55,7 +56,7 @@
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
-#define OLED66display false
+#define OLED66display true
 #define OLED96display false
 #define TTGO_TQ false
 
@@ -63,7 +64,7 @@
 ////////////////////////////////
 
 // Definiciones opcionales para version Wifi
-#define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
+#define BrownoutOFF true   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define WPA2 false          // Colocar en true para redes con WPA2
 #define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";
@@ -227,8 +228,6 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 5, 4);
 
 #endif
 
-#if !ESP8266
-
 #if Tdisplaydisp
 // Display and fonts
 #include <TFT_eSPI.h>
@@ -270,8 +269,6 @@ int vref = 1100;
 
 #define BUTTON_TOP 35   // ??????????
 #define BUTTON_BOTTOM 0 // ??????????
-
-#endif
 
 #endif
 
@@ -1832,22 +1829,18 @@ void Send_Message_Cloud_App_MQTT()
   Serial.print("Sending MQTT message to the send topic: ");
   Serial.println(MQTT_send_topic);
   ///// DEBUG Samples
-  Serial.println(PM25_accumulated);
-  Serial.println(PM25_samples);
+//  Serial.println(PM25_accumulated);
+//  Serial.println(PM25_samples);
   pm25f = PM25_accumulated / PM25_samples;
   pm25int = round(pm25f);
   pm25fori = PM25_accumulated_ori / PM25_samples;
   pm25intori = round(pm25fori);
-  Serial.println(pm25int);
-  Serial.println(pm25intori);
+//  Serial.println(pm25int);
+//  Serial.println(pm25intori);
   ///// END DEBUG Samples
   ReadHyT();
 
-  //#if !ESP8266
   RSSI = WiFi.RSSI();
-  //#else
-  //  RSSI = WiFi.RSSI();
-  //#endif
 
   Serial.print("Signal strength (RSSI):");
   Serial.print(RSSI);
@@ -1862,6 +1855,21 @@ void Send_Message_Cloud_App_MQTT()
   {
     uint8_t voc;
     uint8_t nox;
+
+    if (isnan(ambientHumidity))
+    {
+      if (humi == 0)
+        humi = 0;
+    }
+    else
+      humi = round(ambientHumidity);
+    if (isnan(ambientTemperature))
+    {
+      if (temp == 0)
+        temp = 0;
+    }
+    else
+      temp = round(ambientTemperature);
     if (isnan(vocIndex))
       voc = 0;
     else
@@ -2332,6 +2340,7 @@ if (PMSsen == true)
 #endif
     Serial.print("AM2320 test: ");
     am2320.begin();
+    delay(1);
     humidity = am2320.readHumidity();
     temperature = am2320.readTemperature();
     if (!isnan(humidity))
@@ -2412,10 +2421,17 @@ void Read_Sensor()
       Serial.print(PM25_value);
       Serial.print(" ug/m3   ");
       Serial.print(" Humi % = ");
-      Serial.print(ambientHumidity);
+      if (isnan(ambientHumidity))
+        Serial.print(" n/a");
+      else
+        Serial.print(ambientHumidity);
       humi = round(ambientHumidity);
+
       Serial.print("   Temp *C = ");
-      Serial.print(ambientTemperature);
+      if (isnan(ambientTemperature))
+        Serial.print(" n/a");
+      else
+        Serial.print(ambientTemperature);
       temp = round(ambientTemperature);
       Serial.print("   VocIndex:");
       if (isnan(vocIndex))
@@ -2696,6 +2712,7 @@ void ReadHyT()
       {
         failh = 0;
         am2320.begin();
+        Serial.println("   Reinit AM2320");
       }
       else
         failh = failh + 1;
@@ -3207,6 +3224,9 @@ void Aireciudadano_Characteristics()
     IDn = IDn + 4096;
 #if BrownoutOFF
   IDn = IDn + 8192;
+#endif
+#if ESP8266
+  IDn = IDn + 16384;
 #endif
   IDn = IDn + (Swver * 65536);
   Serial.print("IDn: ");

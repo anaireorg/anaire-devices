@@ -56,7 +56,7 @@
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
-#define OLED66display true
+#define OLED66display false
 #define OLED96display false
 #define TTGO_TQ false
 
@@ -64,7 +64,7 @@
 ////////////////////////////////
 
 // Definiciones opcionales para version Wifi
-#define BrownoutOFF true   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
+#define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define WPA2 false          // Colocar en true para redes con WPA2
 #define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";

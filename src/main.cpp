@@ -28,6 +28,7 @@
 //          OK seguir revisando: Revisar la funcion de la APP de sample time a ver como se maneja desde el micro, investigar eso bien
 //          OK: Version de firmware incluida en el valor IDn que se envia por la trama mqtt
 //          OK: Arreglar problema con lectura Temperatura y Humedad SEN50 que generan errores por envio datos numericos altisimos (nan)
+// Revisar actualizacion por orden a una direccion web repositorio y cada caso especifico: sin pantalla, OLED96, OLED66, wifi, bluetooth, etc
 //
 // Revisar Datos guardados en Bluetooth con cada sleep, se pueden generar muchos datos: opcion preguntar si borrar antes de apagar, revisar esas opciones
 //
@@ -1478,7 +1479,11 @@ void Start_Captive_Portal()
 
   // Captive portal parameters
 
+#if !ESP8266
   WiFiManagerParameter custom_id_name("CustomName", "Set Station Name (29 characters max):", eepromConfig.aireciudadano_device_name, 29);
+#else
+  WiFiManagerParameter custom_id_name("CustomName", "Set Station Name (25 characters max):", eepromConfig.aireciudadano_device_name, 25);
+#endif
   char Ptime[5];
   itoa(eepromConfig.PublicTime, Ptime, 10);
   WiFiManagerParameter custom_public_time("Ptime", "Set Publication Time in minutes:", Ptime, 4);

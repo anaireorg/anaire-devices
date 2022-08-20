@@ -29,6 +29,7 @@
 //          OK: Version de firmware incluida en el valor IDn que se envia por la trama mqtt
 //          OK: Arreglar problema con lectura Temperatura y Humedad SEN50 que generan errores por envio datos numericos altisimos (nan)
 // Revisar actualizacion por orden a una direccion web repositorio y cada caso especifico: sin pantalla, OLED96, OLED66, wifi, bluetooth, etc
+// SDy RTC version
 //
 // Revisar Datos guardados en Bluetooth con cada sleep, se pueden generar muchos datos: opcion preguntar si borrar antes de apagar, revisar esas opciones
 //
@@ -52,17 +53,17 @@
 #include "main.hpp"
 
 ////////////////////////////////
-// Obligatorio para version Bluetooth:
-#define Bluetooth false // Set to true in case Bluetooth is desired
+// Modo de comunicaciones del sensor:
+#define Wifi false       // // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
+#define Bluetooth false  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
+#define SDyRTC true      // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
+#define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
 #define OLED66display false
 #define OLED96display false
 #define TTGO_TQ false
-
-// Fin definiciones de Bluetooth
-////////////////////////////////
 
 // Definiciones opcionales para version Wifi
 #define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
@@ -103,7 +104,9 @@ struct MyConfigStruct
 #if Bluetooth
   uint16_t BluetoothTime = 10;        // Bluetooth Time
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
-#else
+//#elif SDyRTC
+//  uint16_t SDyRTCTime = 10; // SDyRTC Time
+#elif Wifi
   uint16_t PublicTime = 1;                           // Publication Time
   uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
   char MQTT_server[30] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
@@ -175,6 +178,8 @@ unsigned long measurements_loop_start;          // holds a timestamp for each co
 
 unsigned int Bluetooth_loop_time;
 unsigned int Con_loop_times = 0;
+
+unsigned int SDyRTC_loop_time;
 
 // MQTT loop: time between MQTT measurements sent to the cloud
 unsigned long MQTT_loop_start;          // holds a timestamp for each cloud loop start
@@ -367,7 +372,7 @@ GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_VOC_PM25_V2);
 
 #if !ESP8266
 
-#if !Bluetooth
+#if Wifi
 // WiFi
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 
@@ -387,6 +392,7 @@ WiFiManager wifiManager;
 #endif
 
 #else
+#if Wifi
 
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 
@@ -420,7 +426,9 @@ WiFiServer wifi_server(80); // to check if it is alive
 
 #endif
 
-#if !Bluetooth
+#endif
+
+#if Wifi
 
 // MQTT
 #include <PubSubClient.h>
@@ -466,6 +474,21 @@ bool updating = false;
 bool InCaptivePortal = false;
 bool Calibrating = false;
 
+#if (SDyRTC || SaveSDyRTC)
+
+#include <SPI.h>
+#include <SD.h>
+#include "RTClib.h"
+
+const int chipSelect = 10;
+uint16_t SDyRTCtime = 15;
+
+File dataFile;
+
+RTC_DS1307 rtc;
+
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // SETUP
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -480,6 +503,8 @@ void setup()
     delay(500); // wait 0.5 seconds for connection
   }
   Serial.setDebugOutput(true);
+
+#if Wifi
 
 #if !ESP8266
   Serial.println("CPU0 reset reason:");
@@ -498,6 +523,8 @@ void setup()
   }
   Serial.print("Resetvar: ");
   Serial.println(Resetvar);
+#endif
+
 #endif
 
 #if Bluetooth
@@ -542,15 +569,19 @@ void setup()
   Serial.println(eepromConfig.aireciudadano_device_name);
   strcpy(aireciudadano_device_nameTemp, eepromConfig.aireciudadano_device_name);
 #endif
+#if !SDyRTC
   // Read EEPROM config values
   Read_EEPROM();
+#endif
 #if PreProgSensor
   strncpy(eepromConfig.aireciudadano_device_name, aireciudadano_device_nameTemp, sizeof(eepromConfig.aireciudadano_device_name));
   Serial.print("T2:");
   Serial.println(eepromConfig.aireciudadano_device_name);
 #endif
 
+#if !SDyRTC
   aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
+#endif
 
   float Floatver = sw_version.toFloat();
   Swver = Floatver * 10;
@@ -563,6 +594,8 @@ void setup()
 #if Bluetooth
   Bluetooth_loop_time = eepromConfig.BluetoothTime;
   gadgetBle.setSampleIntervalMs(Bluetooth_loop_time * 1000); // Valor de muestreo de APP y de Sensor
+//#elif SDyRTC
+//  SDyRTC_loop_time = eepromConfig.SDyRTCTime;
 #endif
 
 #if Tdisplaydisp
@@ -633,7 +666,7 @@ void setup()
   digitalWrite(OUT_EN, HIGH); // step-up on
   delay(1000);
 
-#if !Bluetooth
+#if Wifi
   // Set MQTT topics
   MQTT_send_topic = "measurement";                          // Measurements are sent to this topic
   MQTT_receive_topic = "config/" + aireciudadano_device_id; // Config messages will be received in config/id
@@ -642,19 +675,20 @@ void setup()
   // Print initial configuration
   Print_Config();
 
-#if !Bluetooth
+#if Wifi
   // Set Latitude and Longitude
   latitudef = atof(eepromConfig.sensor_lat);
   longitudef = atof(eepromConfig.sensor_lon);
 
 // Initialize the GadgetBle Library for Bluetooth
-#else
+#elif Bluetooth
   gadgetBle.begin();
   Serial.print("Sensirion GadgetBle Lib initialized with deviceId = ");
   Serial.println(gadgetBle.getDeviceIdString());
+
 #endif
 
-#if !Bluetooth
+#if Wifi
   // Start Captive Portal for 60 seconds
   if (ResetFlag == true)
   {
@@ -678,8 +712,60 @@ void setup()
   // Init control loops
   measurements_loop_start = millis();
   errors_loop_start = millis();
-#if !Bluetooth
+#if Wifi
   MQTT_loop_start = millis();
+#endif
+
+#if (SDyRTC || SDyRTC)
+
+  Serial.print("Initializing SD card: ");
+  // make sure that the default chip select pin is set to output, even if you don't use it:
+  pinMode(SS, OUTPUT);
+
+  // see if the card is present and can be initialized:
+  if (!SD.begin(chipSelect))
+  {
+    Serial.println("Card failed, or not present");
+    Serial.println("Review SD card or connections");
+  }
+  else
+  {
+    Serial.println("OK, card initialized");
+
+    // Open up the file we're going to log to!
+    dataFile = SD.open("datalog.txt", FILE_WRITE);
+    if (!dataFile)
+    {
+      Serial.println("error opening datalog.txt");
+      Serial.println("Review the SD card");
+    }
+  }
+
+  Serial.print("Initializing RTC ds1307: ");
+
+  if (!rtc.begin())
+  {
+    Serial.println("Couldn't find RTC");
+    Serial.flush();
+  }
+  else
+    Serial.println("OK, ds1307 initialized");
+
+  if (!rtc.isrunning())
+  {
+    Serial.println("RTC is NOT running, let's set the time!");
+    // When time needs to be set on a new device, or after a power loss, the
+    // following line sets the RTC to the date & time this sketch was compiled
+     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // This line sets the RTC with an explicit date & time, for example to set
+    // January 21, 2014 at 3am you would call:
+    // rtc.adjust(DateTime(2022, 8, 20, 15, 18, 0));
+  }
+  else
+    Serial.println("ds1307 is running, no changes");
+
+//  rtc.adjust(DateTime(2022, 8, 20, 15, 18, 0));
+
 #endif
 
   Serial.println("");
@@ -850,10 +936,6 @@ void loop()
 #if Bluetooth
 
   // Bluetooth loop
-  //  Serial.print("Con_loop_times: ");
-  //  Serial.println(Con_loop_times);
-  //  Serial.print("eepromConfig.BluetoothTime: ");
-  //  Serial.println(eepromConfig.BluetoothTime);
 
   if (Con_loop_times >= eepromConfig.BluetoothTime)
   {
@@ -872,10 +954,39 @@ void loop()
     Serial.print("   ");
     ReadHyT();
     Write_Bluetooth();
+#if SaveSDyRTC
+    Write_SD();
+#endif
     PM25_accumulated = 0.0;
     PM25_samples = 0.0;
     Con_loop_times = 0;
   }
+#elif SDyRTC
+
+  // SDyRTC loop
+
+  if (Con_loop_times >= SDyRTCtime)
+  {
+    float PM25f;
+
+    ///// DEBUG Samples
+    // Serial.println(PM25_accumulated);
+    // Serial.print("#samples: ");
+    // Serial.println(PM25_samples);
+    PM25f = PM25_accumulated / PM25_samples;
+    pm25int = round(PM25f);
+    // Serial.println(pm25int);
+    ///// END DEBUG Samples
+    Serial.print("PM25: ");
+    Serial.print(pm25int);
+    Serial.print("   ");
+    ReadHyT();
+    Write_SD();
+    PM25_accumulated = 0.0;
+    PM25_samples = 0.0;
+    Con_loop_times = 0;
+  }
+
 #else
   // MQTT loop
   if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
@@ -889,6 +1000,10 @@ void loop()
     {
       Send_Message_Cloud_App_MQTT();
     }
+
+#if SaveSDyRTC
+    Write_SD();
+#endif
 
     // Reset samples after sending them to the MQTT server
     PM25_accumulated = 0.0;
@@ -911,7 +1026,7 @@ void loop()
       // Setup_Sensor();  // Init pm25 sensors
     }
 
-#if !Bluetooth
+#if Wifi
 
     if (WiFi.status() != WL_CONNECTED)
     {
@@ -943,7 +1058,7 @@ void loop()
 #endif
   }
 
-#if !Bluetooth
+#if Wifi
 
   // From here, all other tasks performed outside of measurements, MQTT and error loops
 
@@ -982,7 +1097,7 @@ void loop()
 // FUNCTIONS
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if !Bluetooth
+#if Wifi
 
 #if !ESP8266
 
@@ -1834,14 +1949,14 @@ void Send_Message_Cloud_App_MQTT()
   Serial.print("Sending MQTT message to the send topic: ");
   Serial.println(MQTT_send_topic);
   ///// DEBUG Samples
-//  Serial.println(PM25_accumulated);
-//  Serial.println(PM25_samples);
+  //  Serial.println(PM25_accumulated);
+  //  Serial.println(PM25_samples);
   pm25f = PM25_accumulated / PM25_samples;
   pm25int = round(pm25f);
   pm25fori = PM25_accumulated_ori / PM25_samples;
   pm25intori = round(pm25fori);
-//  Serial.println(pm25int);
-//  Serial.println(pm25intori);
+  //  Serial.println(pm25int);
+  //  Serial.println(pm25intori);
   ///// END DEBUG Samples
   ReadHyT();
 
@@ -2185,7 +2300,7 @@ void Setup_Sensor()
 
   // Test PM2.5 SPS30
 
-#if !Bluetooth
+#if Wifi
   if (SPS30sen == true)
   {
 #endif
@@ -2220,7 +2335,7 @@ void Setup_Sensor()
       else
         Errorloop((char *)"Could NOT start measurement", 0);
     }
-#if !Bluetooth
+#if Wifi
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////
@@ -2230,7 +2345,7 @@ void Setup_Sensor()
 
   {
 #endif
-#if Bluetooth
+#if (Bluetooth || SDyRTC)
     if (SPS30sen == false)
     {
 #endif
@@ -2275,7 +2390,7 @@ void Setup_Sensor()
         else
           Serial.println("SEN5X measurement OK");
       }
-#if Bluetooth
+#if (Bluetooth || SDyRTC)
     }
 #else
 }
@@ -2306,7 +2421,7 @@ if (PMSsen == true)
     {
       Serial.println("Plantower sensor found!");
       PMSsen = true;
-#if Bluetooth
+#if (Bluetooth || SDyRTC)
       AdjPMS = true; // Por defecto se deja con ajuste, REVISAR!!!!!!
 #endif
     }
@@ -2315,7 +2430,7 @@ if (PMSsen == true)
       Serial.println("Could not find Plantower sensor!");
     }
 
-#if !Bluetooth
+#if Wifi
   }
 
   if (SHT31sen == true)
@@ -2337,7 +2452,7 @@ if (PMSsen == true)
       Serial.println("ENABLED");
     else
       Serial.println("DISABLED");
-#if !Bluetooth
+#if Wifi
   }
 
   if (AM2320sen == true)
@@ -2355,7 +2470,7 @@ if (PMSsen == true)
     }
     else
       Serial.println("none");
-#if !Bluetooth
+#if Wifi
   }
 #endif
 }
@@ -2696,7 +2811,7 @@ void ReadHyT()
   }
 
   // AM2320//
-  if (AM2320sen == true)
+  else if (AM2320sen == true)
   {
     temperature = 0.0;
     humidity = 0.0;
@@ -2732,6 +2847,8 @@ void ReadHyT()
     else
       Serial.println("   Failed to read temperature AM2320");
   }
+  else
+    Serial.println();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2742,14 +2859,19 @@ void Print_Config()
   Serial.println("#######################################");
   Serial.print("Device id: ");
   Serial.println(aireciudadano_device_id);
+#if !SDyRTC
   Serial.print("AireCiudadano custom name: ");
   Serial.println(eepromConfig.aireciudadano_device_name);
+#endif
   Serial.print("SW version: ");
   Serial.println(sw_version);
 #if Bluetooth
   Serial.print("Bluetooth Time: ");
   Serial.println(eepromConfig.BluetoothTime);
-#else
+#elif SDyRTC
+  Serial.print("SDyRTC Time: ");
+  Serial.println(SDyRTCtime);
+#elif Wifi
   Serial.print("Publication Time: ");
   Serial.println(eepromConfig.PublicTime);
   Serial.print("MQTT server: ");
@@ -2808,7 +2930,10 @@ void Button_Init()
 #if Bluetooth
     tft.drawString("Bluetooth ver", 8, 39);
     tft.drawString("Log int: " + String(Bluetooth_loop_time), 8, 56);
-#else
+#elif SDyRTC
+    tft.drawString("SDyRTC ver", 8, 39);
+    tft.drawString("Log int: " + String(SDyRTCtime), 8, 56);
+#elif Wifi
     tft.drawString("Wifi ver", 8, 39);
     tft.drawString("Pubtime min: " + String(eepromConfig.PublicTime), 8, 56);
     tft.drawString("SSID " + String(WiFi.SSID()), 8, 73);
@@ -2944,7 +3069,7 @@ void UpdateOLED()
   //  Serial.println("Sensor Read Update OLED");
   pageStart();
   displaySensorAverage(pm25int);
-#if !Bluetooth
+#if Wifi
 
   //#if !ESP8266
   displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
@@ -3066,7 +3191,7 @@ void Get_AireCiudadano_DeviceId()
   }
   chipIdHEX = String(chipId, HEX);
   strncpy(aireciudadano_device_id_endframe, chipIdHEX.c_str(), sizeof(aireciudadano_device_id_endframe));
-#if !Bluetooth
+#if Wifi
   Aireciudadano_Characteristics();
 #endif
   Serial.printf("ESP32 Chip model = %s Rev %d.\t", ESP.getChipModel(), ESP.getChipRevision());
@@ -3076,7 +3201,9 @@ void Get_AireCiudadano_DeviceId()
 
   chipIdHEX = String(ESP.getChipId(), HEX);
   strncpy(aireciudadano_device_id_endframe, chipIdHEX.c_str(), sizeof(aireciudadano_device_id_endframe));
+#if Wifi
   Aireciudadano_Characteristics();
+#endif
 
 #endif
 
@@ -3084,12 +3211,16 @@ void Get_AireCiudadano_DeviceId()
   if (String(aireciudadano_device_id).isEmpty())
     aireciudadano_device_id = String("AireCiudadano_") + aireciudadano_device_id_endframe;
   else
+  {
+#if !SDyRTC
     aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "_" + aireciudadano_device_id_endframe;
-  // aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + aireciudadano_device_id_endframe;
+    // aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + aireciudadano_device_id_endframe;
+#endif
+  }
   Serial.println(aireciudadano_device_id);
 }
 
-#if !Bluetooth
+#if Wifi
 
 void Aireciudadano_Characteristics()
 {
@@ -3240,6 +3371,8 @@ void Aireciudadano_Characteristics()
 
 #endif
 
+#if !SDyRTC
+
 void Read_EEPROM()
 {
 #if ESP8266
@@ -3348,6 +3481,8 @@ void Wipe_EEPROM()
 
 #endif
 }
+
+#endif
 
 #if Tdisplaydisp
 
@@ -3740,7 +3875,7 @@ void displayAverage(int average)
     tft.drawString("ug/m3", 72, 218);
     // tft.drawString("ug/m3", 72, 268);
 
-#if !Bluetooth
+#if Wifi
   int rssi;
   rssi = WiFi.RSSI();
 
@@ -3820,7 +3955,7 @@ void displaySensorData(int pm25, int humi, int temp, int rssi)
   sprintf(output, "%04d", pm25); // PM25 instantaneo fuente pequeña
   u8g2.print(output);
 
-#if !Bluetooth
+#if Wifi
   u8g2.setCursor(20, dh - 6);
 
   if (rssi == 0)
@@ -3878,5 +4013,43 @@ void Write_Bluetooth()
 
   if (eepromConfig.BluetoothTime != Bluetooth_loop_time)
     FlashBluetoothTime();
+}
+#endif
+
+#if (SDyRTC || SaveSDyRTC)
+void Write_SD()
+{ // Write date - time and measurements to SD card
+
+  DateTime now = rtc.now();
+
+  char buf1[] = "YYYY/MM/DD_hh:mm:ss";
+  String dataString = "";
+
+  // make a string for assembling the data to log:
+
+  dataString = now.toString(buf1);
+  dataString += "_PM:";
+  dataString += pm25int;
+  if (SHT31sen == true || AM2320sen == true)
+  {
+    dataString += "_H:";
+    dataString += humi;
+    dataString += "_T:";
+    dataString += temp;
+  }
+
+  dataFile.println(dataString);
+
+  // print to the serial port too:
+  Serial.print("Data SD: ");
+  Serial.println(dataString);
+
+  //  Serial.print("Unixtime = ");
+  //  Serial.print(now.unixtime());
+  //  Serial.println(" s");
+  //  Serial.print(now.unixtime() / 86400L);
+  //  Serial.println("d");
+
+  dataFile.flush();
 }
 #endif

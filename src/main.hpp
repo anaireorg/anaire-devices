@@ -36,6 +36,7 @@ void update_progress(int cur, int total);
 void update_error(int err);
 void Set_Measurement_Interval();
 void Write_Bluetooth();
+void Write_SD();
 void saveParamCallback();
 void ErrtoMess(char *mess, uint8_t r);
 void Errorloop(char *mess, uint8_t r);

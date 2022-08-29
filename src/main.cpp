@@ -54,7 +54,7 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi false       // // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
+#define Wifi false       // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
 #define Bluetooth false  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
 #define SDyRTC true      // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
@@ -63,6 +63,8 @@
 #define Tdisplaydisp false
 #define OLED66display false
 #define OLED96display false
+
+// Boards diferentes
 #define TTGO_TQ false
 
 // Definiciones opcionales para version Wifi
@@ -92,9 +94,11 @@ uint8_t CustomValue = 0;
 uint16_t CustomValtotal = 0;
 char CustomValTotalString[9] = "00000000";
 uint32_t IDn = 0;
+String chipIdHEX;
+uint32_t chipId = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "1.7";
+String sw_version = "1.8";
 String aireciudadano_device_id;
 uint8_t Swver;
 
@@ -487,6 +491,8 @@ File dataFile;
 
 RTC_DS1307 rtc;
 
+#define LEDPIN 2
+
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -718,6 +724,8 @@ void setup()
 
 #if (SDyRTC || SDyRTC)
 
+  pinMode(LEDPIN, OUTPUT);
+
   Serial.print("Initializing SD card: ");
   // make sure that the default chip select pin is set to output, even if you don't use it:
   pinMode(SS, OUTPUT);
@@ -739,6 +747,17 @@ void setup()
       Serial.println("error opening datalog.txt");
       Serial.println("Review the SD card");
     }
+    else
+    {
+      digitalWrite(LEDPIN, LOW); // turn the LED on (HIGH is the voltage level)
+      delay(500);                 // wait for a 500 msecond
+      digitalWrite(LEDPIN, HIGH);  // turn the LED off by making the voltage LOW
+      delay(500);                 // wait for a 500 msecond
+      digitalWrite(LEDPIN, LOW); // turn the LED on (HIGH is the voltage level)
+      delay(500);                 // wait for a 500 msecond
+      digitalWrite(LEDPIN, HIGH);  // turn the LED off by making the voltage LOW
+      delay(500);                 // wait for a 500 msecond
+    }
   }
 
   Serial.print("Initializing RTC ds1307: ");
@@ -749,14 +768,23 @@ void setup()
     Serial.flush();
   }
   else
+  {
     Serial.println("OK, ds1307 initialized");
+    digitalWrite(LEDPIN, LOW); // turn the LED on (HIGH is the voltage level)
+    delay(200);                 // wait for a 500 msecond
+    digitalWrite(LEDPIN, HIGH);  // turn the LED off by making the voltage LOW
+    delay(200);                 // wait for a 500 msecond
+    digitalWrite(LEDPIN, LOW); // turn the LED on (HIGH is the voltage level)
+    delay(200);                 // wait for a 500 msecond
+    digitalWrite(LEDPIN, HIGH);  // turn the LED off by making the voltage LOW
+  }
 
   if (!rtc.isrunning())
   {
     Serial.println("RTC is NOT running, let's set the time!");
     // When time needs to be set on a new device, or after a power loss, the
     // following line sets the RTC to the date & time this sketch was compiled
-     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
     // This line sets the RTC with an explicit date & time, for example to set
     // January 21, 2014 at 3am you would call:
     // rtc.adjust(DateTime(2022, 8, 20, 15, 18, 0));
@@ -764,7 +792,7 @@ void setup()
   else
     Serial.println("ds1307 is running, no changes");
 
-//  rtc.adjust(DateTime(2022, 8, 20, 15, 18, 0));
+    //  rtc.adjust(DateTime(2022, 8, 20, 15, 18, 0));
 
 #endif
 
@@ -1998,14 +2026,14 @@ void Send_Message_Cloud_App_MQTT()
       nox = 0;
     else
       nox = round(noxIndex);
-    sprintf(MQTT_message, "{id: %s, PM25: %d, VOC: %d, NOx: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn);
+    sprintf(MQTT_message, "{id: %s, PM25: %d, VOC: %d, NOx: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
   }
   else
   {
     if (AdjPMS == true)
-      sprintf(MQTT_message, "{id: %s, PM25: %d, PM25raw: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn);
+      sprintf(MQTT_message, "{id: %s, PM25: %d, PM25raw: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
     else
-      sprintf(MQTT_message, "{id: %s, PM25: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn);
+      sprintf(MQTT_message, "{id: %s, PM25: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
   }
   Serial.print(MQTT_message);
   Serial.println();
@@ -3179,9 +3207,8 @@ void FlashBluetoothTime()
 
 void Get_AireCiudadano_DeviceId()
 { // Get TTGO T-Display info and fill up aireciudadano_device_id with last 6 digits (in HEX) of WiFi mac address or Custom_Name + 6 digits
-  uint32_t chipId = 0;
+  //  uint32_t chipId = 0;
   char aireciudadano_device_id_endframe[10];
-  String chipIdHEX;
 
 #if !ESP8266
 
@@ -3199,6 +3226,7 @@ void Get_AireCiudadano_DeviceId()
 
 #else
 
+  chipId = ESP.getChipId();
   chipIdHEX = String(ESP.getChipId(), HEX);
   strncpy(aireciudadano_device_id_endframe, chipIdHEX.c_str(), sizeof(aireciudadano_device_id_endframe));
 #if Wifi

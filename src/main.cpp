@@ -29,7 +29,7 @@
 //          OK: Version de firmware incluida en el valor IDn que se envia por la trama mqtt
 //          OK: Arreglar problema con lectura Temperatura y Humedad SEN50 que generan errores por envio datos numericos altisimos (nan)
 // Revisar actualizacion por orden a una direccion web repositorio y cada caso especifico: sin pantalla, OLED96, OLED66, wifi, bluetooth, etc
-// SDy RTC version
+// SDy RTC version independiente o unido a BT y Wifi
 //
 // Revisar Datos guardados en Bluetooth con cada sleep, se pueden generar muchos datos: opcion preguntar si borrar antes de apagar, revisar esas opciones
 //
@@ -54,9 +54,9 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi false       // // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
+#define Wifi true        // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
 #define Bluetooth false  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
-#define SDyRTC true      // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
+#define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
@@ -2577,7 +2577,8 @@ void Read_Sensor()
       {
         PM25_value_ori = PM25_value;
         // PM25_value = ((562 * PM25_value_ori) / 1000) - 1; // Ecuación de ajuste resultado de 13 intercomparaciones entre PMS7003 y SPS30 por meses
-        PM25_value = ((553 * PM25_value_ori) / 1000) + 1; // Segundo ajuste
+        // PM25_value = ((553 * PM25_value_ori) / 1000) + 1.3; // Segundo ajuste
+        PM25_value = ((630 * PM25_value_ori) / 1000) + 1.56; // Tercer ajuste a los que salio en Lima y pruebas aqui
         Serial.print("Adjust: ");
         Serial.print(PM25_value);
         Serial.println(" ug/m3");

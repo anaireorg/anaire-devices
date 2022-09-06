@@ -8,13 +8,19 @@
         {
             "name": "PlatformIO",
             "includePath": [
+<<<<<<< HEAD
                 "c:/Users/DBB/Documents/PlatformIO/aireciudadano/include",
                 "c:/Users/DBB/Documents/PlatformIO/aireciudadano/src",
+=======
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/include",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/src",
+>>>>>>> a9509fd9ad3f800386ef6c8d54859ac405e2d73f
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/SD/src",
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/Preferences/src",
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/HTTPUpdate/src",
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src",
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
+<<<<<<< HEAD
                 "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/libdeps/esp32/Adafruit AM2320 sensor library",
                 "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/libdeps/esp32/Adafruit Unified Sensor",
                 "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/libdeps/esp32/Adafruit SHT31 Library",
@@ -34,6 +40,27 @@
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/SPIFFS/src",
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
                 "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/libdeps/esp32/WiFiManager",
+=======
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Adafruit AM2320 sensor library",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Adafruit Unified Sensor",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Adafruit SHT31 Library",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Adafruit BusIO",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/PMS Library/src",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Sensirion I2C SEN5X/src",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Sensirion Core/src",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/sps30/src",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/U8g2/src",
+                "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Sensirion Gadget BLE Arduino Lib/src",
+                "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Button2/src",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/ArduinoJson/src",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/PubSubClient/src",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/TFT_eSPI",
+                "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/SPIFFS/src",
+                "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/WiFiManager",
+>>>>>>> a9509fd9ad3f800386ef6c8d54859ac405e2d73f
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src",
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/FS/src",
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/Update/src",
@@ -215,6 +242,10 @@
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/qspi_qspi/include",
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/cores/esp32",
                 "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/variants/esp32",
+<<<<<<< HEAD
+=======
+                "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/U8g2@2.33.2/src",
+>>>>>>> a9509fd9ad3f800386ef6c8d54859ac405e2d73f
                 "C:/Users/DBB/.platformio/lib/Adafruit ADXL343",
                 "C:/Users/DBB/.platformio/lib/Adafruit AM2320 sensor library",
                 "C:/Users/DBB/.platformio/lib/Adafruit BME280 Library",
@@ -248,13 +279,19 @@
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "path": [
+<<<<<<< HEAD
                     "c:/Users/DBB/Documents/PlatformIO/aireciudadano/include",
                     "c:/Users/DBB/Documents/PlatformIO/aireciudadano/src",
+=======
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/include",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/src",
+>>>>>>> a9509fd9ad3f800386ef6c8d54859ac405e2d73f
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/SD/src",
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/Preferences/src",
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/HTTPUpdate/src",
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src",
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src",
+<<<<<<< HEAD
                     "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/libdeps/esp32/Adafruit AM2320 sensor library",
                     "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/libdeps/esp32/Adafruit Unified Sensor",
                     "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/libdeps/esp32/Adafruit SHT31 Library",
@@ -274,6 +311,27 @@
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/SPIFFS/src",
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
                     "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/libdeps/esp32/WiFiManager",
+=======
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Adafruit AM2320 sensor library",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Adafruit Unified Sensor",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Adafruit SHT31 Library",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Adafruit BusIO",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/PMS Library/src",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Sensirion I2C SEN5X/src",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Sensirion Core/src",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/sps30/src",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/U8g2/src",
+                    "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Sensirion Gadget BLE Arduino Lib/src",
+                    "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/Button2/src",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/ArduinoJson/src",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/PubSubClient/src",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/TFT_eSPI",
+                    "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/SPIFFS/src",
+                    "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src",
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/WiFiManager",
+>>>>>>> a9509fd9ad3f800386ef6c8d54859ac405e2d73f
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/WebServer/src",
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/FS/src",
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/libraries/Update/src",
@@ -455,6 +513,10 @@
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/qspi_qspi/include",
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/cores/esp32",
                     "C:/Users/DBB/.platformio/packages/framework-arduinoespressif32/variants/esp32",
+<<<<<<< HEAD
+=======
+                    "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/libdeps/esp32/U8g2@2.33.2/src",
+>>>>>>> a9509fd9ad3f800386ef6c8d54859ac405e2d73f
                     "C:/Users/DBB/.platformio/lib/Adafruit ADXL343",
                     "C:/Users/DBB/.platformio/lib/Adafruit AM2320 sensor library",
                     "C:/Users/DBB/.platformio/lib/Adafruit BME280 Library",

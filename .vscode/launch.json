@@ -12,7 +12,11 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
+<<<<<<< HEAD
             "executable": "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/build/esp32/firmware.elf",
+=======
+            "executable": "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/build/esp32/firmware.elf",
+>>>>>>> a9509fd9ad3f800386ef6c8d54859ac405e2d73f
             "projectEnvName": "esp32",
             "toolchainBinDir": "C:/Users/DBB/.platformio/packages/toolchain-xtensa-esp32/bin",
             "internalConsoleOptions": "openOnSessionStart",
@@ -25,7 +29,11 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
+<<<<<<< HEAD
             "executable": "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/build/esp32/firmware.elf",
+=======
+            "executable": "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/build/esp32/firmware.elf",
+>>>>>>> a9509fd9ad3f800386ef6c8d54859ac405e2d73f
             "projectEnvName": "esp32",
             "toolchainBinDir": "C:/Users/DBB/.platformio/packages/toolchain-xtensa-esp32/bin",
             "internalConsoleOptions": "openOnSessionStart"
@@ -34,7 +42,11 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (without uploading)",
+<<<<<<< HEAD
             "executable": "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/build/esp32/firmware.elf",
+=======
+            "executable": "c:/Users/DBB/Documents/PlatformIO/aireciudadano_temp/.pio/build/esp32/firmware.elf",
+>>>>>>> a9509fd9ad3f800386ef6c8d54859ac405e2d73f
             "projectEnvName": "esp32",
             "toolchainBinDir": "C:/Users/DBB/.platformio/packages/toolchain-xtensa-esp32/bin",
             "internalConsoleOptions": "openOnSessionStart",

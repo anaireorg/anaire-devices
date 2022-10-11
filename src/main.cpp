@@ -54,10 +54,10 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi true        // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
-#define Bluetooth false  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
-#define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
-#define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
+#define Wifi true         // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
+#define Bluetooth false   // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
+#define SDyRTC false      // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
+#define SaveSDyRTC false  // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
@@ -2006,14 +2006,14 @@ void Send_Message_Cloud_App_MQTT()
 
     if (isnan(ambientHumidity))
     {
-      if (humi == 0)
+//      if (humi == 0)
         humi = 0;
     }
     else
       humi = round(ambientHumidity);
     if (isnan(ambientTemperature))
     {
-      if (temp == 0)
+//      if (temp == 0)
         temp = 0;
     }
     else

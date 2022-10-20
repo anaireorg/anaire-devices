@@ -58,6 +58,7 @@
 #define Bluetooth false   // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false      // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
 #define SaveSDyRTC false  // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
+#define ESP8285 true      // Set ti true in case you use a ESP8285 switch
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
@@ -337,8 +338,15 @@ PMS::DATA data;
 #else
 #include <SoftwareSerial.h>
 
+#if !ESP8285
 #define PMS_TX 14 // PMS TX pin
 #define PMS_RX 12 // PMS RX pin
+
+#else
+#define PMS_TX 3 // PMS TX pin
+#define PMS_RX 12 // PMS RX pin
+
+#endif
 
 SoftwareSerial pmsSerial(PMS_TX, PMS_RX); // SoftwareSerial(rxPin, txPin)
 
@@ -495,6 +503,10 @@ RTC_DS1307 rtc;
 
 #endif
 
+#if ESP8285
+#define LEDPIN 13
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // SETUP
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -583,6 +595,11 @@ void setup()
   strncpy(eepromConfig.aireciudadano_device_name, aireciudadano_device_nameTemp, sizeof(eepromConfig.aireciudadano_device_name));
   Serial.print("T2:");
   Serial.println(eepromConfig.aireciudadano_device_name);
+#endif
+
+#if ESP8285
+  pinMode(LEDPIN, OUTPUT);
+  digitalWrite(LEDPIN, HIGH);
 #endif
 
 #if !SDyRTC
@@ -709,6 +726,11 @@ void setup()
   if (!err_wifi)
   {
     Init_MQTT();
+#if ESP8285
+      digitalWrite(LEDPIN, LOW);  // turn the LED off by making the voltage LOW
+      delay(750);                 // wait for a 750 msecond
+      digitalWrite(LEDPIN, HIGH);
+#endif
   }
 #endif
 
@@ -2038,6 +2060,12 @@ void Send_Message_Cloud_App_MQTT()
   Serial.print(MQTT_message);
   Serial.println();
 
+#if ESP8285
+      digitalWrite(LEDPIN, LOW);  // turn the LED off by making the voltage LOW
+      delay(750);                 // wait for a 750 msecond
+      digitalWrite(LEDPIN, HIGH);
+#endif
+
   if (OLED66 == true || OLED96 == true || TDisplay == true)
     FlagDATAicon = true;
 
@@ -2449,6 +2477,11 @@ if (PMSsen == true)
     {
       Serial.println("Plantower sensor found!");
       PMSsen = true;
+#if ESP8285
+      digitalWrite(LEDPIN, LOW);  // turn the LED off by making the voltage LOW
+      delay(750);                 // wait for a 750 msecond
+      digitalWrite(LEDPIN, HIGH);
+#endif
 #if (Bluetooth || SDyRTC)
       AdjPMS = true; // Por defecto se deja con ajuste, REVISAR!!!!!!
 #endif

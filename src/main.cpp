@@ -58,7 +58,7 @@
 #define Bluetooth false   // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false      // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
 #define SaveSDyRTC false  // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
-#define ESP8285 true      // Set ti true in case you use a ESP8285 switch
+#define ESP8285 false     // Set ti true in case you use a ESP8285 switch
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false

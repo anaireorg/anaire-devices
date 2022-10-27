@@ -2028,14 +2028,14 @@ void Send_Message_Cloud_App_MQTT()
 
     if (isnan(ambientHumidity))
     {
-//      if (humi == 0)
+      if (humi == 0)
         humi = 0;
     }
     else
       humi = round(ambientHumidity);
     if (isnan(ambientTemperature))
     {
-//      if (temp == 0)
+      if (temp == 0)
         temp = 0;
     }
     else

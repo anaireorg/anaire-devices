@@ -70,7 +70,7 @@
 
 // Definiciones opcionales para version Wifi
 #define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define WPA2 false          // Colocar en true para redes con WPA2
+#define WPA2 true           // Colocar en true para redes con WPA2
 #define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";
                             // Longitude: char sensor_lon[10] = "xx.xxxx";
@@ -83,7 +83,7 @@ bool SPS30sen = false;      // Sensor Sensirion SPS30
 bool SEN5Xsen = false;      // Sensor Sensirion SEN5X
 bool PMSsen = false;        // Sensor Plantower PMS
 bool AdjPMS = false;        // PMS sensor adjust
-bool SHT31sen = false;      // Sensor DHT31 humedad y temperatura
+bool SHT31sen = false;      // Sensor SHT31 humedad y temperatura
 bool AM2320sen = false;     // Sensor AM2320 humedad y temperatura
 bool TDisplay = false;      // Set to true if Board TTGO T-Display is used
 bool OLED66 = false;        // Set to true if you use a OLED Diplay 0.66 inch 64x48
@@ -126,6 +126,10 @@ struct MyConfigStruct
   char ConfigValues[10] = "000010111";
   char aireciudadano_device_name[30] = "AireCiudadano_DBB_01"; // Nombre de la estacion
 #endif
+#endif
+#if WPA2
+  char wifi_user[24];                                         // WiFi user to be used on WPA Enterprise. Default to null (not used)
+  char wifi_password[24];                                     // WiFi password to be used on WPA Enterprise. Default to null (not used)
 #endif
 } eepromConfig;
 
@@ -691,8 +695,8 @@ void setup()
 
 #if Wifi
   // Set MQTT topics
-  //MQTT_send_topic = "measurement";                          // Measurements are sent to this topic
-  MQTT_send_topic = "measurementfix";                          // Measurements are sent to this topic
+  MQTT_send_topic = "measurement";                          // measurement are sent to this topic
+  //MQTT_send_topic = "measurementfix";                          // measurementfix are sent to this topic
   MQTT_receive_topic = "config/" + aireciudadano_device_id; // Config messages will be received in config/id
 #endif
 
@@ -1315,6 +1319,7 @@ void Connect_WiFi()
   }
   else
   { // set up wpa2 enterprise
+#if !(ESP8266 || ESP8255)
     Serial.println("Attempting to authenticate using WPA2 Enterprise...");
     Serial.print("User: ");
     Serial.println(eepromConfig.wifi_user);
@@ -1323,8 +1328,46 @@ void Connect_WiFi()
     esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide identity
     esp_wifi_sta_wpa2_ent_set_username((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide username --> identity and username is same
     esp_wifi_sta_wpa2_ent_set_password((uint8_t *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password)); // provide password
-    esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();                                                         // set config settings to default
-    esp_wifi_sta_wpa2_ent_enable(&config);                                                                         // set config settings to enable function
+//    esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();                                                         // set config settings to default
+//    esp_wifi_sta_wpa2_ent_enable(&config);                                                                         // set config settings to enable function
+    esp_wifi_sta_wpa2_ent_enable();
+#else
+    Serial.print("Attempting to authenticate with WPA Enterprise ");
+    Serial.print("User: ");
+    Serial.println(eepromConfig.wifi_user);
+    Serial.print("Password: ");
+    Serial.println(eepromConfig.wifi_password);
+
+    // Setting ESP into STATION mode only (no AP mode or dual mode)
+    wifi_set_opmode(STATION_MODE);
+
+    struct station_config wifi_config;
+
+    memset(&wifi_config, 0, sizeof(wifi_config));
+    strcpy((char*)wifi_config.ssid, wifi_ssid.c_str());
+    strcpy((char*)wifi_config.password, wifi_password.c_str());
+
+    wifi_station_set_config(&wifi_config);
+    //uint8_t target_esp_mac[6] = {0x24, 0x0a, 0xc4, 0x9a, 0x58, 0x28};
+    //wifi_set_macaddr(STATION_IF,target_esp_mac);
+    wifi_station_set_wpa2_enterprise_auth(1);
+
+    // Clean up to be sure no old data is still inside
+    wifi_station_clear_cert_key();
+    wifi_station_clear_enterprise_ca_cert();
+    wifi_station_clear_enterprise_identity();
+    wifi_station_clear_enterprise_username();
+    wifi_station_clear_enterprise_password();
+    wifi_station_clear_enterprise_new_password();
+
+    // Set up authentication
+    //wifi_station_set_enterprise_identity((uint8*)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
+    wifi_station_set_enterprise_username((uint8*)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
+    wifi_station_set_enterprise_password((uint8*)eepromConfig.wifi_password, strlen((char*)eepromConfig.wifi_password));
+
+    wifi_station_connect();
+#endif
+
   }
 #endif
 
@@ -1645,6 +1688,13 @@ void Start_Captive_Portal()
 
   // Captive portal parameters
 
+#if WPA2  
+  WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise</p>"); // only custom html
+  WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user-identity", eepromConfig.wifi_user, 24);
+  WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
+  WiFiManagerParameter custom_wifi_html2("<p></p>"); // only custom html
+#endif
+
 #if !ESP8266
   WiFiManagerParameter custom_id_name("CustomName", "Set Station Name (29 characters max):", eepromConfig.aireciudadano_device_name, 29);
 #else
@@ -1764,6 +1814,14 @@ void Start_Captive_Portal()
   }
 
   // Add parameters
+
+#if WPA2
+  wifiManager.addParameter(&custom_wifi_html);
+  wifiManager.addParameter(&custom_wifi_user);
+  wifiManager.addParameter(&custom_wifi_password);
+  wifiManager.addParameter(&custom_wifi_html2);
+#endif
+    
   wifiManager.addParameter(&custom_id_name);
   wifiManager.addParameter(&custom_public_time);
   wifiManager.addParameter(&custom_mqtt_html);
@@ -1814,6 +1872,25 @@ void Start_Captive_Portal()
 
   // Save parameters to EEPROM only if any of them changed
   bool write_eeprom = false;
+
+#if WPA2
+  if (eepromConfig.wifi_user != custom_wifi_user.getValue())
+  {
+    strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
+    eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
+    write_eeprom = true;
+    Serial.print("WiFi user: ");
+    Serial.println(eepromConfig.wifi_user);
+  }
+  if (eepromConfig.wifi_password != custom_wifi_password.getValue())
+  {
+    strncpy(eepromConfig.wifi_password, custom_wifi_password.getValue(), sizeof(eepromConfig.wifi_password));
+    eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
+    write_eeprom = true;
+    Serial.print("WiFi password: ");
+    Serial.println(eepromConfig.wifi_password);
+  }
+#endif
 
   if (eepromConfig.aireciudadano_device_name != custom_id_name.getValue())
   {
@@ -2049,18 +2126,18 @@ void Send_Message_Cloud_App_MQTT()
       nox = 0;
     else
       nox = round(noxIndex);
-    //sprintf(MQTT_message, "{id: %s, PM25: %d, VOC: %d, NOx: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
-    sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"VOC\": %d, \"NOx\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
+    sprintf(MQTT_message, "{id: %s, PM25: %d, VOC: %d, NOx: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
+    //sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"VOC\": %d, \"NOx\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
   }
   else
   {
     if (AdjPMS == true)
-      //sprintf(MQTT_message, "{id: %s, PM25: %d, PM25raw: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
-      sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"PM25raw\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
+      sprintf(MQTT_message, "{id: %s, PM25: %d, PM25raw: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
+      //sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"PM25raw\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
 
     else
-      //sprintf(MQTT_message, "{id: %s, PM25: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
-      sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
+      sprintf(MQTT_message, "{id: %s, PM25: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
+      //sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
   }
   Serial.print(MQTT_message);
   Serial.println();
@@ -2951,6 +3028,12 @@ void Print_Config()
   Serial.println(eepromConfig.sensor_lon);
   Serial.print("Configuration values: ");
   Serial.println(eepromConfig.ConfigValues);
+#if WPA2
+  Serial.print("WiFi user for WPA enterprise: ");
+  Serial.println(eepromConfig.wifi_user);
+  Serial.print("WiFi user's password for WPA enterprise: ");
+  Serial.println(eepromConfig.wifi_password);
+#endif  
 #endif
   Serial.println("#######################################");
 }

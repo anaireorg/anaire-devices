@@ -62,14 +62,14 @@
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
-#define OLED66display false
+#define OLED66display true
 #define OLED96display false
 
 // Boards diferentes
 #define TTGO_TQ false
 
 // Definiciones opcionales para version Wifi
-#define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
+#define BrownoutOFF true    // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define WPA2 true           // Colocar en true para redes con WPA2
 #define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";
@@ -1332,6 +1332,9 @@ void Connect_WiFi()
 //    esp_wifi_sta_wpa2_ent_enable(&config);                                                                         // set config settings to enable function
     esp_wifi_sta_wpa2_ent_enable();
 #else
+
+String wifi_ssid = WiFi.SSID();                  // your network SSID (name)
+String wifi_password = WiFi.psk();               // your network psk password
     Serial.print("Attempting to authenticate with WPA Enterprise ");
     Serial.print("User: ");
     Serial.println(eepromConfig.wifi_user);

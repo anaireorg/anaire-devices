@@ -54,22 +54,22 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi true         // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
-#define Bluetooth false   // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
-#define SDyRTC false      // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
-#define SaveSDyRTC false  // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
-#define ESP8285 false     // Set ti true in case you use a ESP8285 switch
+#define Wifi true        // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
+#define Bluetooth false  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
+#define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
+#define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
+#define ESP8285 false    // Set ti true in case you use a ESP8285 switch
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
-#define OLED66display true
+#define OLED66display false
 #define OLED96display false
 
 // Boards diferentes
 #define TTGO_TQ false
 
 // Definiciones opcionales para version Wifi
-#define BrownoutOFF true    // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
+#define BrownoutOFF false    // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define WPA2 true           // Colocar en true para redes con WPA2
 #define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";
@@ -109,8 +109,8 @@ struct MyConfigStruct
 #if Bluetooth
   uint16_t BluetoothTime = 10;        // Bluetooth Time
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
-//#elif SDyRTC
-//  uint16_t SDyRTCTime = 10; // SDyRTC Time
+// #elif SDyRTC
+//   uint16_t SDyRTCTime = 10; // SDyRTC Time
 #elif Wifi
   uint16_t PublicTime = 1;                           // Publication Time
   uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
@@ -128,8 +128,8 @@ struct MyConfigStruct
 #endif
 #endif
 #if WPA2
-  char wifi_user[24];                                         // WiFi user to be used on WPA Enterprise. Default to null (not used)
-  char wifi_password[24];                                     // WiFi password to be used on WPA Enterprise. Default to null (not used)
+  char wifi_user[24];     // WiFi user to be used on WPA Enterprise. Default to null (not used)
+  char wifi_password[24]; // WiFi password to be used on WPA Enterprise. Default to null (not used)
 #endif
 } eepromConfig;
 
@@ -251,7 +251,7 @@ U8G2_SSD1306_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, 5, 4);
 #include "ArimoBoldFont16.h"
 #include "ArimoBoldFont20.h"
 #define GFXFF 1
-//#define FF90 &ArchivoNarrow_Regular10pt7b
+// #define FF90 &ArchivoNarrow_Regular10pt7b
 #define FF90 &ArimoBoldFont16
 #define FF92 &ArimoBoldFont20
 #define FF95 &ArchivoNarrow_Regular50pt7b
@@ -347,7 +347,7 @@ PMS::DATA data;
 #define PMS_RX 12 // PMS RX pin
 
 #else
-#define PMS_TX 3 // PMS TX pin
+#define PMS_TX 3  // PMS TX pin
 #define PMS_RX 12 // PMS RX pin
 
 #endif
@@ -621,8 +621,8 @@ void setup()
 #if Bluetooth
   Bluetooth_loop_time = eepromConfig.BluetoothTime;
   gadgetBle.setSampleIntervalMs(Bluetooth_loop_time * 1000); // Valor de muestreo de APP y de Sensor
-//#elif SDyRTC
-//  SDyRTC_loop_time = eepromConfig.SDyRTCTime;
+// #elif SDyRTC
+//   SDyRTC_loop_time = eepromConfig.SDyRTCTime;
 #endif
 
 #if Tdisplaydisp
@@ -695,8 +695,8 @@ void setup()
 
 #if Wifi
   // Set MQTT topics
-  MQTT_send_topic = "measurement";                          // measurement are sent to this topic
-  //MQTT_send_topic = "measurementfix";                          // measurementfix are sent to this topic
+  MQTT_send_topic = "measurement"; // measurement are sent to this topic
+  // MQTT_send_topic = "measurementfix";                          // measurementfix are sent to this topic
   MQTT_receive_topic = "config/" + aireciudadano_device_id; // Config messages will be received in config/id
 #endif
 
@@ -732,9 +732,9 @@ void setup()
   {
     Init_MQTT();
 #if ESP8285
-      digitalWrite(LEDPIN, LOW);  // turn the LED off by making the voltage LOW
-      delay(750);                 // wait for a 750 msecond
-      digitalWrite(LEDPIN, HIGH);
+    digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+    delay(750);                // wait for a 750 msecond
+    digitalWrite(LEDPIN, HIGH);
 #endif
   }
 #endif
@@ -776,13 +776,13 @@ void setup()
     }
     else
     {
-      digitalWrite(LEDPIN, LOW); // turn the LED on (HIGH is the voltage level)
+      digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
       delay(500);                 // wait for a 500 msecond
-      digitalWrite(LEDPIN, HIGH);  // turn the LED off by making the voltage LOW
+      digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
       delay(500);                 // wait for a 500 msecond
-      digitalWrite(LEDPIN, LOW); // turn the LED on (HIGH is the voltage level)
+      digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
       delay(500);                 // wait for a 500 msecond
-      digitalWrite(LEDPIN, HIGH);  // turn the LED off by making the voltage LOW
+      digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
       delay(500);                 // wait for a 500 msecond
     }
   }
@@ -797,13 +797,13 @@ void setup()
   else
   {
     Serial.println("OK, ds1307 initialized");
-    digitalWrite(LEDPIN, LOW); // turn the LED on (HIGH is the voltage level)
+    digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
     delay(200);                 // wait for a 500 msecond
-    digitalWrite(LEDPIN, HIGH);  // turn the LED off by making the voltage LOW
+    digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
     delay(200);                 // wait for a 500 msecond
-    digitalWrite(LEDPIN, LOW); // turn the LED on (HIGH is the voltage level)
+    digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
     delay(200);                 // wait for a 500 msecond
-    digitalWrite(LEDPIN, HIGH);  // turn the LED off by making the voltage LOW
+    digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
   }
 
   if (!rtc.isrunning())
@@ -1281,11 +1281,11 @@ void Print_WiFi_Status_ESP8266()
   // wifi_rssi_dbm = WiFi.RSSI();
   Serial.print("Signal strength (RSSI):");
 
-  //#if !ESP8266
+  // #if !ESP8266
   Serial.print(WiFi.RSSI());
-  //#else
-  //  Serial.print(WiFi.RSSI());
-  //#endif
+  // #else
+  //   Serial.print(WiFi.RSSI());
+  // #endif
 
   Serial.println(" dBm");
 }
@@ -1311,15 +1311,27 @@ void Connect_WiFi()
 
 #endif
 
-#if WPA2
-  // If there are not wifi user and wifi password defined, proceed to traight forward configuration
+  // #if WPA2
+  //  If there are not wifi user and wifi password defined, proceed to traight forward configuration
   if ((strlen(eepromConfig.wifi_user) == 0) && (strlen(eepromConfig.wifi_password) == 0))
   {
     Serial.println("Attempting to authenticate...");
+
+#if ESP8266
+
+#if !PreProgSensor
+    WiFi.begin();
+#else
+    WiFi.begin(ssid, password);
+#endif
+
+#endif
   }
   else
-  { // set up wpa2 enterprise
-#if !(ESP8266 || ESP8255)
+  {
+#if WPA2
+    // set up wpa2 enterprise
+#if !ESP8266
     Serial.println("Attempting to authenticate using WPA2 Enterprise...");
     Serial.print("User: ");
     Serial.println(eepromConfig.wifi_user);
@@ -1328,14 +1340,13 @@ void Connect_WiFi()
     esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide identity
     esp_wifi_sta_wpa2_ent_set_username((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide username --> identity and username is same
     esp_wifi_sta_wpa2_ent_set_password((uint8_t *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password)); // provide password
-//    esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();                                                         // set config settings to default
-//    esp_wifi_sta_wpa2_ent_enable(&config);                                                                         // set config settings to enable function
     esp_wifi_sta_wpa2_ent_enable();
+
 #else
 
-String wifi_ssid = WiFi.SSID();                  // your network SSID (name)
-String wifi_password = WiFi.psk();               // your network psk password
-    Serial.print("Attempting to authenticate with WPA Enterprise ");
+    String wifi_ssid = WiFi.SSID();    // your network SSID (name)
+    //String wifi_password = WiFi.psk(); // your network psk password
+    Serial.print("Attempting to authenticate with WPA2 Enterprise ");
     Serial.print("User: ");
     Serial.println(eepromConfig.wifi_user);
     Serial.print("Password: ");
@@ -1347,12 +1358,12 @@ String wifi_password = WiFi.psk();               // your network psk password
     struct station_config wifi_config;
 
     memset(&wifi_config, 0, sizeof(wifi_config));
-    strcpy((char*)wifi_config.ssid, wifi_ssid.c_str());
-    strcpy((char*)wifi_config.password, wifi_password.c_str());
+    strcpy((char *)wifi_config.ssid, wifi_ssid.c_str());
+    strcpy((char *)wifi_config.password, eepromConfig.wifi_password);
 
     wifi_station_set_config(&wifi_config);
-    //uint8_t target_esp_mac[6] = {0x24, 0x0a, 0xc4, 0x9a, 0x58, 0x28};
-    //wifi_set_macaddr(STATION_IF,target_esp_mac);
+    // uint8_t target_esp_mac[6] = {0x24, 0x0a, 0xc4, 0x9a, 0x58, 0x28};
+    // wifi_set_macaddr(STATION_IF,target_esp_mac);
     wifi_station_set_wpa2_enterprise_auth(1);
 
     // Clean up to be sure no old data is still inside
@@ -1364,20 +1375,25 @@ String wifi_password = WiFi.psk();               // your network psk password
     wifi_station_clear_enterprise_new_password();
 
     // Set up authentication
-    //wifi_station_set_enterprise_identity((uint8*)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
-    wifi_station_set_enterprise_username((uint8*)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
-    wifi_station_set_enterprise_password((uint8*)eepromConfig.wifi_password, strlen((char*)eepromConfig.wifi_password));
+    wifi_station_set_enterprise_identity((uint8*)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
+    wifi_station_set_enterprise_username((uint8 *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
+    wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
 
     wifi_station_connect();
 #endif
 
-  }
 #endif
+  }
+  // #endif
+
+#if ESP32
 
 #if !PreProgSensor
   WiFi.begin();
 #else
   WiFi.begin(ssid, password);
+#endif
+
 #endif
 
   // Timestamp for connection timeout
@@ -1471,11 +1487,11 @@ void Print_WiFi_Status()
   // Print the received signal strength:
   Serial.print("Signal strength (RSSI): ");
 
-  //#if !ESP8266
+  // #if !ESP8266
   Serial.print(WiFi.RSSI());
-  //#else
-  //  Serial.print(WiFi.RSSI());
-  //#endif
+  // #else
+  //   Serial.print(WiFi.RSSI());
+  // #endif
 
   Serial.println(" dBm");
 }
@@ -1529,11 +1545,11 @@ void Check_WiFi_Server()
             client.print(WiFi.macAddress());
             client.println("<br>");
             client.print("RSSI: ");
-            //#if !ESP8266
+            // #if !ESP8266
             client.print(WiFi.RSSI());
-            //#else
-            //            client.print(WiFi.RSSI());
-            //#endif
+            // #else
+            //             client.print(WiFi.RSSI());
+            // #endif
 
             client.println("<br>");
             client.println("------");
@@ -1683,15 +1699,15 @@ void Start_Captive_Portal()
   wifiManager.setDebugOutput(true);
   wifiManager.disconnect();
 
-  //#if ESP8266
-  //  wifiManager.setMinimumSignalQuality(50);
-  //#endif
+  // #if ESP8266
+  //   wifiManager.setMinimumSignalQuality(50);
+  // #endif
 
   WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
   // Captive portal parameters
 
-#if WPA2  
+#if WPA2
   WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise</p>"); // only custom html
   WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user-identity", eepromConfig.wifi_user, 24);
   WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
@@ -1824,7 +1840,7 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_wifi_password);
   wifiManager.addParameter(&custom_wifi_html2);
 #endif
-    
+
   wifiManager.addParameter(&custom_id_name);
   wifiManager.addParameter(&custom_public_time);
   wifiManager.addParameter(&custom_mqtt_html);
@@ -1846,11 +1862,11 @@ void Start_Captive_Portal()
   // If not specified device will remain in configuration mode until
   // switched off via webserver or device is restarted.
 
-  //#if ESP8266
-  //  wifiManager.setSaveConnectTimeout(connectiontimeout);
-  //  Serial.print("setSaveConnectTimeout ");
-  //  Serial.println(connectiontimeout);
-  //#endif
+  // #if ESP8266
+  //   wifiManager.setSaveConnectTimeout(connectiontimeout);
+  //   Serial.print("setSaveConnectTimeout ");
+  //   Serial.println(connectiontimeout);
+  // #endif
 
   // wifiManager.setScanDispPerc(true);
 
@@ -2130,25 +2146,25 @@ void Send_Message_Cloud_App_MQTT()
     else
       nox = round(noxIndex);
     sprintf(MQTT_message, "{id: %s, PM25: %d, VOC: %d, NOx: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
-    //sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"VOC\": %d, \"NOx\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
+    // sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"VOC\": %d, \"NOx\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
   }
   else
   {
     if (AdjPMS == true)
       sprintf(MQTT_message, "{id: %s, PM25: %d, PM25raw: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
-      //sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"PM25raw\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
+    // sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"PM25raw\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
 
     else
       sprintf(MQTT_message, "{id: %s, PM25: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
-      //sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
+    // sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
   }
   Serial.print(MQTT_message);
   Serial.println();
 
 #if ESP8285
-      digitalWrite(LEDPIN, LOW);  // turn the LED off by making the voltage LOW
-      delay(750);                 // wait for a 750 msecond
-      digitalWrite(LEDPIN, HIGH);
+  digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+  delay(750);                // wait for a 750 msecond
+  digitalWrite(LEDPIN, HIGH);
 #endif
 
   if (OLED66 == true || OLED96 == true || TDisplay == true)
@@ -2563,8 +2579,8 @@ if (PMSsen == true)
       Serial.println("Plantower sensor found!");
       PMSsen = true;
 #if ESP8285
-      digitalWrite(LEDPIN, LOW);  // turn the LED off by making the voltage LOW
-      delay(750);                 // wait for a 750 msecond
+      digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+      delay(750);                // wait for a 750 msecond
       digitalWrite(LEDPIN, HIGH);
 #endif
 #if (Bluetooth || SDyRTC)
@@ -3036,7 +3052,7 @@ void Print_Config()
   Serial.println(eepromConfig.wifi_user);
   Serial.print("WiFi user's password for WPA enterprise: ");
   Serial.println(eepromConfig.wifi_password);
-#endif  
+#endif
 #endif
   Serial.println("#######################################");
 }
@@ -3224,11 +3240,11 @@ void UpdateOLED()
   displaySensorAverage(pm25int);
 #if Wifi
 
-  //#if !ESP8266
+  // #if !ESP8266
   displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
-  //#else
-  //  displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
-  //#endif
+  // #else
+  //   displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
+  // #endif
 
   if (FlagDATAicon == true)
   {
@@ -3724,8 +3740,8 @@ void Suspend_Device()
 
     if (TDisplay == true)
     {
-      //#if !ESP8266
-      // int r = digitalRead(TFT_BL);
+      // #if !ESP8266
+      //  int r = digitalRead(TFT_BL);
       tft.fillScreen(TFT_BLACK);
       tft.setTextColor(TFT_GREEN, TFT_BLACK);
       tft.setTextDatum(MC_DATUM);
@@ -3735,7 +3751,7 @@ void Suspend_Device()
       // digitalWrite(TFT_BL, !r);
       tft.writecommand(TFT_DISPOFF);
       tft.writecommand(TFT_SLPIN);
-      //#endif
+      // #endif
     }
 #else
     espDelay(3000);

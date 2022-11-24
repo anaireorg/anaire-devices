@@ -69,8 +69,8 @@
 #define TTGO_TQ false
 
 // Definiciones opcionales para version Wifi
-#define BrownoutOFF false    // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define WPA2 true           // Colocar en true para redes con WPA2
+#define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
+#define WPA2 false          // Colocar en true para redes con WPA2
 #define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";
                             // Longitude: char sensor_lon[10] = "xx.xxxx";
@@ -1311,8 +1311,20 @@ void Connect_WiFi()
 
 #endif
 
-  // #if WPA2
+#if !WPA2
+
+#if ESP8266
+#if !PreProgSensor
+    WiFi.begin();
+#else
+    WiFi.begin(ssid, password);
+#endif
+#endif
+
+#else
+// #if WPA2
   //  If there are not wifi user and wifi password defined, proceed to traight forward configuration
+
   if ((strlen(eepromConfig.wifi_user) == 0) && (strlen(eepromConfig.wifi_password) == 0))
   {
     Serial.println("Attempting to authenticate...");
@@ -1385,6 +1397,7 @@ void Connect_WiFi()
 #endif
   }
   // #endif
+#endif
 
 #if ESP32
 

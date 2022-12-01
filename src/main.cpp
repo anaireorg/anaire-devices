@@ -530,11 +530,11 @@ void setup()
 #if Wifi
 
 #if !ESP8266
-  Serial.println("CPU0 reset reason:");
+  Serial.println(F("CPU0 reset reason:"));
   print_reset_reason(rtc_get_reset_reason(0));
 #else
   uint16_t Resetvar = 0;
-  Serial.print("CPU reset reason: ");
+  Serial.print(F("CPU reset reason: "));
   rst_info *rinfo = ESP.getResetInfoPtr();
   Serial.println(rinfo->reason);
   Resetvar = rinfo->reason;
@@ -542,9 +542,9 @@ void setup()
   if (Resetvar == 4)
   {
     ResetFlag = false;
-    Serial.print("Resetvar: false");
+    Serial.print(F("Resetvar: false"));
   }
-  Serial.print("Resetvar: ");
+  Serial.print(F("Resetvar: "));
   Serial.println(Resetvar);
 #endif
 
@@ -560,19 +560,19 @@ void setup()
       if (digitalRead(BUTTON_TOP) == false)
       {
         NoiseBUTTONFlag = false;
-        Serial.println("NoiseBUTTONFlag = false");
+        Serial.println(F("NoiseBUTTONFlag = false"));
       }
       else
       {
         NoiseBUTTONFlag = true;
-        Serial.println("NoiseBUTTONFlag = true");
+        Serial.println(F("NoiseBUTTONFlag = true"));
         Suspend_Device();
       }
     }
     else
     {
       NoiseBUTTONFlag = true;
-      Serial.println("NoiseBUTTONFlag = true");
+      Serial.println(F("NoiseBUTTONFlag = true"));
       Suspend_Device();
     }
   }
@@ -580,7 +580,7 @@ void setup()
 
   // print info
   Serial.println();
-  Serial.println("##### Inicializando Medidor Aire Ciudadano #####");
+  Serial.println(F("##### Inicializando Medidor Aire Ciudadano #####"));
 
 #if !ESP8266
   // init preferences to handle persitent config data
@@ -588,7 +588,7 @@ void setup()
 #endif
 
 #if PreProgSensor
-  Serial.print("T1: ");
+  Serial.print(F("T1: "));
   Serial.println(eepromConfig.aireciudadano_device_name);
   strcpy(aireciudadano_device_nameTemp, eepromConfig.aireciudadano_device_name);
 #endif
@@ -598,7 +598,7 @@ void setup()
 #endif
 #if PreProgSensor
   strncpy(eepromConfig.aireciudadano_device_name, aireciudadano_device_nameTemp, sizeof(eepromConfig.aireciudadano_device_name));
-  Serial.print("T2:");
+  Serial.print(F("T2:"));
   Serial.println(eepromConfig.aireciudadano_device_name);
 #endif
 
@@ -613,7 +613,7 @@ void setup()
 
   float Floatver = sw_version.toFloat();
   Swver = Floatver * 10;
-  Serial.print("SW version: ");
+  Serial.print(F("SW version: "));
   Serial.println(sw_version);
 
   // Get device id
@@ -712,7 +712,7 @@ void setup()
 // Initialize the GadgetBle Library for Bluetooth
 #elif Bluetooth
   gadgetBle.begin();
-  Serial.print("Sensirion GadgetBle Lib initialized with deviceId = ");
+  Serial.print(F("Sensirion GadgetBle Lib initialized with deviceId = "));
   Serial.println(gadgetBle.getDeviceIdString());
 
 #endif
@@ -754,26 +754,26 @@ void setup()
 
   pinMode(LEDPIN, OUTPUT);
 
-  Serial.print("Initializing SD card: ");
+  Serial.print(F("Initializing SD card: ");
   // make sure that the default chip select pin is set to output, even if you don't use it:
   pinMode(SS, OUTPUT);
 
   // see if the card is present and can be initialized:
   if (!SD.begin(chipSelect))
   {
-    Serial.println("Card failed, or not present");
-    Serial.println("Review SD card or connections");
+    Serial.println(F("Card failed, or not present"));
+    Serial.println(F("Review SD card or connections"));
   }
   else
   {
-    Serial.println("OK, card initialized");
+    Serial.println(F("OK, card initialized"));
 
     // Open up the file we're going to log to!
     dataFile = SD.open("datalog.txt", FILE_WRITE);
     if (!dataFile)
     {
-      Serial.println("error opening datalog.txt");
-      Serial.println("Review the SD card");
+      Serial.println(F("error opening datalog.txt"));
+      Serial.println(F("Review the SD card"));
     }
     else
     {
@@ -788,16 +788,16 @@ void setup()
     }
   }
 
-  Serial.print("Initializing RTC ds1307: ");
+  Serial.print(F("Initializing RTC ds1307: "));
 
   if (!rtc.begin())
   {
-    Serial.println("Couldn't find RTC");
+    Serial.println(F("Couldn't find RTC"));
     Serial.flush();
   }
   else
   {
-    Serial.println("OK, ds1307 initialized");
+    Serial.println(F("OK, ds1307 initialized"));
     digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
     delay(200);                 // wait for a 500 msecond
     digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
@@ -809,7 +809,7 @@ void setup()
 
   if (!rtc.isrunning())
   {
-    Serial.println("RTC is NOT running, let's set the time!");
+    Serial.println(F("RTC is NOT running, let's set the time!"));
     // When time needs to be set on a new device, or after a power loss, the
     // following line sets the RTC to the date & time this sketch was compiled
     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
@@ -818,14 +818,14 @@ void setup()
     // rtc.adjust(DateTime(2022, 8, 20, 15, 18, 0));
   }
   else
-    Serial.println("ds1307 is running, no changes");
+    Serial.println(F("ds1307 is running, no changes"));
 
     //  rtc.adjust(DateTime(2022, 8, 20, 15, 18, 0));
 
 #endif
 
-  Serial.println("");
-  Serial.println("### Configuración del medidor AireCiudadano finalizada ###\n");
+  Serial.println(F(""));
+  Serial.println(F("### Configuración del medidor AireCiudadano finalizada ###\n"));
 
 #if (Tdisplaydisp || OLED96display || OLED66display)
 
@@ -932,7 +932,7 @@ void loop()
     }
     else
     {
-      Serial.println("Medidor No configurado");
+      Serial.println(F("Medidor No configurado"));
 
 #if (Tdisplaydisp || OLED96display || OLED66display)
 
@@ -998,16 +998,16 @@ void loop()
     float PM25f;
 
     ///// DEBUG Samples
-    // Serial.println(PM25_accumulated);
-    // Serial.print("#samples: ");
-    // Serial.println(PM25_samples);
+    // Serial.println(F(PM25_accumulated));
+    // Serial.print(F("#samples: "));
+    // Serial.println(F(PM25_samples));
     PM25f = PM25_accumulated / PM25_samples;
     pm25int = round(PM25f);
-    // Serial.println(pm25int);
+    // Serial.println(F(pm25int));
     ///// END DEBUG Samples
-    Serial.print("PM25: ");
+    Serial.print(F("PM25: "));
     Serial.print(pm25int);
-    Serial.print("   ");
+    Serial.print(F("   "));
     ReadHyT();
     Write_Bluetooth();
 #if SaveSDyRTC
@@ -1026,16 +1026,16 @@ void loop()
     float PM25f;
 
     ///// DEBUG Samples
-    // Serial.println(PM25_accumulated);
-    // Serial.print("#samples: ");
-    // Serial.println(PM25_samples);
+    // Serial.println(F(PM25_accumulated));
+    // Serial.print(F("#samples: "));
+    // Serial.println(F(PM25_samples));
     PM25f = PM25_accumulated / PM25_samples;
     pm25int = round(PM25f);
-    // Serial.println(pm25int);
+    // Serial.println(F(pm25int));
     ///// END DEBUG Samples
-    Serial.print("PM25: ");
+    Serial.print(F("PM25: "));
     Serial.print(pm25int);
-    Serial.print("   ");
+    Serial.print(F("   "));
     ReadHyT();
     Write_SD();
     PM25_accumulated = 0.0;
@@ -1078,7 +1078,7 @@ void loop()
     // Try to recover error conditions
     if (err_sensor)
     {
-      Serial.println("--- err_sensor");
+      Serial.println(F("--- err_sensor"));
       // Setup_Sensor();  // Init pm25 sensors
     }
 
@@ -1086,7 +1086,7 @@ void loop()
 
     if (WiFi.status() != WL_CONNECTED)
     {
-      Serial.println("--- err_wifi");
+      Serial.println(F("--- err_wifi"));
       err_wifi = true;
       WiFi.reconnect();
     }
@@ -1098,7 +1098,7 @@ void loop()
     // Reconnect MQTT if needed
     if ((!MQTT_client.connected()) && (!err_wifi))
     {
-      Serial.println("--- err_mqtt");
+      Serial.println(F("--- err_mqtt"));
       err_MQTT = true;
       FlagDATAicon = false;
     }
@@ -1106,7 +1106,7 @@ void loop()
     // Reconnect MQTT if needed
     if ((err_MQTT) && (!err_wifi))
     {
-      Serial.println("--- MQTT reconnect");
+      Serial.println(F("--- MQTT reconnect"));
       // Attempt to connect to MQTT broker
       MQTT_Reconnect();
       Init_MQTT();
@@ -1146,7 +1146,7 @@ void loop()
 #endif
 #endif
 
-  // Serial.println("--- END LOOP");
+  // Serial.println(F("--- END LOOP"));
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1159,85 +1159,85 @@ void loop()
 
 void WiFiEvent(WiFiEvent_t event)
 {
-  Serial.printf("[WiFi-event] event: %d - ", event);
+  Serial.printf("[WiFi-event] event: %d - ", event));
 
   switch (event)
   {
   case SYSTEM_EVENT_WIFI_READY:
-    Serial.println("WiFi interface ready");
+    Serial.println(F("WiFi interface ready"));
     break;
   case SYSTEM_EVENT_SCAN_DONE:
-    Serial.println("Completed scan for access points");
+    Serial.println(F("Completed scan for access points"));
     break;
   case SYSTEM_EVENT_STA_START:
-    Serial.println("WiFi client started");
+    Serial.println(F("WiFi client started"));
     break;
   case SYSTEM_EVENT_STA_STOP:
-    Serial.println("WiFi clients stopped");
+    Serial.println(F("WiFi clients stopped"));
     break;
   case SYSTEM_EVENT_STA_CONNECTED:
-    Serial.println("Connected to access point");
+    Serial.println(F("Connected to access point"));
     break;
   case SYSTEM_EVENT_STA_DISCONNECTED:
-    Serial.println("Disconnected from WiFi access point");
+    Serial.println(F("Disconnected from WiFi access point"));
     break;
   case SYSTEM_EVENT_STA_AUTHMODE_CHANGE:
-    Serial.println("Authentication mode of access point has changed");
+    Serial.println(F("Authentication mode of access point has changed"));
     break;
   case SYSTEM_EVENT_STA_GOT_IP:
-    Serial.print("Obtained IP address: ");
-    Serial.println(WiFi.localIP());
+    Serial.print(F("Obtained IP address: "));
+    Serial.println(F(WiFi.localIP()));
     break;
   case SYSTEM_EVENT_STA_LOST_IP:
-    Serial.println("Lost IP address and IP address is reset to 0");
+    Serial.println(F("Lost IP address and IP address is reset to 0"));
     break;
   case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
-    Serial.println("WiFi Protected Setup (WPS): succeeded in enrollee mode");
+    Serial.println(F("WiFi Protected Setup (WPS): succeeded in enrollee mode"));
     break;
   case SYSTEM_EVENT_STA_WPS_ER_FAILED:
-    Serial.println("WiFi Protected Setup (WPS): failed in enrollee mode");
+    Serial.println(F("WiFi Protected Setup (WPS): failed in enrollee mode"));
     break;
   case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT:
-    Serial.println("WiFi Protected Setup (WPS): timeout in enrollee mode");
+    Serial.println(F("WiFi Protected Setup (WPS): timeout in enrollee mode"));
     break;
   case SYSTEM_EVENT_STA_WPS_ER_PIN:
-    Serial.println("WiFi Protected Setup (WPS): pin code in enrollee mode");
+    Serial.println(F("WiFi Protected Setup (WPS): pin code in enrollee mode"));
     break;
   case SYSTEM_EVENT_AP_START:
-    Serial.println("WiFi access point started");
+    Serial.println(F("WiFi access point started"));
     break;
   case SYSTEM_EVENT_AP_STOP:
-    Serial.println("WiFi access point  stopped");
+    Serial.println(F("WiFi access point  stopped"));
     break;
   case SYSTEM_EVENT_AP_STACONNECTED:
-    Serial.println("Client connected");
+    Serial.println(F("Client connected"));
     break;
   case SYSTEM_EVENT_AP_STADISCONNECTED:
-    Serial.println("Client disconnected");
+    Serial.println(F("Client disconnected"));
     break;
   case SYSTEM_EVENT_AP_STAIPASSIGNED:
-    Serial.println("Assigned IP address to client");
+    Serial.println(F("Assigned IP address to client"));
     break;
   case SYSTEM_EVENT_AP_PROBEREQRECVED:
-    Serial.println("Received probe request");
+    Serial.println(F("Received probe request"));
     break;
   case SYSTEM_EVENT_GOT_IP6:
-    Serial.println("IPv6 is preferred");
+    Serial.println(F("IPv6 is preferred"));
     break;
   case SYSTEM_EVENT_ETH_START:
-    Serial.println("Ethernet started");
+    Serial.println(F("Ethernet started"));
     break;
   case SYSTEM_EVENT_ETH_STOP:
-    Serial.println("Ethernet stopped");
+    Serial.println(F("Ethernet stopped"));
     break;
   case SYSTEM_EVENT_ETH_CONNECTED:
-    Serial.println("Ethernet connected");
+    Serial.println(F("Ethernet connected"));
     break;
   case SYSTEM_EVENT_ETH_DISCONNECTED:
-    Serial.println("Ethernet disconnected");
+    Serial.println(F("Ethernet disconnected"));
     break;
   case SYSTEM_EVENT_ETH_GOT_IP:
-    Serial.println("Obtained IP address");
+    Serial.println(F("Obtained IP address"));
     break;
   default:
     break;
@@ -1262,25 +1262,25 @@ void Print_WiFi_Status_ESP8266()
   //  WL_DISCONNECTED: assigned when disconnected from a network;
 
   // wifi_status = WiFi.status();
-  Serial.print("wifi_status: ");
+  Serial.print(F("wifi_status: "));
   Serial.println(WiFi.status());
 
   // Print the SSID of the network you're attached to:
-  Serial.print("SSID: ");
+  Serial.print(F("SSID: "));
   Serial.println(WiFi.SSID());
 
   // Print your WiFi shield's IP address:
   // ip_address = WiFi.localIP();
-  Serial.print("IP Address: ");
+  Serial.print(F("IP Address: "));
   Serial.println(WiFi.localIP());
 
   // Print your WiFi shield's MAC address:
-  Serial.print("MAC Adress: ");
+  Serial.print(F("MAC Adress: "));
   Serial.println(WiFi.macAddress());
 
   // Print the received signal strength:
   // wifi_rssi_dbm = WiFi.RSSI();
-  Serial.print("Signal strength (RSSI):");
+  Serial.print(F("Signal strength (RSSI):"));
 
   // #if !ESP8266
   Serial.print(WiFi.RSSI());
@@ -1288,7 +1288,7 @@ void Print_WiFi_Status_ESP8266()
   //   Serial.print(WiFi.RSSI());
   // #endif
 
-  Serial.println(" dBm");
+  Serial.println(F(" dBm"));
 }
 
 #endif
@@ -1306,7 +1306,7 @@ void Connect_WiFi()
 #if !PreProgSensor
   wifi_config_t conf;
   esp_wifi_get_config(WIFI_IF_STA, &conf); // Get WiFi configuration
-  Serial.print("Attempting to connect to WiFi network: ");
+  Serial.print(F("Attempting to connect to WiFi network: "));
   Serial.println(String(reinterpret_cast<const char *>(conf.sta.ssid))); // WiFi.SSID() is not filled up until the connection is established
 #endif
 
@@ -1328,7 +1328,7 @@ void Connect_WiFi()
 
   if ((strlen(eepromConfig.wifi_user) == 0) && (strlen(eepromConfig.wifi_password) == 0))
   {
-    Serial.println("Attempting to authenticate...");
+    Serial.println(F("Attempting to authenticate..."));
 
 #if ESP8266
 
@@ -1345,10 +1345,10 @@ void Connect_WiFi()
 #if WPA2
     // set up wpa2 enterprise
 #if !ESP8266
-    Serial.println("Attempting to authenticate using WPA2 Enterprise...");
-    Serial.print("User: ");
+    Serial.println(F("Attempting to authenticate using WPA2 Enterprise..."));
+    Serial.print(F("User: "));
     Serial.println(eepromConfig.wifi_user);
-    Serial.print("Password: ");
+    Serial.print(F("Password: "));
     Serial.println(eepromConfig.wifi_password);
     esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide identity
     esp_wifi_sta_wpa2_ent_set_username((uint8_t *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));         // provide username --> identity and username is same
@@ -1358,11 +1358,11 @@ void Connect_WiFi()
 #else
 
     String wifi_ssid = WiFi.SSID(); // your network SSID (name)
-    // String wifi_password = WiFi.psk(); // your network psk password
-    Serial.print("Attempting to authenticate with WPA2 Enterprise ");
-    Serial.print("User: ");
+    // String wifi_password = WiFi.psk()); // your network psk password
+    Serial.print(F("Attempting to authenticate with WPA2 Enterprise "));
+    Serial.print(F("User: "));
     Serial.println(eepromConfig.wifi_user);
-    Serial.print("Password: ");
+    Serial.print(F("Password: "));
     Serial.println(eepromConfig.wifi_password);
 
     // Setting ESP into STATION mode only (no AP mode or dual mode)
@@ -1417,19 +1417,19 @@ void Connect_WiFi()
   while ((WiFi.status() != WL_CONNECTED) && ((millis() - wifi_timeout_start) < WIFI_CONNECT_TIMEOUT))
   {
     delay(500); // wait 0.5 seconds for connection
-    Serial.println(".");
+    Serial.println(F("."));
   }
 
   // Status
   if (WiFi.status() != WL_CONNECTED)
   {
     err_wifi = true;
-    Serial.println("WiFi not connected");
+    Serial.println(F("WiFi not connected"));
   }
   else
   {
     err_wifi = false;
-    Serial.println("WiFi connected");
+    Serial.println(F("WiFi connected"));
     // start the web server on port 80
     wifi_server.begin();
   }
@@ -1454,8 +1454,8 @@ void Print_WiFi_Status()
   //  WL_CONNECTION_LOST: assigned when the connection is lost;
   //  WL_DISCONNECTED: assigned when disconnected from a network;
 
-  Serial.println("wifi_status: ");
-  Serial.println("");
+  Serial.println(F("wifi_status: "));
+  Serial.println(F(""));
 #if (OLED66 == true || OLED96 == true)
   pageStart();
   u8g2.setFont(u8g2_font_5x7_tf);
@@ -1464,69 +1464,69 @@ void Print_WiFi_Status()
   switch (WiFi.status())
   {
   case WL_CONNECTED:
-    Serial.println("WIFI CONECTADA !!!!!!!!!!!!!!!!!!!!");
-    Serial.println("WIFI CONECTADA !!!!!!!!!!!!!!!!!!!!");
+    Serial.println(F("WIFI CONECTADA !!!!!!!!!!!!!!!!!!!!"));
+    Serial.println(F("WIFI CONECTADA !!!!!!!!!!!!!!!!!!!!"));
 #if (OLED66 == true || OLED96 == true)
     u8g2.print("OK WIFI :)");
 #endif
     break;
   case WL_NO_SHIELD:
-    Serial.println("No WiFi HW detected");
+    Serial.println(F("No WiFi HW detected"));
     break;
   case WL_IDLE_STATUS:
-    Serial.println("Attempting...");
+    Serial.println(F("Attempting..."));
     break;
   case WL_NO_SSID_AVAIL:
-    Serial.println("No SSID available");
+    Serial.println(F("No SSID available"));
 #if (OLED66 == true || OLED96 == true)
     u8g2.print("NO WIFI :(");
 #endif
     break;
   case WL_SCAN_COMPLETED:
-    Serial.println("Networks scan completed");
+    Serial.println(F("Networks scan completed"));
     break;
   case WL_CONNECT_FAILED:
-    Serial.println("Connect failed");
+    Serial.println(F("Connect failed"));
 #if (OLED66 == true || OLED96 == true)
     u8g2.print("NO WIFI :(");
 #endif
     break;
   case WL_CONNECTION_LOST:
-    Serial.println("Connection lost");
+    Serial.println(F("Connection lost"));
 #if (OLED66 == true || OLED96 == true)
     u8g2.print("NO WIFI :(");
 #endif
     break;
   case WL_DISCONNECTED:
-    Serial.println("Disconnected");
+    Serial.println(F("Disconnected"));
 #if (OLED66 == true || OLED96 == true)
     u8g2.print("NO WIFI :(");
 #endif
     break;
   default:
-    Serial.println("Unknown status");
+    Serial.println(F("Unknown status"));
     break;
   }
-  Serial.println("");
+  Serial.println(F(""));
   delay(3000);
 #if (OLED66 == true || OLED96 == true)
   pageEnd();
 #endif
 
   // Print the SSID of the network you're attached to:
-  Serial.print("SSID: ");
+  Serial.print(F("SSID: "));
   Serial.println(WiFi.SSID());
 
   // Print your WiFi shield's IP address:
-  Serial.print("IP Address: ");
+  Serial.print(F("IP Address: "));
   Serial.println(WiFi.localIP());
 
   // Print your WiFi shield's MAC address:
-  Serial.print("MAC Adress: ");
+  Serial.print(F("MAC Adress: "));
   Serial.println(WiFi.macAddress());
 
   // Print the received signal strength:
-  Serial.print("Signal strength (RSSI): ");
+  Serial.print(F("Signal strength (RSSI): "));
 
   // #if !ESP8266
   Serial.print(WiFi.RSSI());
@@ -1534,7 +1534,7 @@ void Print_WiFi_Status()
   //   Serial.print(WiFi.RSSI());
   // #endif
 
-  Serial.println(" dBm");
+  Serial.println(F(" dBm"));
 }
 
 void Check_WiFi_Server()
@@ -1542,7 +1542,7 @@ void Check_WiFi_Server()
   WiFiClient client = wifi_server.available(); // listen for incoming clients
   if (client)
   {                               // if you get a client,
-    Serial.println("new client"); // print a message out the serial port
+    Serial.println(F("new client")); // print a message out the serial port
     String currentLine = "";      // make a String to hold incoming data from the client
     while (client.connected())
     { // loop while the client's connected
@@ -1678,7 +1678,7 @@ void Check_WiFi_Server()
 
     // close the connection:
     client.stop();
-    Serial.println("client disconnected");
+    Serial.println(F("client disconnected"));
   }
 }
 
@@ -1687,7 +1687,7 @@ void Start_Captive_Portal()
   InCaptivePortal = true;
   String wifiAP;
   const int captiveportaltime = 60;
-  //  const int connectiontimeout = 5;
+//  const int captiveportaltime = 5;
 
   //  wifiAP = String(eepromConfig.aireciudadano_device_name);
 
@@ -1905,7 +1905,7 @@ void Start_Captive_Portal()
 
   // #if ESP8266
   //   wifiManager.setSaveConnectTimeout(connectiontimeout);
-  //   Serial.print("setSaveConnectTimeout ");
+  //   Serial.print(F("setSaveConnectTimeout "));
   //   Serial.println(connectiontimeout);
   // #endif
 
@@ -1922,12 +1922,12 @@ void Start_Captive_Portal()
   bool res = wifiManager.startConfigPortal(wifiAP.c_str());
   if (!res)
   {
-    Serial.println("Not able to start captive portal");
+    Serial.println(F("Not able to start captive portal"));
   }
   else
   {
     // if you get here you have connected to the WiFi
-    Serial.println("Captive portal operative");
+    Serial.println(F("Captive portal operative"));
   }
 
   // Save parameters to EEPROM only if any of them changed
@@ -1939,8 +1939,8 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
     eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
     write_eeprom = true;
-    Serial.println("Wifi user write_eeprom = true");
-    Serial.print("WiFi user: ");
+    Serial.println(F("Wifi user write_eeprom = true"));
+    Serial.print(F("WiFi user: "));
     Serial.println(eepromConfig.wifi_user);
   }
   if (eepromConfig.wifi_password != custom_wifi_password.getValue())
@@ -1948,8 +1948,8 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.wifi_password, custom_wifi_password.getValue(), sizeof(eepromConfig.wifi_password));
     eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
     write_eeprom = true;
-    Serial.println("Wifi pass write_eeprom = true");
-    Serial.print("WiFi password: ");
+    Serial.println(F("Wifi pass write_eeprom = true"));
+    Serial.print(F("WiFi password: "));
     Serial.println(eepromConfig.wifi_password);
   }
 #endif
@@ -1959,8 +1959,8 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.aireciudadano_device_name, custom_id_name.getValue(), sizeof(eepromConfig.aireciudadano_device_name));
     eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
     write_eeprom = true;
-    Serial.println("Devname write_eeprom = true");
-    Serial.print("Device name (captive portal): ");
+    Serial.println(F("Devname write_eeprom = true"));
+    Serial.print(F("Device name (captive portal): "));
     Serial.println(eepromConfig.aireciudadano_device_name);
   }
 
@@ -1968,8 +1968,8 @@ void Start_Captive_Portal()
   {
     eepromConfig.PublicTime = atoi(custom_public_time.getValue());
     write_eeprom = true;
-    Serial.println("PublicTime write_eeprom = true");
-    Serial.print("Publication time: ");
+    Serial.println(F("PublicTime write_eeprom = true"));
+    Serial.print(F("Publication time: "));
     Serial.println(eepromConfig.PublicTime);
   }
 
@@ -1978,8 +1978,8 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.MQTT_server, custom_mqtt_server.getValue(), sizeof(eepromConfig.MQTT_server));
     eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
     write_eeprom = true;
-    Serial.println("MQTT server write_eeprom = true");
-    Serial.print("MQTT server: ");
+    Serial.println(F("MQTT server write_eeprom = true"));
+    Serial.print(F("MQTT server: "));
     Serial.println(eepromConfig.MQTT_server);
   }
 
@@ -1987,8 +1987,8 @@ void Start_Captive_Portal()
   {
     eepromConfig.MQTT_port = atoi(custom_mqtt_port.getValue());
     write_eeprom = true;
-    Serial.println("MQTT port write_eeprom = true");
-    Serial.print("MQTT port: ");
+    Serial.println(F("MQTT port write_eeprom = true"));
+    Serial.print(F("MQTT port: "));
     Serial.println(eepromConfig.MQTT_port);
   }
 
@@ -1997,8 +1997,8 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.sensor_lat, custom_sensor_latitude.getValue(), sizeof(eepromConfig.sensor_lat));
     eepromConfig.sensor_lat[sizeof(eepromConfig.sensor_lat) - 1] = '\0';
     write_eeprom = true;
-    Serial.println("Lat write_eeprom = true");
-    Serial.print("Sensor Latitude: ");
+    Serial.println(F("Lat write_eeprom = true"));
+    Serial.print(F("Sensor Latitude: "));
     Serial.println(eepromConfig.sensor_lat);
     latitudef = atof(eepromConfig.sensor_lat); // Cambiar de string a float
   }
@@ -2008,8 +2008,8 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.sensor_lon, custom_sensor_longitude.getValue(), sizeof(eepromConfig.sensor_lon));
     eepromConfig.sensor_lon[sizeof(eepromConfig.sensor_lon) - 1] = '\0';
     write_eeprom = true;
-    Serial.println("Lon write_eeprom = true");
-    Serial.print("Sensor Longitude: ");
+    Serial.println(F("Lon write_eeprom = true"));
+    Serial.print(F("Sensor Longitude: "));
     Serial.println(eepromConfig.sensor_lon);
     longitudef = atof(eepromConfig.sensor_lon); // Cambiar de string a float
   }
@@ -2035,12 +2035,12 @@ void Start_Captive_Portal()
   if (CustomValTotalString[8] == ' ')
     CustomValTotalString[8] = '0';
 
-  Serial.print("CustomValTotalString: ");
+  Serial.print(F("CustomValTotalString: "));
   Serial.println(CustomValTotalString);
 
   if (CustomValtotal == 0)
   {
-    Serial.println("No configuration sensor values ​​chosen, no changes will be stored");
+    Serial.println(F("No configuration sensor values ​​chosen, no changes will be stored"));
   }
   else
   {
@@ -2049,8 +2049,8 @@ void Start_Captive_Portal()
       strncpy(eepromConfig.ConfigValues, CustomValTotalString, sizeof(eepromConfig.ConfigValues));
       eepromConfig.ConfigValues[sizeof(eepromConfig.ConfigValues) - 1] = '\0';
       write_eeprom = true;
-      Serial.println("CustomVal write_eeprom = true");
-      Serial.print("Configuration Values: ");
+      Serial.println(F("CustomVal write_eeprom = true"));
+      Serial.print(F("Configuration Values: "));
       Serial.println(eepromConfig.ConfigValues);
     }
   }
@@ -2058,7 +2058,7 @@ void Start_Captive_Portal()
   if (write_eeprom)
   {
     Write_EEPROM();
-    Serial.println("write_eeprom = true Final");
+    Serial.println(F("write_eeprom = true Final"));
     ESP.restart();
   }
 
@@ -2080,16 +2080,20 @@ String getParam(String name)
 
 void Init_MQTT()
 { // MQTT Init function
-  Serial.print("Attempting to connect to the MQTT broker ");
+  Serial.print(F("Attempting to connect to the MQTT broker "));
   Serial.print(eepromConfig.MQTT_server);
-  Serial.print(":");
+  Serial.print(F(":"));
   Serial.println(eepromConfig.MQTT_port);
 
   // Attempt to connect to MQTT broker
   MQTT_client.setBufferSize(512); // to receive messages up to 512 bytes length (default is 256)
+  Serial.println(F("Paso1"));
   MQTT_client.setServer(eepromConfig.MQTT_server, eepromConfig.MQTT_port);
+  Serial.println(F("Paso2"));
   MQTT_client.setCallback(Receive_Message_Cloud_App_MQTT);
+  Serial.println(F("Paso3"));
   MQTT_client.connect(aireciudadano_device_id.c_str());
+  Serial.println(F("Paso4"));
 
   if (!MQTT_client.connected())
   {
@@ -2102,7 +2106,7 @@ void Init_MQTT()
     lastReconnectAttempt = 0;
     // Once connected resubscribe
     MQTT_client.subscribe(MQTT_receive_topic.c_str());
-    Serial.print("MQTT connected - Receive topic: ");
+    Serial.print(F("MQTT connected - Receive topic: "));
     Serial.println(MQTT_receive_topic);
   }
 }
@@ -2114,25 +2118,26 @@ void MQTT_Reconnect()
   if (now - lastReconnectAttempt > 5000)
   {
     lastReconnectAttempt = now;
-    Serial.print("Attempting MQTT connection...");
+    Serial.print(F("Attempting MQTT connection..."));
     // Attempt to connect
     if (MQTT_client.connect(aireciudadano_device_id.c_str()))
     {
       err_MQTT = false;
-      Serial.println("MQTT connected");
+      Serial.println(F("MQTT connected"));
       lastReconnectAttempt = 0;
       // Once connected resubscribe
       MQTT_client.subscribe(MQTT_receive_topic.c_str());
-      Serial.print("MQTT connected - Receive topic: ");
+      Serial.print(F("MQTT connected - Receive topic: "));
       Serial.println(MQTT_receive_topic);
     }
     else
     {
       err_MQTT = true;
-      Serial.print("failed, rc=");
+      Serial.print(F("failed, rc="));
       Serial.print(MQTT_client.state());
-      Serial.println(" try again in 5 seconds");
+      Serial.println(F(" try again in 5 seconds"));
     }
+    Serial.println(F("Paso5"));
   }
 }
 
@@ -2144,25 +2149,25 @@ void Send_Message_Cloud_App_MQTT()
   int8_t RSSI;
   int8_t inout;
 
-  Serial.print("Sending MQTT message to the send topic: ");
+  Serial.print(F("Sending MQTT message to the send topic: "));
   Serial.println(MQTT_send_topic);
   ///// DEBUG Samples
-  //  Serial.println(PM25_accumulated);
-  //  Serial.println(PM25_samples);
+  //  Serial.println(F(PM25_accumulated));
+  //  Serial.println(F(PM25_samples));
   pm25f = PM25_accumulated / PM25_samples;
   pm25int = round(pm25f);
   pm25fori = PM25_accumulated_ori / PM25_samples;
   pm25intori = round(pm25fori);
-  //  Serial.println(pm25int);
-  //  Serial.println(pm25intori);
+  //  Serial.println(F(pm25int));
+  //  Serial.println(F(pm25intori));
   ///// END DEBUG Samples
   ReadHyT();
 
   RSSI = WiFi.RSSI();
 
-  Serial.print("Signal strength (RSSI):");
+  Serial.print(F("Signal strength (RSSI):"));
   Serial.print(RSSI);
-  Serial.println(" dBm");
+  Serial.println(F(" dBm"));
 
   if (AmbInOutdoors)
     inout = 1;
@@ -2229,7 +2234,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
 {                               // callback function to receive configuration messages from the cloud application by MQTT
   boolean write_eeprom = false; // to track if writing the eeprom is required
   memcpy(received_payload, payload, length);
-  Serial.print("Message arrived: ");
+  Serial.print(F("Message arrived: "));
   Serial.println(received_payload);
 
   // Deserialize the JSON document
@@ -2238,7 +2243,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   // Test if parsing succeeds.
   if (error)
   {
-    Serial.print("deserializeJson() failed: ");
+    Serial.print(F("deserializeJson() failed: "));
     Serial.println(error.f_str());
     return;
   }
@@ -2248,7 +2253,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   {
     strncpy(eepromConfig.aireciudadano_device_name, jsonBuffer["name"].as<const char *>(), sizeof(eepromConfig.aireciudadano_device_name));
     eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
-    Serial.print("AireCiudadano custom name (json buffer): ");
+    Serial.print(F("AireCiudadano custom name (json buffer): "));
     Serial.println(eepromConfig.aireciudadano_device_name);
     write_eeprom = true;
   }
@@ -2258,7 +2263,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   {
     strncpy(eepromConfig.MQTT_server, jsonBuffer["MQTT_server"], sizeof(eepromConfig.MQTT_server));
     eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
-    Serial.print("MQTT Server: ");
+    Serial.print(F("MQTT Server: "));
     Serial.println(eepromConfig.MQTT_server);
     write_eeprom = true;
 
@@ -2275,7 +2280,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     eepromConfig.MQTT_port = int(jsonBuffer["MQTT_port"]);
     // strncpy(eepromConfig.MQTT_port, jsonBuffer["MQTT_port"], sizeof(eepromConfig.MQTT_port));
     // eepromConfig.MQTT_port[sizeof(eepromConfig.MQTT_port) - 1] = '\0';
-    Serial.print("MQTT Port: ");
+    Serial.print(F("MQTT Port: "));
     Serial.println(eepromConfig.MQTT_port);
     write_eeprom = true;
 
@@ -2287,7 +2292,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   }
 
   // print info
-  Serial.println("MQTT update - message processed");
+  Serial.println(F("MQTT update - message processed"));
   Print_Config();
 
   // If factory reset has been enabled, just do it
@@ -2315,13 +2320,13 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   {
     // boolean result = EEPROM.wipe();
     // if (result) {
-    //   Serial.println("All EEPROM data wiped");
+    //   Serial.println(F("All EEPROM data wiped"));
     // } else {
-    //   Serial.println("EEPROM data could not be wiped from flash store");
+    //   Serial.println(F("EEPROM data could not be wiped from flash store"));
     // }
 
     // Update firmware to latest bin
-    Serial.println("Update firmware to latest bin");
+    Serial.println(F("Update firmware to latest bin"));
     Firmware_Update();
   }
 }
@@ -2331,7 +2336,7 @@ void Firmware_Update()
 
 #if !ESP8266
 
-  Serial.println("### FIRMWARE UPDATE ###");
+  Serial.println(F("### FIRMWARE UPDATE ###"));
 
   // For remote firmware update
   WiFiClientSecure UpdateClient;
@@ -2339,7 +2344,7 @@ void Firmware_Update()
 
   // Reading data over SSL may be slow, use an adequate timeout
   UpdateClient.setTimeout(30); // timeout argument is defined in seconds for setTimeout
-  Serial.println("ACTUALIZACION EN CURSO");
+  Serial.println(F("ACTUALIZACION EN CURSO"));
 
 #if Tdisplaydisp
 
@@ -2379,11 +2384,11 @@ void Firmware_Update()
     break;
 
   case HTTP_UPDATE_NO_UPDATES:
-    Serial.println("HTTP_UPDATE_NO_UPDATES");
+    Serial.println(F("HTTP_UPDATE_NO_UPDATES"));
     break;
 
   case HTTP_UPDATE_OK:
-    Serial.println("HTTP_UPDATE_OK");
+    Serial.println(F("HTTP_UPDATE_OK"));
 
 #if Tdisplaydisp
 
@@ -2405,7 +2410,7 @@ void Firmware_Update()
   BearSSL::WiFiClientSecure UpdateClient;
   int freeheap = ESP.getFreeHeap();
 
-  Serial.println("### FIRMWARE UPGRADE ###");
+  Serial.println(F("### FIRMWARE UPGRADE ###"));
 
   // Add optional callback notifiers
   ESPhttpUpdate.onStart(update_started);
@@ -2445,11 +2450,11 @@ void Firmware_Update()
     break;
 
   case HTTP_UPDATE_NO_UPDATES:
-    Serial.println("HTTP_UPDATE_NO_UPDATES");
+    Serial.println(F("HTTP_UPDATE_NO_UPDATES"));
     break;
 
   case HTTP_UPDATE_OK:
-    Serial.println("HTTP_UPDATE_OK");
+    Serial.println(F("HTTP_UPDATE_OK"));
     break;
   }
 
@@ -2460,14 +2465,14 @@ void Firmware_Update()
 
 void update_started()
 {
-  Serial.println("CALLBACK:  HTTP update process started");
+  Serial.println(F("CALLBACK:  HTTP update process started"));
   updating = true;
 }
 
 void update_finished()
 {
-  Serial.println("CALLBACK:  HTTP update process finished");
-  Serial.println("### FIRMWARE UPGRADE COMPLETED - REBOOT ###");
+  Serial.println(F("CALLBACK:  HTTP update process finished"));
+  Serial.println(F("### FIRMWARE UPGRADE COMPLETED - REBOOT ###"));
   updating = false;
 }
 
@@ -2512,7 +2517,7 @@ void Setup_Sensor()
   if (SPS30sen == true)
   {
 #endif
-    Serial.println("Test Sensirion SPS30 sensor");
+    Serial.println(F("Test Sensirion SPS30 sensor"));
 
 #if ESP8266
     Wire.begin();
@@ -2532,14 +2537,14 @@ void Setup_Sensor()
       Errorloop((char *)"could not probe / connect with SPS30.", 0);
     else
     {
-      Serial.println("Detected I2C Sensirion Sensor");
+      Serial.println(F("Detected I2C Sensirion Sensor"));
       GetDeviceInfo();
     }
     if (SPS30sen == true)
     {
       // start measurement
       if (sps30.start())
-        Serial.println("Measurement started");
+        Serial.println(F("Measurement started"));
       else
         Errorloop((char *)"Could NOT start measurement", 0);
     }
@@ -2557,7 +2562,7 @@ void Setup_Sensor()
     if (SPS30sen == false)
     {
 #endif
-      Serial.println("Test Sensirion SEN5X sensor");
+      Serial.println(F("Test Sensirion SEN5X sensor"));
 
 #if ESP8266
       Wire.begin();
@@ -2574,14 +2579,14 @@ void Setup_Sensor()
       error = sen5x.deviceReset();
       if (error)
       {
-        Serial.print("Error trying to execute deviceReset(): ");
+        Serial.print(F("Error trying to execute deviceReset(): "));
         errorToString(error, errorMessage, 256);
         Serial.println(errorMessage);
       }
       else
       {
         // Print SEN55 module information if i2c buffers are large enough
-        Serial.println("SEN5X sensor found!");
+        Serial.println(F("SEN5X sensor found!"));
         SEN5Xsen = true;
         printSerialNumber();
         printModuleVersions();
@@ -2590,13 +2595,13 @@ void Setup_Sensor()
         error = sen5x.startMeasurement();
         if (error)
         {
-          Serial.print("Error trying to execute startMeasurement(): ");
+          Serial.print(F("Error trying to execute startMeasurement(): "));
           errorToString(error, errorMessage, 256);
           Serial.println(errorMessage);
           // ESP.restart();
         }
         else
-          Serial.println("SEN5X measurement OK");
+          Serial.println(F("SEN5X measurement OK"));
       }
 #if (Bluetooth || SDyRTC)
     }
@@ -2609,7 +2614,7 @@ void Setup_Sensor()
 if (PMSsen == true)
 {
 #endif
-    Serial.println("Test Plantower Sensor");
+    Serial.println(F("Test Plantower Sensor"));
 
 #if !ESP8266
 
@@ -2621,13 +2626,15 @@ if (PMSsen == true)
 
 #else
   pmsSerial.begin(9600); // Software serial begin for PMS sensor
+  Serial.println(F("Test5"));
 #endif
 
     delay(1000);
+  Serial.println(F("Test6"));
 
     if (pms.readUntil(data))
     {
-      Serial.println("Plantower sensor found!");
+      Serial.println(F("Plantower sensor found!"));
       PMSsen = true;
 #if ESP8285
       digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
@@ -2640,7 +2647,7 @@ if (PMSsen == true)
     }
     else
     {
-      Serial.println("Could not find Plantower sensor!");
+      Serial.println(F("Could not find Plantower sensor!"));
     }
 
 #if Wifi
@@ -2649,40 +2656,40 @@ if (PMSsen == true)
   if (SHT31sen == true)
   {
 #endif
-    Serial.print("SHT31 test: ");
+    Serial.print(F("SHT31 test: "));
     if (!sht31.begin(0x44))
     { // Set to 0x45 for alternate i2c addr
-      Serial.println("none");
+      Serial.println(F("none"));
     }
     else
     {
-      Serial.println("OK");
+      Serial.println(F("OK"));
       SHT31sen = true;
     }
 
-    Serial.print("Heater Enabled State: ");
+    Serial.print(F("Heater Enabled State: "));
     if (sht31.isHeaterEnabled())
-      Serial.println("ENABLED");
+      Serial.println(F("ENABLED"));
     else
-      Serial.println("DISABLED");
+      Serial.println(F("DISABLED"));
 #if Wifi
   }
 
   if (AM2320sen == true)
   {
 #endif
-    Serial.print("AM2320 test: ");
+    Serial.print(F("AM2320 test: "));
     am2320.begin();
     delay(1);
     humidity = am2320.readHumidity();
     temperature = am2320.readTemperature();
     if (!isnan(humidity))
     {
-      Serial.println("OK");
+      Serial.println(F("OK"));
       AM2320sen = true;
     }
     else
-      Serial.println("none");
+      Serial.println(F("none"));
 #if Wifi
   }
 #endif
@@ -2722,9 +2729,9 @@ void Read_Sensor()
     if (!err_sensor)
     {
       // Provide the sensor values for Tools -> Serial Monitor or Serial Plotter
-      Serial.print("SPS30 PM2.5: ");
+      Serial.print(F("SPS30 PM2.5: "));
       Serial.print(PM25_value);
-      Serial.println(" ug/m3   ");
+      Serial.println(F(" ug/m3   "));
     }
   }
   else if (SEN5Xsen == true)
@@ -2739,41 +2746,41 @@ void Read_Sensor()
 
     if (error)
     {
-      Serial.print("Error trying to execute readMeasuredValues(): ");
+      Serial.print(F("Error trying to execute readMeasuredValues(): "));
       errorToString(error, errorMessage, 256);
       Serial.println(errorMessage);
       delay(10);
       Setup_Sensor();
-      Serial.println("Reinit I2C");
+      Serial.println(F("Reinit I2C"));
       delay(10);
     }
     else
     {
       PM25_value = massConcentrationPm2p5;
-      Serial.print("SEN5X PM2.5: ");
+      Serial.print(F("SEN5X PM2.5: "));
       Serial.print(PM25_value);
-      Serial.print(" ug/m3   ");
-      Serial.print(" Humi % = ");
+      Serial.print(F(" ug/m3   "));
+      Serial.print(F(" Humi % = "));
       if (isnan(ambientHumidity))
-        Serial.print(" n/a");
+        Serial.print(F(" n/a"));
       else
         Serial.print(ambientHumidity);
       humi = round(ambientHumidity);
 
-      Serial.print("   Temp *C = ");
+      Serial.print(F("   Temp *C = "));
       if (isnan(ambientTemperature))
-        Serial.print(" n/a");
+        Serial.print(F(" n/a"));
       else
         Serial.print(ambientTemperature);
       temp = round(ambientTemperature);
-      Serial.print("   VocIndex:");
+      Serial.print(F("   VocIndex:"));
       if (isnan(vocIndex))
-        Serial.print(" n/a");
+        Serial.print(F(" n/a"));
       else
         Serial.print(vocIndex);
-      Serial.print("   NoxIndex:");
+      Serial.print(F("   NoxIndex:"));
       if (isnan(noxIndex))
-        Serial.println(" n/a");
+        Serial.println(F(" n/a"));
       else
         Serial.println(noxIndex);
     }
@@ -2783,25 +2790,25 @@ void Read_Sensor()
     if (pms.readUntil(data))
     {
       PM25_value = data.PM_AE_UG_2_5;
-      Serial.print("PMS PM2.5: ");
+      Serial.print(F("PMS PM2.5: "));
       Serial.print(PM25_value);
-      Serial.print(" ug/m3   ");
+      Serial.print(F(" ug/m3   "));
       if (AdjPMS == true)
       {
         PM25_value_ori = PM25_value;
         // PM25_value = ((562 * PM25_value_ori) / 1000) - 1; // Ecuación de ajuste resultado de 13 intercomparaciones entre PMS7003 y SPS30 por meses
         // PM25_value = ((553 * PM25_value_ori) / 1000) + 1.3; // Segundo ajuste
         PM25_value = ((630 * PM25_value_ori) / 1000) + 1.56; // Tercer ajuste a los que salio en Lima y pruebas aqui
-        Serial.print("Adjust: ");
+        Serial.print(F("Adjust: "));
         Serial.print(PM25_value);
-        Serial.println(" ug/m3");
+        Serial.println(F(" ug/m3"));
       }
       else
-        Serial.println("");
+        Serial.println(F(""));
     }
     else
     {
-      Serial.println("No data by Plantower sensor!");
+      Serial.println(F("No data by Plantower sensor!"));
     }
   }
   else
@@ -2821,11 +2828,11 @@ void GetDeviceInfo()
   ret = sps30.GetSerialNumber(buf, 32);
   if (ret == SPS30_ERR_OK)
   {
-    Serial.print("Serial number : ");
+    Serial.print(F("Serial number : "));
     if (strlen(buf) > 0)
       Serial.println(buf);
     else
-      Serial.println("not available");
+      Serial.println(F("not available"));
   }
   else
     ErrtoMess((char *)"could not get serial number. ", ret);
@@ -2833,7 +2840,7 @@ void GetDeviceInfo()
   ret = sps30.GetProductName(buf, 32);
   if (ret == SPS30_ERR_OK)
   {
-    Serial.print("Product name  : "); //     !!!!!!!!!!!!!!!!!!debe compararse con “00080000”
+    Serial.print(F("Product name  : ")); //     !!!!!!!!!!!!!!!!!!debe compararse con “00080000”
 
     if (buf[7] == '0')
       if (buf[6] == '0')
@@ -2842,7 +2849,7 @@ void GetDeviceInfo()
             if (buf[3] == '8')
             {
               Serial.println(buf);
-              Serial.println("Detected SPS30");
+              Serial.println(F("Detected SPS30"));
               SPS30sen = true;
             }
             else
@@ -2862,27 +2869,27 @@ void GetDeviceInfo()
   ret = sps30.GetVersion(&v);
   if (ret != SPS30_ERR_OK)
   {
-    Serial.println("Can not read version info.");
+    Serial.println(F("Can not read version info."));
     return;
   }
 
   if (SPS30sen == true)
   {
-    Serial.print("Firmware level: ");
+    Serial.print(F("Firmware level: "));
     Serial.print(v.major);
-    Serial.print(".");
+    Serial.print(F("."));
     Serial.println(v.minor);
 
-    Serial.print("Library level : ");
+    Serial.print(F("Library level : "));
     Serial.print(v.DRV_major);
-    Serial.print(".");
+    Serial.print(F("."));
     Serial.println(v.DRV_minor);
   }
 }
 
 void NotAvailableSPS30()
 {
-  Serial.println("NO SPS30");
+  Serial.println(F("NO SPS30"));
   SPS30sen = false;
 }
 
@@ -2892,7 +2899,7 @@ void Errorloop(char *mess, uint8_t r)
     ErrtoMess(mess, r);
   else
     Serial.println(mess);
-  Serial.println("No SPS30 connected");
+  Serial.println(F("No SPS30 connected"));
 }
 
 /**
@@ -2921,13 +2928,13 @@ void printModuleVersions()
 
   if (error)
   {
-    Serial.print("Error trying to execute getProductName(): ");
+    Serial.print(F("Error trying to execute getProductName(): "));
     errorToString(error, errorMessage, 256);
     Serial.println(errorMessage);
   }
   else
   {
-    Serial.print("ProductName: ");
+    Serial.print(F("ProductName: "));
     Serial.println((char *)productName);
   }
 
@@ -2944,21 +2951,21 @@ void printModuleVersions()
                            protocolMinor);
   if (error)
   {
-    Serial.print("Error trying to execute getVersion(): ");
+    Serial.print(F("Error trying to execute getVersion(): "));
     errorToString(error, errorMessage, 256);
     Serial.println(errorMessage);
   }
   else
   {
-    Serial.print("Firmware: ");
+    Serial.print(F("Firmware: "));
     Serial.print(firmwareMajor);
-    Serial.print(".");
+    Serial.print(F("."));
     Serial.print(firmwareMinor);
-    Serial.print(", ");
+    Serial.print(F(", "));
 
-    Serial.print("Hardware: ");
+    Serial.print(F("Hardware: "));
     Serial.print(hardwareMajor);
-    Serial.print(".");
+    Serial.print(F("."));
     Serial.println(hardwareMinor);
   }
 }
@@ -2973,13 +2980,13 @@ void printSerialNumber()
   error = sen5x.getSerialNumber(serialNumber, serialNumberSize);
   if (error)
   {
-    Serial.print("Error trying to execute getSerialNumber(): ");
+    Serial.print(F("Error trying to execute getSerialNumber(): "));
     errorToString(error, errorMessage, 256);
     Serial.println(errorMessage);
   }
   else
   {
-    Serial.print("SerialNumber: ");
+    Serial.print(F("SerialNumber: "));
     Serial.println((char *)serialNumber);
   }
 }
@@ -2998,13 +3005,13 @@ void ReadHyT()
     if (!isnan(humidity))
     { // check if 'is not a number'
       failh = 0;
-      Serial.print("SHT31 Humi % = ");
+      Serial.print(F("SHT31 Humi % = "));
       Serial.print(humidity);
       humi = round(humidity);
     }
     else
     {
-      Serial.println("Failed to read humidity SHT31");
+      Serial.println(F("Failed to read humidity SHT31"));
       if (failh == 5)
       {
         failh = 0;
@@ -3016,12 +3023,12 @@ void ReadHyT()
 
     if (!isnan(temperature))
     { // check if 'is not a number'
-      Serial.print("   Temp *C = ");
+      Serial.print(F("   Temp *C = "));
       Serial.println(temperature);
       temp = round(temperature);
     }
     else
-      Serial.println("   Failed to read temperature SHT31");
+      Serial.println(F("   Failed to read temperature SHT31"));
   }
 
   // AM2320//
@@ -3035,18 +3042,18 @@ void ReadHyT()
     if (!isnan(humidity))
     {
       failh = 0;
-      Serial.print("AM2320 Humi % = ");
+      Serial.print(F("AM2320 Humi % = "));
       Serial.print(humidity);
       humi = round(humidity);
     }
     else
     {
-      Serial.println("   Failed to read humidity AM2320");
+      Serial.println(F("   Failed to read humidity AM2320"));
       if (failh == 5)
       {
         failh = 0;
         am2320.begin();
-        Serial.println("   Reinit AM2320");
+        Serial.println(F("   Reinit AM2320"));
       }
       else
         failh = failh + 1;
@@ -3054,12 +3061,12 @@ void ReadHyT()
 
     if (!isnan(temperature))
     {
-      Serial.print("   Temp *C = ");
+      Serial.print(F("   Temp *C = "));
       Serial.println(temperature);
       temp = round(temperature);
     }
     else
-      Serial.println("   Failed to read temperature AM2320");
+      Serial.println(F("   Failed to read temperature AM2320"));
   }
   else
     Serial.println();
@@ -3070,42 +3077,42 @@ void ReadHyT()
 void Print_Config()
 { // print AireCiudadano device settings
 
-  Serial.println("#######################################");
-  Serial.print("Device id: ");
+  Serial.println(F("#######################################"));
+  Serial.print(F("Device id: "));
   Serial.println(aireciudadano_device_id);
 #if !SDyRTC
-  Serial.print("AireCiudadano custom name: ");
+  Serial.print(F("AireCiudadano custom name: "));
   Serial.println(eepromConfig.aireciudadano_device_name);
 #endif
-  Serial.print("SW version: ");
+  Serial.print(F("SW version: "));
   Serial.println(sw_version);
 #if Bluetooth
-  Serial.print("Bluetooth Time: ");
+  Serial.print(F("Bluetooth Time: "));
   Serial.println(eepromConfig.BluetoothTime);
 #elif SDyRTC
-  Serial.print("SDyRTC Time: ");
+  Serial.print(F("SDyRTC Time: "));
   Serial.println(SDyRTCtime);
 #elif Wifi
-  Serial.print("Publication Time: ");
+  Serial.print(F("Publication Time: "));
   Serial.println(eepromConfig.PublicTime);
-  Serial.print("MQTT server: ");
+  Serial.print(F("MQTT server: "));
   Serial.println(eepromConfig.MQTT_server);
-  Serial.print("MQTT Port: ");
+  Serial.print(F("MQTT Port: "));
   Serial.println(eepromConfig.MQTT_port);
-  Serial.print("Sensor latitude: ");
+  Serial.print(F("Sensor latitude: "));
   Serial.println(eepromConfig.sensor_lat);
-  Serial.print("Sensor longitude: ");
+  Serial.print(F("Sensor longitude: "));
   Serial.println(eepromConfig.sensor_lon);
-  Serial.print("Configuration values: ");
+  Serial.print(F("Configuration values: "));
   Serial.println(eepromConfig.ConfigValues);
 #if WPA2
-  Serial.print("WiFi user for WPA enterprise: ");
+  Serial.print(F("WiFi user for WPA enterprise: "));
   Serial.println(eepromConfig.wifi_user);
-  Serial.print("WiFi user's password for WPA enterprise: ");
+  Serial.print(F("WiFi user's password for WPA enterprise: "));
   Serial.println(eepromConfig.wifi_password);
 #endif
 #endif
-  Serial.println("#######################################");
+  Serial.println(F("#######################################"));
 }
 
 #if !ESP8266
@@ -3134,12 +3141,12 @@ void Button_Init()
   // Long clicks: keep pressing more than 2 second
   button_top.setLongClickTime(2000);
   button_bottom.setLongClickTime(2000);
-  //  Serial.println("Button_Init");
+  //  Serial.println(F("Button_Init");
 
   // Top button short click: show info about the device
   button_top.setClickHandler([](Button2 &b)
                              {
-    Serial.println("Top button short click");
+    Serial.println(F("Top button short click"));
     tft.fillScreen(TFT_WHITE);
     tft.setTextColor(TFT_RED, TFT_WHITE);
     tft.setTextDatum(TL_DATUM); // top left
@@ -3163,19 +3170,19 @@ void Button_Init()
 #endif
 
     delay(5000); // keep the info in the display for 5s
-    Update_Display(); });
+    Update_Display(); }));
 
   // Top button long click: toggle acoustic alarm
   button_top.setLongClickDetectedHandler([](Button2 &b)
                                          {
-    Serial.println("Top button long click");
+    Serial.println(F("Top button long click"));
 
     Suspend_Device(); });
 
   // Bottom button short click: show buttons info
   button_bottom.setClickHandler([](Button2 &b)
                                 {
-    Serial.println("Bottom button short click");
+    Serial.println(F("Bottom button short click"));
     tft.fillScreen(TFT_WHITE);
     tft.setTextColor(TFT_BLACK, TFT_WHITE);
     tft.setTextDatum(TL_DATUM); // top left
@@ -3191,7 +3198,7 @@ void Button_Init()
   // Bottom button long click: deactivate self calibration and perform sensor forced recalibration
   button_bottom.setLongClickDetectedHandler([](Button2 &b)
                                             {
-                                              Serial.println("Bottom button long click");
+                                              Serial.println(F("Bottom button long click");
 
                                               tft.fillScreen(TFT_WHITE);
                                               tft.setTextColor(TFT_RED, TFT_WHITE);
@@ -3286,7 +3293,7 @@ void Update_Display()
 
 void UpdateOLED()
 {
-  //  Serial.println("Sensor Read Update OLED");
+  //  Serial.println(F("Sensor Read Update OLED");
   pageStart();
   displaySensorAverage(pm25int);
 #if Wifi
@@ -3372,9 +3379,9 @@ void TimeConfig()
         pageEnd();
 
 #endif
-        Serial.print("Tiempo evaluacion: ");
-        Serial.print(Bluetooth_loop_time);
-        Serial.println(" seg");
+        Serial.print(F("Tiempo evaluacion: "));
+        Serial.print(F(Bluetooth_loop_time));
+        Serial.println(F(" seg"));
         delay(1000);
       }
       FlashBluetoothTime();
@@ -3389,8 +3396,8 @@ void FlashBluetoothTime()
   if (eepromConfig.BluetoothTime != Bluetooth_loop_time)
   {
     eepromConfig.BluetoothTime = Bluetooth_loop_time;
-    Serial.print("Bluetooth time: ");
-    Serial.println(eepromConfig.BluetoothTime);
+    Serial.print(F("Bluetooth time: "));
+    Serial.println(F(eepromConfig.BluetoothTime));
     Write_EEPROM();
   }
 }
@@ -3413,8 +3420,8 @@ void Get_AireCiudadano_DeviceId()
 #if Wifi
   Aireciudadano_Characteristics();
 #endif
-  Serial.printf("ESP32 Chip model = %s Rev %d.\t", ESP.getChipModel(), ESP.getChipRevision());
-  Serial.printf("This chip has %d cores and %dMB Flash.\n", ESP.getChipCores(), ESP.getFlashChipSize() / (1024 * 1024));
+  Serial.printf("ESP32 Chip model = %s Rev %d.\t", ESP.getChipModel(), ESP.getChipRevision()));
+  Serial.printf("This chip has %d cores and %dMB Flash.\n", ESP.getChipCores(), ESP.getFlashChipSize() / (1024 * 1024)));
 
 #else
 
@@ -3427,7 +3434,7 @@ void Get_AireCiudadano_DeviceId()
 
 #endif
 
-  Serial.print("AireCiudadano Device ID: ");
+  Serial.print(F("AireCiudadano Device ID: "));
   if (String(aireciudadano_device_id).isEmpty())
     aireciudadano_device_id = String("AireCiudadano_") + aireciudadano_device_id_endframe;
   else
@@ -3444,102 +3451,102 @@ void Get_AireCiudadano_DeviceId()
 
 void Aireciudadano_Characteristics()
 {
-  Serial.print("eepromConfig.ConfigValues: ");
+  Serial.print(F("eepromConfig.ConfigValues: "));
   Serial.println(eepromConfig.ConfigValues);
-  Serial.print("eepromConfig.ConfigValues[4]: ");
+  Serial.print(F("eepromConfig.ConfigValues[4]: "));
   Serial.println(eepromConfig.ConfigValues[4]);
   if (eepromConfig.ConfigValues[4] == '0')
   {
     AmbInOutdoors = false;
-    Serial.println("Outdoors");
+    Serial.println(F("Outdoors"));
   }
   else
   {
     AmbInOutdoors = true;
-    Serial.println("Indoors");
+    Serial.println(F("Indoors"));
   }
 
-  Serial.print("eepromConfig.ConfigValues[5]: ");
+  Serial.print(F("eepromConfig.ConfigValues[5]: "));
   Serial.println(eepromConfig.ConfigValues[5]);
   if (eepromConfig.ConfigValues[5] == '0')
   {
     ExtAnt = false;
-    Serial.println("Normal board");
+    Serial.println(F("Normal board"));
   }
   else
   {
     ExtAnt = true;
-    Serial.println("Board with externa antenna");
+    Serial.println(F("Board with externa antenna"));
   }
-  Serial.print("eepromConfig.ConfigValues[6]: ");
+  Serial.print(F("eepromConfig.ConfigValues[6]: "));
   Serial.println(eepromConfig.ConfigValues[6]);
 
   TDisplay = false;
   OLED66 = false;
   OLED96 = false;
   if (eepromConfig.ConfigValues[6] == '0')
-    Serial.println("None Display");
+    Serial.println(F("None Display"));
   else if (eepromConfig.ConfigValues[6] == '1')
   {
     TDisplay = true;
-    Serial.println("TTGO TDisplay board");
+    Serial.println(F("TTGO TDisplay board"));
   }
   else if (eepromConfig.ConfigValues[6] == '2')
   {
     OLED96 = true;
-    Serial.println("OLED 0.96 inch display 128x64");
+    Serial.println(F("OLED 0.96 inch display 128x64"));
   }
   else if (eepromConfig.ConfigValues[6] == '3')
   {
     OLED66 = true;
-    Serial.println("OLED 0.66 inch display 64x48");
+    Serial.println(F("OLED 0.66 inch display 64x48"));
   }
 
-  Serial.print("eepromConfig.ConfigValues[7]: ");
+  Serial.print(F("eepromConfig.ConfigValues[7]: "));
   Serial.println(eepromConfig.ConfigValues[7]);
   SHT31sen = false;
   AM2320sen = false;
   if (eepromConfig.ConfigValues[7] == '0')
-    Serial.println("None sensor HYT");
+    Serial.println(F("None sensor HYT"));
   else if (eepromConfig.ConfigValues[7] == '1')
   {
     SHT31sen = true;
-    Serial.println("SHT31 sensor");
+    Serial.println(F("SHT31 sensor"));
   }
   else if (eepromConfig.ConfigValues[7] == '2')
   {
     AM2320sen = true;
-    Serial.println("AM2320 sensor");
+    Serial.println(F("AM2320 sensor"));
   }
 
-  Serial.print("eepromConfig.ConfigValues[8]: ");
+  Serial.print(F("eepromConfig.ConfigValues[8]: "));
   Serial.println(eepromConfig.ConfigValues[8]);
   SPS30sen = false;
   SEN5Xsen = false;
   PMSsen = false;
   AdjPMS = false;
   if (eepromConfig.ConfigValues[8] == '0')
-    Serial.println("None PM sensor");
+    Serial.println(F("None PM sensor"));
   else if (eepromConfig.ConfigValues[8] == '1')
   {
     SPS30sen = true;
-    Serial.println("SPS30 sensor");
+    Serial.println(F("SPS30 sensor"));
   }
   else if (eepromConfig.ConfigValues[8] == '2')
   {
     SEN5Xsen = true;
-    Serial.println("SEN5X sensor");
+    Serial.println(F("SEN5X sensor"));
   }
   else if (eepromConfig.ConfigValues[8] == '3')
   {
     PMSsen = true;
-    Serial.println("PMS sensor");
+    Serial.println(F("PMS sensor"));
   }
   else if (eepromConfig.ConfigValues[8] == '4')
   {
     AdjPMS = true;
     PMSsen = true;
-    Serial.println("PMS sensor with stadistical adjust");
+    Serial.println(F("PMS sensor with stadistical adjust"));
   }
 
   // SPS30sen = 1
@@ -3585,7 +3592,7 @@ void Aireciudadano_Characteristics()
   IDn = IDn + 16384;
 #endif
   IDn = IDn + (Swver * 65536);
-  Serial.print("IDn: ");
+  Serial.print(F("IDn: "));
   Serial.println(IDn);
 }
 
@@ -3605,9 +3612,9 @@ void Read_EEPROM()
   // If so, overwrite the 'default' values set up in our struct
   if (EEPROM.percentUsed() >= 0)
   {
-    Serial.println("EEPROM has data from a previous run.");
+    Serial.println(F("EEPROM has data from a previous run."));
     Serial.print(EEPROM.percentUsed());
-    Serial.println("% of ESP flash space currently used");
+    Serial.println(F("% of ESP flash space currently used"));
 
     // Read saved data
     EEPROM.get(0, eepromConfig);
@@ -3616,7 +3623,7 @@ void Read_EEPROM()
   else
   {
     aireciudadano_device_id.toCharArray(eepromConfig.aireciudadano_device_name, sizeof(eepromConfig.aireciudadano_device_name)); // Initialize aireciudadano_device_name with aireciudadano_device_id
-    Serial.println("No EEPROM data - using default config values");
+    Serial.println(F("No EEPROM data - using default config values"));
   }
 
 #else
@@ -3626,17 +3633,17 @@ void Read_EEPROM()
     boolean result = preferences.getBytes("config", &eepromConfig, sizeof(eepromConfig));
     if (result)
     {
-      Serial.println("Config data read from flash");
+      Serial.println(F("Config data read from flash"));
     }
     else
     {
-      Serial.println("Config data could not be read from flash");
+      Serial.println(F("Config data could not be read from flash"));
     }
   }
   else
   {
     aireciudadano_device_id.toCharArray(eepromConfig.aireciudadano_device_name, sizeof(eepromConfig.aireciudadano_device_name)); // Initialize aireciudadano_device_name with aireciudadano_device_id
-    Serial.println("No EEPROM data - using default config values");
+    Serial.println(F("No EEPROM data - using default config values"));
   }
 
 #endif
@@ -3663,11 +3670,11 @@ void Write_EEPROM()
   boolean result = preferences.putBytes("config", &eepromConfig, sizeof(eepromConfig));
   if (result)
   {
-    Serial.println("Config data written to flash");
+    Serial.println(F("Config data written to flash"));
   }
   else
   {
-    Serial.println("Config data could not be written to flash");
+    Serial.println(F("Config data could not be written to flash"));
   }
 
 #endif
@@ -3680,11 +3687,11 @@ void Wipe_EEPROM()
   boolean result = EEPROM.wipe();
   if (result)
   {
-    Serial.println("All EEPROM data wiped");
+    Serial.println(F("All EEPROM data wiped"));
   }
   else
   {
-    Serial.println("EEPROM data could not be wiped from flash store");
+    Serial.println(F("EEPROM data could not be wiped from flash store"));
   }
 
 #else
@@ -3692,11 +3699,11 @@ void Wipe_EEPROM()
   boolean result = preferences.clear();
   if (result)
   {
-    Serial.println("All EEPROM data wiped");
+    Serial.println(F("All EEPROM data wiped"));
   }
   else
   {
-    Serial.println("EEPROM data could not be wiped from flash store");
+    Serial.println(F("EEPROM data could not be wiped from flash store"));
   }
 
 #endif
@@ -3713,8 +3720,8 @@ void displayBatteryLevel(int colour)
   // Measure the battery voltage
   battery_voltage = ((float)analogRead(ADC_PIN) / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
 
-  Serial.print("battery voltage: ");
-  Serial.println(battery_voltage);
+  Serial.print(F("battery voltage: "));
+  Serial.println(F(battery_voltage));
 
   //  tft.drawString(String(battery_voltage), 42, 218);
 
@@ -3770,7 +3777,7 @@ void displayBatteryLevel(int colour)
     tft.fillRect(35, 223, 5, 8, colour);
 
     // Measurements are not trustable with this battery level
-    Serial.println("Battery level too low");
+    Serial.println(F("Battery level too low"));
   }
 }
 #endif
@@ -3783,7 +3790,7 @@ void Suspend_Device()
 {
   if (NoiseBUTTONFlag == false)
   {
-    Serial.println("Presiona de nuevo el boton para despertar");
+    Serial.println(F("Presiona de nuevo el boton para despertar"));
     // Off sensors
     digitalWrite(OUT_EN, LOW); // step-up off
 
@@ -3813,7 +3820,7 @@ void Suspend_Device()
     // esp_sleep_enable_ext1_wakeup(GPIO_SEL_0, ESP_EXT1_WAKEUP_ALL_LOW);
   }
   else
-    Serial.println("Tecla fallida, presione 1 segundo para despertar");
+    Serial.println(F("Tecla fallida, presione 1 segundo para despertar"));
 
   // After using light sleep, you need to disable timer wake, because here use external IO port to wake up
   //  esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
@@ -3832,58 +3839,58 @@ void print_reset_reason(RESET_REASON reason)
   switch (reason)
   {
   case 1:
-    Serial.println("POWERON_RESET");
+    Serial.println(F("POWERON_RESET"));
     ResetFlag = true;
     DeepSleepFlag = false;
     break; /**<1,  Vbat power on reset*/
   case 3:
-    Serial.println("SW_RESET");
+    Serial.println(F("SW_RESET"));
     break; /**<3,  Software reset digital core*/
   case 4:
-    Serial.println("OWDT_RESET");
+    Serial.println(F("OWDT_RESET"));
     break; /**<4,  Legacy watch dog reset digital core*/
   case 5:
-    Serial.println("DEEPSLEEP_RESET");
+    Serial.println(F("DEEPSLEEP_RESET"));
     DeepSleepFlag = true;
     ResetFlag = false;
     break; /**<5,  Deep Sleep reset digital core*/
   case 6:
-    Serial.println("SDIO_RESET");
+    Serial.println(F("SDIO_RESET"));
     break; /**<6,  Reset by SLC module, reset digital core*/
   case 7:
-    Serial.println("TG0WDT_SYS_RESET");
+    Serial.println(F("TG0WDT_SYS_RESET"));
     break; /**<7,  Timer Group0 Watch dog reset digital core*/
   case 8:
-    Serial.println("TG1WDT_SYS_RESET");
+    Serial.println(F("TG1WDT_SYS_RESET"));
     break; /**<8,  Timer Group1 Watch dog reset digital core*/
   case 9:
-    Serial.println("RTCWDT_SYS_RESET");
+    Serial.println(F("RTCWDT_SYS_RESET"));
     break; /**<9,  RTC Watch dog Reset digital core*/
   case 10:
-    Serial.println("INTRUSION_RESET");
+    Serial.println(F("INTRUSION_RESET"));
     break; /**<10, Instrusion tested to reset CPU*/
   case 11:
-    Serial.println("TGWDT_CPU_RESET");
+    Serial.println(F("TGWDT_CPU_RESET"));
     break; /**<11, Time Group reset CPU*/
   case 12:
-    Serial.println("SW_CPU_RESET");
+    Serial.println(F("SW_CPU_RESET"));
     ResetFlag = false;
     DeepSleepFlag = false;
     break; /**<12, Software reset CPU*/
   case 13:
-    Serial.println("RTCWDT_CPU_RESET");
+    Serial.println(F("RTCWDT_CPU_RESET"));
     break; /**<13, RTC Watch dog Reset CPU*/
   case 14:
-    Serial.println("EXT_CPU_RESET");
+    Serial.println(F("EXT_CPU_RESET"));
     break; /**<14, for APP CPU, reseted by PRO CPU*/
   case 15:
-    Serial.println("RTCWDT_BROWN_OUT_RESET");
+    Serial.println(F("RTCWDT_BROWN_OUT_RESET"));
     break; /**<15, Reset when the vdd voltage is not stable*/
   case 16:
-    Serial.println("RTCWDT_RTC_RESET");
+    Serial.println(F("RTCWDT_RTC_RESET"));
     break; /**<16, RTC Watch dog reset digital core and rtc module*/
   default:
-    Serial.println("NO_MEAN");
+    Serial.println(F("NO_MEAN"));
   }
 }
 
@@ -3904,7 +3911,7 @@ void displayInit()
   u8g2.setFontMode(0);
   dw = u8g2.getDisplayWidth();
   dh = u8g2.getDisplayHeight();
-  //  Serial.println("OLED display ready");
+  //  Serial.println(F("OLED display ready"));
 }
 
 void showWelcome()
@@ -3918,7 +3925,7 @@ void showWelcome()
   u8g2.drawStr(22, 8, sw_version.c_str());
   u8g2.sendBuffer();
   lastDrawedLine = 10;
-  Serial.println("OLED display ready");
+  Serial.println(F("OLED display ready"));
   u8g2.sendBuffer();
 }
 
@@ -4105,11 +4112,11 @@ void displayAverage(int average)
       tft.drawXBitmap(5, 215, Icono_wifi_on_BIG, 20, 20, TFT_BLACK);
     else
       tft.drawXBitmap(5, 215, Icono_wifi_on_BIG, 20, 20, TFT_WHITE);
-    Serial.print(" RSSI: ");
-    Serial.print(rssi);
+    Serial.print(F(" RSSI: "));
+    Serial.print(F(rssi));
     rssi = rssi + 130;
-    Serial.print("  norm: ");
-    Serial.println(rssi);
+    Serial.print(F("  norm: "));
+    Serial.println(F(rssi));
     tft.drawString(String(rssi), 30, 220);
   }
 #endif
@@ -4181,18 +4188,18 @@ void displaySensorData(int pm25, int humi, int temp, int rssi)
   if (rssi == 0)
   {
     u8g2.print("   ");
-    Serial.println("");
+    Serial.println(F(""));
   }
   else
   {
     u8g2.drawBitmap(5, dh - 8, 1, 8, Icono_wifi_on);
-    Serial.print(" RSSI: ");
-    Serial.print(rssi);
+    Serial.print(F(" RSSI: "));
+    Serial.print(F(rssi));
     //    rssi = abs(rssi);
     sprintf(output, "%02d", rssi);
     rssi = rssi + 130;
-    Serial.print("  norm: ");
-    Serial.println(rssi);
+    Serial.print(F("  norm: "));
+    Serial.println(F(rssi));
     u8g2.print(rssi);
   }
 #endif
@@ -4219,15 +4226,15 @@ void Write_Bluetooth()
   gadgetBle.writePM2p5(pm25int);
   gadgetBle.writeTemperature(temp);
   gadgetBle.writeHumidity(humi);
-  Serial.println("Bluetooth frame: PM25, humidity and temperature");
+  Serial.println(F("Bluetooth frame: PM25, humidity and temperature"));
   gadgetBle.commit();
 
   ValSampleIntervals = gadgetBle.getSampleInterval();
-  //  Serial.print("ValSampleIntervals: ");
-  //  Serial.println(ValSampleIntervals);
+  //  Serial.print(F("ValSampleIntervals: "));
+  //  Serial.println(F(ValSampleIntervals));
 
-  //  Serial.print("Bluetooth_loop_time: ");
-  //  Serial.println(Bluetooth_loop_time);
+  //  Serial.print(F("Bluetooth_loop_time: "));
+  //  Serial.println(F(Bluetooth_loop_time));
 
   Bluetooth_loop_time = ValSampleIntervals;
 
@@ -4261,14 +4268,14 @@ void Write_SD()
   dataFile.println(dataString);
 
   // print to the serial port too:
-  Serial.print("Data SD: ");
-  Serial.println(dataString);
+  Serial.print(F("Data SD: "));
+  Serial.println(F(dataString));
 
-  //  Serial.print("Unixtime = ");
-  //  Serial.print(now.unixtime());
-  //  Serial.println(" s");
-  //  Serial.print(now.unixtime() / 86400L);
-  //  Serial.println("d");
+  //  Serial.print(F("Unixtime = "));
+  //  Serial.print(F(now.unixtime()));
+  //  Serial.println(F(" s"));
+  //  Serial.print(F(now.unixtime() / 86400L));
+  //  Serial.println(F("d"));
 
   dataFile.flush();
 }

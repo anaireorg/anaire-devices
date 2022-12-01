@@ -70,7 +70,7 @@
 
 // Definiciones opcionales para version Wifi
 #define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define WPA2 false          // Colocar en true para redes con WPA2
+#define WPA2 true           // Colocar en true para redes con WPA2
 #define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";
                             // Longitude: char sensor_lon[10] = "xx.xxxx";
@@ -390,6 +390,7 @@ GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_VOC_PM25_V2);
 
 #if Wifi
 // WiFi
+// #define WM_DEBUG_LEVEL DEBUG_DEV
 #include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 
 #if WPA2
@@ -674,7 +675,7 @@ void setup()
     displayInit();
     pageStart();
     showWelcome();
-    delay(1000);
+    delay(100);
     u8g2.drawXBM(16, 18, 32, 32, IconoAC);
     pageEnd();
 #endif
@@ -683,7 +684,7 @@ void setup()
 
 #else
   pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
-  delay(1000);
+  delay(100);
 
 #endif
 
@@ -691,7 +692,7 @@ void setup()
   pinMode(OUT_EN, OUTPUT);
   // On sensors
   digitalWrite(OUT_EN, HIGH); // step-up on
-  delay(1000);
+  delay(100);
 
 #if Wifi
   // Set MQTT topics
@@ -855,7 +856,7 @@ void setup()
     u8g2.setFont(u8g2_font_5x8_tf);
     u8g2.setCursor(0, (dh / 2 - 4));
     u8g2.print("Medidor Listo");
-    delay(2000);
+    delay(1000);
     pageEnd();
 #endif
   }
@@ -1315,14 +1316,14 @@ void Connect_WiFi()
 
 #if ESP8266
 #if !PreProgSensor
-    WiFi.begin();
+  WiFi.begin();
 #else
-    WiFi.begin(ssid, password);
+  WiFi.begin(ssid, password);
 #endif
 #endif
 
 #else
-// #if WPA2
+  // #if WPA2
   //  If there are not wifi user and wifi password defined, proceed to traight forward configuration
 
   if ((strlen(eepromConfig.wifi_user) == 0) && (strlen(eepromConfig.wifi_password) == 0))
@@ -1356,8 +1357,8 @@ void Connect_WiFi()
 
 #else
 
-    String wifi_ssid = WiFi.SSID();    // your network SSID (name)
-    //String wifi_password = WiFi.psk(); // your network psk password
+    String wifi_ssid = WiFi.SSID(); // your network SSID (name)
+    // String wifi_password = WiFi.psk(); // your network psk password
     Serial.print("Attempting to authenticate with WPA2 Enterprise ");
     Serial.print("User: ");
     Serial.println(eepromConfig.wifi_user);
@@ -1387,7 +1388,7 @@ void Connect_WiFi()
     wifi_station_clear_enterprise_new_password();
 
     // Set up authentication
-    wifi_station_set_enterprise_identity((uint8*)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
+    wifi_station_set_enterprise_identity((uint8 *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
     wifi_station_set_enterprise_username((uint8 *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
     wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
 
@@ -1453,11 +1454,21 @@ void Print_WiFi_Status()
   //  WL_CONNECTION_LOST: assigned when the connection is lost;
   //  WL_DISCONNECTED: assigned when disconnected from a network;
 
-  Serial.print("wifi_status: ");
+  Serial.println("wifi_status: ");
+  Serial.println("");
+#if (OLED66 == true || OLED96 == true)
+  pageStart();
+  u8g2.setFont(u8g2_font_5x7_tf);
+  u8g2.setCursor(10, dh / 2);
+#endif
   switch (WiFi.status())
   {
   case WL_CONNECTED:
-    Serial.println("WiFi connected");
+    Serial.println("WIFI CONECTADA !!!!!!!!!!!!!!!!!!!!");
+    Serial.println("WIFI CONECTADA !!!!!!!!!!!!!!!!!!!!");
+#if (OLED66 == true || OLED96 == true)
+    u8g2.print("OK WIFI :)");
+#endif
     break;
   case WL_NO_SHIELD:
     Serial.println("No WiFi HW detected");
@@ -1467,23 +1478,40 @@ void Print_WiFi_Status()
     break;
   case WL_NO_SSID_AVAIL:
     Serial.println("No SSID available");
+#if (OLED66 == true || OLED96 == true)
+    u8g2.print("NO WIFI :(");
+#endif
     break;
   case WL_SCAN_COMPLETED:
     Serial.println("Networks scan completed");
     break;
   case WL_CONNECT_FAILED:
     Serial.println("Connect failed");
+#if (OLED66 == true || OLED96 == true)
+    u8g2.print("NO WIFI :(");
+#endif
     break;
   case WL_CONNECTION_LOST:
     Serial.println("Connection lost");
+#if (OLED66 == true || OLED96 == true)
+    u8g2.print("NO WIFI :(");
+#endif
     break;
   case WL_DISCONNECTED:
     Serial.println("Disconnected");
+#if (OLED66 == true || OLED96 == true)
+    u8g2.print("NO WIFI :(");
+#endif
     break;
   default:
     Serial.println("Unknown status");
     break;
   }
+  Serial.println("");
+  delay(3000);
+#if (OLED66 == true || OLED96 == true)
+  pageEnd();
+#endif
 
   // Print the SSID of the network you're attached to:
   Serial.print("SSID: ");
@@ -1911,6 +1939,7 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
     eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
     write_eeprom = true;
+    Serial.println("Wifi user write_eeprom = true");
     Serial.print("WiFi user: ");
     Serial.println(eepromConfig.wifi_user);
   }
@@ -1919,6 +1948,7 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.wifi_password, custom_wifi_password.getValue(), sizeof(eepromConfig.wifi_password));
     eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
     write_eeprom = true;
+    Serial.println("Wifi pass write_eeprom = true");
     Serial.print("WiFi password: ");
     Serial.println(eepromConfig.wifi_password);
   }
@@ -1929,6 +1959,7 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.aireciudadano_device_name, custom_id_name.getValue(), sizeof(eepromConfig.aireciudadano_device_name));
     eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
     write_eeprom = true;
+    Serial.println("Devname write_eeprom = true");
     Serial.print("Device name (captive portal): ");
     Serial.println(eepromConfig.aireciudadano_device_name);
   }
@@ -1937,6 +1968,7 @@ void Start_Captive_Portal()
   {
     eepromConfig.PublicTime = atoi(custom_public_time.getValue());
     write_eeprom = true;
+    Serial.println("PublicTime write_eeprom = true");
     Serial.print("Publication time: ");
     Serial.println(eepromConfig.PublicTime);
   }
@@ -1946,6 +1978,7 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.MQTT_server, custom_mqtt_server.getValue(), sizeof(eepromConfig.MQTT_server));
     eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
     write_eeprom = true;
+    Serial.println("MQTT server write_eeprom = true");
     Serial.print("MQTT server: ");
     Serial.println(eepromConfig.MQTT_server);
   }
@@ -1954,6 +1987,7 @@ void Start_Captive_Portal()
   {
     eepromConfig.MQTT_port = atoi(custom_mqtt_port.getValue());
     write_eeprom = true;
+    Serial.println("MQTT port write_eeprom = true");
     Serial.print("MQTT port: ");
     Serial.println(eepromConfig.MQTT_port);
   }
@@ -1963,6 +1997,7 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.sensor_lat, custom_sensor_latitude.getValue(), sizeof(eepromConfig.sensor_lat));
     eepromConfig.sensor_lat[sizeof(eepromConfig.sensor_lat) - 1] = '\0';
     write_eeprom = true;
+    Serial.println("Lat write_eeprom = true");
     Serial.print("Sensor Latitude: ");
     Serial.println(eepromConfig.sensor_lat);
     latitudef = atof(eepromConfig.sensor_lat); // Cambiar de string a float
@@ -1973,6 +2008,7 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.sensor_lon, custom_sensor_longitude.getValue(), sizeof(eepromConfig.sensor_lon));
     eepromConfig.sensor_lon[sizeof(eepromConfig.sensor_lon) - 1] = '\0';
     write_eeprom = true;
+    Serial.println("Lon write_eeprom = true");
     Serial.print("Sensor Longitude: ");
     Serial.println(eepromConfig.sensor_lon);
     longitudef = atof(eepromConfig.sensor_lon); // Cambiar de string a float
@@ -2013,6 +2049,7 @@ void Start_Captive_Portal()
       strncpy(eepromConfig.ConfigValues, CustomValTotalString, sizeof(eepromConfig.ConfigValues));
       eepromConfig.ConfigValues[sizeof(eepromConfig.ConfigValues) - 1] = '\0';
       write_eeprom = true;
+      Serial.println("CustomVal write_eeprom = true");
       Serial.print("Configuration Values: ");
       Serial.println(eepromConfig.ConfigValues);
     }
@@ -2021,6 +2058,7 @@ void Start_Captive_Portal()
   if (write_eeprom)
   {
     Write_EEPROM();
+    Serial.println("write_eeprom = true Final");
     ESP.restart();
   }
 
@@ -2446,7 +2484,7 @@ void update_error(int err)
 
 #endif
 
-#endif // Bluetooth linea 856
+#endif
 
 void saveParamCallback()
 {

@@ -455,6 +455,8 @@ char received_payload[384];
 String MQTT_send_topic;
 String MQTT_receive_topic;
 
+//#define MQTT_VERSION MQTT_VERSION_3_1
+
 // JSON
 #include <ArduinoJson.h>
 StaticJsonDocument<384> jsonBuffer;
@@ -581,6 +583,17 @@ void setup()
   // print info
   Serial.println();
   Serial.println(F("##### Inicializando Medidor Aire Ciudadano #####"));
+
+  Serial.print("ESP.getFreeHeap 0: ");
+  Serial.println(ESP.getFreeHeap());
+
+  Serial.print("ESP.getHeapFragmentation 0: ");
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print("ESP.getMaxFreeBlockSize 0: ");
+  Serial.println(ESP.getMaxFreeBlockSize());
+
+  
 
 #if !ESP8266
   // init preferences to handle persitent config data
@@ -718,6 +731,17 @@ void setup()
 #endif
 
 #if Wifi
+
+  Serial.print("ESP.getFreeHeap 1: ");
+  Serial.println(ESP.getFreeHeap());
+
+  Serial.print("ESP.getHeapFragmentation 1: ");
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print("ESP.getMaxFreeBlockSize 1: ");
+  Serial.println(ESP.getMaxFreeBlockSize());
+
+
   // Start Captive Portal for 60 seconds
   if (ResetFlag == true)
   {
@@ -732,6 +756,18 @@ void setup()
   if (!err_wifi)
   {
     Init_MQTT();
+
+      Serial.print("ESP.getFreeHeap 3: ");
+  Serial.println(ESP.getFreeHeap());
+
+    Serial.print("ESP.getHeapFragmentation 3: ");
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print("ESP.getMaxFreeBlockSize 3: ");
+  Serial.println(ESP.getMaxFreeBlockSize());
+
+
+
 #if ESP8285
     digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
     delay(750);                // wait for a 750 msecond
@@ -1686,8 +1722,8 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-  const int captiveportaltime = 60;
-//  const int captiveportaltime = 5;
+//  const int captiveportaltime = 60;
+  const int captiveportaltime = 15;
 
   //  wifiAP = String(eepromConfig.aireciudadano_device_name);
 
@@ -2086,6 +2122,16 @@ void Init_MQTT()
   Serial.println(eepromConfig.MQTT_port);
 
   // Attempt to connect to MQTT broker
+  Serial.print("ESP.getFreeHeap 2: ");
+  Serial.println(ESP.getFreeHeap());
+
+    Serial.print("ESP.getHeapFragmentation 2: ");
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print("ESP.getMaxFreeBlockSize 2: ");
+  Serial.println(ESP.getMaxFreeBlockSize());
+
+
   MQTT_client.setBufferSize(512); // to receive messages up to 512 bytes length (default is 256)
   Serial.println(F("Paso1"));
   MQTT_client.setServer(eepromConfig.MQTT_server, eepromConfig.MQTT_port);
@@ -2227,7 +2273,29 @@ void Send_Message_Cloud_App_MQTT()
     FlagDATAicon = true;
 
   // send message, the Print interface can be used to set the message contents
+
+
+  Serial.print("ESP.getFreeHeap 5: ");
+  Serial.println(ESP.getFreeHeap());
+
+    Serial.print("ESP.getHeapFragmentation 5: ");
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print("ESP.getMaxFreeBlockSize 5: ");
+  Serial.println(ESP.getMaxFreeBlockSize());
+
+
   MQTT_client.publish(MQTT_send_topic.c_str(), MQTT_message);
+
+  Serial.print("ESP.getFreeHeap 6: ");
+  Serial.println(ESP.getFreeHeap());
+
+    Serial.print("ESP.getHeapFragmentation 6: ");
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print("ESP.getMaxFreeBlockSize 6: ");
+  Serial.println(ESP.getMaxFreeBlockSize());
+
 }
 
 void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int length)
@@ -2514,6 +2582,17 @@ void Setup_Sensor()
   // Test PM2.5 SPS30
 
 #if Wifi
+
+     Serial.print("ESP.getFreeHeap 4: ");
+  Serial.println(ESP.getFreeHeap());
+
+  Serial.print("ESP.getHeapFragmentation 4: ");
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print("ESP.getMaxFreeBlockSize 4: ");
+  Serial.println(ESP.getMaxFreeBlockSize());
+
+
   if (SPS30sen == true)
   {
 #endif

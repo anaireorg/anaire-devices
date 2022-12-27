@@ -71,6 +71,7 @@
 // Definiciones opcionales para version Wifi
 #define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
 #define WPA2 true           // Colocar en true para redes con WPA2
+#define ESP8266SH false     // Colocar para PMS en pin 0 - Hardware Serial
 #define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";
                             // Longitude: char sensor_lon[10] = "xx.xxxx";
@@ -112,9 +113,9 @@ struct MyConfigStruct
 // #elif SDyRTC
 //   uint16_t SDyRTCTime = 10; // SDyRTC Time
 #elif Wifi
-  uint16_t PublicTime = 1;                           // Publication Time
-  uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
-  char MQTT_server[30] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
+//  uint16_t PublicTime = 1;                           // Publication Time
+//  uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
+//  char MQTT_server[30] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
 #if !PreProgSensor
   char sensor_lat[10] = "0.0";                       // Sensor latitude  GPS
   char sensor_lon[10] = "0.0";                       // Sensor longitude GPS
@@ -340,6 +341,9 @@ PMS::DATA data;
 #endif
 
 #else
+
+#if !ESP8266SH
+
 #include <SoftwareSerial.h>
 
 #if !ESP8285
@@ -357,6 +361,13 @@ SoftwareSerial pmsSerial(PMS_TX, PMS_RX); // SoftwareSerial(rxPin, txPin)
 PMS pms(pmsSerial);
 PMS::DATA data;
 // bool PMSflag = false;
+
+#else                                     // ESP8266 Hardware Serial 
+
+PMS pms(Serial);
+PMS::DATA data;
+
+#endif
 
 #endif
 
@@ -521,7 +532,11 @@ RTC_DS1307 rtc;
 void setup()
 {
   // Initialize serial port for serial monitor in Arduino IDE
+#if !ESP8266SH
   Serial.begin(115200);
+#else
+  Serial.begin(9600);
+#endif
   delay(100);
   while (!Serial)
   {
@@ -584,15 +599,16 @@ void setup()
   Serial.println();
   Serial.println(F("##### Inicializando Medidor Aire Ciudadano #####"));
 
-  Serial.print("ESP.getFreeHeap 0: ");
+#if ESP8266
+  Serial.print(F("ESP.getFreeHeap 0: "));
   Serial.println(ESP.getFreeHeap());
 
-  Serial.print("ESP.getHeapFragmentation 0: ");
+  Serial.print(F("ESP.getHeapFragmentation 0: "));
   Serial.println(ESP.getHeapFragmentation());
 
-  Serial.print("ESP.getMaxFreeBlockSize 0: ");
+  Serial.print(F("ESP.getMaxFreeBlockSize 0: "));
   Serial.println(ESP.getMaxFreeBlockSize());
-
+#endif
   
 
 #if !ESP8266
@@ -732,15 +748,16 @@ void setup()
 
 #if Wifi
 
-  Serial.print("ESP.getFreeHeap 1: ");
+#if ESP8266
+  Serial.print(F("ESP.getFreeHeap 1: "));
   Serial.println(ESP.getFreeHeap());
 
-  Serial.print("ESP.getHeapFragmentation 1: ");
+  Serial.print(F("ESP.getHeapFragmentation 1: "));
   Serial.println(ESP.getHeapFragmentation());
 
-  Serial.print("ESP.getMaxFreeBlockSize 1: ");
+  Serial.print(F("ESP.getMaxFreeBlockSize 1: "));
   Serial.println(ESP.getMaxFreeBlockSize());
-
+#endif
 
   // Start Captive Portal for 60 seconds
   if (ResetFlag == true)
@@ -757,15 +774,17 @@ void setup()
   {
     Init_MQTT();
 
-      Serial.print("ESP.getFreeHeap 3: ");
+#if ESP8266
+      Serial.print(F("ESP.getFreeHeap 3: "));
   Serial.println(ESP.getFreeHeap());
 
-    Serial.print("ESP.getHeapFragmentation 3: ");
+    Serial.print(F("ESP.getHeapFragmentation 3: "));
   Serial.println(ESP.getHeapFragmentation());
 
-  Serial.print("ESP.getMaxFreeBlockSize 3: ");
+  Serial.print(F("ESP.getMaxFreeBlockSize 3: "));
   Serial.println(ESP.getMaxFreeBlockSize());
 
+#endif
 
 
 #if ESP8285
@@ -848,7 +867,7 @@ void setup()
     Serial.println(F("RTC is NOT running, let's set the time!"));
     // When time needs to be set on a new device, or after a power loss, the
     // following line sets the RTC to the date & time this sketch was compiled
-    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    rtc.adjust(DateTime(__DATE__, __TIME__));
     // This line sets the RTC with an explicit date & time, for example to set
     // January 21, 2014 at 3am you would call:
     // rtc.adjust(DateTime(2022, 8, 20, 15, 18, 0));
@@ -1039,7 +1058,7 @@ void loop()
     // Serial.println(F(PM25_samples));
     PM25f = PM25_accumulated / PM25_samples;
     pm25int = round(PM25f);
-    // Serial.println(F(pm25int));
+    // Serial.println(pm25int);
     ///// END DEBUG Samples
     Serial.print(F("PM25: "));
     Serial.print(pm25int);
@@ -1062,12 +1081,12 @@ void loop()
     float PM25f;
 
     ///// DEBUG Samples
-    // Serial.println(F(PM25_accumulated));
+    // Serial.println(PM25_accumulated);
     // Serial.print(F("#samples: "));
-    // Serial.println(F(PM25_samples));
+    // Serial.println(PM25_samples);
     PM25f = PM25_accumulated / PM25_samples;
     pm25int = round(PM25f);
-    // Serial.println(F(pm25int));
+    // Serial.println(pm25int);
     ///// END DEBUG Samples
     Serial.print(F("PM25: "));
     Serial.print(pm25int);
@@ -1081,7 +1100,8 @@ void loop()
 
 #else
   // MQTT loop
-  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
+//  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
+  if ((millis() - MQTT_loop_start) >= (1 * 60000))
   {
 
     // New timestamp for the loop start time
@@ -1195,7 +1215,7 @@ void loop()
 
 void WiFiEvent(WiFiEvent_t event)
 {
-  Serial.printf("[WiFi-event] event: %d - ", event));
+  Serial.printf("[WiFi-event] event: %d - ", event);
 
   switch (event)
   {
@@ -1222,7 +1242,7 @@ void WiFiEvent(WiFiEvent_t event)
     break;
   case SYSTEM_EVENT_STA_GOT_IP:
     Serial.print(F("Obtained IP address: "));
-    Serial.println(F(WiFi.localIP()));
+    Serial.println(WiFi.localIP());
     break;
   case SYSTEM_EVENT_STA_LOST_IP:
     Serial.println(F("Lost IP address and IP address is reset to 0"));
@@ -1631,14 +1651,14 @@ void Check_WiFi_Server()
             client.println("<br>");
             client.println("------");
             client.println("<br>");
-            client.print("Publication Time: ");
-            client.print(eepromConfig.PublicTime);
-            client.print("MQTT Server: ");
-            client.print(eepromConfig.MQTT_server);
-            client.println("<br>");
-            client.print("MQTT Port: ");
-            client.print(eepromConfig.MQTT_port);
-            client.println("<br>");
+//            client.print("Publication Time: ");
+//            client.print(eepromConfig.PublicTime);
+//            client.print("MQTT Server: ");
+//            client.print(eepromConfig.MQTT_server);
+//            client.println("<br>");
+//            client.print("MQTT Port: ");
+//            client.print(eepromConfig.MQTT_port);
+//            client.println("<br>");
             client.print("Sensor latitude: ");
             client.print(eepromConfig.sensor_lat);
             client.println("<br>");
@@ -1796,14 +1816,15 @@ void Start_Captive_Portal()
 #else
   WiFiManagerParameter custom_id_name("CustomName", "Set Station Name (25 characters max):", eepromConfig.aireciudadano_device_name, 25);
 #endif
-  char Ptime[5];
-  itoa(eepromConfig.PublicTime, Ptime, 10);
-  WiFiManagerParameter custom_public_time("Ptime", "Set Publication Time in minutes:", Ptime, 4);
-  WiFiManagerParameter custom_mqtt_html("<p></p>"); // only custom html
-  WiFiManagerParameter custom_mqtt_server("Server", "MQTT server:", eepromConfig.MQTT_server, 32);
-  char port[6];
-  itoa(eepromConfig.MQTT_port, port, 10);
-  WiFiManagerParameter custom_mqtt_port("Port", "MQTT port:", port, 6);
+//  char Ptime[5];
+//  itoa(eepromConfig.PublicTime, Ptime, 10);
+//  itoa(1, Ptime, 10);
+//  WiFiManagerParameter custom_public_time("Ptime", "Set Publication Time in minutes:", Ptime, 4);
+//  WiFiManagerParameter custom_mqtt_html("<p></p>"); // only custom html
+//  WiFiManagerParameter custom_mqtt_server("Server", "MQTT server:", eepromConfig.MQTT_server, 32);
+//  char port[6];
+  //itoa(eepromConfig.MQTT_port, port, 10);
+//  WiFiManagerParameter custom_mqtt_port("Port", "MQTT port:", port, 6);
   WiFiManagerParameter custom_sensor_html("<p></p>"); // only custom html
   WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor (5-4 dec digits are enough)", eepromConfig.sensor_lat, 10);
   WiFiManagerParameter custom_sensor_longitude("Longitude", "Longitude sensor", eepromConfig.sensor_lon, 10);
@@ -1919,10 +1940,10 @@ void Start_Captive_Portal()
 #endif
 
   wifiManager.addParameter(&custom_id_name);
-  wifiManager.addParameter(&custom_public_time);
-  wifiManager.addParameter(&custom_mqtt_html);
-  wifiManager.addParameter(&custom_mqtt_server);
-  wifiManager.addParameter(&custom_mqtt_port);
+//  wifiManager.addParameter(&custom_public_time);
+//  wifiManager.addParameter(&custom_mqtt_html);
+//  wifiManager.addParameter(&custom_mqtt_server);
+//  wifiManager.addParameter(&custom_mqtt_port);
   wifiManager.addParameter(&custom_sensor_html);
   wifiManager.addParameter(&custom_sensor_latitude);
   wifiManager.addParameter(&custom_sensor_longitude);
@@ -2000,33 +2021,33 @@ void Start_Captive_Portal()
     Serial.println(eepromConfig.aireciudadano_device_name);
   }
 
-  if (eepromConfig.PublicTime != atoi(custom_public_time.getValue()))
-  {
-    eepromConfig.PublicTime = atoi(custom_public_time.getValue());
-    write_eeprom = true;
-    Serial.println(F("PublicTime write_eeprom = true"));
-    Serial.print(F("Publication time: "));
-    Serial.println(eepromConfig.PublicTime);
-  }
+//  if (eepromConfig.PublicTime != atoi(custom_public_time.getValue()))
+//  {
+//    eepromConfig.PublicTime = atoi(custom_public_time.getValue());
+//    write_eeprom = true;
+//    Serial.println(F("PublicTime write_eeprom = true"));
+//    Serial.print(F("Publication time: "));
+//    Serial.println(eepromConfig.PublicTime);
+//  }
 
-  if (eepromConfig.MQTT_server != custom_mqtt_server.getValue())
-  {
-    strncpy(eepromConfig.MQTT_server, custom_mqtt_server.getValue(), sizeof(eepromConfig.MQTT_server));
-    eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
-    write_eeprom = true;
-    Serial.println(F("MQTT server write_eeprom = true"));
-    Serial.print(F("MQTT server: "));
-    Serial.println(eepromConfig.MQTT_server);
-  }
+//  if (eepromConfig.MQTT_server != custom_mqtt_server.getValue())
+//  {
+//    strncpy(eepromConfig.MQTT_server, custom_mqtt_server.getValue(), sizeof(eepromConfig.MQTT_server));
+//    eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
+//    write_eeprom = true;
+//    Serial.println(F("MQTT server write_eeprom = true"));
+//    Serial.print(F("MQTT server: "));
+//    Serial.println(eepromConfig.MQTT_server);
+//  }
 
-  if (eepromConfig.MQTT_port != atoi(custom_mqtt_port.getValue()))
-  {
-    eepromConfig.MQTT_port = atoi(custom_mqtt_port.getValue());
-    write_eeprom = true;
-    Serial.println(F("MQTT port write_eeprom = true"));
-    Serial.print(F("MQTT port: "));
-    Serial.println(eepromConfig.MQTT_port);
-  }
+//  if (eepromConfig.MQTT_port != atoi(custom_mqtt_port.getValue()))
+//  {
+//    eepromConfig.MQTT_port = atoi(custom_mqtt_port.getValue());
+//    write_eeprom = true;
+//    Serial.println(F("MQTT port write_eeprom = true"));
+//    Serial.print(F("MQTT port: "));
+//    Serial.println(eepromConfig.MQTT_port);
+//  }
 
   if (eepromConfig.sensor_lat != custom_sensor_latitude.getValue())
   {
@@ -2117,24 +2138,29 @@ String getParam(String name)
 void Init_MQTT()
 { // MQTT Init function
   Serial.print(F("Attempting to connect to the MQTT broker "));
-  Serial.print(eepromConfig.MQTT_server);
+//  Serial.print(eepromConfig.MQTT_server);
+  Serial.print(F("sensor.aireciudadano.com"));
   Serial.print(F(":"));
-  Serial.println(eepromConfig.MQTT_port);
+//  Serial.println(eepromConfig.MQTT_port);
+  Serial.println(F("80"));
 
+#if ESP8266
   // Attempt to connect to MQTT broker
-  Serial.print("ESP.getFreeHeap 2: ");
+  Serial.print(F("ESP.getFreeHeap 2: "));
   Serial.println(ESP.getFreeHeap());
 
-    Serial.print("ESP.getHeapFragmentation 2: ");
+    Serial.print(F("ESP.getHeapFragmentation 2: "));
   Serial.println(ESP.getHeapFragmentation());
 
-  Serial.print("ESP.getMaxFreeBlockSize 2: ");
+  Serial.print(F("ESP.getMaxFreeBlockSize 2: "));
   Serial.println(ESP.getMaxFreeBlockSize());
 
+#endif
 
   MQTT_client.setBufferSize(512); // to receive messages up to 512 bytes length (default is 256)
   Serial.println(F("Paso1"));
-  MQTT_client.setServer(eepromConfig.MQTT_server, eepromConfig.MQTT_port);
+//  MQTT_client.setServer(eepromConfig.MQTT_server, eepromConfig.MQTT_port);
+  MQTT_client.setServer("sensor.aireciudadano.com", 80);
   Serial.println(F("Paso2"));
   MQTT_client.setCallback(Receive_Message_Cloud_App_MQTT);
   Serial.println(F("Paso3"));
@@ -2198,14 +2224,14 @@ void Send_Message_Cloud_App_MQTT()
   Serial.print(F("Sending MQTT message to the send topic: "));
   Serial.println(MQTT_send_topic);
   ///// DEBUG Samples
-  //  Serial.println(F(PM25_accumulated));
-  //  Serial.println(F(PM25_samples));
+  //  Serial.println(PM25_accumulated);
+  //  Serial.println(PM25_samples);
   pm25f = PM25_accumulated / PM25_samples;
   pm25int = round(pm25f);
   pm25fori = PM25_accumulated_ori / PM25_samples;
   pm25intori = round(pm25fori);
-  //  Serial.println(F(pm25int));
-  //  Serial.println(F(pm25intori));
+  //  Serial.println(pm25int);
+  //  Serial.println(pm25intori);
   ///// END DEBUG Samples
   ReadHyT();
 
@@ -2274,27 +2300,32 @@ void Send_Message_Cloud_App_MQTT()
 
   // send message, the Print interface can be used to set the message contents
 
+#if ESP8266
 
-  Serial.print("ESP.getFreeHeap 5: ");
+  Serial.print(F("ESP.getFreeHeap 5: "));
   Serial.println(ESP.getFreeHeap());
 
-    Serial.print("ESP.getHeapFragmentation 5: ");
+    Serial.print(F("ESP.getHeapFragmentation 5: "));
   Serial.println(ESP.getHeapFragmentation());
 
-  Serial.print("ESP.getMaxFreeBlockSize 5: ");
+  Serial.print(F("ESP.getMaxFreeBlockSize 5: "));
   Serial.println(ESP.getMaxFreeBlockSize());
 
+#endif
 
   MQTT_client.publish(MQTT_send_topic.c_str(), MQTT_message);
 
-  Serial.print("ESP.getFreeHeap 6: ");
+#if ESP8266
+  Serial.print(F("ESP.getFreeHeap 6: "));
   Serial.println(ESP.getFreeHeap());
 
-    Serial.print("ESP.getHeapFragmentation 6: ");
+    Serial.print(F("ESP.getHeapFragmentation 6: "));
   Serial.println(ESP.getHeapFragmentation());
 
-  Serial.print("ESP.getMaxFreeBlockSize 6: ");
+  Serial.print(F("ESP.getMaxFreeBlockSize 6: "));
   Serial.println(ESP.getMaxFreeBlockSize());
+
+#endif
 
 }
 
@@ -2327,41 +2358,41 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   }
 
   // Check MQTT server
-  if ((jsonBuffer["MQTT_server"]) && (eepromConfig.MQTT_server != jsonBuffer["MQTT_server"]))
-  {
-    strncpy(eepromConfig.MQTT_server, jsonBuffer["MQTT_server"], sizeof(eepromConfig.MQTT_server));
-    eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
-    Serial.print(F("MQTT Server: "));
-    Serial.println(eepromConfig.MQTT_server);
-    write_eeprom = true;
+//  if ((jsonBuffer["MQTT_server"]) && (eepromConfig.MQTT_server != jsonBuffer["MQTT_server"]))
+//  {
+//    strncpy(eepromConfig.MQTT_server, jsonBuffer["MQTT_server"], sizeof(eepromConfig.MQTT_server));
+//    eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
+//    Serial.print(F("MQTT Server: "));
+//    Serial.println(eepromConfig.MQTT_server);
+//    write_eeprom = true;
 
     // Attempt to connect to MQTT broker
-    if (!err_wifi)
-    {
-      Init_MQTT();
-    }
-  }
+//    if (!err_wifi)
+//    {
+//      Init_MQTT();
+//    }
+//  }
 
   // Check MQTT port
-  if ((jsonBuffer["MQTT_port"]) && (eepromConfig.MQTT_port != int(jsonBuffer["MQTT_port"])))
-  {
-    eepromConfig.MQTT_port = int(jsonBuffer["MQTT_port"]);
+//  if ((jsonBuffer["MQTT_port"]) && (eepromConfig.MQTT_port != int(jsonBuffer["MQTT_port"])))
+//  {
+//    eepromConfig.MQTT_port = int(jsonBuffer["MQTT_port"]);
     // strncpy(eepromConfig.MQTT_port, jsonBuffer["MQTT_port"], sizeof(eepromConfig.MQTT_port));
     // eepromConfig.MQTT_port[sizeof(eepromConfig.MQTT_port) - 1] = '\0';
-    Serial.print(F("MQTT Port: "));
-    Serial.println(eepromConfig.MQTT_port);
-    write_eeprom = true;
+//    Serial.print(F("MQTT Port: "));
+//    Serial.println(eepromConfig.MQTT_port);
+//    write_eeprom = true;
 
     // Attempt to connect to MQTT broker
-    if (!err_wifi)
-    {
-      Init_MQTT();
-    }
-  }
+//    if (!err_wifi)
+//    {
+//      Init_MQTT();
+//    }
+//  }
 
   // print info
-  Serial.println(F("MQTT update - message processed"));
-  Print_Config();
+//  Serial.println(F("MQTT update - message processed"));
+//  Print_Config();
 
   // If factory reset has been enabled, just do it
   if ((jsonBuffer["factory_reset"]) && (jsonBuffer["factory_reset"] == "ON"))
@@ -2561,7 +2592,7 @@ void update_error(int err)
 
 void saveParamCallback()
 {
-  Serial.println("[CALLBACK] saveParamCallback fired");
+  Serial.println(F("[CALLBACK] saveParamCallback fired"));
   Serial.println("Value customSenPM = " + getParam("customSenPM"));
   CustomValtotal = CustomValue;
   Serial.println("Value cutomSenHYT = " + getParam("customSenHYT"));
@@ -2572,7 +2603,7 @@ void saveParamCallback()
   CustomValtotal = CustomValtotal + (CustomValue * 1000);
   Serial.println("Value customOutIn = " + getParam("customOutIn"));
   CustomValtotal = CustomValtotal + (CustomValue * 10000);
-  Serial.print("CustomValtotal: ");
+  Serial.print(F("CustomValtotal: "));
   Serial.println(CustomValtotal);
 }
 
@@ -2583,15 +2614,17 @@ void Setup_Sensor()
 
 #if Wifi
 
-     Serial.print("ESP.getFreeHeap 4: ");
+#if ESP8266
+     Serial.print(F("ESP.getFreeHeap 4: "));
   Serial.println(ESP.getFreeHeap());
 
-  Serial.print("ESP.getHeapFragmentation 4: ");
+  Serial.print(F("ESP.getHeapFragmentation 4: "));
   Serial.println(ESP.getHeapFragmentation());
 
-  Serial.print("ESP.getMaxFreeBlockSize 4: ");
+  Serial.print(F("ESP.getMaxFreeBlockSize 4: "));
   Serial.println(ESP.getMaxFreeBlockSize());
 
+#endif
 
   if (SPS30sen == true)
   {
@@ -2704,7 +2737,10 @@ if (PMSsen == true)
 #endif
 
 #else
+
+#if !ESP8266SH
   pmsSerial.begin(9600); // Software serial begin for PMS sensor
+#endif
   Serial.println(F("Test5"));
 #endif
 
@@ -3172,12 +3208,12 @@ void Print_Config()
   Serial.print(F("SDyRTC Time: "));
   Serial.println(SDyRTCtime);
 #elif Wifi
-  Serial.print(F("Publication Time: "));
-  Serial.println(eepromConfig.PublicTime);
-  Serial.print(F("MQTT server: "));
-  Serial.println(eepromConfig.MQTT_server);
-  Serial.print(F("MQTT Port: "));
-  Serial.println(eepromConfig.MQTT_port);
+//  Serial.print(F("Publication Time: "));
+//  Serial.println(eepromConfig.PublicTime);
+//  Serial.print(F("MQTT server: "));
+//  Serial.println(eepromConfig.MQTT_server);
+//  Serial.print(F("MQTT Port: "));
+//  Serial.println(eepromConfig.MQTT_port);
   Serial.print(F("Sensor latitude: "));
   Serial.println(eepromConfig.sensor_lat);
   Serial.print(F("Sensor longitude: "));
@@ -3459,7 +3495,7 @@ void TimeConfig()
 
 #endif
         Serial.print(F("Tiempo evaluacion: "));
-        Serial.print(F(Bluetooth_loop_time));
+        Serial.print(Bluetooth_loop_time);
         Serial.println(F(" seg"));
         delay(1000);
       }
@@ -3476,7 +3512,7 @@ void FlashBluetoothTime()
   {
     eepromConfig.BluetoothTime = Bluetooth_loop_time;
     Serial.print(F("Bluetooth time: "));
-    Serial.println(F(eepromConfig.BluetoothTime));
+    Serial.println(eepromConfig.BluetoothTime);
     Write_EEPROM();
   }
 }
@@ -3499,8 +3535,8 @@ void Get_AireCiudadano_DeviceId()
 #if Wifi
   Aireciudadano_Characteristics();
 #endif
-  Serial.printf("ESP32 Chip model = %s Rev %d.\t", ESP.getChipModel(), ESP.getChipRevision()));
-  Serial.printf("This chip has %d cores and %dMB Flash.\n", ESP.getChipCores(), ESP.getFlashChipSize() / (1024 * 1024)));
+  Serial.printf("ESP32 Chip model = %s Rev %d.\t", ESP.getChipModel(), ESP.getChipRevision());
+  Serial.printf("This chip has %d cores and %dMB Flash.\n", ESP.getChipCores(), ESP.getFlashChipSize() / (1024 * 1024));
 
 #else
 
@@ -3510,6 +3546,11 @@ void Get_AireCiudadano_DeviceId()
 #if Wifi
   Aireciudadano_Characteristics();
 #endif
+  Serial.print(F("ESP8266 Chip ID = "));
+  Serial.print(chipIdHEX);
+  Serial.print(F(", ESP CoreVersion: "));
+  Serial.println(ESP.getCoreVersion());
+
 
 #endif
 
@@ -3697,7 +3738,7 @@ void Read_EEPROM()
 
     // Read saved data
     EEPROM.get(0, eepromConfig);
-    Print_Config();
+//    Print_Config();
   }
   else
   {
@@ -3800,7 +3841,7 @@ void displayBatteryLevel(int colour)
   battery_voltage = ((float)analogRead(ADC_PIN) / 4095.0) * 2.0 * 3.3 * (vref / 1000.0);
 
   Serial.print(F("battery voltage: "));
-  Serial.println(F(battery_voltage));
+  Serial.println(battery_voltage);
 
   //  tft.drawString(String(battery_voltage), 42, 218);
 
@@ -4192,10 +4233,10 @@ void displayAverage(int average)
     else
       tft.drawXBitmap(5, 215, Icono_wifi_on_BIG, 20, 20, TFT_WHITE);
     Serial.print(F(" RSSI: "));
-    Serial.print(F(rssi));
+    Serial.print(rssi);
     rssi = rssi + 130;
     Serial.print(F("  norm: "));
-    Serial.println(F(rssi));
+    Serial.println(rssi);
     tft.drawString(String(rssi), 30, 220);
   }
 #endif
@@ -4273,12 +4314,12 @@ void displaySensorData(int pm25, int humi, int temp, int rssi)
   {
     u8g2.drawBitmap(5, dh - 8, 1, 8, Icono_wifi_on);
     Serial.print(F(" RSSI: "));
-    Serial.print(F(rssi));
+    Serial.print(rssi);
     //    rssi = abs(rssi);
     sprintf(output, "%02d", rssi);
     rssi = rssi + 130;
     Serial.print(F("  norm: "));
-    Serial.println(F(rssi));
+    Serial.println(rssi);
     u8g2.print(rssi);
   }
 #endif
@@ -4310,10 +4351,10 @@ void Write_Bluetooth()
 
   ValSampleIntervals = gadgetBle.getSampleInterval();
   //  Serial.print(F("ValSampleIntervals: "));
-  //  Serial.println(F(ValSampleIntervals));
+  //  Serial.println(ValSampleIntervals);
 
   //  Serial.print(F("Bluetooth_loop_time: "));
-  //  Serial.println(F(Bluetooth_loop_time));
+  //  Serial.println(Bluetooth_loop_time);
 
   Bluetooth_loop_time = ValSampleIntervals;
 
@@ -4348,12 +4389,12 @@ void Write_SD()
 
   // print to the serial port too:
   Serial.print(F("Data SD: "));
-  Serial.println(F(dataString));
+  Serial.println(dataString);
 
   //  Serial.print(F("Unixtime = "));
-  //  Serial.print(F(now.unixtime()));
+  //  Serial.print(now.unixtime());
   //  Serial.println(F(" s"));
-  //  Serial.print(F(now.unixtime() / 86400L));
+  //  Serial.print(now.unixtime() / 86400L);
   //  Serial.println(F("d"));
 
   dataFile.flush();

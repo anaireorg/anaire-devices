@@ -54,14 +54,14 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi true        // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
-#define Bluetooth false  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
+#define Wifi false        // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
+#define Bluetooth true  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set ti true in case you use a ESP8285 switch
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
-#define Tdisplaydisp false
+#define Tdisplaydisp true
 #define OLED66display false
 #define OLED96display false
 
@@ -70,7 +70,7 @@
 
 // Definiciones opcionales para version Wifi
 #define BrownoutOFF false   // Colocar en true en boards con problemas de RESET por Brownout o bajo voltaje
-#define WPA2 true           // Colocar en true para redes con WPA2
+#define WPA2 false           // Colocar en true para redes con WPA2
 #define ESP8266SH false     // Colocar para PMS en pin 0 - Hardware Serial
 #define PreProgSensor false // Variables de sensor preprogramadas:
                             // Latitude: char sensor_lat[10] = "xx.xxxx";

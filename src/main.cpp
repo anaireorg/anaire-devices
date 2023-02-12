@@ -54,15 +54,15 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi false        // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
-#define Bluetooth true  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
+#define Wifi true        // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
+#define Bluetooth false  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set ti true in case you use a ESP8285 switch
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
-#define Tdisplaydisp true
-#define OLED66display false
+#define Tdisplaydisp false
+#define OLED66display true
 #define OLED96display false
 
 // Boards diferentes
@@ -100,7 +100,7 @@ String chipIdHEX;
 uint32_t chipId = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "1.8";
+String sw_version = "1.9";
 String aireciudadano_device_id;
 uint8_t Swver;
 
@@ -1745,8 +1745,8 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-//  const int captiveportaltime = 60;
-  const int captiveportaltime = 15;
+  const int captiveportaltime = 60;
+//  const int captiveportaltime = 15;
 
   //  wifiAP = String(eepromConfig.aireciudadano_device_name);
 
@@ -2743,11 +2743,11 @@ if (PMSsen == true)
 #if !ESP8266SH
   pmsSerial.begin(9600); // Software serial begin for PMS sensor
 #endif
-  Serial.println(F("Test5"));
+//  Serial.println(F("Test5"));
 #endif
 
     delay(1000);
-  Serial.println(F("Test6"));
+//  Serial.println(F("Test6"));
 
     if (pms.readUntil(data))
     {
@@ -3269,11 +3269,15 @@ void Button_Init()
     tft.setTextDatum(TL_DATUM); // top left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
+#if Wifi
     tft.drawString("ID " + aireciudadano_device_id, 8, 5);         //!!!Arreglar por nuevo tamaño String
-    tft.drawString("SW " + sw_version, 8, 22);
+#elif Bluetooth
+  tft.drawString("ID app:  " + provider.getDeviceIdString(), 8, 5);         //!!!Arreglar por nuevo tamaño String
+#endif
+    tft.drawString("SW ver: " + sw_version, 8, 22);
 #if Bluetooth
-    tft.drawString("Bluetooth ver", 8, 39);
-    tft.drawString("Log int: " + String(Bluetooth_loop_time), 8, 56);
+    tft.drawString("Sample int: " + String(Bluetooth_loop_time), 8, 39);
+    tft.drawString("Bluetooth ver", 8, 56);
 #elif SDyRTC
     tft.drawString("SDyRTC ver", 8, 39);
     tft.drawString("Log int: " + String(SDyRTCtime), 8, 56);
@@ -3301,14 +3305,16 @@ void Button_Init()
                                 {
     Serial.println(F("Bottom button short click"));
     tft.fillScreen(TFT_WHITE);
-    tft.setTextColor(TFT_BLACK, TFT_WHITE);
+    tft.setTextColor(TFT_BLUE, TFT_WHITE);
     tft.setTextDatum(TL_DATUM); // top left
     tft.setTextSize(1);
     tft.setFreeFont(FF90);
-    tft.drawString("Der Corto: Info", 3, 5);
-    tft.drawString(" Largo: Dormir", 3, 21);
-    tft.drawString("Izq Corto:Menu", 3, 69);
-    tft.drawString(" Largo: Tiempo", 3, 85);
+    tft.drawString("Left button", 3, 5);
+    tft.drawString("  Short: Menu", 3, 21);
+    tft.drawString("  Long: SampTi", 3, 37);
+    tft.drawString("Right button", 3, 75);
+    tft.drawString("  Short: Info", 3, 91);
+    tft.drawString("  Long: Sleep", 3, 107);
     delay(5000);
     Update_Display(); });
 
@@ -3323,7 +3329,7 @@ void Button_Init()
                                               tft.setFreeFont(FF90);
                                               tft.setTextDatum(MC_DATUM);
 #if Bluetooth
-                                              tft.drawString("Tiempo eval:", tft.width() / 2, tft.height() / 2 - 15);
+                                              tft.drawString("Eval Time:", tft.width() / 2, tft.height() / 2 - 15);
                                               tft.drawString(String(eepromConfig.BluetoothTime) + " seg", tft.width() / 2, tft.height() / 2 + 15);
                                               delay(1000);
 
@@ -3456,7 +3462,7 @@ void TimeConfig()
       pageStart();
       u8g2.setFont(u8g2_font_6x10_tf);
       u8g2.setCursor(0, dh / 2 - 7);
-      u8g2.print("Tiempo eval:");
+      u8g2.print("Eval time:");
       u8g2.setCursor(10, dh / 2 + 7);
       u8g2.print(String(eepromConfig.BluetoothTime) + " seg");
       pageEnd();
@@ -3490,13 +3496,13 @@ void TimeConfig()
 
         pageStart();
         u8g2.setCursor(0, dh / 2 - 7);
-        u8g2.print("Tiempo eval");
+        u8g2.print("Eval time");
         u8g2.setCursor(8, dh / 2 + 7);
         u8g2.print(String(Bluetooth_loop_time) + " seg");
         pageEnd();
 
 #endif
-        Serial.print(F("Tiempo evaluacion: "));
+        Serial.print(F("Evaluation time: "));
         Serial.print(Bluetooth_loop_time);
         Serial.println(F(" seg"));
         delay(1000);

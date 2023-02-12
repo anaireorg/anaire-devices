@@ -113,7 +113,7 @@ struct MyConfigStruct
 // #elif SDyRTC
 //   uint16_t SDyRTCTime = 10; // SDyRTC Time
 #elif Wifi
-//  uint16_t PublicTime = 1;                           // Publication Time
+  uint16_t PublicTime = 1;                           // Publication Time
 //  uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
 //  char MQTT_server[30] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
 #if !PreProgSensor
@@ -1100,8 +1100,8 @@ void loop()
 
 #else
   // MQTT loop
-//  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
-  if ((millis() - MQTT_loop_start) >= (1 * 60000))
+  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
+//  if ((millis() - MQTT_loop_start) >= (1 * 60000))
   {
 
     // New timestamp for the loop start time
@@ -1651,14 +1651,14 @@ void Check_WiFi_Server()
             client.println("<br>");
             client.println("------");
             client.println("<br>");
-//            client.print("Publication Time: ");
-//            client.print(eepromConfig.PublicTime);
+            client.print("Publication Time: ");
+            client.print(eepromConfig.PublicTime);
 //            client.print("MQTT Server: ");
 //            client.print(eepromConfig.MQTT_server);
 //            client.println("<br>");
 //            client.print("MQTT Port: ");
 //            client.print(eepromConfig.MQTT_port);
-//            client.println("<br>");
+            client.println("<br>");
             client.print("Sensor latitude: ");
             client.print(eepromConfig.sensor_lat);
             client.println("<br>");
@@ -1816,10 +1816,10 @@ void Start_Captive_Portal()
 #else
   WiFiManagerParameter custom_id_name("CustomName", "Set Station Name (25 characters max):", eepromConfig.aireciudadano_device_name, 25);
 #endif
-//  char Ptime[5];
-//  itoa(eepromConfig.PublicTime, Ptime, 10);
-//  itoa(1, Ptime, 10);
-//  WiFiManagerParameter custom_public_time("Ptime", "Set Publication Time in minutes:", Ptime, 4);
+  char Ptime[5];
+  itoa(eepromConfig.PublicTime, Ptime, 10);
+  itoa(1, Ptime, 10);
+  WiFiManagerParameter custom_public_time("Ptime", "Set Publication Time in minutes:", Ptime, 4);
 //  WiFiManagerParameter custom_mqtt_html("<p></p>"); // only custom html
 //  WiFiManagerParameter custom_mqtt_server("Server", "MQTT server:", eepromConfig.MQTT_server, 32);
 //  char port[6];
@@ -1940,7 +1940,7 @@ void Start_Captive_Portal()
 #endif
 
   wifiManager.addParameter(&custom_id_name);
-//  wifiManager.addParameter(&custom_public_time);
+  wifiManager.addParameter(&custom_public_time);
 //  wifiManager.addParameter(&custom_mqtt_html);
 //  wifiManager.addParameter(&custom_mqtt_server);
 //  wifiManager.addParameter(&custom_mqtt_port);
@@ -2021,14 +2021,14 @@ void Start_Captive_Portal()
     Serial.println(eepromConfig.aireciudadano_device_name);
   }
 
-//  if (eepromConfig.PublicTime != atoi(custom_public_time.getValue()))
-//  {
-//    eepromConfig.PublicTime = atoi(custom_public_time.getValue());
-//    write_eeprom = true;
-//    Serial.println(F("PublicTime write_eeprom = true"));
-//    Serial.print(F("Publication time: "));
-//    Serial.println(eepromConfig.PublicTime);
-//  }
+  if (eepromConfig.PublicTime != atoi(custom_public_time.getValue()))
+  {
+    eepromConfig.PublicTime = atoi(custom_public_time.getValue());
+    write_eeprom = true;
+    Serial.println(F("PublicTime write_eeprom = true"));
+    Serial.print(F("Publication time: "));
+    Serial.println(eepromConfig.PublicTime);
+  }
 
 //  if (eepromConfig.MQTT_server != custom_mqtt_server.getValue())
 //  {
@@ -3208,8 +3208,8 @@ void Print_Config()
   Serial.print(F("SDyRTC Time: "));
   Serial.println(SDyRTCtime);
 #elif Wifi
-//  Serial.print(F("Publication Time: "));
-//  Serial.println(eepromConfig.PublicTime);
+  Serial.print(F("Publication Time: "));
+  Serial.println(eepromConfig.PublicTime);
 //  Serial.print(F("MQTT server: "));
 //  Serial.println(eepromConfig.MQTT_server);
 //  Serial.print(F("MQTT Port: "));

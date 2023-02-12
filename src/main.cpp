@@ -1818,7 +1818,6 @@ void Start_Captive_Portal()
 #endif
   char Ptime[5];
   itoa(eepromConfig.PublicTime, Ptime, 10);
-  itoa(1, Ptime, 10);
   WiFiManagerParameter custom_public_time("Ptime", "Set Publication Time in minutes:", Ptime, 4);
 //  WiFiManagerParameter custom_mqtt_html("<p></p>"); // only custom html
 //  WiFiManagerParameter custom_mqtt_server("Server", "MQTT server:", eepromConfig.MQTT_server, 32);

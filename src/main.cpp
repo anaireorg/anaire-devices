@@ -385,10 +385,13 @@ bool AM2320flag = false;
 
 // Bluetooth in TTGO T-Display
 #if Bluetooth
-#include "Sensirion_GadgetBle_Lib.h" // to connect to Sensirion MyAmbience Android App available on Google Play
-// GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_CO2_ALT);
-GadgetBle gadgetBle = GadgetBle(GadgetBle::DataType::T_RH_VOC_PM25_V2);
-// bool bluetooth_active = false;
+#include <Sensirion_Gadget_BLE.h> // to connect to Sensirion MyAmbience Android App available on Google Play
+#include <BLE2902.h>
+// #include <BLEDevice.h>
+// #include <BLEServer.h>
+// #include <BLEUtils.h>
+NimBLELibraryWrapper lib;
+DataProvider provider(lib, DataType::T_RH_VOC_PM25);
 #endif
 
 #if !ESP8266
@@ -650,7 +653,7 @@ void setup()
 
 #if Bluetooth
   Bluetooth_loop_time = eepromConfig.BluetoothTime;
-  gadgetBle.setSampleIntervalMs(Bluetooth_loop_time * 1000); // Valor de muestreo de APP y de Sensor
+//  gadgetBle.setSampleIntervalMs(Bluetooth_loop_time * 1000); // Valor de muestreo de APP y de Sensor
 // #elif SDyRTC
 //   SDyRTC_loop_time = eepromConfig.SDyRTCTime;
 #endif
@@ -740,9 +743,9 @@ void setup()
 
 // Initialize the GadgetBle Library for Bluetooth
 #elif Bluetooth
-  gadgetBle.begin();
-  Serial.print(F("Sensirion GadgetBle Lib initialized with deviceId = "));
-  Serial.println(gadgetBle.getDeviceIdString());
+  provider.begin();
+  Serial.print("Sensirion Provider Lib initialized with deviceId = ");
+  Serial.println(provider.getDeviceIdString());
 
 #endif
 
@@ -809,7 +812,7 @@ void setup()
 
   pinMode(LEDPIN, OUTPUT);
 
-  Serial.print(F("Initializing SD card: ");
+  Serial.print(F("Initializing SD card: "));
   // make sure that the default chip select pin is set to output, even if you don't use it:
   pinMode(SS, OUTPUT);
 
@@ -1187,7 +1190,7 @@ void loop()
 
 // Process Bluetooth events
 #if Bluetooth
-  gadgetBle.handleEvents();
+  provider.handleDownload();
   delay(3);
 #endif
 
@@ -3284,7 +3287,7 @@ void Button_Init()
 #endif
 
     delay(5000); // keep the info in the display for 5s
-    Update_Display(); }));
+    Update_Display(); });
 
   // Top button long click: toggle acoustic alarm
   button_top.setLongClickDetectedHandler([](Button2 &b)
@@ -3312,7 +3315,7 @@ void Button_Init()
   // Bottom button long click: deactivate self calibration and perform sensor forced recalibration
   button_bottom.setLongClickDetectedHandler([](Button2 &b)
                                             {
-                                              Serial.println(F("Bottom button long click");
+                                              Serial.println(F("Bottom button long click"));
 
                                               tft.fillScreen(TFT_WHITE);
                                               tft.setTextColor(TFT_RED, TFT_WHITE);
@@ -3505,7 +3508,7 @@ void TimeConfig()
 
 void FlashBluetoothTime()
 {
-  gadgetBle.setSampleIntervalMs(Bluetooth_loop_time * 1000); // Rutina para configurar el tiempo de muestreo del sensor y la app
+//  gadgetBle.setSampleIntervalMs(Bluetooth_loop_time * 1000); // Rutina para configurar el tiempo de muestreo del sensor y la app
 
   if (eepromConfig.BluetoothTime != Bluetooth_loop_time)
   {
@@ -4340,25 +4343,25 @@ void pageEnd()
 void Write_Bluetooth()
 { // Write measurements to Bluetooth
 
-  uint32_t ValSampleIntervals;
+//  uint32_t ValSampleIntervals;
 
-  gadgetBle.writePM2p5(pm25int);
-  gadgetBle.writeTemperature(temp);
-  gadgetBle.writeHumidity(humi);
-  Serial.println(F("Bluetooth frame: PM25, humidity and temperature"));
-  gadgetBle.commit();
+  provider.writeValueToCurrentSample(pm25int, Unit::PM2P5);
+  provider.writeValueToCurrentSample(temp, Unit::T);
+  provider.writeValueToCurrentSample(humi, Unit::RH);
+  provider.commitSample();
+  Serial.println("Bluetooth frame: PM25, humidity and temperature");
 
-  ValSampleIntervals = gadgetBle.getSampleInterval();
+//  ValSampleIntervals = gadgetBle.getSampleInterval();
   //  Serial.print(F("ValSampleIntervals: "));
   //  Serial.println(ValSampleIntervals);
 
   //  Serial.print(F("Bluetooth_loop_time: "));
   //  Serial.println(Bluetooth_loop_time);
 
-  Bluetooth_loop_time = ValSampleIntervals;
+//  Bluetooth_loop_time = ValSampleIntervals;
 
-  if (eepromConfig.BluetoothTime != Bluetooth_loop_time)
-    FlashBluetoothTime();
+//  if (eepromConfig.BluetoothTime != Bluetooth_loop_time)
+//    FlashBluetoothTime();
 }
 #endif
 

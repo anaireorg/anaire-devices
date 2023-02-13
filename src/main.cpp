@@ -2,46 +2,15 @@
 // AireCiudadano medidor Fijo - Medidor de PM2.5 abierto, medición opcional de humedad y temperatura.
 // Más información en: aireciudadano.com
 // Este firmware es un fork del proyecto Anaire (https://www.anaire.org/) recomendado para la medición de CO2.
-// 22/05/2022 info@aireciudadano.com
+// 12/02/2023 info@aireciudadano.com
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pendientes:
-//          OK: Nombre de la estacion con modelo de sensor, board  y etiqueta propia si es posible
-//          OK: Programacion de modelo de sensor por portal cautivo
-//          OK: BT funcionando en este codigo y sin WIFI y encendiendo sensor con pin enable
-//          OK: TTGO T Display funcionando
-//          OK: Agregar comparacion de valores de PM25 para emoticons y colores
-//          OK: OLED funcionando
-//          OK: AireCiudadano Splash Screen
-//          OK: Valor de RSSI para modo wifi
-//          OK: Añadir coordenadas GPS
-//          OK: Añadir VOCs y NOx para SEN5X
-//          OK: Revisar presicion envio de float, si cortarla o dejarlo al usuario
-//          OK: Variable Sensor de exteriores o interiores, ExternalSensor via mqtt InOut inout
-//          OK: Tiempo de muestreo
-//          OK: Revisar diferencia entre Sensor characteristics y Numero ID de la configuracion del sensor
-//          OK: Revisar Update por Portal Cautivo
-//          OK: Guardar configuracion de sensores, board, display y demás en el Portal Cautivo
-//          OK: Revisar como saber si una board tiene Brownout, si por config values
-//          OK: Revision de Teclas para dormir en el Splash Screen!!!!!!!!!!!!!!!!!
-//          OK: Revisión de Teclas para despertar, ojala fuera mas de 1 segundo por posibles ruidos de tecla
-//          OK seguir revisando: Revisar la funcion de la APP de sample time a ver como se maneja desde el micro, investigar eso bien
-//          OK: Version de firmware incluida en el valor IDn que se envia por la trama mqtt
-//          OK: Arreglar problema con lectura Temperatura y Humedad SEN50 que generan errores por envio datos numericos altisimos (nan)
+// Funcionamiento correcto con WPA2 enterprise con ESP8266
 // Revisar actualizacion por orden a una direccion web repositorio y cada caso especifico: sin pantalla, OLED96, OLED66, wifi, bluetooth, etc
 // SDy RTC version independiente o unido a BT y Wifi
-//
-// Revisar Datos guardados en Bluetooth con cada sleep, se pueden generar muchos datos: opcion preguntar si borrar antes de apagar, revisar esas opciones
-//
-// Version ESP8266:
-//          Revisar porque muchas veces no carga bien el portal cautivo, queda en blanco la pagina. Parece ser si hay mas de 20 router por mostrar paila:
-//          Aqui revisar: https://github.com/tzapu/WiFiManager/blob/master/WiFiManager.cpp
-//
-// Cambio en el archivo WifiEspClient.cpp:
-// size_t WiFiEspClient::print(const __FlashStringHelper *ifsh)
-//{
-//	return printFSH(ifsh, false);
-//}
+// Mqtt para recepcion de ordenes desde el portal
+// Revisar Warnings
 //
 // MODIFICACIONES EXTERNAS:
 // Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:
@@ -1329,7 +1298,6 @@ void Print_WiFi_Status_ESP8266()
   Serial.println(WiFi.SSID());
 
   // Print your WiFi shield's IP address:
-  // ip_address = WiFi.localIP();
   Serial.print(F("IP Address: "));
   Serial.println(WiFi.localIP());
 
@@ -1338,15 +1306,10 @@ void Print_WiFi_Status_ESP8266()
   Serial.println(WiFi.macAddress());
 
   // Print the received signal strength:
-  // wifi_rssi_dbm = WiFi.RSSI();
   Serial.print(F("Signal strength (RSSI):"));
 
-  // #if !ESP8266
   Serial.print(WiFi.RSSI());
-  // #else
-  //   Serial.print(WiFi.RSSI());
-  // #endif
-
+  
   Serial.println(F(" dBm"));
 }
 
@@ -1587,12 +1550,7 @@ void Print_WiFi_Status()
   // Print the received signal strength:
   Serial.print(F("Signal strength (RSSI): "));
 
-  // #if !ESP8266
   Serial.print(WiFi.RSSI());
-  // #else
-  //   Serial.print(WiFi.RSSI());
-  // #endif
-
   Serial.println(F(" dBm"));
 }
 
@@ -1645,12 +1603,7 @@ void Check_WiFi_Server()
             client.print(WiFi.macAddress());
             client.println("<br>");
             client.print("RSSI: ");
-            // #if !ESP8266
             client.print(WiFi.RSSI());
-            // #else
-            //             client.print(WiFi.RSSI());
-            // #endif
-
             client.println("<br>");
             client.println("------");
             client.println("<br>");
@@ -1748,11 +1701,6 @@ void Start_Captive_Portal()
   const int captiveportaltime = 60;
 //  const int captiveportaltime = 15;
 
-  //  wifiAP = String(eepromConfig.aireciudadano_device_name);
-
-  //  if (wifiAP.isEmpty())
-  //    wifiAP = "AireCiudadano_" + aireciudadano_device_id;
-  //  else
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
 
@@ -1833,7 +1781,7 @@ void Start_Captive_Portal()
   WiFiManagerParameter custom_sensorPM_type;
   WiFiManagerParameter custom_sensorHYT_type;
   WiFiManagerParameter custom_display_type;
-  WiFiManagerParameter custom_board_type;
+//  WiFiManagerParameter custom_board_type;
   WiFiManagerParameter custom_outin_type;
   WiFiManagerParameter custom_endhtml("<p></p>"); // only custom html
 
@@ -1908,16 +1856,16 @@ void Start_Captive_Portal()
 
   // Sensor Board menu
 
-  if (eepromConfig.ConfigValues[5] == '0')
-  {
-    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0' checked> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1'> Board for external antenna";
-    new (&custom_board_type) WiFiManagerParameter(custom_board_str);
-  }
-  else if (eepromConfig.ConfigValues[5] == '1')
-  {
-    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0'> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1' checked> Board for external antenna";
-    new (&custom_board_type) WiFiManagerParameter(custom_board_str);
-  }
+//  if (eepromConfig.ConfigValues[5] == '0')
+//  {
+//    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0' checked> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1'> Board for external antenna";
+//    new (&custom_board_type) WiFiManagerParameter(custom_board_str);
+//  }
+//  else if (eepromConfig.ConfigValues[5] == '1')
+//  {
+//    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0'> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1' checked> Board for external antenna";
+//    new (&custom_board_type) WiFiManagerParameter(custom_board_str);
+//  }
 
   // Sensor Location menu
 
@@ -1952,23 +1900,11 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_sensorPM_type);
   wifiManager.addParameter(&custom_sensorHYT_type);
   wifiManager.addParameter(&custom_display_type);
-  wifiManager.addParameter(&custom_board_type);
+//  wifiManager.addParameter(&custom_board_type);
   wifiManager.addParameter(&custom_outin_type);
   wifiManager.addParameter(&custom_endhtml);
 
   wifiManager.setSaveParamsCallback(saveParamCallback);
-
-  // sets timeout in seconds until configuration portal gets turned off.
-  // If not specified device will remain in configuration mode until
-  // switched off via webserver or device is restarted.
-
-  // #if ESP8266
-  //   wifiManager.setSaveConnectTimeout(connectiontimeout);
-  //   Serial.print(F("setSaveConnectTimeout "));
-  //   Serial.println(connectiontimeout);
-  // #endif
-
-  // wifiManager.setScanDispPerc(true);
 
   wifiManager.setConfigPortalTimeout(captiveportaltime);
 
@@ -3421,11 +3357,7 @@ void UpdateOLED()
   displaySensorAverage(pm25int);
 #if Wifi
 
-  // #if !ESP8266
   displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
-  // #else
-  //   displaySensorData(round(PM25_value), humi, temp, WiFi.RSSI());
-  // #endif
 
   if (FlagDATAicon == true)
   {
@@ -3594,18 +3526,19 @@ void Aireciudadano_Characteristics()
     Serial.println(F("Indoors"));
   }
 
-  Serial.print(F("eepromConfig.ConfigValues[5]: "));
-  Serial.println(eepromConfig.ConfigValues[5]);
-  if (eepromConfig.ConfigValues[5] == '0')
-  {
-    ExtAnt = false;
-    Serial.println(F("Normal board"));
-  }
-  else
-  {
-    ExtAnt = true;
-    Serial.println(F("Board with externa antenna"));
-  }
+//  Serial.print(F("eepromConfig.ConfigValues[5]: "));
+//  Serial.println(eepromConfig.ConfigValues[5]);
+//  if (eepromConfig.ConfigValues[5] == '0')
+//  {
+//    ExtAnt = false;
+//    Serial.println(F("Normal board"));
+//  }
+//  else
+//  {
+//    ExtAnt = true;
+//    Serial.println(F("Board with externa antenna"));
+//  }
+
   Serial.print(F("eepromConfig.ConfigValues[6]: "));
   Serial.println(eepromConfig.ConfigValues[6]);
 

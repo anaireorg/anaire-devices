@@ -24,7 +24,7 @@
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
 #define Bluetooth false  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode

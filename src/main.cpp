@@ -24,7 +24,7 @@
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define WPA2 true       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
 #define Bluetooth false  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
@@ -1321,6 +1321,17 @@ void Connect_WiFi()
   WiFi.disconnect(true); // disconnect from wifi to set new wifi connection
   WiFi.mode(WIFI_STA);   // init wifi mode
 
+#if ESP8266
+  Serial.print(F("ESP.getFreeHeap 1.1: "));
+  Serial.println(ESP.getFreeHeap());
+
+  Serial.print(F("ESP.getHeapFragmentation 1.1: "));
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print(F("ESP.getMaxFreeBlockSize 1.1: "));
+  Serial.println(ESP.getMaxFreeBlockSize());
+#endif
+
 #if !ESP8266
 
   WiFi.onEvent(WiFiEvent);
@@ -1379,6 +1390,17 @@ void Connect_WiFi()
 
 #else
 
+#if ESP8266
+  Serial.print(F("ESP.getFreeHeap 1.2: "));
+  Serial.println(ESP.getFreeHeap());
+
+  Serial.print(F("ESP.getHeapFragmentation 1.2: "));
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print(F("ESP.getMaxFreeBlockSize 1.2: "));
+  Serial.println(ESP.getMaxFreeBlockSize());
+#endif
+
     String wifi_ssid = WiFi.SSID(); // your network SSID (name)
     // String wifi_password = WiFi.psk()); // your network psk password
     Serial.print(F("Attempting to authenticate with WPA2 Enterprise "));
@@ -1414,7 +1436,30 @@ void Connect_WiFi()
     wifi_station_set_enterprise_username((uint8 *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
     wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
 
+#if ESP8266
+  Serial.print(F("ESP.getFreeHeap 1.3: "));
+  Serial.println(ESP.getFreeHeap());
+
+  Serial.print(F("ESP.getHeapFragmentation 1.3: "));
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print(F("ESP.getMaxFreeBlockSize 1.3: "));
+  Serial.println(ESP.getMaxFreeBlockSize());
+#endif
+
     wifi_station_connect();
+
+#if ESP8266
+  Serial.print(F("ESP.getFreeHeap 1.4: "));
+  Serial.println(ESP.getFreeHeap());
+
+  Serial.print(F("ESP.getHeapFragmentation 1.4: "));
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print(F("ESP.getMaxFreeBlockSize 1.4: "));
+  Serial.println(ESP.getMaxFreeBlockSize());
+#endif
+
 #endif
 
 #endif
@@ -1452,8 +1497,34 @@ void Connect_WiFi()
   {
     err_wifi = false;
     Serial.println(F("WiFi connected"));
+
+
+#if ESP8266
+  Serial.print(F("ESP.getFreeHeap 1.5: "));
+  Serial.println(ESP.getFreeHeap());
+
+  Serial.print(F("ESP.getHeapFragmentation 1.5: "));
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print(F("ESP.getMaxFreeBlockSize 1.5: "));
+  Serial.println(ESP.getMaxFreeBlockSize());
+#endif
+
+
     // start the web server on port 80
     wifi_server.begin();
+
+#if ESP8266
+  Serial.print(F("ESP.getFreeHeap 1.6: "));
+  Serial.println(ESP.getFreeHeap());
+
+  Serial.print(F("ESP.getHeapFragmentation 1.6: "));
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print(F("ESP.getMaxFreeBlockSize 1.6: "));
+  Serial.println(ESP.getMaxFreeBlockSize());
+#endif
+
   }
 
 #if ESP8266
@@ -1699,7 +1770,7 @@ void Start_Captive_Portal()
   InCaptivePortal = true;
   String wifiAP;
   const int captiveportaltime = 60;
-//  const int captiveportaltime = 15;
+//  const int captiveportaltime = 30;
 
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
@@ -2096,14 +2167,45 @@ void Init_MQTT()
 #endif
 
   MQTT_client.setBufferSize(512); // to receive messages up to 512 bytes length (default is 256)
+//  MQTT_client.setBufferSize(128); // to receive messages up to 512 bytes length (default is 256)
   Serial.println(F("Paso1"));
 //  MQTT_client.setServer(eepromConfig.MQTT_server, eepromConfig.MQTT_port);
   MQTT_client.setServer("sensor.aireciudadano.com", 80);
   Serial.println(F("Paso2"));
   MQTT_client.setCallback(Receive_Message_Cloud_App_MQTT);
   Serial.println(F("Paso3"));
+
+#if ESP8266
+  // Attempt to connect to MQTT broker
+  Serial.print(F("ESP.getFreeHeap 2.1: "));
+  Serial.println(ESP.getFreeHeap());
+
+    Serial.print(F("ESP.getHeapFragmentation 2.1: "));
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print(F("ESP.getMaxFreeBlockSize 2.1: "));
+  Serial.println(ESP.getMaxFreeBlockSize());
+
+#endif
+
+
   MQTT_client.connect(aireciudadano_device_id.c_str());
   Serial.println(F("Paso4"));
+
+
+#if ESP8266
+  // Attempt to connect to MQTT broker
+  Serial.print(F("ESP.getFreeHeap 2.2: "));
+  Serial.println(ESP.getFreeHeap());
+
+    Serial.print(F("ESP.getHeapFragmentation 2.2: "));
+  Serial.println(ESP.getHeapFragmentation());
+
+  Serial.print(F("ESP.getMaxFreeBlockSize 2.2: "));
+  Serial.println(ESP.getMaxFreeBlockSize());
+
+#endif
+
 
   if (!MQTT_client.connected())
   {

@@ -528,7 +528,7 @@ void setup()
   Serial.println(rinfo->reason);
   Resetvar = rinfo->reason;
   ResetFlag = true;
-  if (Resetvar == 4)
+  if (Resetvar == 1 || Resetvar == 2 || Resetvar == 3 || Resetvar == 4 )
   {
     ResetFlag = false;
     Serial.print(F("Resetvar: false"));

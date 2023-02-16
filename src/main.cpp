@@ -1289,13 +1289,13 @@ void Connect_WiFi()
 
 // CLAVE!!! si se elimina no funciona 
 
-  Serial.print(F("ESP.getFreeHeap 1.1: "));
+  Serial.print(F("ESP.getFreeHeap 1: "));
   Serial.println(ESP.getFreeHeap());
 
-  Serial.print(F("ESP.getHeapFragmentation 1.1: "));
+  Serial.print(F("ESP.getHeapFragmentation 1: "));
   Serial.println(ESP.getHeapFragmentation());
 
-  Serial.print(F("ESP.getMaxFreeBlockSize 1.1: "));
+  Serial.print(F("ESP.getMaxFreeBlockSize 1: "));
   Serial.println(ESP.getMaxFreeBlockSize());
 #endif
 
@@ -1678,8 +1678,8 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-//  const int captiveportaltime = 60;
-  const int captiveportaltime = 10;
+  const int captiveportaltime = 60;
+//  const int captiveportaltime = 10;
 
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
@@ -2062,8 +2062,12 @@ void Init_MQTT()
 //  Serial.println(eepromConfig.MQTT_port);
   Serial.println(F("80"));
 
-//  MQTT_client.setBufferSize(512); // to receive messages up to 512 bytes length (default is 256)
-  MQTT_client.setBufferSize(1024); // to receive messages up to 512 bytes length (default is 256)
+#if !ESP8266
+  MQTT_client.setBufferSize(512); // to receive messages up to 512 bytes length (default is 256)
+#else
+  MQTT_client.setBufferSize(1024);
+#endif
+
 //  MQTT_client.setServer(eepromConfig.MQTT_server, eepromConfig.MQTT_port);
   MQTT_client.setServer("sensor.aireciudadano.com", 80);
   MQTT_client.setCallback(Receive_Message_Cloud_App_MQTT);
@@ -2204,20 +2208,17 @@ void Send_Message_Cloud_App_MQTT()
 
   MQTT_client.publish(MQTT_send_topic.c_str(), MQTT_message);
 
-/*
 #if ESP8266
-  Serial.print(F("ESP.getFreeHeap 6: "));
+  Serial.print(F("ESP.getFreeHeap 2: "));
   Serial.println(ESP.getFreeHeap());
 
-    Serial.print(F("ESP.getHeapFragmentation 6: "));
+    Serial.print(F("ESP.getHeapFragmentation 2: "));
   Serial.println(ESP.getHeapFragmentation());
 
-  Serial.print(F("ESP.getMaxFreeBlockSize 6: "));
+  Serial.print(F("ESP.getMaxFreeBlockSize 2: "));
   Serial.println(ESP.getMaxFreeBlockSize());
 
 #endif
-*/
-
 }
 
 void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int length)

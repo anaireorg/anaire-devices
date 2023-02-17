@@ -1767,27 +1767,27 @@ void Start_Captive_Portal()
 
   // Sensor PM menu
 
-  if (eepromConfig.ConfigValues[8] == '0')
+  if (eepromConfig.ConfigValues[7] == '0')
   {
     const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM model:</label><br/><input type='radio' name='customSenPM' value='0' checked> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw NOT recommended<br><input type='radio' name='customSenPM' value='4'> Plantower PMS adjust RECOMMENDED";
     new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str);
   }
-  else if (eepromConfig.ConfigValues[8] == '1')
+  else if (eepromConfig.ConfigValues[7] == '1')
   {
     const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM model:</label><br/><input type='radio' name='customSenPM' value='0'> None<br><input type='radio' name='customSenPM' value='1' checked> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw NOT recommended<br><input type='radio' name='customSenPM' value='4'> Plantower PMS adjust RECOMMENDED";
     new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str);
   }
-  else if (eepromConfig.ConfigValues[8] == '2')
+  else if (eepromConfig.ConfigValues[7] == '2')
   {
     const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM model:</label><br/><input type='radio' name='customSenPM' value='0'> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2' checked> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw NOT recommended<br><input type='radio' name='customSenPM' value='4'> Plantower PMS adjust RECOMMENDED";
     new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str);
   }
-  else if (eepromConfig.ConfigValues[8] == '3')
+  else if (eepromConfig.ConfigValues[7] == '3')
   {
     const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM model:</label><br/><input type='radio' name='customSenPM' value='0'> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3' checked> Plantower PMS raw NOT recommended<br><input type='radio' name='customSenPM' value='4'> Plantower PMS adjust RECOMMENDED";
     new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str);
   }
-  else if (eepromConfig.ConfigValues[8] == '4')
+  else if (eepromConfig.ConfigValues[7] == '4')
   {
     const char *custom_senPM_str = "<br/><br/><label for='customSenPM'>Sensor PM model:</label><br/><input type='radio' name='customSenPM' value='0'> None<br><input type='radio' name='customSenPM' value='1'> Sensirion SPS30<br><input type='radio' name='customSenPM' value='2'> Sensirion SEN5X<br><input type='radio' name='customSenPM' value='3'> Plantower PMS raw NOT recommended<br><input type='radio' name='customSenPM' value='4' checked> Plantower PMS adjust RECOMMENDED";
     new (&custom_sensorPM_type) WiFiManagerParameter(custom_senPM_str);
@@ -1795,17 +1795,17 @@ void Start_Captive_Portal()
 
   // Sensor HYT menu
 
-  if (eepromConfig.ConfigValues[7] == '0')
+  if (eepromConfig.ConfigValues[6] == '0')
   {
     const char *custom_senHYT_str = "<br/><br/><label for='customSenHYT'>Sensor HYT type:</label><br/><input type='radio' name='customSenHYT' value='0' checked> None<br><input type='radio' name='customSenHYT' value='1'> Sensirion SHT31<br><input type='radio' name='customSenHYT' value='2'> AM2320";
     new (&custom_sensorHYT_type) WiFiManagerParameter(custom_senHYT_str);
   }
-  else if (eepromConfig.ConfigValues[7] == '1')
+  else if (eepromConfig.ConfigValues[6] == '1')
   {
     const char *custom_senHYT_str = "<br/><br/><label for='customSenHYT'>Sensor HYT type:</label><br/><input type='radio' name='customSenHYT' value='0'> None<br><input type='radio' name='customSenHYT' value='1' checked> Sensirion SHT31<br><input type='radio' name='customSenHYT' value='2'> AM2320";
     new (&custom_sensorHYT_type) WiFiManagerParameter(custom_senHYT_str);
   }
-  else if (eepromConfig.ConfigValues[7] == '2')
+  else if (eepromConfig.ConfigValues[6] == '2')
   {
     const char *custom_senHYT_str = "<br/><br/><label for='customSenHYT'>Sensor HYT type:</label><br/><input type='radio' name='customSenHYT' value='0'> None<br><input type='radio' name='customSenHYT' value='1'> Sensirion SHT31<br><input type='radio' name='customSenHYT' value='2' checked> AM2320";
     new (&custom_sensorHYT_type) WiFiManagerParameter(custom_senHYT_str);
@@ -1813,22 +1813,22 @@ void Start_Captive_Portal()
 
   // Sensor Display menu
 
-  if (eepromConfig.ConfigValues[6] == '0')
+  if (eepromConfig.ConfigValues[5] == '0')
   {
     const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0' checked> Without display<br><input type='radio' name='customDisplay' value='1'> TTGO T-Display<br><input type='radio' name='customDisplay' value='2'> OLED 0.96 inch - 128x64p<br><input type='radio' name='customDisplay' value='3'> OLED 0.66 inch - 64x48p";
     new (&custom_display_type) WiFiManagerParameter(custom_display_str);
   }
-  else if (eepromConfig.ConfigValues[6] == '1')
+  else if (eepromConfig.ConfigValues[5] == '1')
   {
     const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0'> Without display<br><input type='radio' name='customDisplay' value='1' checked> TTGO T-Display<br><input type='radio' name='customDisplay' value='2'> OLED 0.96 inch - 128x64p<br><input type='radio' name='customDisplay' value='3'> OLED 0.66 inch - 64x48p";
     new (&custom_display_type) WiFiManagerParameter(custom_display_str);
   }
-  else if (eepromConfig.ConfigValues[6] == '2')
+  else if (eepromConfig.ConfigValues[5] == '2')
   {
     const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0'> Without display<br><input type='radio' name='customDisplay' value='1'> TTGO T-Display<br><input type='radio' name='customDisplay' value='2' checked> OLED 0.96 inch - 128x64p<br><input type='radio' name='customDisplay' value='3'> OLED 0.66 inch - 64x48p";
     new (&custom_display_type) WiFiManagerParameter(custom_display_str);
   }
-  else if (eepromConfig.ConfigValues[6] == '3')
+  else if (eepromConfig.ConfigValues[5] == '3')
   {
     const char *custom_display_str = "<br/><br/><label for='customDisplay'>Display model:</label><br/><input type='radio' name='customDisplay' value='0'> Without display<br><input type='radio' name='customDisplay' value='1'> TTGO T-Display<br><input type='radio' name='customDisplay' value='2'> OLED 0.96 inch - 128x64p<br><input type='radio' name='customDisplay' value='3' checked> OLED 0.66 inch - 64x48p";
     new (&custom_display_type) WiFiManagerParameter(custom_display_str);
@@ -1836,12 +1836,12 @@ void Start_Captive_Portal()
 
   // Sensor Board menu
 
-//  if (eepromConfig.ConfigValues[5] == '0')
+//  if (eepromConfig.ConfigValues[4] == '0')
 //  {
 //    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0' checked> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1'> Board for external antenna";
 //    new (&custom_board_type) WiFiManagerParameter(custom_board_str);
 //  }
-//  else if (eepromConfig.ConfigValues[5] == '1')
+//  else if (eepromConfig.ConfigValues[4] == '1')
 //  {
 //    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0'> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1' checked> Board for external antenna";
 //    new (&custom_board_type) WiFiManagerParameter(custom_board_str);
@@ -1849,12 +1849,12 @@ void Start_Captive_Portal()
 
   // Sensor Location menu
 
-  if (eepromConfig.ConfigValues[4] == '0')
+  if (eepromConfig.ConfigValues[3] == '0')
   {
     const char *custom_outin_str = "<br/><br/><label for='customOutIn'>IMPORTANT:</label><br/><input type='radio' name='customOutIn' value='0' checked> Outdoors - sensor measures outdoors air<br><input type='radio' name='customOutIn' value='1'> Indoors - sensor measures indoors air";
     new (&custom_outin_type) WiFiManagerParameter(custom_outin_str);
   }
-  else if (eepromConfig.ConfigValues[4] == '1')
+  else if (eepromConfig.ConfigValues[3] == '1')
   {
     const char *custom_outin_str = "<br/><br/><label for='customOutIn'>IMPORTANT:</label><br/><input type='radio' name='customOutIn' value='0'> Outdoors - sensor measures outdoors air<br><input type='radio' name='customOutIn' value='1' checked> Indoors - sensor measures indoors air";
     new (&custom_outin_type) WiFiManagerParameter(custom_outin_str);
@@ -1990,7 +1990,7 @@ void Start_Captive_Portal()
   }
 
   CustomValTotalString[9] = {0};
-  sprintf(CustomValTotalString, "%9d", CustomValtotal);
+  sprintf(CustomValTotalString, "%8d", CustomValtotal);
   if (CustomValTotalString[0] == ' ')
     CustomValTotalString[0] = '0';
   if (CustomValTotalString[1] == ' ')
@@ -2208,17 +2208,17 @@ void Send_Message_Cloud_App_MQTT()
 
   MQTT_client.publish(MQTT_send_topic.c_str(), MQTT_message);
 
-#if ESP8266
-  Serial.print(F("ESP.getFreeHeap 2: "));
-  Serial.println(ESP.getFreeHeap());
+//#if ESP8266
+//  Serial.print(F("ESP.getFreeHeap 2: "));
+//  Serial.println(ESP.getFreeHeap());
 
-    Serial.print(F("ESP.getHeapFragmentation 2: "));
-  Serial.println(ESP.getHeapFragmentation());
+//  Serial.print(F("ESP.getHeapFragmentation 2: "));
+//  Serial.println(ESP.getHeapFragmentation());
 
-  Serial.print(F("ESP.getMaxFreeBlockSize 2: "));
-  Serial.println(ESP.getMaxFreeBlockSize());
+//  Serial.print(F("ESP.getMaxFreeBlockSize 2: "));
+//  Serial.println(ESP.getMaxFreeBlockSize());
 
-#endif
+//#endif
 }
 
 void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int length)
@@ -2491,8 +2491,8 @@ void saveParamCallback()
   CustomValtotal = CustomValtotal + (CustomValue * 10);
   Serial.println("Value customDisplay = " + getParam("customDisplay"));
   CustomValtotal = CustomValtotal + (CustomValue * 100);
-  Serial.println("Value customBoard = " + getParam("customBoard"));
-  CustomValtotal = CustomValtotal + (CustomValue * 1000);
+  Serial.println("Value customBoard = NA");
+  //CustomValtotal = CustomValtotal + (CustomValue * 1000);
   Serial.println("Value customOutIn = " + getParam("customOutIn"));
   CustomValtotal = CustomValtotal + (CustomValue * 10000);
   Serial.print(F("CustomValtotal: "));
@@ -3455,9 +3455,9 @@ void Aireciudadano_Characteristics()
 {
   Serial.print(F("eepromConfig.ConfigValues: "));
   Serial.println(eepromConfig.ConfigValues);
-  Serial.print(F("eepromConfig.ConfigValues[4]: "));
-  Serial.println(eepromConfig.ConfigValues[4]);
-  if (eepromConfig.ConfigValues[4] == '0')
+  Serial.print(F("eepromConfig.ConfigValues[3]: "));
+  Serial.println(eepromConfig.ConfigValues[3]);
+  if (eepromConfig.ConfigValues[3] == '0')
   {
     AmbInOutdoors = false;
     Serial.println(F("Outdoors"));
@@ -3468,9 +3468,9 @@ void Aireciudadano_Characteristics()
     Serial.println(F("Indoors"));
   }
 
-//  Serial.print(F("eepromConfig.ConfigValues[5]: "));
-//  Serial.println(eepromConfig.ConfigValues[5]);
-//  if (eepromConfig.ConfigValues[5] == '0')
+//  Serial.print(F("eepromConfig.ConfigValues[4]: "));
+//  Serial.println(eepromConfig.ConfigValues[4]);
+//  if (eepromConfig.ConfigValues[4] == '0')
 //  {
 //    ExtAnt = false;
 //    Serial.println(F("Normal board"));
@@ -3481,71 +3481,71 @@ void Aireciudadano_Characteristics()
 //    Serial.println(F("Board with externa antenna"));
 //  }
 
-  Serial.print(F("eepromConfig.ConfigValues[6]: "));
-  Serial.println(eepromConfig.ConfigValues[6]);
+  Serial.print(F("eepromConfig.ConfigValues[5]: "));
+  Serial.println(eepromConfig.ConfigValues[5]);
 
   TDisplay = false;
   OLED66 = false;
   OLED96 = false;
-  if (eepromConfig.ConfigValues[6] == '0')
+  if (eepromConfig.ConfigValues[5] == '0')
     Serial.println(F("None Display"));
-  else if (eepromConfig.ConfigValues[6] == '1')
+  else if (eepromConfig.ConfigValues[5] == '1')
   {
     TDisplay = true;
     Serial.println(F("TTGO TDisplay board"));
   }
-  else if (eepromConfig.ConfigValues[6] == '2')
+  else if (eepromConfig.ConfigValues[5] == '2')
   {
     OLED96 = true;
     Serial.println(F("OLED 0.96 inch display 128x64"));
   }
-  else if (eepromConfig.ConfigValues[6] == '3')
+  else if (eepromConfig.ConfigValues[5] == '3')
   {
     OLED66 = true;
     Serial.println(F("OLED 0.66 inch display 64x48"));
   }
 
-  Serial.print(F("eepromConfig.ConfigValues[7]: "));
-  Serial.println(eepromConfig.ConfigValues[7]);
+  Serial.print(F("eepromConfig.ConfigValues[6]: "));
+  Serial.println(eepromConfig.ConfigValues[6]);
   SHT31sen = false;
   AM2320sen = false;
-  if (eepromConfig.ConfigValues[7] == '0')
+  if (eepromConfig.ConfigValues[6] == '0')
     Serial.println(F("None sensor HYT"));
-  else if (eepromConfig.ConfigValues[7] == '1')
+  else if (eepromConfig.ConfigValues[6] == '1')
   {
     SHT31sen = true;
     Serial.println(F("SHT31 sensor"));
   }
-  else if (eepromConfig.ConfigValues[7] == '2')
+  else if (eepromConfig.ConfigValues[6] == '2')
   {
     AM2320sen = true;
     Serial.println(F("AM2320 sensor"));
   }
 
-  Serial.print(F("eepromConfig.ConfigValues[8]: "));
-  Serial.println(eepromConfig.ConfigValues[8]);
+  Serial.print(F("eepromConfig.ConfigValues[7]: "));
+  Serial.println(eepromConfig.ConfigValues[7]);
   SPS30sen = false;
   SEN5Xsen = false;
   PMSsen = false;
   AdjPMS = false;
-  if (eepromConfig.ConfigValues[8] == '0')
+  if (eepromConfig.ConfigValues[7] == '0')
     Serial.println(F("None PM sensor"));
-  else if (eepromConfig.ConfigValues[8] == '1')
+  else if (eepromConfig.ConfigValues[7] == '1')
   {
     SPS30sen = true;
     Serial.println(F("SPS30 sensor"));
   }
-  else if (eepromConfig.ConfigValues[8] == '2')
+  else if (eepromConfig.ConfigValues[7] == '2')
   {
     SEN5Xsen = true;
     Serial.println(F("SEN5X sensor"));
   }
-  else if (eepromConfig.ConfigValues[8] == '3')
+  else if (eepromConfig.ConfigValues[7] == '3')
   {
     PMSsen = true;
     Serial.println(F("PMS sensor"));
   }
-  else if (eepromConfig.ConfigValues[8] == '4')
+  else if (eepromConfig.ConfigValues[7] == '4')
   {
     AdjPMS = true;
     PMSsen = true;

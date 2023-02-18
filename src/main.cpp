@@ -6,17 +6,16 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pendientes:
-// Funcionamiento correcto con WPA2 enterprise con ESP8266
+// OK: Funcionamiento correcto con WPA2 enterprise con ESP8266
 // Revisar actualizacion por orden a una direccion web repositorio y cada caso especifico: sin pantalla, OLED96, OLED66, wifi, bluetooth, etc
 // SDy RTC version independiente o unido a BT y Wifi
 // Mqtt para recepcion de ordenes desde el portal
-// Revisar Warnings
+// OK: Revisar Warnings
+// Version solo para proyecto U Rosario: PMS7003 y deteccion del SHT31 asi define interior o exterior. Sin opciones menu en Portal Cautivo. SD definir como lee y RTC
 //
 // MODIFICACIONES EXTERNAS:
-// Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:
-// _configPortalTimeout = 300000;   // New Config Portal Timeout
-//  DEBUG_WM(DEBUG_VERBOSE,F("New Config Portal Timeout: 300 seconds"));
-// Modificado template.h en texto: Configure WiFi por Configure WiFi and Sensor & Show Password
+// Modificado libreria WifiManager para compatibilidad
+// Modificado PubSubClient.cpp : para quitar warning
 
 #include <Arduino.h>
 #include "main.hpp"
@@ -3063,8 +3062,6 @@ void ReadHyT()
     else
       Serial.println(F("   Failed to read temperature AM2320"));
   }
-  else
-    Serial.println();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

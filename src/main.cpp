@@ -315,12 +315,14 @@ PMS::DATA data;
 #include <SoftwareSerial.h>
 
 #if !ESP8285
+//#define PMS_TX 0 // PMS TX pin
 #define PMS_TX 14 // PMS TX pin
 #define PMS_RX 12 // PMS RX pin
+//#define PMS_RX 2 // PMS RX pin
 
 #else
 #define PMS_TX 3  // PMS TX pin
-#define PMS_RX 12 // PMS RX pin
+#define PMS_RX 2 // PMS RX pin
 
 #endif
 
@@ -1035,7 +1037,7 @@ void loop()
 
 #else
   // MQTT loop
-  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
+  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
   //  if ((millis() - MQTT_loop_start) >= (1 * 60000))
   {
 
@@ -1291,11 +1293,11 @@ void Connect_WiFi()
   Serial.print(F("ESP.getFreeHeap 1: "));
   Serial.println(ESP.getFreeHeap());
 
-  Serial.print(F("ESP.getHeapFragmentation 1: "));
-  Serial.println(ESP.getHeapFragmentation());
+//  Serial.print(F("ESP.getHeapFragmentation 1: "));   //CLAVE!!!!!!!!!!!!!!!!!!!!!!!!!
+//  Serial.println(ESP.getHeapFragmentation());
 
-  Serial.print(F("ESP.getMaxFreeBlockSize 1: "));
-  Serial.println(ESP.getMaxFreeBlockSize());
+//  Serial.print(F("ESP.getMaxFreeBlockSize 1: "));
+//  Serial.println(ESP.getMaxFreeBlockSize());
 #endif
 
 #if !ESP8266
@@ -1358,7 +1360,7 @@ void Connect_WiFi()
 
     String wifi_ssid = WiFi.SSID(); // your network SSID (name)
     // String wifi_password = WiFi.psk()); // your network psk password
-    Serial.print(F("Attempting to authenticate with WPA2 Enterprise "));
+    Serial.println(F("Attempting to authenticate with WPA2 Enterprise "));
     Serial.print(F("User: "));
     Serial.println(eepromConfig.wifi_user);
     Serial.print(F("Password: "));
@@ -1367,16 +1369,24 @@ void Connect_WiFi()
     // Setting ESP into STATION mode only (no AP mode or dual mode)
     wifi_set_opmode(STATION_MODE);
 
+//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en el dhcp client start
+
     struct station_config wifi_config;
+
+//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en el dhcp client start
 
     memset(&wifi_config, 0, sizeof(wifi_config));
     strcpy((char *)wifi_config.ssid, wifi_ssid.c_str());
     strcpy((char *)wifi_config.password, eepromConfig.wifi_password);
 
+//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor nuemro 1
+
     wifi_station_set_config(&wifi_config);
     // uint8_t target_esp_mac[6] = {0x24, 0x0a, 0xc4, 0x9a, 0x58, 0x28};
     // wifi_set_macaddr(STATION_IF,target_esp_mac);
     wifi_station_set_wpa2_enterprise_auth(1);
+
+//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 4
 
     // Clean up to be sure no old data is still inside
     wifi_station_clear_cert_key();
@@ -1386,10 +1396,17 @@ void Connect_WiFi()
     wifi_station_clear_enterprise_password();
     wifi_station_clear_enterprise_new_password();
 
+//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 6
+
     // Set up authentication
     wifi_station_set_enterprise_identity((uint8 *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
     wifi_station_set_enterprise_username((uint8 *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
+    
+//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 2
+    
     wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
+
+    Serial.print(F("ESP.getHeapFragmentation 1: ")); // NO PASA NADA
 
     wifi_station_connect();
 
@@ -1413,12 +1430,18 @@ void Connect_WiFi()
   // Timestamp for connection timeout
   int wifi_timeout_start = millis();
 
-  // Wait for warming time while blinking blue led
+    Serial.println("Test4");
+
+  // Wait for warming time while blinking blue led AQUI ESTA EL PROBLEMA DEL DHCP
   while ((WiFi.status() != WL_CONNECTED) && ((millis() - wifi_timeout_start) < WIFI_CONNECT_TIMEOUT))
   {
     delay(500); // wait 0.5 seconds for connection
     Serial.println(F("."));
   }
+
+  Serial.println("Test5");
+
+//  Serial.print(F("ESP.getHeapFragmentation 1: "));
 
   // Status
   if (WiFi.status() != WL_CONNECTED)
@@ -1677,8 +1700,8 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-  const int captiveportaltime = 60;
-  //  const int captiveportaltime = 10;
+//  const int captiveportaltime = 60;
+    const int captiveportaltime = 10;
 
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);

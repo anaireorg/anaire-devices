@@ -74,6 +74,7 @@ uint8_t Swver;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
+//struct __attribute__((packed)) MyConfigStruct
 {
 #if Bluetooth
   uint16_t BluetoothTime = 10;        // Bluetooth Time
@@ -315,9 +316,12 @@ PMS::DATA data;
 #include <SoftwareSerial.h>
 
 #if !ESP8285
-//#define PMS_TX 0 // PMS TX pin
+//#define PMS_TX 0 // PMS TX pin  --- A veces no programa en ESP8266mini
+//#define PMS_TX 2 // PMS TX pin  --- Bien pero conectado al Onboard Led del ESP8266
+//#define PMS_TX 16 // PMS TX pin --- No hace nada, no lee
+//#define PMS_TX 14 // PMS TX pin --- Bien pero SPI de SD card usa ese pin
 #define PMS_TX 14 // PMS TX pin
-#define PMS_RX 12 // PMS RX pin
+#define PMS_RX 16 // PMS RX pin
 //#define PMS_RX 2 // PMS RX pin
 
 #else
@@ -490,13 +494,15 @@ File dataFile;
 
 RTC_DS1307 rtc;
 
-#define LEDPIN 2
-
 #endif
 
 #if ESP8285
 #define LEDPIN 13
+#else
+#define LEDPIN 2
 #endif
+
+bool FlagLED = false;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // SETUP
@@ -592,10 +598,8 @@ void setup()
   Serial.println(eepromConfig.aireciudadano_device_name);
 #endif
 
-#if ESP8285
   pinMode(LEDPIN, OUTPUT);
   digitalWrite(LEDPIN, HIGH);
-#endif
 
 #if !SDyRTC
   aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
@@ -744,8 +748,6 @@ void setup()
 
 #if (SDyRTC || SDyRTC)
 
-  pinMode(LEDPIN, OUTPUT);
-
   Serial.print(F("Initializing SD card: "));
   // make sure that the default chip select pin is set to output, even if you don't use it:
   pinMode(SS, OUTPUT);
@@ -884,6 +886,11 @@ void loop()
 
     // Read sensors
     Read_Sensor();
+
+    if (FlagLED == true)
+      FlagLED = false;
+    else
+      digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
 
     if (NoSensor == false)
     {
@@ -1037,7 +1044,7 @@ void loop()
 
 #else
   // MQTT loop
-  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
+  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
   //  if ((millis() - MQTT_loop_start) >= (1 * 60000))
   {
 
@@ -1286,20 +1293,6 @@ void Connect_WiFi()
   WiFi.disconnect(true); // disconnect from wifi to set new wifi connection
   WiFi.mode(WIFI_STA);   // init wifi mode
 
-#if ESP8266
-
-  // CLAVE!!! si se elimina no funciona
-
-  Serial.print(F("ESP.getFreeHeap 1: "));
-  Serial.println(ESP.getFreeHeap());
-
-//  Serial.print(F("ESP.getHeapFragmentation 1: "));   //CLAVE!!!!!!!!!!!!!!!!!!!!!!!!!
-//  Serial.println(ESP.getHeapFragmentation());
-
-//  Serial.print(F("ESP.getMaxFreeBlockSize 1: "));
-//  Serial.println(ESP.getMaxFreeBlockSize());
-#endif
-
 #if !ESP8266
 
   WiFi.onEvent(WiFiEvent);
@@ -1366,6 +1359,8 @@ void Connect_WiFi()
     Serial.print(F("Password: "));
     Serial.println(eepromConfig.wifi_password);
 
+//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // No pasa nada
+
     // Setting ESP into STATION mode only (no AP mode or dual mode)
     wifi_set_opmode(STATION_MODE);
 
@@ -1401,12 +1396,12 @@ void Connect_WiFi()
     // Set up authentication
     wifi_station_set_enterprise_identity((uint8 *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
     wifi_station_set_enterprise_username((uint8 *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
-    
-//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 2
-    
-    wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
 
-    Serial.print(F("ESP.getHeapFragmentation 1: ")); // NO PASA NADA
+//    Serial.println(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 2
+
+  wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
+
+//    Serial.println(F("ESP.getHeapFragmentation 1: ")); // NO PASA NADA
 
     wifi_station_connect();
 
@@ -1700,8 +1695,8 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-//  const int captiveportaltime = 60;
-    const int captiveportaltime = 10;
+  const int captiveportaltime = 60;
+//    const int captiveportaltime = 15;
 
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
@@ -2109,6 +2104,11 @@ void Init_MQTT()
     MQTT_client.subscribe(MQTT_receive_topic.c_str());
     Serial.print(F("MQTT connected - Receive topic: "));
     Serial.println(MQTT_receive_topic);
+    digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+    delay(1000);
+    digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
+    delay(1000);
+    digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
   }
 }
 
@@ -2130,6 +2130,12 @@ void MQTT_Reconnect()
       MQTT_client.subscribe(MQTT_receive_topic.c_str());
       Serial.print(F("MQTT connected - Receive topic: "));
       Serial.println(MQTT_receive_topic);
+      digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+      delay(1000);
+      digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
+      delay(1000);
+      digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+
     }
     else
     {
@@ -2230,17 +2236,8 @@ void Send_Message_Cloud_App_MQTT()
 
   MQTT_client.publish(MQTT_send_topic.c_str(), MQTT_message);
 
-  // #if ESP8266
-  //   Serial.print(F("ESP.getFreeHeap 2: "));
-  //   Serial.println(ESP.getFreeHeap());
-
-  //  Serial.print(F("ESP.getHeapFragmentation 2: "));
-  //  Serial.println(ESP.getHeapFragmentation());
-
-  //  Serial.print(F("ESP.getMaxFreeBlockSize 2: "));
-  //  Serial.println(ESP.getMaxFreeBlockSize());
-
-  // #endif
+    digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+    FlagLED = true;
 }
 
 void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int length)

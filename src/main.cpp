@@ -1044,7 +1044,8 @@ void loop()
 
 #else
   // MQTT loop
-  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
+//  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
+  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
   //  if ((millis() - MQTT_loop_start) >= (1 * 60000))
   {
 
@@ -1399,9 +1400,10 @@ void Connect_WiFi()
 
 //    Serial.println(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 2
 
-  wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
+    wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
+//  wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password));
 
-//    Serial.println(F("ESP.getHeapFragmentation 1: ")); // NO PASA NADA
+    Serial.println(F("ESP.getHeapFragmentation 1: ")); // NO PASA NADA
 
     wifi_station_connect();
 
@@ -1695,8 +1697,8 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-  const int captiveportaltime = 60;
-//    const int captiveportaltime = 15;
+//  const int captiveportaltime = 60;
+    const int captiveportaltime = 13;
 
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);

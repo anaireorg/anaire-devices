@@ -30,6 +30,7 @@
 #define ESP8285 false    // Set ti true in case you use a ESP8285 switch
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
+#define Tdisplaydisp false
 #define OLED66display false
 #define OLED96display false
 
@@ -663,9 +664,7 @@ void setup()
   }
   else if (OLED66 == true || OLED96 == true)
   {
-#if !ESP8266
     pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
-#endif
 #if !Tdisplaydisp
     displayInit();
     pageStart();
@@ -679,10 +678,9 @@ void setup()
 
 #else
 
-#if !ESP8266
   pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
   delay(100);
-  
+
 #endif
 
   // Out for power on and off sensors
@@ -968,7 +966,6 @@ void loop()
 #if !Tdisplaydisp
         pageStart();
         u8g2.setFont(u8g2_font_5x8_tf);
-#if !ESP8266
         if (Bluetooth == true)
         {
           u8g2.setCursor(4, (dh / 2 - 7));
@@ -978,14 +975,11 @@ void loop()
         }
         else
         {
-#endif
           u8g2.setCursor(8, (dh / 2 - 7));
           u8g2.print("Medidor No");
           u8g2.setCursor(5, (dh / 2 + 7));
           u8g2.print("configurado");
-#if !ESP8266          
         }
-#endif
         pageEnd();
 #endif
         delay(2000);
@@ -1052,7 +1046,8 @@ void loop()
 #else
   // MQTT loop
   if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
-  //  if ((millis() - MQTT_loop_start) >= (1 * 60000))
+//  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
+//  if ((millis() - MQTT_loop_start) >= (1 * 60000))
   {
 
     // New timestamp for the loop start time
@@ -1406,7 +1401,8 @@ void Connect_WiFi()
 
 //    Serial.println(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 2
 
-  wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
+    wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
+//  wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password));
 
 //    Serial.println(F("ESP.getHeapFragmentation 1: ")); // NO PASA NADA
 
@@ -1780,7 +1776,7 @@ void Start_Captive_Portal()
   // itoa(eepromConfig.MQTT_port, port, 10);
   //  WiFiManagerParameter custom_mqtt_port("Port", "MQTT port:", port, 6);
   WiFiManagerParameter custom_sensor_html("<p></p>"); // only custom html
-  WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor (5-4 decimals are enough)", eepromConfig.sensor_lat, 10);
+  WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor (5-4 dec digits are enough)", eepromConfig.sensor_lat, 10);
   WiFiManagerParameter custom_sensor_longitude("Longitude", "Longitude sensor", eepromConfig.sensor_lon, 10);
   WiFiManagerParameter custom_sensorPM_type;
   WiFiManagerParameter custom_sensorHYT_type;

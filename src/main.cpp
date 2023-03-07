@@ -23,7 +23,7 @@
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 true        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
 #define Bluetooth false  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
@@ -74,7 +74,7 @@ uint8_t Swver;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
-//struct __attribute__((packed)) MyConfigStruct
+// struct __attribute__((packed)) MyConfigStruct
 {
 #if Bluetooth
   uint16_t BluetoothTime = 10;        // Bluetooth Time
@@ -316,16 +316,16 @@ PMS::DATA data;
 #include <SoftwareSerial.h>
 
 #if !ESP8285
-//#define PMS_TX 0 // PMS TX pin  --- A veces no programa en ESP8266mini
-//#define PMS_TX 2 // PMS TX pin  --- Bien pero conectado al Onboard Led del ESP8266
-//#define PMS_TX 16 // PMS TX pin --- No hace nada, no lee
-//#define PMS_TX 14 // PMS TX pin --- Bien pero SPI de SD card usa ese pin
-#define PMS_TX 14 // PMS TX pin
+// #define PMS_TX 0 // PMS TX pin  --- A veces no programa en ESP8266mini
+// #define PMS_TX 2 // PMS TX pin  --- Bien pero conectado al Onboard Led del ESP8266
+// #define PMS_TX 16 // PMS TX pin --- No hace nada, no lee
+// #define PMS_TX 14 // PMS TX pin --- Bien pero SPI de SD card usa ese pin
+#define PMS_TX 14 // PMS TX pin   --- D5 conectado al LED SCK
 #define PMS_RX 16 // PMS RX pin
-//#define PMS_RX 2 // PMS RX pin
+// #define PMS_RX 2 // PMS RX pin
 
 #else
-#define PMS_TX 3  // PMS TX pin
+#define PMS_TX 3 // PMS TX pin
 #define PMS_RX 2 // PMS RX pin
 
 #endif
@@ -677,6 +677,7 @@ void setup()
   }
 
 #else
+
   pinMode(BUTTON_BOTTOM, INPUT_PULLUP);
   delay(100);
 
@@ -1044,8 +1045,8 @@ void loop()
 
 #else
   // MQTT loop
-//  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
-  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
+  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
+  //  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
   //  if ((millis() - MQTT_loop_start) >= (1 * 60000))
   {
 
@@ -1360,29 +1361,29 @@ void Connect_WiFi()
     Serial.print(F("Password: "));
     Serial.println(eepromConfig.wifi_password);
 
-//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // No pasa nada
+    //    Serial.print(F("ESP.getHeapFragmentation 1: ")); // No pasa nada
 
     // Setting ESP into STATION mode only (no AP mode or dual mode)
     wifi_set_opmode(STATION_MODE);
 
-//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en el dhcp client start
+    //    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en el dhcp client start
 
     struct station_config wifi_config;
 
-//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en el dhcp client start
+    //    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en el dhcp client start
 
     memset(&wifi_config, 0, sizeof(wifi_config));
     strcpy((char *)wifi_config.ssid, wifi_ssid.c_str());
     strcpy((char *)wifi_config.password, eepromConfig.wifi_password);
 
-//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor nuemro 1
+    //    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor nuemro 1
 
     wifi_station_set_config(&wifi_config);
     // uint8_t target_esp_mac[6] = {0x24, 0x0a, 0xc4, 0x9a, 0x58, 0x28};
     // wifi_set_macaddr(STATION_IF,target_esp_mac);
     wifi_station_set_wpa2_enterprise_auth(1);
 
-//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 4
+    //    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 4
 
     // Clean up to be sure no old data is still inside
     wifi_station_clear_cert_key();
@@ -1392,16 +1393,16 @@ void Connect_WiFi()
     wifi_station_clear_enterprise_password();
     wifi_station_clear_enterprise_new_password();
 
-//    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 6
+    //    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 6
 
     // Set up authentication
     wifi_station_set_enterprise_identity((uint8 *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
     wifi_station_set_enterprise_username((uint8 *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
 
-//    Serial.println(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 2
+    //    Serial.println(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 2
 
     wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
-//  wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password));
+    //  wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password));
 
     Serial.println(F("ESP.getHeapFragmentation 1: ")); // NO PASA NADA
 
@@ -1427,7 +1428,7 @@ void Connect_WiFi()
   // Timestamp for connection timeout
   int wifi_timeout_start = millis();
 
-    Serial.println("Test4");
+//  Serial.println("Test4");
 
   // Wait for warming time while blinking blue led AQUI ESTA EL PROBLEMA DEL DHCP
   while ((WiFi.status() != WL_CONNECTED) && ((millis() - wifi_timeout_start) < WIFI_CONNECT_TIMEOUT))
@@ -1436,9 +1437,9 @@ void Connect_WiFi()
     Serial.println(F("."));
   }
 
-  Serial.println("Test5");
+//  Serial.println("Test5");
 
-//  Serial.print(F("ESP.getHeapFragmentation 1: "));
+  //  Serial.print(F("ESP.getHeapFragmentation 1: "));
 
   // Status
   if (WiFi.status() != WL_CONNECTED)
@@ -1697,8 +1698,8 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-//  const int captiveportaltime = 60;
-    const int captiveportaltime = 13;
+  const int captiveportaltime = 60;
+  //    const int captiveportaltime = 13;
 
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
@@ -2137,7 +2138,6 @@ void MQTT_Reconnect()
       digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
       delay(1000);
       digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
-
     }
     else
     {
@@ -2209,6 +2209,13 @@ void Send_Message_Cloud_App_MQTT()
       nox = 0;
     else
       nox = round(noxIndex);
+
+//    if (humi > 2147483645)
+//      humi = 255;
+
+//    if (temp > 2147483645)
+//      temp = 255;
+
     sprintf(MQTT_message, "{id: %s, PM25: %d, VOC: %d, NOx: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
     // sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"VOC\": %d, \"NOx\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
   }
@@ -2238,8 +2245,8 @@ void Send_Message_Cloud_App_MQTT()
 
   MQTT_client.publish(MQTT_send_topic.c_str(), MQTT_message);
 
-    digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
-    FlagLED = true;
+  digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+  FlagLED = true;
 }
 
 void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int length)
@@ -3028,6 +3035,7 @@ void ReadHyT()
     else
     {
       Serial.println(F("Failed to read humidity SHT31"));
+      humi = 255;
       if (failh == 5)
       {
         failh = 0;
@@ -3044,7 +3052,10 @@ void ReadHyT()
       temp = round(temperature);
     }
     else
+    {
       Serial.println(F("   Failed to read temperature SHT31"));
+      temp = 255;
+    }
   }
 
   // AM2320//

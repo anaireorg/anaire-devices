@@ -22,11 +22,11 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi true        // Set to true in case Wifi is desired, Bluetooth off and SDyRTCsave optional
+#define Wifi false       // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
 #define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Bluetooth false  // Set to true in case Bluetooth is desired, Wifi off and SDyRTCsave optional
-#define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) is desires, Wifi and Bluetooth off
-#define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) is desires to save data in Wifi or Bluetooth mode
+#define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
+#define SDyRTC true      // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
+#define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set ti true in case you use a ESP8285 switch
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
@@ -488,7 +488,9 @@ bool Calibrating = false;
 #include "RTClib.h"
 
 const int chipSelect = 10;
-uint16_t SDyRTCtime = 15;
+//uint16_t SDyRTCtime = 15;       // Valor de Sample Time de SD y RTC
+uint16_t SDyRTCtime = 60;       // Valor de Sample Time de SD y RTC
+byte SDreset = 0;
 
 File dataFile;
 
@@ -813,9 +815,16 @@ void setup()
     // rtc.adjust(DateTime(2022, 8, 20, 15, 18, 0));
   }
   else
-    Serial.println(F("ds1307 is running, no changes"));
-
+  {
+    if (analogRead(A0) > 200)
+    {
+      rtc.adjust(DateTime(__DATE__, __TIME__));
+      Serial.println(F("RTC set at compilation time!"));
+    }
+    else
+      Serial.println(F("ds1307 is running, no changes"));
     //  rtc.adjust(DateTime(2022, 8, 20, 15, 18, 0));
+  }
 
 #endif
 
@@ -1033,9 +1042,9 @@ void loop()
     pm25int = round(PM25f);
     // Serial.println(pm25int);
     ///// END DEBUG Samples
-    Serial.print(F("PM25: "));
-    Serial.print(pm25int);
-    Serial.print(F("   "));
+    Serial.print(F("PM2.5: "));
+    Serial.println(pm25int);
+    //  Serial.print(F("   "));
     ReadHyT();
     Write_SD();
     PM25_accumulated = 0.0;
@@ -4287,7 +4296,7 @@ void Write_SD()
   // make a string for assembling the data to log:
 
   dataString = now.toString(buf1);
-  dataString += "_PM:";
+  dataString += "_PM25:";
   dataString += pm25int;
   if (SHT31sen == true || AM2320sen == true)
   {
@@ -4297,18 +4306,32 @@ void Write_SD()
     dataString += temp;
   }
 
-  dataFile.println(dataString);
+    Serial.print(F("SDreset: "));
+    Serial.println(SDreset);
+    SDreset = SDreset + 1;
 
-  // print to the serial port too:
-  Serial.print(F("Data SD: "));
-  Serial.println(dataString);
+  if (SDreset == 180)
+  {
+    Serial.print(F("SD reset 180 cycles"));
+    SDreset = 0;
+    ESP.restart();
+  }
 
-  //  Serial.print(F("Unixtime = "));
-  //  Serial.print(now.unixtime());
-  //  Serial.println(F(" s"));
-  //  Serial.print(now.unixtime() / 86400L);
-  //  Serial.println(F("d"));
+  dataFile = SD.open("datalog.txt", FILE_WRITE);
 
-  dataFile.flush();
+  // if the file is available, write to it:
+  if (dataFile)
+  {
+    dataFile.println(dataString);
+    dataFile.close();
+    // print to the serial port too:
+    Serial.print(F("SD write: "));
+    Serial.println(dataString);
+  }
+  // if the file isn't open, pop up an error:
+  else
+  {
+    Serial.println("SD write: error opening file");
+  }
 }
 #endif

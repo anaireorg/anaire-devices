@@ -2,15 +2,13 @@
 // AireCiudadano medidor Fijo - Medidor de PM2.5 abierto, medición opcional de humedad y temperatura.
 // Más información en: aireciudadano.com
 // Este firmware es un fork del proyecto Anaire (https://www.anaire.org/) recomendado para la medición de CO2.
-// 12/02/2023 info@aireciudadano.com
+// 26/03/2023 info@aireciudadano.com
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pendientes:
-// OK: Funcionamiento correcto con WPA2 enterprise con ESP8266
 // Revisar actualizacion por orden a una direccion web repositorio y cada caso especifico: sin pantalla, OLED96, OLED66, wifi, bluetooth, etc
 // SDy RTC version independiente o unido a BT y Wifi
 // Mqtt para recepcion de ordenes desde el portal
-// OK: Revisar Warnings
 // Version solo para proyecto U Rosario: PMS7003 y deteccion del SHT31 asi define interior o exterior. Sin opciones menu en Portal Cautivo. SD definir como lee y RTC
 //
 // MODIFICACIONES EXTERNAS:
@@ -22,12 +20,16 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi false       // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
+#define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
 #define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
-#define SDyRTC true      // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
+#define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
-#define ESP8285 false    // Set ti true in case you use a ESP8285 switch
+#define ESP8285 false    // Set to true in case you use a ESP8285 switch
+#define CO2sensor false  // Set to true for CO2 sensors: SCD30 and SenseAir S8
+
+#define SiteAltitude 2600    // IMPORTANT for CO2 measurement: Put the site altitude of the measurement, it affects directly the value
+                             // 2600 meters above sea level: Bogota, Colombia
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
@@ -54,6 +56,8 @@ bool PMSsen = false;        // Sensor Plantower PMS
 bool AdjPMS = false;        // PMS sensor adjust
 bool SHT31sen = false;      // Sensor SHT31 humedad y temperatura
 bool AM2320sen = false;     // Sensor AM2320 humedad y temperatura
+bool SCD30sen = false;      // Sensor CO2 SCD30 Sensirion
+bool S8sen = false;         // Sensor CO2 SenseAir S8
 bool TDisplay = false;      // Set to true if Board TTGO T-Display is used
 bool OLED66 = false;        // Set to true if you use a OLED Diplay 0.66 inch 64x48
 bool OLED96 = false;        // Set to true if you use a OLED Diplay 0.96 inch 128x64
@@ -77,7 +81,11 @@ struct MyConfigStruct
 // struct __attribute__((packed)) MyConfigStruct
 {
 #if Bluetooth
+#if !CO2sensor
   uint16_t BluetoothTime = 10;        // Bluetooth Time
+#else
+  uint16_t BluetoothTime = 2;        // Bluetooth Time
+#endif
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 // #elif SDyRTC
 //   uint16_t SDyRTCTime = 10; // SDyRTC Time
@@ -257,8 +265,8 @@ int vref = 1100;
 
 #endif
 
-#define Sensor_SDA_pin 21 // Define the SDA pin used for the SCD30
-#define Sensor_SCL_pin 22 // Define the SCL pin used for the SCD30
+#define Sensor_SDA_pin 21 // Define the SDA pin used
+#define Sensor_SCL_pin 22 // Define the SCL pin used
 
 #include <sps30.h>
 SPS30 sps30;
@@ -297,7 +305,7 @@ PMS pms(Serial1);
 PMS::DATA data;
 // bool PMSflag = false;
 #define PMS_TX 17 // PMS TX pin
-#define PMS_RX 15 // PMS RX pin
+#define PMS_RX 16 // PMS RX pin
 
 #else
 
@@ -357,6 +365,21 @@ byte failh = 0;
 Adafruit_AM2320 am2320 = Adafruit_AM2320();
 bool AM2320flag = false;
 
+#if CO2sensor
+bool CO2measure = false;
+
+#include "SparkFun_SCD30_Arduino_Library.h"
+SCD30 airSensor;
+
+#include "s8_uart.h"
+#define S8_UART_PORT  1     // Change UART port if it is needed
+HardwareSerial S8_serial(S8_UART_PORT);   
+S8_UART *sensor_S8;
+S8_sensor sensorS8;
+float hpa;
+
+#endif
+
 // Bluetooth in TTGO T-Display
 #if Bluetooth
 #include <Sensirion_Gadget_BLE.h> // to connect to Sensirion MyAmbience Android App available on Google Play
@@ -365,7 +388,12 @@ bool AM2320flag = false;
 // #include <BLEServer.h>
 // #include <BLEUtils.h>
 NimBLELibraryWrapper lib;
+
+#if !CO2sensor
 DataProvider provider(lib, DataType::T_RH_VOC_PM25);
+#else
+DataProvider provider(lib, DataType::T_RH_CO2_ALT);
+#endif
 #endif
 
 #if !ESP8266
@@ -617,7 +645,6 @@ void setup()
 
 #if Bluetooth
   Bluetooth_loop_time = eepromConfig.BluetoothTime;
-//  gadgetBle.setSampleIntervalMs(Bluetooth_loop_time * 1000); // Valor de muestreo de APP y de Sensor
 // #elif SDyRTC
 //   SDyRTC_loop_time = eepromConfig.SDyRTCTime;
 #endif
@@ -740,7 +767,12 @@ void setup()
 #endif
 
   // Initialize and warm up PM25 sensor
+
+#if !CO2sensor
   Setup_Sensor();
+#else
+  Setup_CO2sensor();
+#endif
 
   // Init control loops
   measurements_loop_start = millis();
@@ -895,7 +927,12 @@ void loop()
     measurements_loop_start = millis();
 
     // Read sensors
+
+#if !CO2sensor
     Read_Sensor();
+#else
+    Read_CO2sensor();
+#endif
 
     if (FlagLED == true)
       FlagLED = false;
@@ -933,6 +970,10 @@ void loop()
 
         // Accumulates samples
         PM25_accumulated += PM25_value;
+//        Serial.print("PM25_value: ");
+//        Serial.println(PM25_value);
+//        Serial.print("PM25_acc: ");
+//        Serial.println(PM25_accumulated);
         if (AdjPMS == true)
           PM25_accumulated_ori += PM25_value_ori;
         PM25_samples++;
@@ -1005,18 +1046,18 @@ void loop()
   if (Con_loop_times >= eepromConfig.BluetoothTime)
   {
     float PM25f;
-
-    ///// DEBUG Samples
-    // Serial.println(F(PM25_accumulated));
-    // Serial.print(F("#samples: "));
-    // Serial.println(F(PM25_samples));
     PM25f = PM25_accumulated / PM25_samples;
     pm25int = round(PM25f);
-    // Serial.println(pm25int);
-    ///// END DEBUG Samples
-    Serial.print(F("PM25: "));
+#if !CO2sensor
+    Serial.print(F("PM2.5: "));
     Serial.print(pm25int);
+    Serial.print(F(" ug/m3"));
     Serial.print(F("   "));
+#else
+    Serial.print(F("CO2: "));
+    Serial.print(pm25int);
+    Serial.println(F(" ppm"));
+#endif
     ReadHyT();
     Write_Bluetooth();
 #if SaveSDyRTC
@@ -1034,17 +1075,10 @@ void loop()
   {
     float PM25f;
 
-    ///// DEBUG Samples
-    // Serial.println(PM25_accumulated);
-    // Serial.print(F("#samples: "));
-    // Serial.println(PM25_samples);
     PM25f = PM25_accumulated / PM25_samples;
     pm25int = round(PM25f);
-    // Serial.println(pm25int);
-    ///// END DEBUG Samples
     Serial.print(F("PM2.5: "));
     Serial.println(pm25int);
-    //  Serial.print(F("   "));
     ReadHyT();
     Write_SD();
     PM25_accumulated = 0.0;
@@ -2168,16 +2202,10 @@ void Send_Message_Cloud_App_MQTT()
 
   Serial.print(F("Sending MQTT message to the send topic: "));
   Serial.println(MQTT_send_topic);
-  ///// DEBUG Samples
-  //  Serial.println(PM25_accumulated);
-  //  Serial.println(PM25_samples);
   pm25f = PM25_accumulated / PM25_samples;
   pm25int = round(pm25f);
   pm25fori = PM25_accumulated_ori / PM25_samples;
   pm25intori = round(pm25fori);
-  //  Serial.println(pm25int);
-  //  Serial.println(pm25intori);
-  ///// END DEBUG Samples
   ReadHyT();
 
   RSSI = WiFi.RSSI();
@@ -2847,6 +2875,148 @@ void Read_Sensor()
     NoSensor = true;
 }
 
+#if CO2sensor
+void Setup_CO2sensor()
+{
+  // Test Sensirion SCD30
+
+  Serial.println(F("Test Sensirion SCD30 sensor"));
+
+  Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
+
+  if (airSensor.begin(Wire, false) == false)
+  {
+    Serial.println("Air sensor not detected. Please check wiring");
+  }
+  else
+  {
+    Serial.println(F("SCD30 sensor found!"));
+    SCD30sen = true;
+    airSensor.setMeasurementInterval(2); // Change number of seconds between measurements: 2 to 1800 (30 minutes), stored in non-volatile memory of SCD30
+
+    // While the setting is recorded, it is not immediately available to be read.
+    delay(200);
+
+    Serial.print("Auto calibration set to ");
+    if (airSensor.getAutoSelfCalibration() == true)
+      Serial.println("true");
+    else
+      Serial.println("false");
+
+    // meters above sealevel
+    airSensor.setAltitudeCompensation(SiteAltitude); // Set altitude of the sensor in m, stored in non-volatile memory of SCD30
+
+    // Read altitude compensation value
+    unsigned int altitude = airSensor.getAltitudeCompensation();
+    Serial.print("Current altitude: ");
+    Serial.print(altitude);
+    Serial.println("m");
+
+    // Read temperature offset
+    float offset = airSensor.getTemperatureOffset();
+    Serial.print("Current temp offset: ");
+    Serial.print(offset, 2);
+    Serial.println("C");
+  }
+
+  // Test SenseAir S8
+
+  Serial.println(F("Test Sensirion SenseAir S8 sensor"));
+
+  // Initialize S8 sensor
+  S8_serial.begin(S8_BAUDRATE, SERIAL_8N1, PMS_TX, PMS_RX);
+  sensor_S8 = new S8_UART(S8_serial);
+
+  // Check if S8 is available
+  sensor_S8->get_firmware_version(sensorS8.firm_version);
+  int len = strlen(sensorS8.firm_version);
+  if (len == 0)
+  {
+    Serial.println("SenseAir S8 CO2 sensor not found!");
+    S8sen = false;
+  }
+  else
+  {
+    S8sen = true;
+    // Show basic S8 sensor info
+    Serial.println("SenseAir S8 sensor found!");
+    printf("Firmware version: %s\n", sensorS8.firm_version);
+    sensorS8.sensor_id = sensor_S8->get_sensor_ID();
+    Serial.print("Sensor ID: 0x");
+    printIntToHex(sensorS8.sensor_id, 4);
+    Serial.println("");
+
+    // meters above sealevel
+    Serial.print("Current altitude: ");
+    Serial.print(SiteAltitude);
+    Serial.println("m");
+
+    hpa = 1013 - 0.118 * SiteAltitude + 0.00000473 * SiteAltitude * SiteAltitude; // Cuadratic regresion formula obtained PA (hpa) from high above the sea
+    Serial.print(F("Atmospheric pressure calculated by the sea level inserted (hPa): "));
+    Serial.println(hpa);
+
+    Serial.println("S8 Disabling ABC period");
+    sensor_S8 ->set_ABC_period(0);
+    delay(100);
+    sensorS8.abc_period = sensor_S8->get_ABC_period();
+
+    if (sensorS8.abc_period > 0)
+    {
+      Serial.print("ABC (automatic background calibration) period: ");
+      Serial.print(sensorS8.abc_period);
+      Serial.println(" hours");
+    }
+    else
+      Serial.println("ABC (automatic calibration) is disabled");
+      
+    Serial.println("Setup done!");
+  }
+}
+
+void Read_CO2sensor()
+{
+  if (CO2measure == false)
+  {
+    CO2measure = true;
+
+    if (SCD30sen == true)
+    {
+      if (airSensor.dataAvailable())
+      {
+        PM25_value = airSensor.getCO2();
+        Serial.print("CO2:");
+        Serial.print(PM25_value);
+
+        temp = round(airSensor.getTemperature());
+        Serial.print(", temp:");
+        Serial.print(temp);
+
+        humi = round(airSensor.getHumidity());
+        Serial.print(", humidity:");
+        Serial.println(humi);
+      }
+    }
+
+    if (S8sen == true)
+    {
+      // Get CO2 measure
+      float CO2cor;
+      sensorS8.co2 = sensor_S8->get_co2();
+      // Adjust by altitude above the sea level
+      CO2cor = sensorS8.co2 + (0.016 * ((1013 - hpa) / 10) * (sensorS8.co2 - 400)); // Increment of 1.6% for every hPa of difference at sea level
+      PM25_value = round(CO2cor);
+      Serial.print("CO2 orignal:");
+      Serial.print(sensorS8.co2);
+      Serial.print("    CO2 adjust:");
+      Serial.println(PM25_value);
+    }
+  }
+  else
+    CO2measure = false;
+}
+
+#endif
+
 /**
  * @brief : read and display device info
  */
@@ -3366,10 +3536,10 @@ void TimeConfig()
 {
   if (digitalRead(BUTTON_BOTTOM) == false)
   {
-    delay(10);
+    delay(500);
     if (digitalRead(BUTTON_BOTTOM) == false)
     {
-
+#if !CO2sensor
 #if (OLED96display || OLED66display)
 
       pageStart();
@@ -3421,6 +3591,55 @@ void TimeConfig()
         delay(1000);
       }
       FlashBluetoothTime();
+#else
+      u8g2.setFont(u8g2_font_6x10_tf);
+      Serial.print("CALIBRATION:");
+      for (int i = 180; i > -1; i--)
+      {              // loop from 0 to 180
+        pageStart();
+        u8g2.setCursor(0, dh / 2 - 7);
+        u8g2.print("Calib time:");
+        u8g2.setCursor(8, dh / 2 + 7);
+        u8g2.print(String(i) + " seg");
+        pageEnd();
+        delay(1000); // wait 1000 ms
+
+        if (toggleLive == false)
+        {
+          if (SCD30sen == true)
+          {
+            pm25int = airSensor.getCO2();
+            Serial.print(i);
+            Serial.print(" CO2(ppm):");
+            Serial.println(pm25int);
+            toggleLive = true;
+          }
+          else if (S8sen == true)
+          {
+            // Get CO2 measure
+            pm25int = sensor_S8->get_co2();
+            Serial.print(i);
+            Serial.print(" CO2(ppm):");
+            Serial.println(pm25int);
+            toggleLive = true;
+          }
+        }
+        else
+          toggleLive = false;
+       }
+       if (SCD30sen == true)
+        airSensor.setForcedRecalibrationFactor(400);
+       else if (S8sen == true)
+        sensor_S8->manual_calibration();
+       Serial.println("Resetting forced calibration factor to 400: done");
+       pageStart();
+       u8g2.setCursor(0, dh / 2 - 2);
+       u8g2.print("Reset calib:");
+       u8g2.setCursor(8, dh / 2 + 7);
+       u8g2.print("400 ppm");
+       pageEnd();
+       delay(5000);
+#endif
     }
   }
 }
@@ -3987,6 +4206,7 @@ void AddMessage(String msg)
 
 void displayCenterBig(String msg)
 {
+#if !CO2sensor  
   if (dw > 64)
   {
     u8g2.setCursor(dw - 64, 6);
@@ -4002,6 +4222,23 @@ void displayCenterBig(String msg)
   u8g2.setCursor(100, 37);
   u8g2.setFont(u8g2_font_5x7_tf);
   u8g2.print("ug/m3");
+#else
+  if (dw > 64)
+  {
+    u8g2.setCursor(dw - 62, 10);
+    u8g2.setFont(u8g2_font_inb19_mn);
+  }
+  else
+  {
+    u8g2.setCursor(dw - 27, 9);
+    u8g2.setFont(u8g2_font_7x13B_tf);
+  }
+  u8g2.print(msg.c_str());
+
+  u8g2.setCursor(100, 37);
+  u8g2.setFont(u8g2_font_5x7_tf);
+  u8g2.print("ppm");
+#endif
 }
 
 void displayBottomLine(String msg)
@@ -4169,6 +4406,7 @@ void displayAverage(int average)
 
 void displaySensorAverage(int average)
 {
+#if !CO2sensor
   if (average < 13)
   {
     u8g2.drawXBM(1, 5, 32, 32, SmileFaceGood);
@@ -4205,6 +4443,38 @@ void displaySensorAverage(int average)
     displayColorLevel(0, " brown");
     displayTextLevel(" HAZARD");
   }
+#else
+  if (average < 600)
+  {
+    u8g2.drawXBM(1, 5, 32, 32, SmileFaceGood);
+    displayColorLevel(0, " green");
+    displayTextLevel("  GOOD");
+  }
+  else if (average < 800)
+  {
+    u8g2.drawXBM(1, 5, 32, 32, SmileFaceModerate);
+    displayColorLevel(0, "yellow");
+    displayTextLevel("MODERATE");
+  }
+  else if (average < 1000)
+  {
+    u8g2.drawXBM(1, 5, 32, 32, SmileFaceUnhealthy);
+    displayColorLevel(0, "  red");
+    displayTextLevel("UNHEALT");
+  }
+  else if (average < 1400)
+  {
+    u8g2.drawXBM(1, 5, 32, 32, SmileFaceVeryUnhealthy);
+    displayColorLevel(0, "violet");
+    displayTextLevel("V UNHEA");
+  }
+  else
+  {
+    u8g2.drawXBM(1, 5, 32, 32, SmileFaceHazardous);
+    displayColorLevel(0, " brown");
+    displayTextLevel(" HAZARD");
+  }
+#endif
   char output[4];
   sprintf(output, "%03d", average);
   displayCenterBig(output);
@@ -4219,7 +4489,11 @@ void displaySensorData(int pm25, int humi, int temp, int rssi)
   displayBottomLine(String(output));
 
   u8g2.setFont(u8g2_font_4x6_tf);
+#if !CO2sensor
   u8g2.setCursor(43, 1);
+#else
+  u8g2.setCursor(42, 1);
+#endif
   sprintf(output, "%04d", pm25); // PM25 instantaneo fuente pequeña
   u8g2.print(output);
 
@@ -4262,25 +4536,26 @@ void pageEnd()
 void Write_Bluetooth()
 { // Write measurements to Bluetooth
 
-  //  uint32_t ValSampleIntervals;
-
+#if !CO2sensor
   provider.writeValueToCurrentSample(pm25int, Unit::PM2P5);
   provider.writeValueToCurrentSample(temp, Unit::T);
   provider.writeValueToCurrentSample(humi, Unit::RH);
   provider.commitSample();
-  Serial.println("Bluetooth frame: PM25, humidity and temperature");
+  Serial.print("Bluetooth frame: PM2.5(ug/m3):");
 
-  //  ValSampleIntervals = gadgetBle.getSampleInterval();
-  //  Serial.print(F("ValSampleIntervals: "));
-  //  Serial.println(ValSampleIntervals);
+#else
+  provider.writeValueToCurrentSample(pm25int, Unit::CO2);
+  provider.writeValueToCurrentSample(temp, Unit::T);
+  provider.writeValueToCurrentSample(humi, Unit::RH);
+  provider.commitSample();
+  Serial.print("Bluetooth frame: CO2(ppm):");
+#endif
+  Serial.print(pm25int);
+  Serial.print(", temp(°C):");
+  Serial.print(temp);
+  Serial.print(", humidity(%):");
+  Serial.println(humi);
 
-  //  Serial.print(F("Bluetooth_loop_time: "));
-  //  Serial.println(Bluetooth_loop_time);
-
-  //  Bluetooth_loop_time = ValSampleIntervals;
-
-  //  if (eepromConfig.BluetoothTime != Bluetooth_loop_time)
-  //    FlashBluetoothTime();
 }
 #endif
 

@@ -304,8 +304,13 @@ float noxIndex;
 PMS pms(Serial1);
 PMS::DATA data;
 // bool PMSflag = false;
+#if !Tdisplaydisp 
 #define PMS_TX 17 // PMS TX pin
 #define PMS_RX 16 // PMS RX pin
+#else
+#define PMS_TX 17 // PMS TX pin
+#define PMS_RX 15 // PMS RX pin
+#endif
 
 #else
 

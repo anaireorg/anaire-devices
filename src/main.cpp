@@ -21,12 +21,13 @@
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define WPA2 true       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true in case you use a ESP8285 switch
 #define CO2sensor false  // Set to true for CO2 sensors: SCD30 and SenseAir S8
+#define Rosver true      // Set to true URosario version
 
 #define SiteAltitude 2600    // IMPORTANT for CO2 measurement: Put the site altitude of the measurement, it affects directly the value
                              // 2600 meters above sea level: Bogota, Colombia
@@ -1093,8 +1094,8 @@ void loop()
 
 #else
   // MQTT loop
-  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
-  //  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
+//  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
+    if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
   //  if ((millis() - MQTT_loop_start) >= (1 * 60000))
   {
 
@@ -1368,7 +1369,7 @@ void Connect_WiFi()
 
 #else
   // #if WPA2
-  //  If there are not wifi user and wifi password defined, proceed to traight forward configuration
+  //  If there are not wifi identity and wifi password defined, proceed to traight forward configuration
 
   if ((strlen(eepromConfig.wifi_user) == 0) && (strlen(eepromConfig.wifi_password) == 0))
   {
@@ -1390,7 +1391,7 @@ void Connect_WiFi()
     // set up wpa2 enterprise
 #if !ESP8266
     Serial.println(F("Attempting to authenticate using WPA2 Enterprise..."));
-    Serial.print(F("User: "));
+    Serial.print(F("Identity: "));
     Serial.println(eepromConfig.wifi_user);
     Serial.print(F("Password: "));
     Serial.println(eepromConfig.wifi_password);
@@ -1404,7 +1405,7 @@ void Connect_WiFi()
     String wifi_ssid = WiFi.SSID(); // your network SSID (name)
     // String wifi_password = WiFi.psk()); // your network psk password
     Serial.println(F("Attempting to authenticate with WPA2 Enterprise "));
-    Serial.print(F("User: "));
+    Serial.print(F("Identity: "));
     Serial.println(eepromConfig.wifi_user);
     Serial.print(F("Password: "));
     Serial.println(eepromConfig.wifi_password);
@@ -1746,8 +1747,8 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-  const int captiveportaltime = 60;
-  //    const int captiveportaltime = 13;
+//  const int captiveportaltime = 60;
+      const int captiveportaltime = 13;
 
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
@@ -1805,9 +1806,13 @@ void Start_Captive_Portal()
 
 #if WPA2
   WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise</p>"); // only custom html
-  WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise user-identity", eepromConfig.wifi_user, 24);
+  WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise identity", eepromConfig.wifi_user, 24);
   WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
+#if !Rosver  
   WiFiManagerParameter custom_wifi_html2("<p></p>"); // only custom html
+#else
+  WiFiManagerParameter custom_wifi_html2("<hr><br/>"); // only custom html
+#endif
 #endif
 
 #if !ESP8266
@@ -1815,6 +1820,8 @@ void Start_Captive_Portal()
 #else
   WiFiManagerParameter custom_id_name("CustomName", "Set Station Name (25 characters max):", eepromConfig.aireciudadano_device_name, 25);
 #endif
+
+#if !Rosver
   char Ptime[5];
   itoa(eepromConfig.PublicTime, Ptime, 10);
   WiFiManagerParameter custom_public_time("Ptime", "Set Publication Time in minutes:", Ptime, 4);
@@ -1824,15 +1831,19 @@ void Start_Captive_Portal()
   // itoa(eepromConfig.MQTT_port, port, 10);
   //  WiFiManagerParameter custom_mqtt_port("Port", "MQTT port:", port, 6);
   WiFiManagerParameter custom_sensor_html("<p></p>"); // only custom html
+#endif
   WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude sensor (5-4 dec digits are enough)", eepromConfig.sensor_lat, 10);
   WiFiManagerParameter custom_sensor_longitude("Longitude", "Longitude sensor", eepromConfig.sensor_lon, 10);
+#if !Rosver
   WiFiManagerParameter custom_sensorPM_type;
   WiFiManagerParameter custom_sensorHYT_type;
   WiFiManagerParameter custom_display_type;
+#endif
   //  WiFiManagerParameter custom_board_type;
   WiFiManagerParameter custom_outin_type;
   WiFiManagerParameter custom_endhtml("<p></p>"); // only custom html
 
+#if !Rosver
   // Sensor PM menu
 
   if (eepromConfig.ConfigValues[7] == '0')
@@ -1915,6 +1926,7 @@ void Start_Captive_Portal()
   //    new (&custom_board_type) WiFiManagerParameter(custom_board_str);
   //  }
 
+#endif
   // Sensor Location menu
 
   if (eepromConfig.ConfigValues[3] == '0')
@@ -1931,24 +1943,30 @@ void Start_Captive_Portal()
   // Add parameters
 
 #if WPA2
+#if !Rosver
   wifiManager.addParameter(&custom_wifi_html);
+#endif
   wifiManager.addParameter(&custom_wifi_user);
   wifiManager.addParameter(&custom_wifi_password);
   wifiManager.addParameter(&custom_wifi_html2);
 #endif
 
   wifiManager.addParameter(&custom_id_name);
+#if !Rosver
   wifiManager.addParameter(&custom_public_time);
   //  wifiManager.addParameter(&custom_mqtt_html);
   //  wifiManager.addParameter(&custom_mqtt_server);
   //  wifiManager.addParameter(&custom_mqtt_port);
   wifiManager.addParameter(&custom_sensor_html);
+#endif
   wifiManager.addParameter(&custom_sensor_latitude);
   wifiManager.addParameter(&custom_sensor_longitude);
+#if !Rosver
   wifiManager.addParameter(&custom_sensorPM_type);
   wifiManager.addParameter(&custom_sensorHYT_type);
   wifiManager.addParameter(&custom_display_type);
   //  wifiManager.addParameter(&custom_board_type);
+#endif
   wifiManager.addParameter(&custom_outin_type);
   wifiManager.addParameter(&custom_endhtml);
 
@@ -1982,8 +2000,8 @@ void Start_Captive_Portal()
     strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
     eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
     write_eeprom = true;
-    Serial.println(F("Wifi user write_eeprom = true"));
-    Serial.print(F("WiFi user: "));
+    Serial.println(F("Wifi Identity write_eeprom = true"));
+    Serial.print(F("WiFi identity: "));
     Serial.println(eepromConfig.wifi_user);
   }
   if (eepromConfig.wifi_password != custom_wifi_password.getValue())
@@ -2007,6 +2025,7 @@ void Start_Captive_Portal()
     Serial.println(eepromConfig.aireciudadano_device_name);
   }
 
+#if !Rosver
   if (eepromConfig.PublicTime != atoi(custom_public_time.getValue()))
   {
     eepromConfig.PublicTime = atoi(custom_public_time.getValue());
@@ -2034,6 +2053,7 @@ void Start_Captive_Portal()
   //    Serial.print(F("MQTT port: "));
   //    Serial.println(eepromConfig.MQTT_port);
   //  }
+#endif
 
   if (eepromConfig.sensor_lat != custom_sensor_latitude.getValue())
   {
@@ -2574,283 +2594,51 @@ void Setup_Sensor()
 
   // Test PM2.5 SPS30
 
-#if Wifi
+  ///////////////////////////////////////////////////////////////////////////////////////////
 
-  if (SPS30sen == true)
-  {
-#endif
-    Serial.println(F("Test Sensirion SPS30 sensor"));
+  // PMS7003 PMSA003
+  Serial.println(F("Test Plantower Sensor"));
 
-#if ESP8266
-    Wire.begin();
-#else
-  Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
-#endif
-
-    sps30.EnableDebugging(DEBUG);
-    // Begin communication channel
-    SP30_COMMS.begin();
-    if (sps30.begin(&SP30_COMMS) == false)
-    {
-      Errorloop((char *)"Could not set I2C communication channel.", 0);
-    }
-    // check for SPS30 connection
-    if (!sps30.probe())
-      Errorloop((char *)"could not probe / connect with SPS30.", 0);
-    else
-    {
-      Serial.println(F("Detected I2C Sensirion Sensor"));
-      GetDeviceInfo();
-    }
-    if (SPS30sen == true)
-    {
-      // start measurement
-      if (sps30.start())
-        Serial.println(F("Measurement started"));
-      else
-        Errorloop((char *)"Could NOT start measurement", 0);
-    }
-#if Wifi
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////
-  // Test PM2.5 SEN5X
-
-  if (SEN5Xsen == true)
-
-  {
-#endif
-#if (Bluetooth || SDyRTC)
-    if (SPS30sen == false)
-    {
-#endif
-      Serial.println(F("Test Sensirion SEN5X sensor"));
-
-#if ESP8266
-      Wire.begin();
-#else
-  Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
-#endif
-
-      delay(10);
-      sen5x.begin(Wire);
-      delay(10);
-
-      uint16_t error;
-      char errorMessage[256];
-      error = sen5x.deviceReset();
-      if (error)
-      {
-        Serial.print(F("Error trying to execute deviceReset(): "));
-        errorToString(error, errorMessage, 256);
-        Serial.println(errorMessage);
-      }
-      else
-      {
-        // Print SEN55 module information if i2c buffers are large enough
-        Serial.println(F("SEN5X sensor found!"));
-        SEN5Xsen = true;
-        printSerialNumber();
-        printModuleVersions();
-
-        // Start Measurement
-        error = sen5x.startMeasurement();
-        if (error)
-        {
-          Serial.print(F("Error trying to execute startMeasurement(): "));
-          errorToString(error, errorMessage, 256);
-          Serial.println(errorMessage);
-          // ESP.restart();
-        }
-        else
-          Serial.println(F("SEN5X measurement OK"));
-      }
-#if (Bluetooth || SDyRTC)
-    }
-#else
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////
-
-// PMS7003 PMSA003
-if (PMSsen == true)
-{
-#endif
-    Serial.println(F("Test Plantower Sensor"));
-
-#if !ESP8266
-
-#if !TTGO_TQ
-    Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
-#else
-    Serial2.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
-#endif
-
-#else
-
-#if !ESP8266SH
   pmsSerial.begin(9600); // Software serial begin for PMS sensor
-#endif
-                         //  Serial.println(F("Test5"));
-#endif
 
-    delay(1000);
-    //  Serial.println(F("Test6"));
+  delay(1000);
 
-    if (pms.readUntil(data))
-    {
-      Serial.println(F("Plantower sensor found!"));
-      PMSsen = true;
-#if ESP8285
-      digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
-      delay(750);                // wait for a 750 msecond
-      digitalWrite(LEDPIN, HIGH);
-#endif
-#if (Bluetooth || SDyRTC)
-      AdjPMS = true; // Por defecto se deja con ajuste, REVISAR!!!!!!
-#endif
-    }
-    else
-    {
-      Serial.println(F("Could not find Plantower sensor!"));
-    }
-
-#if Wifi
-  }
-
-  if (SHT31sen == true)
+  if (pms.readUntil(data))
   {
-#endif
-    Serial.print(F("SHT31 test: "));
-    if (!sht31.begin(0x44))
-    { // Set to 0x45 for alternate i2c addr
-      Serial.println(F("none"));
-    }
-    else
-    {
-      Serial.println(F("OK"));
-      SHT31sen = true;
-    }
-
-    Serial.print(F("Heater Enabled State: "));
-    if (sht31.isHeaterEnabled())
-      Serial.println(F("ENABLED"));
-    else
-      Serial.println(F("DISABLED"));
-#if Wifi
+    Serial.println(F("Plantower sensor found!"));
+    PMSsen = true;
+    AdjPMS = true; // Por defecto se deja con ajuste
   }
-
-  if (AM2320sen == true)
+  else
   {
-#endif
-    Serial.print(F("AM2320 test: "));
-    am2320.begin();
-    delay(1);
-    humidity = am2320.readHumidity();
-    temperature = am2320.readTemperature();
-    if (!isnan(humidity))
-    {
-      Serial.println(F("OK"));
-      AM2320sen = true;
-    }
-    else
-      Serial.println(F("none"));
-#if Wifi
+    Serial.println(F("Could not find Plantower sensor!"));
+    PMSsen = false;
+    AdjPMS = false;
   }
-#endif
+
+  Serial.print(F("SHT31 test: "));
+  if (!sht31.begin(0x44))
+  { // Set to 0x45 for alternate i2c addr
+    Serial.println(F("none"));
+    SHT31sen = false;
+  }
+  else
+  {
+    Serial.println(F("OK"));
+    SHT31sen = true;
+  }
+
+  Serial.print(F("Heater Enabled State: "));
+  if (sht31.isHeaterEnabled())
+    Serial.println(F("ENABLED"));
+  else
+    Serial.println(F("DISABLED"));
 }
 
 void Read_Sensor()
 { // Read PM25, temperature and humidity values
 
-  if (SPS30sen == true)
-  {
-    uint8_t ret, error_cnt = 0;
-    struct sps_values val;
-    // loop to get data
-    do
-    {
-      ret = sps30.GetValues(&val);
-      // data might not have been ready
-      if (ret == SPS30_ERR_DATALENGTH)
-      {
-        if (error_cnt++ > 3)
-        {
-          ErrtoMess((char *)"Error during reading values: ", ret);
-          // return(false);
-        }
-        delay(1000);
-      }
-      // if other error
-      else if (ret != SPS30_ERR_OK)
-      {
-        ErrtoMess((char *)"Error during reading values: ", ret);
-        // return(false);
-      }
-    } while (ret != SPS30_ERR_OK);
-
-    PM25_value = val.MassPM2;
-
-    if (!err_sensor)
-    {
-      // Provide the sensor values for Tools -> Serial Monitor or Serial Plotter
-      Serial.print(F("SPS30 PM2.5: "));
-      Serial.print(PM25_value);
-      Serial.println(F(" ug/m3   "));
-    }
-  }
-  else if (SEN5Xsen == true)
-  {
-    uint16_t error;
-    char errorMessage[256];
-
-    error = sen5x.readMeasuredValues(
-        massConcentrationPm1p0, massConcentrationPm2p5, massConcentrationPm4p0,
-        massConcentrationPm10p0, ambientHumidity, ambientTemperature, vocIndex,
-        noxIndex);
-
-    if (error)
-    {
-      Serial.print(F("Error trying to execute readMeasuredValues(): "));
-      errorToString(error, errorMessage, 256);
-      Serial.println(errorMessage);
-      delay(10);
-      Setup_Sensor();
-      Serial.println(F("Reinit I2C"));
-      delay(10);
-    }
-    else
-    {
-      PM25_value = massConcentrationPm2p5;
-      Serial.print(F("SEN5X PM2.5: "));
-      Serial.print(PM25_value);
-      Serial.print(F(" ug/m3   "));
-      Serial.print(F(" Humi % = "));
-      if (isnan(ambientHumidity))
-        Serial.print(F(" n/a"));
-      else
-        Serial.print(ambientHumidity);
-      humi = round(ambientHumidity);
-
-      Serial.print(F("   Temp *C = "));
-      if (isnan(ambientTemperature))
-        Serial.print(F(" n/a"));
-      else
-        Serial.print(ambientTemperature);
-      temp = round(ambientTemperature);
-      Serial.print(F("   VocIndex:"));
-      if (isnan(vocIndex))
-        Serial.print(F(" n/a"));
-      else
-        Serial.print(vocIndex);
-      Serial.print(F("   NoxIndex:"));
-      if (isnan(noxIndex))
-        Serial.println(F(" n/a"));
-      else
-        Serial.println(noxIndex);
-    }
-  }
-  else if (PMSsen == true)
+  if (PMSsen == true)
   {
     if (pms.readUntil(data))
     {
@@ -2858,18 +2646,13 @@ void Read_Sensor()
       Serial.print(F("PMS PM2.5: "));
       Serial.print(PM25_value);
       Serial.print(F(" ug/m3   "));
-      if (AdjPMS == true)
-      {
-        PM25_value_ori = PM25_value;
-        // PM25_value = ((562 * PM25_value_ori) / 1000) - 1; // Ecuación de ajuste resultado de 13 intercomparaciones entre PMS7003 y SPS30 por meses
-        // PM25_value = ((553 * PM25_value_ori) / 1000) + 1.3; // Segundo ajuste
-        PM25_value = ((630 * PM25_value_ori) / 1000) + 1.56; // Tercer ajuste a los que salio en Lima y pruebas aqui
-        Serial.print(F("Adjust: "));
-        Serial.print(PM25_value);
-        Serial.println(F(" ug/m3"));
-      }
-      else
-        Serial.println(F(""));
+      PM25_value_ori = PM25_value;
+      // PM25_value = ((562 * PM25_value_ori) / 1000) - 1; // Ecuación de ajuste resultado de 13 intercomparaciones entre PMS7003 y SPS30 por meses
+      // PM25_value = ((553 * PM25_value_ori) / 1000) + 1.3; // Segundo ajuste
+      PM25_value = ((630 * PM25_value_ori) / 1000) + 1.56; // Tercer ajuste a los que salio en Lima y pruebas aqui
+      Serial.print(F("Adjust: "));
+      Serial.print(PM25_value);
+      Serial.println(F(" ug/m3"));
     }
     else
     {
@@ -2880,328 +2663,10 @@ void Read_Sensor()
     NoSensor = true;
 }
 
-#if CO2sensor
-void Setup_CO2sensor()
-{
-  // Test Sensirion SCD30
-
-  Serial.println(F("Test Sensirion SCD30 sensor"));
-
-  Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
-
-  if (airSensor.begin(Wire, false) == false)
-  {
-    Serial.println("Air sensor not detected. Please check wiring");
-  }
-  else
-  {
-    Serial.println(F("SCD30 sensor found!"));
-    SCD30sen = true;
-    airSensor.setMeasurementInterval(2); // Change number of seconds between measurements: 2 to 1800 (30 minutes), stored in non-volatile memory of SCD30
-
-    // While the setting is recorded, it is not immediately available to be read.
-    delay(200);
-
-    Serial.print("Auto calibration set to ");
-    if (airSensor.getAutoSelfCalibration() == true)
-      Serial.println("true");
-    else
-      Serial.println("false");
-
-    // meters above sealevel
-    airSensor.setAltitudeCompensation(SiteAltitude); // Set altitude of the sensor in m, stored in non-volatile memory of SCD30
-
-    // Read altitude compensation value
-    unsigned int altitude = airSensor.getAltitudeCompensation();
-    Serial.print("Current altitude: ");
-    Serial.print(altitude);
-    Serial.println("m");
-
-    // Read temperature offset
-    float offset = airSensor.getTemperatureOffset();
-    Serial.print("Current temp offset: ");
-    Serial.print(offset, 2);
-    Serial.println("C");
-  }
-
-  // Test SenseAir S8
-
-  Serial.println(F("Test Sensirion SenseAir S8 sensor"));
-
-  // Initialize S8 sensor
-  S8_serial.begin(S8_BAUDRATE, SERIAL_8N1, PMS_TX, PMS_RX);
-  sensor_S8 = new S8_UART(S8_serial);
-
-  // Check if S8 is available
-  sensor_S8->get_firmware_version(sensorS8.firm_version);
-  int len = strlen(sensorS8.firm_version);
-  if (len == 0)
-  {
-    Serial.println("SenseAir S8 CO2 sensor not found!");
-    S8sen = false;
-  }
-  else
-  {
-    S8sen = true;
-    // Show basic S8 sensor info
-    Serial.println("SenseAir S8 sensor found!");
-    printf("Firmware version: %s\n", sensorS8.firm_version);
-    sensorS8.sensor_id = sensor_S8->get_sensor_ID();
-    Serial.print("Sensor ID: 0x");
-    printIntToHex(sensorS8.sensor_id, 4);
-    Serial.println("");
-
-    // meters above sealevel
-    Serial.print("Current altitude: ");
-    Serial.print(SiteAltitude);
-    Serial.println("m");
-
-    hpa = 1013 - 0.118 * SiteAltitude + 0.00000473 * SiteAltitude * SiteAltitude; // Cuadratic regresion formula obtained PA (hpa) from high above the sea
-    Serial.print(F("Atmospheric pressure calculated by the sea level inserted (hPa): "));
-    Serial.println(hpa);
-
-    Serial.println("S8 Disabling ABC period");
-    sensor_S8 ->set_ABC_period(0);
-    delay(100);
-    sensorS8.abc_period = sensor_S8->get_ABC_period();
-
-    if (sensorS8.abc_period > 0)
-    {
-      Serial.print("ABC (automatic background calibration) period: ");
-      Serial.print(sensorS8.abc_period);
-      Serial.println(" hours");
-    }
-    else
-      Serial.println("ABC (automatic calibration) is disabled");
-      
-    Serial.println("Setup done!");
-  }
-}
-
-void Read_CO2sensor()
-{
-  if (CO2measure == false)
-  {
-    CO2measure = true;
-
-    if (SCD30sen == true)
-    {
-      if (airSensor.dataAvailable())
-      {
-        PM25_value = airSensor.getCO2();
-        Serial.print("CO2:");
-        Serial.print(PM25_value);
-
-        temp = round(airSensor.getTemperature());
-        Serial.print(", temp:");
-        Serial.print(temp);
-
-        humi = round(airSensor.getHumidity());
-        Serial.print(", humidity:");
-        Serial.println(humi);
-      }
-    }
-
-    if (S8sen == true)
-    {
-      // Get CO2 measure
-      float CO2cor;
-      sensorS8.co2 = sensor_S8->get_co2();
-      // Adjust by altitude above the sea level
-      CO2cor = sensorS8.co2 + (0.016 * ((1013 - hpa) / 10) * (sensorS8.co2 - 400)); // Increment of 1.6% for every hPa of difference at sea level
-      PM25_value = round(CO2cor);
-      Serial.print("CO2 orignal:");
-      Serial.print(sensorS8.co2);
-      Serial.print("    CO2 adjust:");
-      Serial.println(PM25_value);
-    }
-  }
-  else
-    CO2measure = false;
-}
-
-#endif
-
-/**
- * @brief : read and display device info
- */
-
-void GetDeviceInfo()
-{
-  char buf[32];
-  uint8_t ret;
-  SPS30_version v;
-  // try to read serial number
-  ret = sps30.GetSerialNumber(buf, 32);
-  if (ret == SPS30_ERR_OK)
-  {
-    Serial.print(F("Serial number : "));
-    if (strlen(buf) > 0)
-      Serial.println(buf);
-    else
-      Serial.println(F("not available"));
-  }
-  else
-    ErrtoMess((char *)"could not get serial number. ", ret);
-  // try to get product name
-  ret = sps30.GetProductName(buf, 32);
-  if (ret == SPS30_ERR_OK)
-  {
-    Serial.print(F("Product name  : ")); //     !!!!!!!!!!!!!!!!!!debe compararse con “00080000”
-
-    if (buf[7] == '0')
-      if (buf[6] == '0')
-        if (buf[5] == '0')
-          if (buf[4] == '0')
-            if (buf[3] == '8')
-            {
-              Serial.println(buf);
-              Serial.println(F("Detected SPS30"));
-              SPS30sen = true;
-            }
-            else
-              NotAvailableSPS30();
-          else
-            NotAvailableSPS30();
-        else
-          NotAvailableSPS30();
-      else
-        NotAvailableSPS30();
-    else
-      NotAvailableSPS30();
-  }
-  else
-    ErrtoMess((char *)"could not get product name. ", ret);
-  // try to get version info
-  ret = sps30.GetVersion(&v);
-  if (ret != SPS30_ERR_OK)
-  {
-    Serial.println(F("Can not read version info."));
-    return;
-  }
-
-  if (SPS30sen == true)
-  {
-    Serial.print(F("Firmware level: "));
-    Serial.print(v.major);
-    Serial.print(F("."));
-    Serial.println(v.minor);
-
-    Serial.print(F("Library level : "));
-    Serial.print(v.DRV_major);
-    Serial.print(F("."));
-    Serial.println(v.DRV_minor);
-  }
-}
-
-void NotAvailableSPS30()
-{
-  Serial.println(F("NO SPS30"));
-  SPS30sen = false;
-}
-
-void Errorloop(char *mess, uint8_t r)
-{
-  if (r)
-    ErrtoMess(mess, r);
-  else
-    Serial.println(mess);
-  Serial.println(F("No SPS30 connected"));
-}
-
-/**
- *  @brief : display error message
- *  @param mess : message to display
- *  @param r : error code
- *
- */
-void ErrtoMess(char *mess, uint8_t r)
-{
-  char buf[80];
-  Serial.print(mess);
-  sps30.GetErrDescription(r, buf, 80);
-  Serial.println(buf);
-}
-
-void printModuleVersions()
-{
-  uint16_t error;
-  char errorMessage[256];
-
-  unsigned char productName[32];
-  uint8_t productNameSize = 32;
-
-  error = sen5x.getProductName(productName, productNameSize);
-
-  if (error)
-  {
-    Serial.print(F("Error trying to execute getProductName(): "));
-    errorToString(error, errorMessage, 256);
-    Serial.println(errorMessage);
-  }
-  else
-  {
-    Serial.print(F("ProductName: "));
-    Serial.println((char *)productName);
-  }
-
-  bool firmwareDebug;
-  uint8_t firmwareMajor;
-  uint8_t firmwareMinor;
-  uint8_t hardwareMajor;
-  uint8_t hardwareMinor;
-  uint8_t protocolMajor;
-  uint8_t protocolMinor;
-
-  error = sen5x.getVersion(firmwareMajor, firmwareMinor, firmwareDebug,
-                           hardwareMajor, hardwareMinor, protocolMajor,
-                           protocolMinor);
-  if (error)
-  {
-    Serial.print(F("Error trying to execute getVersion(): "));
-    errorToString(error, errorMessage, 256);
-    Serial.println(errorMessage);
-  }
-  else
-  {
-    Serial.print(F("Firmware: "));
-    Serial.print(firmwareMajor);
-    Serial.print(F("."));
-    Serial.print(firmwareMinor);
-    Serial.print(F(", "));
-
-    Serial.print(F("Hardware: "));
-    Serial.print(hardwareMajor);
-    Serial.print(F("."));
-    Serial.println(hardwareMinor);
-  }
-}
-
-void printSerialNumber()
-{
-  uint16_t error;
-  char errorMessage[256];
-  unsigned char serialNumber[32];
-  uint8_t serialNumberSize = 32;
-
-  error = sen5x.getSerialNumber(serialNumber, serialNumberSize);
-  if (error)
-  {
-    Serial.print(F("Error trying to execute getSerialNumber(): "));
-    errorToString(error, errorMessage, 256);
-    Serial.println(errorMessage);
-  }
-  else
-  {
-    Serial.print(F("SerialNumber: "));
-    Serial.println((char *)serialNumber);
-  }
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 void ReadHyT()
 {
-  /////////  SHT31
+  // SHT31
   if (SHT31sen == true)
   {
     temperature = 0.0;
@@ -3241,44 +2706,6 @@ void ReadHyT()
       temp = 255;
     }
   }
-
-  // AM2320//
-  else if (AM2320sen == true)
-  {
-    temperature = 0.0;
-    humidity = 0.0;
-    humidity = am2320.readHumidity();
-    temperature = am2320.readTemperature();
-
-    if (!isnan(humidity))
-    {
-      failh = 0;
-      Serial.print(F("AM2320 Humi % = "));
-      Serial.print(humidity);
-      humi = round(humidity);
-    }
-    else
-    {
-      Serial.println(F("   Failed to read humidity AM2320"));
-      if (failh == 5)
-      {
-        failh = 0;
-        am2320.begin();
-        Serial.println(F("   Reinit AM2320"));
-      }
-      else
-        failh = failh + 1;
-    }
-
-    if (!isnan(temperature))
-    {
-      Serial.print(F("   Temp *C = "));
-      Serial.println(temperature);
-      temp = round(temperature);
-    }
-    else
-      Serial.println(F("   Failed to read temperature AM2320"));
-  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3315,9 +2742,9 @@ void Print_Config()
   Serial.print(F("Configuration values: "));
   Serial.println(eepromConfig.ConfigValues);
 #if WPA2
-  Serial.print(F("WiFi user for WPA enterprise: "));
+  Serial.print(F("WiFi Identity for WPA enterprise: "));
   Serial.println(eepromConfig.wifi_user);
-  Serial.print(F("WiFi user's password for WPA enterprise: "));
+  Serial.print(F("WiFi identity's password for WPA enterprise: "));
   Serial.println(eepromConfig.wifi_password);
 #endif
 #endif

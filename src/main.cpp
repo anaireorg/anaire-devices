@@ -112,6 +112,11 @@ struct MyConfigStruct
 #endif
 } eepromConfig;
 
+char wifi_passwpa2[24];
+bool ConfigPortalSave = false;
+
+//byte testover = 0;
+
 #if PreProgSensor
 // const char *ssid = "Techotyva";
 // const char *password = "Layuyux31";
@@ -1405,6 +1410,8 @@ void Connect_WiFi()
     String wifi_ssid = WiFi.SSID(); // your network SSID (name)
     // String wifi_password = WiFi.psk()); // your network psk password
     Serial.println(F("Attempting to authenticate with WPA2 Enterprise "));
+    Serial.print(F("SSID: "));
+    Serial.println(WiFi.SSID());
     Serial.print(F("Identity: "));
     Serial.println(eepromConfig.wifi_user);
     Serial.print(F("Password: "));
@@ -1453,7 +1460,7 @@ void Connect_WiFi()
     wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
     //  wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password));
 
-    Serial.println(F("ESP.getHeapFragmentation 1: ")); // NO PASA NADA
+//    Serial.println(F("ESP.getHeapFragmentation 1: ")); // NO PASA NADA
 
     wifi_station_connect();
 
@@ -1747,8 +1754,8 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-//  const int captiveportaltime = 60;
-      const int captiveportaltime = 13;
+  //  const int captiveportaltime = 60;
+  const int captiveportaltime = 15;
 
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
@@ -1807,8 +1814,9 @@ void Start_Captive_Portal()
 #if WPA2
   WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise</p>"); // only custom html
   WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise identity", eepromConfig.wifi_user, 24);
-  WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
-#if !Rosver  
+  //  WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
+  WiFiManagerParameter custom_wpa2_pass;
+#if !Rosver
   WiFiManagerParameter custom_wifi_html2("<p></p>"); // only custom html
 #else
   WiFiManagerParameter custom_wifi_html2("<hr><br/>"); // only custom html
@@ -1926,7 +1934,14 @@ void Start_Captive_Portal()
   //    new (&custom_board_type) WiFiManagerParameter(custom_board_str);
   //  }
 
+#else
+  const char *custom_wpa2_pw = "<label for='p'>Password</label><input id='p' name='p' maxlength='64' type='password' placeholder='{p}'><input type='checkbox' onclick='f()'> Show Password";
+  new (&custom_wpa2_pass) WiFiManagerParameter(custom_wpa2_pw); // REVISAR!!!!!!!!!!!
+
 #endif
+
+  // Sensor Location menu
+
   if (eepromConfig.ConfigValues[3] == '0')
   {
     const char *custom_outin_str = "<br/><br/><label for='customOutIn'>Location:</label><br/><input type='radio' name='customOutIn' value='1'> Indoors - sensor measures indoors air<br><input type='radio' name='customOutIn' value='0' checked> Outdoors - sensor measures outdoors air";
@@ -1945,7 +1960,8 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_wifi_html);
 #endif
   wifiManager.addParameter(&custom_wifi_user);
-  wifiManager.addParameter(&custom_wifi_password);
+  //  wifiManager.addParameter(&custom_wifi_password);
+  wifiManager.addParameter(&custom_wpa2_pass);
   wifiManager.addParameter(&custom_wifi_html2);
 #endif
 
@@ -1978,6 +1994,10 @@ void Start_Captive_Portal()
   // it starts an access point
   // and goes into a blocking loop awaiting configuration
   // wifiManager.resetSettings(); // reset previous configurations
+  ConfigPortalSave = false;
+  Serial.print(F("ConfigPortalSave1: "));
+  Serial.println(ConfigPortalSave);
+
   bool res = wifiManager.startConfigPortal(wifiAP.c_str());
   if (!res)
   {
@@ -1990,140 +2010,100 @@ void Start_Captive_Portal()
   }
 
   // Save parameters to EEPROM only if any of them changed
-  bool write_eeprom = false;
+
+  if (ConfigPortalSave == true)
+  {
+    ConfigPortalSave = false;
+    //    bool write_eeprom = false;
 
 #if WPA2
-  if (eepromConfig.wifi_user != custom_wifi_user.getValue())
-  {
     strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
     eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
-    write_eeprom = true;
+    //    write_eeprom = true;
     Serial.println(F("Wifi Identity write_eeprom = true"));
-    Serial.print(F("WiFi identity: "));
-    Serial.println(eepromConfig.wifi_user);
-  }
-  if (eepromConfig.wifi_password != custom_wifi_password.getValue())
-  {
-    strncpy(eepromConfig.wifi_password, custom_wifi_password.getValue(), sizeof(eepromConfig.wifi_password));
+    //    Serial.print(F("WiFi identity: "));
+    //    Serial.println(eepromConfig.wifi_user);
+
+    strncpy(eepromConfig.wifi_password, wifi_passwpa2, sizeof(eepromConfig.wifi_password));
     eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
-    write_eeprom = true;
+    //    write_eeprom = true;
     Serial.println(F("Wifi pass write_eeprom = true"));
-    Serial.print(F("WiFi password: "));
-    Serial.println(eepromConfig.wifi_password);
-  }
+//    Serial.print(F("WiFi password: "));
+//    Serial.println(eepromConfig.wifi_password);
 #endif
 
-  if (eepromConfig.aireciudadano_device_name != custom_id_name.getValue())
-  {
     strncpy(eepromConfig.aireciudadano_device_name, custom_id_name.getValue(), sizeof(eepromConfig.aireciudadano_device_name));
     eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
-    write_eeprom = true;
+    //    write_eeprom = true;
     Serial.println(F("Devname write_eeprom = true"));
-    Serial.print(F("Device name (captive portal): "));
-    Serial.println(eepromConfig.aireciudadano_device_name);
-  }
+    //    Serial.print(F("Device name (captive portal): "));
+    //    Serial.println(eepromConfig.aireciudadano_device_name);
 
 #if !Rosver
-  if (eepromConfig.PublicTime != atoi(custom_public_time.getValue()))
-  {
     eepromConfig.PublicTime = atoi(custom_public_time.getValue());
-    write_eeprom = true;
+    //    write_eeprom = true;
     Serial.println(F("PublicTime write_eeprom = true"));
-    Serial.print(F("Publication time: "));
-    Serial.println(eepromConfig.PublicTime);
-  }
-
-  //  if (eepromConfig.MQTT_server != custom_mqtt_server.getValue())
-  //  {
-  //    strncpy(eepromConfig.MQTT_server, custom_mqtt_server.getValue(), sizeof(eepromConfig.MQTT_server));
-  //    eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
-  //    write_eeprom = true;
-  //    Serial.println(F("MQTT server write_eeprom = true"));
-  //    Serial.print(F("MQTT server: "));
-  //    Serial.println(eepromConfig.MQTT_server);
-  //  }
-
-  //  if (eepromConfig.MQTT_port != atoi(custom_mqtt_port.getValue()))
-  //  {
-  //    eepromConfig.MQTT_port = atoi(custom_mqtt_port.getValue());
-  //    write_eeprom = true;
-  //    Serial.println(F("MQTT port write_eeprom = true"));
-  //    Serial.print(F("MQTT port: "));
-  //    Serial.println(eepromConfig.MQTT_port);
-  //  }
+//    Serial.print(F("Publication time: "));
+//    Serial.println(eepromConfig.PublicTime);
 #endif
 
-  if (eepromConfig.sensor_lat != custom_sensor_latitude.getValue())
-  {
     strncpy(eepromConfig.sensor_lat, custom_sensor_latitude.getValue(), sizeof(eepromConfig.sensor_lat));
     eepromConfig.sensor_lat[sizeof(eepromConfig.sensor_lat) - 1] = '\0';
-    write_eeprom = true;
+    //    write_eeprom = true;
     Serial.println(F("Lat write_eeprom = true"));
-    Serial.print(F("Sensor Latitude: "));
-    Serial.println(eepromConfig.sensor_lat);
+    //    Serial.print(F("Sensor Latitude: "));
+    //    Serial.println(eepromConfig.sensor_lat);
     latitudef = atof(eepromConfig.sensor_lat); // Cambiar de string a float
-  }
 
-  if (eepromConfig.sensor_lon != custom_sensor_longitude.getValue())
-  {
     strncpy(eepromConfig.sensor_lon, custom_sensor_longitude.getValue(), sizeof(eepromConfig.sensor_lon));
     eepromConfig.sensor_lon[sizeof(eepromConfig.sensor_lon) - 1] = '\0';
-    write_eeprom = true;
+    //    write_eeprom = true;
     Serial.println(F("Lon write_eeprom = true"));
-    Serial.print(F("Sensor Longitude: "));
-    Serial.println(eepromConfig.sensor_lon);
+    //    Serial.print(F("Sensor Longitude: "));
+    //    Serial.println(eepromConfig.sensor_lon);
     longitudef = atof(eepromConfig.sensor_lon); // Cambiar de string a float
-  }
 
-  CustomValTotalString[9] = {0};
-  sprintf(CustomValTotalString, "%8d", CustomValtotal);
-  if (CustomValTotalString[0] == ' ')
-    CustomValTotalString[0] = '0';
-  if (CustomValTotalString[1] == ' ')
-    CustomValTotalString[1] = '0';
-  if (CustomValTotalString[2] == ' ')
-    CustomValTotalString[2] = '0';
-  if (CustomValTotalString[3] == ' ')
-    CustomValTotalString[3] = '0';
-  if (CustomValTotalString[4] == ' ')
-    CustomValTotalString[4] = '0';
-  if (CustomValTotalString[5] == ' ')
-    CustomValTotalString[5] = '0';
-  if (CustomValTotalString[6] == ' ')
-    CustomValTotalString[6] = '0';
-  if (CustomValTotalString[7] == ' ')
-    CustomValTotalString[7] = '0';
-  if (CustomValTotalString[8] == ' ')
-    CustomValTotalString[8] = '0';
+    CustomValTotalString[9] = {0};
+    sprintf(CustomValTotalString, "%8d", CustomValtotal);
+    if (CustomValTotalString[0] == ' ')
+      CustomValTotalString[0] = '0';
+    if (CustomValTotalString[1] == ' ')
+      CustomValTotalString[1] = '0';
+    if (CustomValTotalString[2] == ' ')
+      CustomValTotalString[2] = '0';
+    if (CustomValTotalString[3] == ' ')
+      CustomValTotalString[3] = '0';
+    if (CustomValTotalString[4] == ' ')
+      CustomValTotalString[4] = '0';
+    if (CustomValTotalString[5] == ' ')
+      CustomValTotalString[5] = '0';
+    if (CustomValTotalString[6] == ' ')
+      CustomValTotalString[6] = '0';
+    if (CustomValTotalString[7] == ' ')
+      CustomValTotalString[7] = '0';
+    if (CustomValTotalString[8] == ' ')
+      CustomValTotalString[8] = '0';
 
-  Serial.print(F("CustomValTotalString: "));
-  Serial.println(CustomValTotalString);
+    Serial.print(F("CustomValTotalString: "));
+    Serial.println(CustomValTotalString);
 
-  if (CustomValtotal == 0)
-  {
-    Serial.println(F("No configuration sensor values ​​chosen, no changes will be stored"));
-  }
-  else
-  {
-    if (eepromConfig.ConfigValues != CustomValTotalString)
+    if (CustomValtotal == 0)
+    {
+      Serial.println(F("No configuration sensor values ​​chosen, no changes will be stored"));
+    }
+    else
     {
       strncpy(eepromConfig.ConfigValues, CustomValTotalString, sizeof(eepromConfig.ConfigValues));
       eepromConfig.ConfigValues[sizeof(eepromConfig.ConfigValues) - 1] = '\0';
-      write_eeprom = true;
+      //      write_eeprom = true;
       Serial.println(F("CustomVal write_eeprom = true"));
-      Serial.print(F("Configuration Values: "));
-      Serial.println(eepromConfig.ConfigValues);
+      //      Serial.print(F("Configuration Values: "));
+      //      Serial.println(eepromConfig.ConfigValues);
     }
   }
-
-  if (write_eeprom)
-  {
-    Write_EEPROM();
-    Serial.println(F("write_eeprom = true Final"));
-    ESP.restart();
-  }
-
-  InCaptivePortal = false;
+  Write_EEPROM();
+  Serial.println(F("write_eeprom = true Final"));
+  ESP.restart();
 }
 
 String getParam(String name)
@@ -2137,6 +2117,27 @@ String getParam(String name)
   }
   CustomValue = atoi(value.c_str());
   return value;
+}
+
+void saveParamCallback()
+{
+  Serial.println(F("[CALLBACK] saveParamCallback fired"));
+  Serial.println("Value customSenPM = " + getParam("customSenPM"));
+  CustomValtotal = CustomValue;
+  Serial.println("Value cutomSenHYT = " + getParam("customSenHYT"));
+  CustomValtotal = CustomValtotal + (CustomValue * 10);
+  Serial.println("Value customDisplay = " + getParam("customDisplay"));
+  CustomValtotal = CustomValtotal + (CustomValue * 100);
+  Serial.println("Value customBoard = NA");
+  Serial.println("Value customOutIn = " + getParam("customOutIn"));
+  CustomValtotal = CustomValtotal + (CustomValue * 10000);
+  Serial.print(F("CustomValtotal: "));
+  Serial.println(CustomValtotal);
+  strncpy(wifi_passwpa2, getParam("p").c_str(), sizeof(wifi_passwpa2));   // REVISAR!!!!!!!!!!!
+//  Serial.println("Se presiono SAVE!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  ConfigPortalSave = true;
+  Serial.print(F("ConfigPortalSave2: "));
+  Serial.println(ConfigPortalSave);
 }
 
 void Init_MQTT()
@@ -2570,23 +2571,6 @@ void update_error(int err)
 
 #endif
 
-void saveParamCallback()
-{
-  Serial.println(F("[CALLBACK] saveParamCallback fired"));
-  Serial.println("Value customSenPM = " + getParam("customSenPM"));
-  CustomValtotal = CustomValue;
-  Serial.println("Value cutomSenHYT = " + getParam("customSenHYT"));
-  CustomValtotal = CustomValtotal + (CustomValue * 10);
-  Serial.println("Value customDisplay = " + getParam("customDisplay"));
-  CustomValtotal = CustomValtotal + (CustomValue * 100);
-  Serial.println("Value customBoard = NA");
-  // CustomValtotal = CustomValtotal + (CustomValue * 1000);
-  Serial.println("Value customOutIn = " + getParam("customOutIn"));
-  CustomValtotal = CustomValtotal + (CustomValue * 10000);
-  Serial.print(F("CustomValtotal: "));
-  Serial.println(CustomValtotal);
-}
-
 void Setup_Sensor()
 { // Identify and initialize PM25, temperature and humidity sensor
 
@@ -2651,6 +2635,13 @@ void Read_Sensor()
       Serial.print(F("Adjust: "));
       Serial.print(PM25_value);
       Serial.println(F(" ug/m3"));
+//      testover = testover + 1;
+//      if (testover == 60)
+//      {
+//        while(1)
+//        {
+//        }
+//      }
     }
     else
     {
@@ -2740,6 +2731,8 @@ void Print_Config()
   Serial.print(F("Configuration values: "));
   Serial.println(eepromConfig.ConfigValues);
 #if WPA2
+  Serial.print(F("SSID: "));
+  Serial.println(WiFi.SSID());
   Serial.print(F("WiFi Identity for WPA enterprise: "));
   Serial.println(eepromConfig.wifi_user);
   Serial.print(F("WiFi identity's password for WPA enterprise: "));

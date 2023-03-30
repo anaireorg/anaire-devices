@@ -21,16 +21,17 @@
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 true       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define WPA2 true        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define Rosver true      // Set to true URosario version
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true in case you use a ESP8285 switch
 #define CO2sensor false  // Set to true for CO2 sensors: SCD30 and SenseAir S8
-#define Rosver true      // Set to true URosario version
 
-#define SiteAltitude 2600    // IMPORTANT for CO2 measurement: Put the site altitude of the measurement, it affects directly the value
-                             // 2600 meters above sea level: Bogota, Colombia
+
+#define SiteAltitude 2600 // IMPORTANT for CO2 measurement: Put the site altitude of the measurement, it affects directly the value
+                          // 2600 meters above sea level: Bogota, Colombia
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
@@ -83,9 +84,9 @@ struct MyConfigStruct
 {
 #if Bluetooth
 #if !CO2sensor
-  uint16_t BluetoothTime = 10;        // Bluetooth Time
+  uint16_t BluetoothTime = 10; // Bluetooth Time
 #else
-  uint16_t BluetoothTime = 2;        // Bluetooth Time
+  uint16_t BluetoothTime = 2; // Bluetooth Time
 #endif
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 // #elif SDyRTC
@@ -114,8 +115,6 @@ struct MyConfigStruct
 
 char wifi_passwpa2[24];
 bool ConfigPortalSave = false;
-
-//byte testover = 0;
 
 #if PreProgSensor
 // const char *ssid = "Techotyva";
@@ -310,7 +309,7 @@ float noxIndex;
 PMS pms(Serial1);
 PMS::DATA data;
 // bool PMSflag = false;
-#if !Tdisplaydisp 
+#if !Tdisplaydisp
 #define PMS_TX 17 // PMS TX pin
 #define PMS_RX 16 // PMS RX pin
 #else
@@ -383,8 +382,8 @@ bool CO2measure = false;
 SCD30 airSensor;
 
 #include "s8_uart.h"
-#define S8_UART_PORT  1     // Change UART port if it is needed
-HardwareSerial S8_serial(S8_UART_PORT);   
+#define S8_UART_PORT 1 // Change UART port if it is needed
+HardwareSerial S8_serial(S8_UART_PORT);
 S8_UART *sensor_S8;
 S8_sensor sensorS8;
 float hpa;
@@ -527,8 +526,8 @@ bool Calibrating = false;
 #include "RTClib.h"
 
 const int chipSelect = 10;
-//uint16_t SDyRTCtime = 15;       // Valor de Sample Time de SD y RTC
-uint16_t SDyRTCtime = 60;       // Valor de Sample Time de SD y RTC
+// uint16_t SDyRTCtime = 15;       // Valor de Sample Time de SD y RTC
+uint16_t SDyRTCtime = 60; // Valor de Sample Time de SD y RTC
 byte SDreset = 0;
 
 File dataFile;
@@ -871,6 +870,11 @@ void setup()
 
 #endif
 
+  // Get device id
+#if Rosver
+  Aireciudadano_Characteristics();
+#endif
+
   Serial.println(F(""));
   Serial.println(F("### Configuración del medidor AireCiudadano finalizada ###\n"));
 
@@ -981,10 +985,6 @@ void loop()
 
         // Accumulates samples
         PM25_accumulated += PM25_value;
-//        Serial.print("PM25_value: ");
-//        Serial.println(PM25_value);
-//        Serial.print("PM25_acc: ");
-//        Serial.println(PM25_accumulated);
         if (AdjPMS == true)
           PM25_accumulated_ori += PM25_value_ori;
         PM25_samples++;
@@ -1099,8 +1099,8 @@ void loop()
 
 #else
   // MQTT loop
-//  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
-    if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
+    if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
+  //  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
   //  if ((millis() - MQTT_loop_start) >= (1 * 60000))
   {
 
@@ -1417,30 +1417,16 @@ void Connect_WiFi()
     Serial.print(F("Password: "));
     Serial.println(eepromConfig.wifi_password);
 
-    //    Serial.print(F("ESP.getHeapFragmentation 1: ")); // No pasa nada
-
     // Setting ESP into STATION mode only (no AP mode or dual mode)
     wifi_set_opmode(STATION_MODE);
-
-    //    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en el dhcp client start
-
     struct station_config wifi_config;
-
-    //    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en el dhcp client start
-
     memset(&wifi_config, 0, sizeof(wifi_config));
     strcpy((char *)wifi_config.ssid, wifi_ssid.c_str());
     strcpy((char *)wifi_config.password, eepromConfig.wifi_password);
-
-    //    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor nuemro 1
-
     wifi_station_set_config(&wifi_config);
     // uint8_t target_esp_mac[6] = {0x24, 0x0a, 0xc4, 0x9a, 0x58, 0x28};
     // wifi_set_macaddr(STATION_IF,target_esp_mac);
     wifi_station_set_wpa2_enterprise_auth(1);
-
-    //    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 4
-
     // Clean up to be sure no old data is still inside
     wifi_station_clear_cert_key();
     wifi_station_clear_enterprise_ca_cert();
@@ -1449,19 +1435,10 @@ void Connect_WiFi()
     wifi_station_clear_enterprise_password();
     wifi_station_clear_enterprise_new_password();
 
-    //    Serial.print(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 6
-
     // Set up authentication
     wifi_station_set_enterprise_identity((uint8 *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
     wifi_station_set_enterprise_username((uint8 *)eepromConfig.wifi_user, strlen(eepromConfig.wifi_user));
-
-    //    Serial.println(F("ESP.getHeapFragmentation 1: ")); // Se resetea en la lectura del sensor numero 2
-
     wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen((char *)eepromConfig.wifi_password));
-    //  wifi_station_set_enterprise_password((uint8 *)eepromConfig.wifi_password, strlen(eepromConfig.wifi_password));
-
-//    Serial.println(F("ESP.getHeapFragmentation 1: ")); // NO PASA NADA
-
     wifi_station_connect();
 
 #endif
@@ -1484,18 +1461,12 @@ void Connect_WiFi()
   // Timestamp for connection timeout
   int wifi_timeout_start = millis();
 
-//  Serial.println("Test4");
-
   // Wait for warming time while blinking blue led AQUI ESTA EL PROBLEMA DEL DHCP
   while ((WiFi.status() != WL_CONNECTED) && ((millis() - wifi_timeout_start) < WIFI_CONNECT_TIMEOUT))
   {
     delay(500); // wait 0.5 seconds for connection
     Serial.println(F("."));
   }
-
-//  Serial.println("Test5");
-
-  //  Serial.print(F("ESP.getHeapFragmentation 1: "));
 
   // Status
   if (WiFi.status() != WL_CONNECTED)
@@ -1754,8 +1725,8 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-  //  const int captiveportaltime = 60;
-  const int captiveportaltime = 15;
+  const int captiveportaltime = 60;
+  //  const int captiveportaltime = 15;
 
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
@@ -1995,8 +1966,6 @@ void Start_Captive_Portal()
   // and goes into a blocking loop awaiting configuration
   // wifiManager.resetSettings(); // reset previous configurations
   ConfigPortalSave = false;
-  Serial.print(F("ConfigPortalSave1: "));
-  Serial.println(ConfigPortalSave);
 
   bool res = wifiManager.startConfigPortal(wifiAP.c_str());
   if (!res)
@@ -2133,11 +2102,9 @@ void saveParamCallback()
   CustomValtotal = CustomValtotal + (CustomValue * 10000);
   Serial.print(F("CustomValtotal: "));
   Serial.println(CustomValtotal);
-  strncpy(wifi_passwpa2, getParam("p").c_str(), sizeof(wifi_passwpa2));   // REVISAR!!!!!!!!!!!
-//  Serial.println("Se presiono SAVE!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  strncpy(wifi_passwpa2, getParam("p").c_str(), sizeof(wifi_passwpa2)); // REVISAR!!!!!!!!!!!
+                                                                        //  Serial.println("Se presiono SAVE!!!!!!!!!!!!!!!!!!!!!!!!!!");
   ConfigPortalSave = true;
-  Serial.print(F("ConfigPortalSave2: "));
-  Serial.println(ConfigPortalSave);
 }
 
 void Init_MQTT()
@@ -2270,12 +2237,6 @@ void Send_Message_Cloud_App_MQTT()
       nox = 0;
     else
       nox = round(noxIndex);
-
-//    if (humi > 2147483645)
-//      humi = 255;
-
-//    if (temp > 2147483645)
-//      temp = 255;
 
     sprintf(MQTT_message, "{id: %s, PM25: %d, VOC: %d, NOx: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
     // sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"VOC\": %d, \"NOx\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
@@ -2635,13 +2596,6 @@ void Read_Sensor()
       Serial.print(F("Adjust: "));
       Serial.print(PM25_value);
       Serial.println(F(" ug/m3"));
-//      testover = testover + 1;
-//      if (testover == 60)
-//      {
-//        while(1)
-//        {
-//        }
-//      }
     }
     else
     {
@@ -3018,7 +2972,7 @@ void TimeConfig()
       u8g2.setFont(u8g2_font_6x10_tf);
       Serial.print("CALIBRATION:");
       for (int i = 180; i > -1; i--)
-      {              // loop from 0 to 180
+      { // loop from 0 to 180
         pageStart();
         u8g2.setCursor(0, dh / 2 - 7);
         u8g2.print("Calib time:");
@@ -3049,19 +3003,19 @@ void TimeConfig()
         }
         else
           toggleLive = false;
-       }
-       if (SCD30sen == true)
+      }
+      if (SCD30sen == true)
         airSensor.setForcedRecalibrationFactor(400);
-       else if (S8sen == true)
+      else if (S8sen == true)
         sensor_S8->manual_calibration();
-       Serial.println("Resetting forced calibration factor to 400: done");
-       pageStart();
-       u8g2.setCursor(0, dh / 2 - 2);
-       u8g2.print("Reset calib:");
-       u8g2.setCursor(8, dh / 2 + 7);
-       u8g2.print("400 ppm");
-       pageEnd();
-       delay(5000);
+      Serial.println("Resetting forced calibration factor to 400: done");
+      pageStart();
+      u8g2.setCursor(0, dh / 2 - 2);
+      u8g2.print("Reset calib:");
+      u8g2.setCursor(8, dh / 2 + 7);
+      u8g2.print("400 ppm");
+      pageEnd();
+      delay(5000);
 #endif
     }
   }
@@ -3133,6 +3087,7 @@ void Get_AireCiudadano_DeviceId()
 
 void Aireciudadano_Characteristics()
 {
+#if !Rosver
   Serial.print(F("eepromConfig.ConfigValues: "));
   Serial.println(eepromConfig.ConfigValues);
   Serial.print(F("eepromConfig.ConfigValues[3]: "));
@@ -3147,19 +3102,6 @@ void Aireciudadano_Characteristics()
     AmbInOutdoors = true;
     Serial.println(F("Indoors"));
   }
-
-  //  Serial.print(F("eepromConfig.ConfigValues[4]: "));
-  //  Serial.println(eepromConfig.ConfigValues[4]);
-  //  if (eepromConfig.ConfigValues[4] == '0')
-  //  {
-  //    ExtAnt = false;
-  //    Serial.println(F("Normal board"));
-  //  }
-  //  else
-  //  {
-  //    ExtAnt = true;
-  //    Serial.println(F("Board with externa antenna"));
-  //  }
 
   Serial.print(F("eepromConfig.ConfigValues[5]: "));
   Serial.println(eepromConfig.ConfigValues[5]);
@@ -3231,6 +3173,36 @@ void Aireciudadano_Characteristics()
     PMSsen = true;
     Serial.println(F("PMS sensor with stadistical adjust"));
   }
+
+#else
+  Serial.print(F("eepromConfig.ConfigValues: "));
+  Serial.println(eepromConfig.ConfigValues);
+  Serial.print(F("eepromConfig.ConfigValues[3]: "));
+  Serial.println(eepromConfig.ConfigValues[3]);
+  if (eepromConfig.ConfigValues[3] == '0')
+  {
+    AmbInOutdoors = false;
+    Serial.println(F("Outdoors"));
+  }
+  else
+  {
+    AmbInOutdoors = true;
+    Serial.println(F("Indoors"));
+  }
+
+  if (AdjPMS == true)
+    Serial.println(F("PMS sensor with stadistical adjust"));
+  else if (PMSsen == true)
+    Serial.println(F("PMS sensor"));
+  else
+    Serial.println(F("No PMS sensor"));
+
+  if (SHT31sen == true)
+    Serial.println(F("SHT31 sensor"));
+  else
+    Serial.println("No SHT31 sensor");
+
+#endif
 
   // SPS30sen = 1
   // SEN5Xsen = 2
@@ -3629,7 +3601,7 @@ void AddMessage(String msg)
 
 void displayCenterBig(String msg)
 {
-#if !CO2sensor  
+#if !CO2sensor
   if (dw > 64)
   {
     u8g2.setCursor(dw - 64, 6);
@@ -3978,7 +3950,6 @@ void Write_Bluetooth()
   Serial.print(temp);
   Serial.print(", humidity(%):");
   Serial.println(humi);
-
 }
 #endif
 
@@ -4004,9 +3975,9 @@ void Write_SD()
     dataString += temp;
   }
 
-    Serial.print(F("SDreset: "));
-    Serial.println(SDreset);
-    SDreset = SDreset + 1;
+  Serial.print(F("SDreset: "));
+  Serial.println(SDreset);
+  SDreset = SDreset + 1;
 
   if (SDreset == 180)
   {

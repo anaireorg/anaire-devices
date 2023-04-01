@@ -21,11 +21,11 @@
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver false      // Set to true URosario version
+#define WPA2 true        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define Rosver true      // Set to true URosario version
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
-#define SaveSDyRTC true // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
+#define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true in case you use a ESP8285 switch
 #define CO2sensor false  // Set to true for CO2 sensors: SCD30 and SenseAir S8
 
@@ -2431,13 +2431,13 @@ void Firmware_Update()
 //OLED96display false
 
 #if Tdisplaydisp
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WITD.bin");
 #elif OLED96display
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WI96.bin");
 #elif OLED66display
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WI99.bin");
 #else
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WISP.bin");
 #endif
 
   switch (ret)
@@ -2517,30 +2517,25 @@ void Firmware_Update()
 
   // Run http update
 
-//ESP32 y ESP8266
-//Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
 //WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
 //Rosver false      // Set to true URosario version
 //SaveSDyRTC true // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
-//Tdisplaydisp false
 //OLED66display false
 //OLED96display false
 
 /*
 ESP8266WISP
-ESP8266SD
-BTTD
-BT96
-BT66
-BTSP
-WISP
-WI96
-WI66
-WISP
-WITTGOTQ
 */
 
-  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://aireciudadano.com/wp-content/uploads/ESP8266WISP.bin");
+#if WPA2
+#if Rosver
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/ESP8266WISP_WPA2Rosver.bin");
+#else
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/ESP8266WISP_WPA2.bin");
+#endif
+#else
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/ESP8266WISP.bin");
+#endif
 
   switch (ret)
   {

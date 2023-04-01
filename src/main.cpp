@@ -21,11 +21,11 @@
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 true        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver true      // Set to true URosario version
+#define WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define Rosver false      // Set to true URosario version
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
-#define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
+#define SaveSDyRTC true // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true in case you use a ESP8285 switch
 #define CO2sensor false  // Set to true for CO2 sensors: SCD30 and SenseAir S8
 
@@ -338,9 +338,13 @@ PMS::DATA data;
 // #define PMS_TX 2 // PMS TX pin  --- Bien pero conectado al Onboard Led del ESP8266
 // #define PMS_TX 16 // PMS TX pin --- No hace nada, no lee
 // #define PMS_TX 14 // PMS TX pin --- Bien pero SPI de SD card usa ese pin
+#if !SaveSDyRTC
 #define PMS_TX 14 // PMS TX pin   --- D5 conectado al LED SCK
 #define PMS_RX 16 // PMS RX pin
-// #define PMS_RX 2 // PMS RX pin
+#else
+#define PMS_TX 0 // PMS TX pin   --- D5 conectado al LED SCK
+#define PMS_RX 16 // PMS RX pin
+#endif
 
 #else
 #define PMS_TX 3 // PMS TX pin
@@ -528,7 +532,13 @@ bool Calibrating = false;
 const int chipSelect = 10;
 // uint16_t SDyRTCtime = 15;       // Valor de Sample Time de SD y RTC
 uint16_t SDyRTCtime = 60; // Valor de Sample Time de SD y RTC
-byte SDreset = 0;
+uint16_t SDreset = 0;              // Valor en el que se resetea el ESP para verificar que la SD este conectada
+
+#if SDyRTC
+#define ValSDreset 180
+#elif SaveSDyRTC
+#define ValSDreset 720
+#endif
 
 File dataFile;
 
@@ -791,7 +801,9 @@ void setup()
   MQTT_loop_start = millis();
 #endif
 
-#if (SDyRTC || SDyRTC)
+#if (SDyRTC || SaveSDyRTC)
+
+  SDreset = ValSDreset ;
 
   Serial.print(F("Initializing SD card: "));
   // make sure that the default chip select pin is set to output, even if you don't use it:
@@ -1582,7 +1594,7 @@ void Print_WiFi_Status()
   Serial.println(F(" dBm"));
 }
 
-void Check_WiFi_Server()
+void Check_WiFi_Server()      // Server access by http when you put the ip address in a web browser !!!!!!!!!!!!!!!!!!!!!!!!!!!
 {                                              // Wifi server
   WiFiClient client = wifi_server.available(); // listen for incoming clients
   if (client)
@@ -1636,12 +1648,13 @@ void Check_WiFi_Server()
             client.println("------");
             client.println("<br>");
             client.print("Publication Time: ");
-            client.print(eepromConfig.PublicTime);
-            //            client.print("MQTT Server: ");
-            //            client.print(eepromConfig.MQTT_server);
-            //            client.println("<br>");
-            //            client.print("MQTT Port: ");
-            //            client.print(eepromConfig.MQTT_port);
+            client.println(eepromConfig.PublicTime);
+            client.println("<br>");
+            client.print("MQTT Server: ");
+            client.print("sensor.aireciudadano.com");
+            client.println("<br>");
+            client.print("MQTT Port: ");
+            client.print("80");
             client.println("<br>");
             client.print("Sensor latitude: ");
             client.print(eepromConfig.sensor_lat);
@@ -1670,7 +1683,8 @@ void Check_WiFi_Server()
             client.print("Click <a href=\"/3\">here</a> to launch captive portal to set up WiFi and MQTT endpoint.<br>");
             client.println("<br>");
             // Suspend:
-            client.print("Click <a href=\"/4\">here</a> to suspend the device.<br>");
+            // client.print("Click <a href=\"/4\">here</a> to suspend the device.<br>");
+            client.print("Click <a href=\"/4\">here</a> to Firmware update.<br>");
             client.println("<br>");
             // Restart:
             client.print("Click <a href=\"/5\">here</a> to restart the device.<br>");
@@ -1700,13 +1714,12 @@ void Check_WiFi_Server()
           PortalFlag = true;
           Start_Captive_Portal();
         }
-#if !ESP8266
-        // Check to see if the client request was "GET /4" to suspend the device:
+//#if !ESP8266        // Check to see if the client request was "GET /4" to suspend the device:
         if (currentLine.endsWith("GET /4"))
         {
-          Suspend_Device();
+          Firmware_Update();
         }
-#endif
+//#endif
 
         // Check to see if the client request was "GET /5" to restart the device:
         if (currentLine.endsWith("GET /5"))
@@ -2403,8 +2416,29 @@ void Firmware_Update()
 
 #endif
 
-  // t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+// WISP
+// WI96
+// WI66
+// WISP
+
+//ESP32 y ESP8266
+//Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
+//WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+//Rosver false      // Set to true URosario version
+//SaveSDyRTC true // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
+//Tdisplaydisp false
+//OLED66display false
+//OLED96display false
+
+#if Tdisplaydisp
   t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+#elif OLED96display
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+#elif OLED66display
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+#else
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.PiCO2/anaire.PiCO2/anaire.PiCO2.ino.esp32.bin");
+#endif
 
   switch (ret)
   {
@@ -2482,8 +2516,31 @@ void Firmware_Update()
   }
 
   // Run http update
-  // t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/src/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
-  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/anaireorg/anaire-devices/main/Anaire.30ppm-50ppm/anaire-device.NodeMCULuaAmicaV2/anaire-device.NodeMCULuaAmicaV2.ino.nodemcu.bin");
+
+//ESP32 y ESP8266
+//Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
+//WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+//Rosver false      // Set to true URosario version
+//SaveSDyRTC true // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
+//Tdisplaydisp false
+//OLED66display false
+//OLED96display false
+
+/*
+ESP8266WISP
+ESP8266SD
+BTTD
+BT96
+BT66
+BTSP
+WISP
+WI96
+WI66
+WISP
+WITTGOTQ
+*/
+
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://aireciudadano.com/wp-content/uploads/ESP8266WISP.bin");
 
   switch (ret)
   {
@@ -3140,6 +3197,9 @@ void Print_Config()
   Serial.print(F("SDyRTC Time: "));
   Serial.println(SDyRTCtime);
 #elif Wifi
+#if SaveSDyRTC
+  Serial.println("SDyRTC enabled: save data and date on SD Card");
+#endif  
   Serial.print(F("Publication Time: "));
   Serial.println(eepromConfig.PublicTime);
   //  Serial.print(F("MQTT server: "));
@@ -4445,12 +4505,12 @@ void Write_SD()
 
   Serial.print(F("SDreset: "));
   Serial.println(SDreset);
-  SDreset = SDreset + 1;
+  SDreset = SDreset - 1;
 
-  if (SDreset == 180)
+  if (SDreset == 0)
   {
     Serial.print(F("SD reset 180 cycles"));
-    SDreset = 0;
+    SDreset = ValSDreset;
     ESP.restart();
   }
 

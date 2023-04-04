@@ -20,10 +20,10 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 true        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver true      // Set to true URosario version
-#define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
+#define Wifi false        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
+#define WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define Rosver false      // Set to true URosario version
+#define Bluetooth true  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true in case you use a ESP8285 switch
@@ -34,7 +34,7 @@
                           // 2600 meters above sea level: Bogota, Colombia
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
-#define Tdisplaydisp false
+#define Tdisplaydisp true
 #define OLED66display false
 #define OLED96display false
 
@@ -2083,10 +2083,11 @@ void Start_Captive_Portal()
       //      Serial.print(F("Configuration Values: "));
       //      Serial.println(eepromConfig.ConfigValues);
     }
+      Write_EEPROM();
+      Serial.println(F("write_eeprom = true Final"));
+      //  ESP.restart();              // REVISAR!!!!!!!!!!!!!
   }
-  Write_EEPROM();
-  Serial.println(F("write_eeprom = true Final"));
-  ESP.restart();
+  ESP.restart();              // REVISAR!!!!!!!!!!!!!
 }
 
 String getParam(String name)
@@ -2107,7 +2108,7 @@ void saveParamCallback()
   Serial.println(F("[CALLBACK] saveParamCallback fired"));
   Serial.println("Value customSenPM = " + getParam("customSenPM"));
   CustomValtotal = CustomValue;
-  Serial.println("Value cutomSenHYT = " + getParam("customSenHYT"));
+  Serial.println("Value customSenHYT = " + getParam("customSenHYT"));
   CustomValtotal = CustomValtotal + (CustomValue * 10);
   Serial.println("Value customDisplay = " + getParam("customDisplay"));
   CustomValtotal = CustomValtotal + (CustomValue * 100);
@@ -2288,6 +2289,8 @@ void Send_Message_Cloud_App_MQTT()
 void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int length)
 {                               // callback function to receive configuration messages from the cloud application by MQTT
   boolean write_eeprom = false; // to track if writing the eeprom is required
+  uint16_t tempcustom = 0;
+  uint16_t CustomValtotal2 = 0;
   memcpy(received_payload, payload, length);
   Serial.print(F("Message arrived: "));
   Serial.println(received_payload);
@@ -2304,7 +2307,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   }
 
   // Update name
-  if ((jsonBuffer["name"]) && (eepromConfig.aireciudadano_device_name != jsonBuffer["name"]))
+  if (jsonBuffer["name"] != "")
   {
     strncpy(eepromConfig.aireciudadano_device_name, jsonBuffer["name"].as<const char *>(), sizeof(eepromConfig.aireciudadano_device_name));
     eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
@@ -2313,42 +2316,159 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     write_eeprom = true;
   }
 
-  // Check MQTT server
-  //  if ((jsonBuffer["MQTT_server"]) && (eepromConfig.MQTT_server != jsonBuffer["MQTT_server"]))
-  //  {
-  //    strncpy(eepromConfig.MQTT_server, jsonBuffer["MQTT_server"], sizeof(eepromConfig.MQTT_server));
-  //    eepromConfig.MQTT_server[sizeof(eepromConfig.MQTT_server) - 1] = '\0';
-  //    Serial.print(F("MQTT Server: "));
-  //    Serial.println(eepromConfig.MQTT_server);
-  //    write_eeprom = true;
+  // Publication Time
 
-  // Attempt to connect to MQTT broker
-  //    if (!err_wifi)
-  //    {
-  //      Init_MQTT();
-  //    }
-  //  }
+  tempcustom = uint16_t(jsonBuffer["warning"]);
+  Serial.print("tempcustom= ");
+  Serial.println(tempcustom);
 
-  // Check MQTT port
-  //  if ((jsonBuffer["MQTT_port"]) && (eepromConfig.MQTT_port != int(jsonBuffer["MQTT_port"])))
-  //  {
-  //    eepromConfig.MQTT_port = int(jsonBuffer["MQTT_port"]);
-  // strncpy(eepromConfig.MQTT_port, jsonBuffer["MQTT_port"], sizeof(eepromConfig.MQTT_port));
-  // eepromConfig.MQTT_port[sizeof(eepromConfig.MQTT_port) - 1] = '\0';
-  //    Serial.print(F("MQTT Port: "));
-  //    Serial.println(eepromConfig.MQTT_port);
-  //    write_eeprom = true;
+#if !Rosver
+  if (tempcustom != 0)
+  {
+    eepromConfig.PublicTime = (uint16_t)jsonBuffer["warning"];
+    Serial.print(F("PublicTime write_eeprom = true, value: "));
+    Serial.println((uint16_t)jsonBuffer["warning"]);
+    write_eeprom = true;
+  }
+#endif
 
-  // Attempt to connect to MQTT broker
-  //    if (!err_wifi)
-  //    {
-  //      Init_MQTT();
-  //    }
-  //  }
+  // Latitude
+
+  latitudef = atof(jsonBuffer["caution"]);
+  if (latitudef != 0)
+  {
+    strncpy(eepromConfig.sensor_lat, jsonBuffer["caution"], sizeof(eepromConfig.sensor_lat));
+    eepromConfig.sensor_lat[sizeof(eepromConfig.sensor_lat) - 1] = '\0';
+    Serial.print(F("Lat write_eeprom = true, value: "));
+    Serial.println(eepromConfig.sensor_lat);
+    write_eeprom = true;
+  }
+
+   // Longitude
+
+  longitudef = atof(jsonBuffer["temperature_offset"]);
+  if (longitudef != 0)
+  {
+    strncpy(eepromConfig.sensor_lon, jsonBuffer["temperature_offset"], sizeof(eepromConfig.sensor_lon));
+    eepromConfig.sensor_lon[sizeof(eepromConfig.sensor_lon) - 1] = '\0';
+    Serial.print(F("Lon write_eeprom = true, value: "));
+    Serial.println(eepromConfig.sensor_lon);
+    write_eeprom = true;
+  }
+
+  // CustomSenPM
+
+#if !Rosver
+
+  tempcustom = ((uint16_t)jsonBuffer["altitude_compensation"]);
+  if (tempcustom != 0)
+  {
+    tempcustom = tempcustom - 1;
+    Serial.print("Value customSenPM = ");
+    Serial.println(tempcustom);
+    CustomValtotal2 = tempcustom;
+  }
+  else
+#endif
+    CustomValtotal2 = ((int)(eepromConfig.ConfigValues[7]) - 48);
+
+//  Serial.print("eepromConfig.ConfigValues[7]= ");
+//  Serial.println(eepromConfig.ConfigValues[7]);
+//  Serial.print("CustomValtotal2: ");
+//  Serial.println(CustomValtotal2);
+
+  // CustomSenHYT
+
+#if !Rosver
+
+  tempcustom = ((uint16_t)jsonBuffer["FRC_value"]);
+
+  if (tempcustom != 0)
+  {
+    tempcustom = tempcustom - 1;
+    Serial.print("Value customSenHYT = ");
+    Serial.println(tempcustom);
+    CustomValtotal2 = CustomValtotal2 + (tempcustom * 10);
+  }
+  else
+#endif
+    CustomValtotal2 = CustomValtotal2 + ((int)eepromConfig.ConfigValues[6] - 48) * 10;
+
+//  Serial.print("eepromConfig.ConfigValues[6]= ");
+//  Serial.println(eepromConfig.ConfigValues[6]);
+//  Serial.print("CustomValtotal2: ");
+//  Serial.println(CustomValtotal2);
+
+  // CustomOutIn
+
+  tempcustom = ((uint16_t)jsonBuffer["MQTT_port"]);
+
+  if (tempcustom != 0)
+  {
+    tempcustom = tempcustom - 1;
+    Serial.print("Value customSenOutIn = ");
+    Serial.println(tempcustom);
+    CustomValtotal2 = CustomValtotal2 + (tempcustom * 10000);
+  }
+  else
+    CustomValtotal2 = CustomValtotal2 + ((int)eepromConfig.ConfigValues[3] - 48) * 10000;
+
+//  Serial.print("eepromConfig.ConfigValues[3]= ");
+//  Serial.println(eepromConfig.ConfigValues[3]);
+//  Serial.print("CustomValtotal2: ");
+//  Serial.println(CustomValtotal2);
+
+  CustomValTotalString[9] = {0};
+  sprintf(CustomValTotalString, "%8d", CustomValtotal2);
+  if (CustomValTotalString[0] == ' ')
+    CustomValTotalString[0] = '0';
+  if (CustomValTotalString[1] == ' ')
+    CustomValTotalString[1] = '0';
+  if (CustomValTotalString[2] == ' ')
+    CustomValTotalString[2] = '0';
+  if (CustomValTotalString[3] == ' ')
+    CustomValTotalString[3] = '0';
+  if (CustomValTotalString[4] == ' ')
+    CustomValTotalString[4] = '0';
+  if (CustomValTotalString[5] == ' ')
+    CustomValTotalString[5] = '0';
+  if (CustomValTotalString[6] == ' ')
+    CustomValTotalString[6] = '0';
+  if (CustomValTotalString[7] == ' ')
+    CustomValTotalString[7] = '0';
+  if (CustomValTotalString[8] == ' ')
+    CustomValTotalString[8] = '0';
+
+  Serial.print(F("CustomValTotalString: "));
+  Serial.println(CustomValTotalString);
+
+  if (CustomValtotal2 == 0)
+  {
+    Serial.println(F("No configuration sensor values ​​chosen, no changes will be stored"));
+  }
+  else
+  {
+    strncpy(eepromConfig.ConfigValues, CustomValTotalString, sizeof(eepromConfig.ConfigValues));
+    eepromConfig.ConfigValues[sizeof(eepromConfig.ConfigValues) - 1] = '\0';
+    write_eeprom = true;
+    Serial.println(F("CustomVal write_eeprom = true"));
+    Serial.print(F("Configuration Values: "));
+    Serial.println(eepromConfig.ConfigValues);
+  }
+
+  Aireciudadano_Characteristics(); // PENDIENTE!!!!
 
   // print info
-  //  Serial.println(F("MQTT update - message processed"));
-  //  Print_Config();
+  Serial.println(F("MQTT update - message processed"));
+//  Print_Config();
+
+  // save the new values if the flag was set
+  if (write_eeprom)
+  {
+    Serial.println(F("write_eeprom = true Final"));
+    Write_EEPROM();
+    ESP.restart();
+  }
 
   // If factory reset has been enabled, just do it
   if ((jsonBuffer["factory_reset"]) && (jsonBuffer["factory_reset"] == "ON"))
@@ -2363,23 +2483,10 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     ESP.restart();
   }
 
-  // save the new values if the flag was set
-  if (write_eeprom)
-  {
-    Write_EEPROM();
-  }
-
   // if update flag has been enabled, update to latest bin
   // It has to be the last option, to allow to save EEPROM if required
   if (((jsonBuffer["update"]) && (jsonBuffer["update"] == "ON")))
   {
-    // boolean result = EEPROM.wipe();
-    // if (result) {
-    //   Serial.println(F("All EEPROM data wiped"));
-    // } else {
-    //   Serial.println(F("EEPROM data could not be wiped from flash store"));
-    // }
-
     // Update firmware to latest bin
     Serial.println(F("Update firmware to latest bin"));
     Firmware_Update();
@@ -2388,6 +2495,8 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
 
 void Firmware_Update()
 {
+
+// ESP32 Firmware Update
 
 #if !ESP8266
 
@@ -2402,9 +2511,6 @@ void Firmware_Update()
   Serial.println(F("ACTUALIZACION EN CURSO"));
 
 #if Tdisplaydisp
-
-  if (TDisplay == true)
-  {
     // Update display
     tft.fillScreen(TFT_ORANGE);
     tft.setTextColor(TFT_BLACK, TFT_ORANGE);
@@ -2412,30 +2518,21 @@ void Firmware_Update()
     tft.setFreeFont(FF90);
     tft.setTextDatum(MC_DATUM);
     tft.drawString("ACTUALIZACION EN CURSO", tft.width() / 2, tft.height() / 2);
-  }
-
+#elif (OLED66 == true || OLED96 == true)
+    pageStart();
+    u8g2.setFont(u8g2_font_5x8_tf);
+    u8g2.setCursor(0, (dh / 2 - 4));
+    u8g2.print("Actualizacion");
+    delay(1000);
+    pageEnd();
 #endif
-
-// WISP
-// WI96
-// WI66
-// WISP
-
-//ESP32 y ESP8266
-//Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-//WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-//Rosver false      // Set to true URosario version
-//SaveSDyRTC true // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
-//Tdisplaydisp false
-//OLED66display false
-//OLED96display false
 
 #if Tdisplaydisp
   t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WITD.bin");
 #elif OLED96display
   t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WI96.bin");
 #elif OLED66display
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WI99.bin");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WI66.bin");
 #else
   t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WISP.bin");
 #endif
@@ -2447,38 +2544,40 @@ void Firmware_Update()
     Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
 
 #if Tdisplaydisp
-
-    if (TDisplay == true)
-    {
       tft.fillScreen(TFT_ORANGE);
       tft.drawString("ACTUALIZACION FALLIDA", tft.width() / 2, tft.height() / 2);
-    }
-
+#elif (OLED66 == true || OLED96 == true)
+    pageStart();
+    u8g2.setFont(u8g2_font_5x8_tf);
+    u8g2.setCursor(0, (dh / 2 - 4));
+    u8g2.print("Act Fallo");
+    pageEnd();
 #endif
-
     delay(1000);
     break;
 
   case HTTP_UPDATE_NO_UPDATES:
-    Serial.println(F("HTTP_UPDATE_NO_UPDATES"));
+    Serial.println(F("HTTP_FIRMWARE_UPDATE_NO_UPDATES"));
     break;
 
   case HTTP_UPDATE_OK:
-    Serial.println(F("HTTP_UPDATE_OK"));
+    Serial.println(F("HTTP_FIRMWARE_UPDATE_OK"));
 
 #if Tdisplaydisp
-
-    if (TDisplay == true)
-    {
       tft.fillScreen(TFT_ORANGE);
       tft.drawString("ACTUALIZACION COMPLETA", tft.width() / 2, tft.height() / 2);
-    }
-
+#elif (OLED66 == true || OLED96 == true)
+    pageStart();
+    u8g2.setFont(u8g2_font_5x8_tf);
+    u8g2.setCursor(0, (dh / 2 - 4));
+    u8g2.print("Act OK");
+    pageEnd();
 #endif
-
     delay(1000);
     break;
   }
+
+// ESP8266 Firmware Update
 
 #else
 
@@ -2516,16 +2615,6 @@ void Firmware_Update()
   }
 
   // Run http update
-
-//WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-//Rosver false      // Set to true URosario version
-//SaveSDyRTC true // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
-//OLED66display false
-//OLED96display false
-
-/*
-ESP8266WISP
-*/
 
 #if WPA2
 #if Rosver

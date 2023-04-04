@@ -20,10 +20,10 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi false        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver false      // Set to true URosario version
-#define Bluetooth true  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
+#define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
+#define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define Rosver true      // Set to true URosario version
+#define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true in case you use a ESP8285 switch
@@ -34,7 +34,7 @@
                           // 2600 meters above sea level: Bogota, Colombia
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
-#define Tdisplaydisp true
+#define Tdisplaydisp false
 #define OLED66display false
 #define OLED96display false
 
@@ -1662,9 +1662,6 @@ void Check_WiFi_Server()      // Server access by http when you put the ip addre
             client.print("Sensor longitude: ");
             client.print(eepromConfig.sensor_lon);
             client.println("<br>");
-            //            client.print("Alarm: ");
-            //            client.print(eepromConfig.acoustic_alarm);
-            //            client.println("<br>");
             client.println("------");
             client.println("<br>");
             client.print("PM2.5: ");
@@ -1680,7 +1677,7 @@ void Check_WiFi_Server()      // Server access by http when you put the ip addre
             client.println("<br>");
 
             // Captive portal:
-            client.print("Click <a href=\"/3\">here</a> to launch captive portal to set up WiFi and MQTT endpoint.<br>");
+            client.print("Click <a href=\"/3\">here</a> to launch captive portal to set up WiFi and sensor configuration.<br>");
             client.println("<br>");
             // Suspend:
             // client.print("Click <a href=\"/4\">here</a> to suspend the device.<br>");
@@ -1906,22 +1903,12 @@ void Start_Captive_Portal()
     new (&custom_display_type) WiFiManagerParameter(custom_display_str);
   }
 
-  // Sensor Board menu
-
-  //  if (eepromConfig.ConfigValues[4] == '0')
-  //  {
-  //    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0' checked> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1'> Board for external antenna";
-  //    new (&custom_board_type) WiFiManagerParameter(custom_board_str);
-  //  }
-  //  else if (eepromConfig.ConfigValues[4] == '1')
-  //  {
-  //    const char *custom_board_str = "<br/><br/><label for='customBoard'>Board model:</label><br/><input type='radio' name='customBoard' value='0'> Normal (internal antenna)<br><input type='radio' name='customBoard' value='1' checked> Board for external antenna";
-  //    new (&custom_board_type) WiFiManagerParameter(custom_board_str);
-  //  }
-
 #else
+
+#if WPA2
   const char *custom_wpa2_pw = "<label for='p'>Password</label><input id='p' name='p' maxlength='64' type='password' placeholder='{p}'><input type='checkbox' onclick='f()'> Show Password";
   new (&custom_wpa2_pass) WiFiManagerParameter(custom_wpa2_pw); // REVISAR!!!!!!!!!!!
+#endif
 
 #endif
 
@@ -1997,53 +1984,34 @@ void Start_Captive_Portal()
   if (ConfigPortalSave == true)
   {
     ConfigPortalSave = false;
-    //    bool write_eeprom = false;
 
 #if WPA2
     strncpy(eepromConfig.wifi_user, custom_wifi_user.getValue(), sizeof(eepromConfig.wifi_user));
     eepromConfig.wifi_user[sizeof(eepromConfig.wifi_user) - 1] = '\0';
-    //    write_eeprom = true;
     Serial.println(F("Wifi Identity write_eeprom = true"));
-    //    Serial.print(F("WiFi identity: "));
-    //    Serial.println(eepromConfig.wifi_user);
 
     strncpy(eepromConfig.wifi_password, wifi_passwpa2, sizeof(eepromConfig.wifi_password));
     eepromConfig.wifi_password[sizeof(eepromConfig.wifi_password) - 1] = '\0';
-    //    write_eeprom = true;
     Serial.println(F("Wifi pass write_eeprom = true"));
-//    Serial.print(F("WiFi password: "));
-//    Serial.println(eepromConfig.wifi_password);
 #endif
 
     strncpy(eepromConfig.aireciudadano_device_name, custom_id_name.getValue(), sizeof(eepromConfig.aireciudadano_device_name));
     eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
-    //    write_eeprom = true;
     Serial.println(F("Devname write_eeprom = true"));
-    //    Serial.print(F("Device name (captive portal): "));
-    //    Serial.println(eepromConfig.aireciudadano_device_name);
 
 #if !Rosver
     eepromConfig.PublicTime = atoi(custom_public_time.getValue());
-    //    write_eeprom = true;
     Serial.println(F("PublicTime write_eeprom = true"));
-//    Serial.print(F("Publication time: "));
-//    Serial.println(eepromConfig.PublicTime);
 #endif
 
     strncpy(eepromConfig.sensor_lat, custom_sensor_latitude.getValue(), sizeof(eepromConfig.sensor_lat));
     eepromConfig.sensor_lat[sizeof(eepromConfig.sensor_lat) - 1] = '\0';
-    //    write_eeprom = true;
     Serial.println(F("Lat write_eeprom = true"));
-    //    Serial.print(F("Sensor Latitude: "));
-    //    Serial.println(eepromConfig.sensor_lat);
     latitudef = atof(eepromConfig.sensor_lat); // Cambiar de string a float
 
     strncpy(eepromConfig.sensor_lon, custom_sensor_longitude.getValue(), sizeof(eepromConfig.sensor_lon));
     eepromConfig.sensor_lon[sizeof(eepromConfig.sensor_lon) - 1] = '\0';
-    //    write_eeprom = true;
     Serial.println(F("Lon write_eeprom = true"));
-    //    Serial.print(F("Sensor Longitude: "));
-    //    Serial.println(eepromConfig.sensor_lon);
     longitudef = atof(eepromConfig.sensor_lon); // Cambiar de string a float
 
     CustomValTotalString[9] = {0};
@@ -2078,10 +2046,7 @@ void Start_Captive_Portal()
     {
       strncpy(eepromConfig.ConfigValues, CustomValTotalString, sizeof(eepromConfig.ConfigValues));
       eepromConfig.ConfigValues[sizeof(eepromConfig.ConfigValues) - 1] = '\0';
-      //      write_eeprom = true;
       Serial.println(F("CustomVal write_eeprom = true"));
-      //      Serial.print(F("Configuration Values: "));
-      //      Serial.println(eepromConfig.ConfigValues);
     }
       Write_EEPROM();
       Serial.println(F("write_eeprom = true Final"));
@@ -2372,11 +2337,6 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
 #endif
     CustomValtotal2 = ((int)(eepromConfig.ConfigValues[7]) - 48);
 
-//  Serial.print("eepromConfig.ConfigValues[7]= ");
-//  Serial.println(eepromConfig.ConfigValues[7]);
-//  Serial.print("CustomValtotal2: ");
-//  Serial.println(CustomValtotal2);
-
   // CustomSenHYT
 
 #if !Rosver
@@ -2394,11 +2354,6 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
 #endif
     CustomValtotal2 = CustomValtotal2 + ((int)eepromConfig.ConfigValues[6] - 48) * 10;
 
-//  Serial.print("eepromConfig.ConfigValues[6]= ");
-//  Serial.println(eepromConfig.ConfigValues[6]);
-//  Serial.print("CustomValtotal2: ");
-//  Serial.println(CustomValtotal2);
-
   // CustomOutIn
 
   tempcustom = ((uint16_t)jsonBuffer["MQTT_port"]);
@@ -2412,11 +2367,6 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   }
   else
     CustomValtotal2 = CustomValtotal2 + ((int)eepromConfig.ConfigValues[3] - 48) * 10000;
-
-//  Serial.print("eepromConfig.ConfigValues[3]= ");
-//  Serial.println(eepromConfig.ConfigValues[3]);
-//  Serial.print("CustomValtotal2: ");
-//  Serial.println(CustomValtotal2);
 
   CustomValTotalString[9] = {0};
   sprintf(CustomValTotalString, "%8d", CustomValtotal2);
@@ -2996,6 +2946,148 @@ void Read_Sensor()
   else
     NoSensor = true;
 }
+
+#if CO2sensor
+void Setup_CO2sensor()
+{
+  // Test Sensirion SCD30
+
+  Serial.println(F("Test Sensirion SCD30 sensor"));
+
+  Wire.begin(Sensor_SDA_pin, Sensor_SCL_pin);
+
+  if (airSensor.begin(Wire, false) == false)
+  {
+    Serial.println("Air sensor not detected. Please check wiring");
+  }
+  else
+  {
+    Serial.println(F("SCD30 sensor found!"));
+    SCD30sen = true;
+    airSensor.setMeasurementInterval(2); // Change number of seconds between measurements: 2 to 1800 (30 minutes), stored in non-volatile memory of SCD30
+
+    // While the setting is recorded, it is not immediately available to be read.
+    delay(200);
+
+    Serial.print("Auto calibration set to ");
+    if (airSensor.getAutoSelfCalibration() == true)
+      Serial.println("true");
+    else
+      Serial.println("false");
+
+    // meters above sealevel
+    airSensor.setAltitudeCompensation(SiteAltitude); // Set altitude of the sensor in m, stored in non-volatile memory of SCD30
+
+    // Read altitude compensation value
+    unsigned int altitude = airSensor.getAltitudeCompensation();
+    Serial.print("Current altitude: ");
+    Serial.print(altitude);
+    Serial.println("m");
+
+    // Read temperature offset
+    float offset = airSensor.getTemperatureOffset();
+    Serial.print("Current temp offset: ");
+    Serial.print(offset, 2);
+    Serial.println("C");
+  }
+
+  // Test SenseAir S8
+
+  Serial.println(F("Test Sensirion SenseAir S8 sensor"));
+
+  // Initialize S8 sensor
+  S8_serial.begin(S8_BAUDRATE, SERIAL_8N1, PMS_TX, PMS_RX);
+  sensor_S8 = new S8_UART(S8_serial);
+
+  // Check if S8 is available
+  sensor_S8->get_firmware_version(sensorS8.firm_version);
+  int len = strlen(sensorS8.firm_version);
+  if (len == 0)
+  {
+    Serial.println("SenseAir S8 CO2 sensor not found!");
+    S8sen = false;
+  }
+  else
+  {
+    S8sen = true;
+    // Show basic S8 sensor info
+    Serial.println("SenseAir S8 sensor found!");
+    printf("Firmware version: %s\n", sensorS8.firm_version);
+    sensorS8.sensor_id = sensor_S8->get_sensor_ID();
+    Serial.print("Sensor ID: 0x");
+    printIntToHex(sensorS8.sensor_id, 4);
+    Serial.println("");
+
+    // meters above sealevel
+    Serial.print("Current altitude: ");
+    Serial.print(SiteAltitude);
+    Serial.println("m");
+
+    hpa = 1013 - 0.118 * SiteAltitude + 0.00000473 * SiteAltitude * SiteAltitude; // Cuadratic regresion formula obtained PA (hpa) from high above the sea
+    Serial.print(F("Atmospheric pressure calculated by the sea level inserted (hPa): "));
+    Serial.println(hpa);
+
+    Serial.println("S8 Disabling ABC period");
+    sensor_S8 ->set_ABC_period(0);
+    delay(100);
+    sensorS8.abc_period = sensor_S8->get_ABC_period();
+
+    if (sensorS8.abc_period > 0)
+    {
+      Serial.print("ABC (automatic background calibration) period: ");
+      Serial.print(sensorS8.abc_period);
+      Serial.println(" hours");
+    }
+    else
+      Serial.println("ABC (automatic calibration) is disabled");
+      
+    Serial.println("Setup done!");
+  }
+}
+
+void Read_CO2sensor()
+{
+  if (CO2measure == false)
+  {
+    CO2measure = true;
+
+    if (SCD30sen == true)
+    {
+      if (airSensor.dataAvailable())
+      {
+        PM25_value = airSensor.getCO2();
+        Serial.print("CO2:");
+        Serial.print(PM25_value);
+
+        temp = round(airSensor.getTemperature());
+        Serial.print(", temp:");
+        Serial.print(temp);
+
+        humi = round(airSensor.getHumidity());
+        Serial.print(", humidity:");
+        Serial.println(humi);
+      }
+    }
+
+    if (S8sen == true)
+    {
+      // Get CO2 measure
+      float CO2cor;
+      sensorS8.co2 = sensor_S8->get_co2();
+      // Adjust by altitude above the sea level
+      CO2cor = sensorS8.co2 + (0.016 * ((1013 - hpa) / 10) * (sensorS8.co2 - 400)); // Increment of 1.6% for every hPa of difference at sea level
+      PM25_value = round(CO2cor);
+      Serial.print("CO2 orignal:");
+      Serial.print(sensorS8.co2);
+      Serial.print("    CO2 adjust:");
+      Serial.println(PM25_value);
+    }
+  }
+  else
+    CO2measure = false;
+}
+
+#endif
 
 /**
  * @brief : read and display device info

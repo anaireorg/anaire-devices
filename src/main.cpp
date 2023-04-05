@@ -6,10 +6,12 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pendientes:
-// Revisar actualizacion por orden a una direccion web repositorio y cada caso especifico: sin pantalla, OLED96, OLED66, wifi, bluetooth, etc
-// SDy RTC version independiente o unido a BT y Wifi
-// Mqtt para recepcion de ordenes desde el portal
-// Version solo para proyecto U Rosario: PMS7003 y deteccion del SHT31 asi define interior o exterior. Sin opciones menu en Portal Cautivo. SD definir como lee y RTC
+// OK: Revisar actualizacion por orden a una direccion web repositorio y cada caso especifico: sin pantalla, OLED96, OLED66, wifi, bluetooth, etc
+// OK: SDy RTC version independiente o unido a BT y Wifi
+// OK: Mqtt para recepcion de ordenes desde el portal
+// OK: Version solo para proyecto U Rosario: PMS7003 y deteccion del SHT31 asi define interior o exterior. Sin opciones menu en Portal Cautivo. SD definir como lee y RTC
+// Conexion TX del PMS7003 y la SD en la version Rosver, pin3 conflicto al programar
+
 //
 // MODIFICACIONES EXTERNAS:
 // Modificado libreria WifiManager para compatibilidad
@@ -21,7 +23,7 @@
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
 #define Rosver true      // Set to true URosario version
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
@@ -2284,10 +2286,10 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   // Publication Time
 
   tempcustom = uint16_t(jsonBuffer["warning"]);
-  Serial.print("tempcustom= ");
-  Serial.println(tempcustom);
+//  Serial.print("tempcustom= ");
+//  Serial.println(tempcustom);
 
-#if !Rosver
+//#if !Rosver
   if (tempcustom != 0)
   {
     eepromConfig.PublicTime = (uint16_t)jsonBuffer["warning"];
@@ -2295,7 +2297,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     Serial.println((uint16_t)jsonBuffer["warning"]);
     write_eeprom = true;
   }
-#endif
+//#endif
 
   // Latitude
 
@@ -2412,12 +2414,13 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   Serial.println(F("MQTT update - message processed"));
 //  Print_Config();
 
-  // save the new values if the flag was set
-  if (write_eeprom)
+  // if update flag has been enabled, update to latest bin
+  // It has to be the last option, to allow to save EEPROM if required
+  if (((jsonBuffer["update"]) && (jsonBuffer["update"] == "ON")))
   {
-    Serial.println(F("write_eeprom = true Final"));
-    Write_EEPROM();
-    ESP.restart();
+    // Update firmware to latest bin
+    Serial.println(F("Update firmware to latest bin"));
+    Firmware_Update();
   }
 
   // If factory reset has been enabled, just do it
@@ -2427,20 +2430,17 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     ESP.restart();
   }
 
-  // If reboot, just do it, without cleaning the EEPROM
-  if ((jsonBuffer["reboot"]) && (jsonBuffer["reboot"] == "ON"))
+  // save the new values if the flag was set
+  if (write_eeprom)
   {
+    Serial.println(F("write_eeprom = true Final"));
+    Write_EEPROM();
     ESP.restart();
   }
 
-  // if update flag has been enabled, update to latest bin
-  // It has to be the last option, to allow to save EEPROM if required
-  if (((jsonBuffer["update"]) && (jsonBuffer["update"] == "ON")))
-  {
-    // Update firmware to latest bin
-    Serial.println(F("Update firmware to latest bin"));
-    Firmware_Update();
-  }
+  // If reboot, just do it, without cleaning the EEPROM
+//  if ((jsonBuffer["reboot"]) && (jsonBuffer["reboot"] == "ON"))
+//    ESP.restart();
 }
 
 void Firmware_Update()
@@ -2573,7 +2573,11 @@ void Firmware_Update()
   t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/ESP8266WISP_WPA2.bin");
 #endif
 #else
+#if Rosver
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/ESP8266WISP_Rosver.bin");
+#else
   t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/ESP8266WISP.bin");
+#endif
 #endif
 
   switch (ret)

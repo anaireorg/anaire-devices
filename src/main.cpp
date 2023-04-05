@@ -11,6 +11,7 @@
 // OK: Mqtt para recepcion de ordenes desde el portal
 // OK: Version solo para proyecto U Rosario: PMS7003 y deteccion del SHT31 asi define interior o exterior. Sin opciones menu en Portal Cautivo. SD definir como lee y RTC
 // Conexion TX del PMS7003 y la SD en la version Rosver, pin3 conflicto al programar
+// Firmware update CAMBIAR A MAIN no en branch
 
 //
 // MODIFICACIONES EXTERNAS:
@@ -22,11 +23,11 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
+#define Wifi false        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
 #define WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver true      // Set to true URosario version
+#define Rosver false      // Set to true URosario version
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
-#define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
+#define SDyRTC true     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true in case you use a ESP8285 switch
 #define CO2sensor false  // Set to true for CO2 sensors: SCD30 and SenseAir S8
@@ -340,11 +341,11 @@ PMS::DATA data;
 // #define PMS_TX 2 // PMS TX pin  --- Bien pero conectado al Onboard Led del ESP8266
 // #define PMS_TX 16 // PMS TX pin --- No hace nada, no lee
 // #define PMS_TX 14 // PMS TX pin --- Bien pero SPI de SD card usa ese pin
-#if !SaveSDyRTC
+#if !(SaveSDyRTC || SDyRTC)
 #define PMS_TX 14 // PMS TX pin   --- D5 conectado al LED SCK
 #define PMS_RX 16 // PMS RX pin
 #else
-#define PMS_TX 0 // PMS TX pin   --- D5 conectado al LED SCK
+#define PMS_TX 0 // PMS TX pin   --- D5 conectado al 
 #define PMS_RX 16 // PMS RX pin
 #endif
 
@@ -850,7 +851,7 @@ void setup()
   }
   else
   {
-    Serial.println(F("OK, ds1307 initialized"));
+    Serial.println(F("OK, ds1307 init"));
     digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
     delay(200);                 // wait for a 500 msecond
     digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
@@ -2447,6 +2448,7 @@ void Firmware_Update()
 {
 
 // ESP32 Firmware Update
+// CAMBIAR .bin AL MAIN no en un branch!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if !ESP8266
 
@@ -2565,6 +2567,7 @@ void Firmware_Update()
   }
 
   // Run http update
+  // CAMBIAR A MAIN no en branch
 
 #if WPA2
 #if Rosver
@@ -2574,7 +2577,7 @@ void Firmware_Update()
 #endif
 #else
 #if Rosver
-  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/ESP8266WISP_Rosver.bin");
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.91_4abril2023/bin/ESP8266WISP_Rosver.bin");
 #else
   t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/ESP8266WISP.bin");
 #endif

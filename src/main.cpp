@@ -23,12 +23,12 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi false        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
+#define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
 #define WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver false      // Set to true URosario version
+#define Rosver true      // Set to true URosario version
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
-#define SDyRTC true     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
-#define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
+#define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
+#define SaveSDyRTC true // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true in case you use a ESP8285 switch
 #define CO2sensor false  // Set to true for CO2 sensors: SCD30 and SenseAir S8
 
@@ -114,6 +114,7 @@ struct MyConfigStruct
   char wifi_user[24];     // WiFi user to be used on WPA Enterprise. Default to null (not used)
   char wifi_password[24]; // WiFi password to be used on WPA Enterprise. Default to null (not used)
 #endif
+  bool SDver;        // SD version escogida desde el portal cautivo
 } eepromConfig;
 
 char wifi_passwpa2[24];
@@ -547,6 +548,60 @@ File dataFile;
 
 RTC_DS1307 rtc;
 
+/*
+  char convertedValue[20];
+
+  int day = 0;
+  char * daysOfWeek[] = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+
+  const char *day_select_str = R"(
+  <br/><label for='day'>Custom Field Label</label>
+  <select name="dayOfWeek" id="day" onchange="document.getElementById('key_custom').value = this.value">
+    <option value="0">Monday</option>
+    <option value="1">Tuesday</option>
+    <option value="2">Wednesday</option>
+    <option value="3">Thursday</option>
+    <option value="4">Friday</option>
+    <option value="5">Saturday</option>
+    <option value="6">Sunday</option>
+  </select>
+  <script>
+    document.getElementById('day').value = "%d";
+    document.querySelector("[for='key_custom']").hidden = true;
+    document.getElementById('key_custom').hidden = true;
+  </script>
+  )";
+
+*/
+//  char bufferStr[700];
+  char bufferStr2[450];
+
+   char prueba1[15];
+   char prueba2[15];
+
+   int day2 = 0;
+
+const char *date_str = R"(
+  <p>Actual date:</p>
+  <p id="current_date"></p>
+  <p id="numfloat"></p>
+  <script>
+    function addZero(i) {
+    if (i < 10) {i = "0" + i}
+    return i;
+    }
+    date = new Date();
+    year = date.getFullYear();
+    month = addZero(date.getMonth() + 1);
+    day = addZero(date.getDate());
+    hour = addZero(date.getHours());
+    minutes = addZero(date.getMinutes());
+    seconds = addZero(date.getSeconds());
+    prueba1 = year + ", " + month + ", " + day + ", " + hour + ", " + minutes + ", " + seconds;
+    document.getElementById("current_date").innerHTML = prueba1;
+    prueba1 = "prueba 1 prueba 1";
+  </script>
+  )";
 #endif
 
 #if ESP8285
@@ -869,7 +924,7 @@ void setup()
     rtc.adjust(DateTime(__DATE__, __TIME__));
     // This line sets the RTC with an explicit date & time, for example to set
     // January 21, 2014 at 3am you would call:
-    // rtc.adjust(DateTime(2022, 8, 20, 15, 18, 0));
+    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
   }
   else
   {
@@ -1796,6 +1851,17 @@ void Start_Captive_Portal()
 
   // Captive portal parameters
 
+    // The sprintf is so we can input the value of the current selected day
+  // If you dont need to do that, then just pass the const char* straight in.
+//  sprintf(bufferStr, day_select_str, day);
+
+//  Serial.println(bufferStr);
+  
+  sprintf(bufferStr2, date_str, prueba1);
+
+    Serial.println(bufferStr2);
+
+
 #if WPA2
   WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise</p>"); // only custom html
   WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise identity", eepromConfig.wifi_user, 24);
@@ -1928,6 +1994,17 @@ void Start_Captive_Portal()
     new (&custom_outin_type) WiFiManagerParameter(custom_outin_str);
   }
 
+//  WiFiManagerParameter custom_field(bufferStr);
+
+//  sprintf(convertedValue, "%d", day); // Need to convert to string to display a default value.
+
+//  WiFiManagerParameter custom_hidden("key_custom", "Will be hidden", convertedValue, 2);
+
+  WiFiManagerParameter custom_field2(bufferStr2);
+
+  WiFiManagerParameter custom_hidden2("Prueba1valor", "Will be hidden", prueba1, 15);
+
+
   // Add parameters
 
 #if WPA2
@@ -1959,6 +2036,11 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_outin_type);
   wifiManager.addParameter(&custom_endhtml);
 
+//  wifiManager.addParameter(&custom_hidden);
+//  wifiManager.addParameter(&custom_field);
+  wifiManager.addParameter(&custom_hidden2);
+  wifiManager.addParameter(&custom_field2);
+
   wifiManager.setSaveParamsCallback(saveParamCallback);
 
   wifiManager.setConfigPortalTimeout(captiveportaltime);
@@ -1970,6 +2052,16 @@ void Start_Captive_Portal()
   // and goes into a blocking loop awaiting configuration
   // wifiManager.resetSettings(); // reset previous configurations
   ConfigPortalSave = false;
+    Serial.print("prueba1: ");
+    Serial.println(prueba1);
+
+    Serial.print("prueba2: ");
+    Serial.println(prueba2);
+
+
+//   day = atoi(custom_hidden.getValue());
+//  Serial.print("Selected Day1: ");
+//  Serial.println(daysOfWeek[day]);
 
   bool res = wifiManager.startConfigPortal(wifiAP.c_str());
   if (!res)
@@ -1981,6 +2073,26 @@ void Start_Captive_Portal()
     // if you get here you have connected to the WiFi
     Serial.println(F("Captive portal operative"));
   }
+
+    Serial.print("prueba11: ");
+    Serial.println(prueba1);
+
+    Serial.print("prueba21: ");
+    Serial.println(prueba2);
+
+    Serial.print("prueba13: ");
+    Serial.println(custom_hidden2.getValue());
+
+
+strncpy(prueba1, custom_hidden2.getValue(), sizeof(prueba1));
+prueba1[sizeof(prueba1) - 1] = '\0';
+Serial.println(F("Prueba1 write_eeprom = true"));
+Serial.print("prueba12: ");
+    Serial.println(prueba1);
+
+// day = atoi(custom_hidden.getValue());
+//  Serial.print("Selected Day2: ");
+//  Serial.println(daysOfWeek[day]);
 
   // Save parameters to EEPROM only if any of them changed
 

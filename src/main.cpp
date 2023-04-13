@@ -23,15 +23,14 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 false        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver true      // Set to true URosario version
-#define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
-#define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
+#define Wifi true       // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
+#define WPA2 false      // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define Rosver true     // Set to true URosario version
+#define Bluetooth false // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
+#define SDyRTC false    // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC true // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
-#define ESP8285 false    // Set to true in case you use a ESP8285 switch
-#define CO2sensor false  // Set to true for CO2 sensors: SCD30 and SenseAir S8
-
+#define ESP8285 false   // Set to true in case you use a ESP8285 switch
+#define CO2sensor false // Set to true for CO2 sensors: SCD30 and SenseAir S8
 
 #define SiteAltitude 2600 // IMPORTANT for CO2 measurement: Put the site altitude of the measurement, it affects directly the value
                           // 2600 meters above sea level: Bogota, Colombia
@@ -114,7 +113,7 @@ struct MyConfigStruct
   char wifi_user[24];     // WiFi user to be used on WPA Enterprise. Default to null (not used)
   char wifi_password[24]; // WiFi password to be used on WPA Enterprise. Default to null (not used)
 #endif
-  bool SDver;        // SD version escogida desde el portal cautivo
+  bool SDver; // SD version escogida desde el portal cautivo
 } eepromConfig;
 
 char wifi_passwpa2[24];
@@ -346,7 +345,7 @@ PMS::DATA data;
 #define PMS_TX 14 // PMS TX pin   --- D5 conectado al LED SCK
 #define PMS_RX 16 // PMS RX pin
 #else
-#define PMS_TX 0 // PMS TX pin   --- D5 conectado al 
+#define PMS_TX 0  // PMS TX pin   --- D5 conectado al
 #define PMS_RX 16 // PMS RX pin
 #endif
 
@@ -536,7 +535,7 @@ bool Calibrating = false;
 const int chipSelect = 10;
 // uint16_t SDyRTCtime = 15;       // Valor de Sample Time de SD y RTC
 uint16_t SDyRTCtime = 60; // Valor de Sample Time de SD y RTC
-uint16_t SDreset = 0;              // Valor en el que se resetea el ESP para verificar que la SD este conectada
+uint16_t SDreset = 0;     // Valor en el que se resetea el ESP para verificar que la SD este conectada
 
 #if SDyRTC
 #define ValSDreset 180
@@ -548,16 +547,16 @@ File dataFile;
 
 RTC_DS1307 rtc;
 
-char bufferStr2[700];
+////////////////////////
+
+char bufferStr[800];
 
 char prueba1[15];
 int prueba2 = 2;
 
-char Tempoconvertedvalue2[20];
+char Tempoconvertedvalue2[16];
 
-char convertedValue2[20];
-
-char *yearsel[] = {"2020", "2021", "2022", "2023", "2024", "2025", "2026"};
+char convertedValue2[16];
 
 const char *date_str = R"(
   <p>Actual date:</p>
@@ -841,7 +840,7 @@ void setup()
 
 #if (SDyRTC || SaveSDyRTC)
 
-  SDreset = ValSDreset ;
+  SDreset = ValSDreset;
 
   Serial.print(F("Initializing SD card: "));
   // make sure that the default chip select pin is set to output, even if you don't use it:
@@ -1150,7 +1149,7 @@ void loop()
 
 #else
   // MQTT loop
-    if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
+  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
   //  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
   //  if ((millis() - MQTT_loop_start) >= (1 * 60000))
   {
@@ -1632,7 +1631,7 @@ void Print_WiFi_Status()
   Serial.println(F(" dBm"));
 }
 
-void Check_WiFi_Server()      // Server access by http when you put the ip address in a web browser !!!!!!!!!!!!!!!!!!!!!!!!!!!
+void Check_WiFi_Server()                       // Server access by http when you put the ip address in a web browser !!!!!!!!!!!!!!!!!!!!!!!!!!!
 {                                              // Wifi server
   WiFiClient client = wifi_server.available(); // listen for incoming clients
   if (client)
@@ -1749,12 +1748,12 @@ void Check_WiFi_Server()      // Server access by http when you put the ip addre
           PortalFlag = true;
           Start_Captive_Portal();
         }
-//#if !ESP8266        // Check to see if the client request was "GET /4" to suspend the device:
+        // #if !ESP8266        // Check to see if the client request was "GET /4" to suspend the device:
         if (currentLine.endsWith("GET /4"))
         {
           Firmware_Update();
         }
-//#endif
+        // #endif
 
         // Check to see if the client request was "GET /5" to restart the device:
         if (currentLine.endsWith("GET /5"))
@@ -1830,14 +1829,6 @@ void Start_Captive_Portal()
   WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
   // Captive portal parameters
-
-    // The sprintf is so we can input the value of the current selected day
-  // If you dont need to do that, then just pass the const char* straight in.
-
-  sprintf(bufferStr2, date_str, prueba2);
-
-  Serial.println(bufferStr2);
-
 
 #if WPA2
   WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise</p>"); // only custom html
@@ -1971,12 +1962,18 @@ void Start_Captive_Portal()
     new (&custom_outin_type) WiFiManagerParameter(custom_outin_str);
   }
 
-  WiFiManagerParameter custom_field2(bufferStr2);
+  // The sprintf is so we can input the value of the current selected day
+  // If you dont need to do that, then just pass the const char* straight in.
 
-    sprintf(convertedValue2, "%d", prueba2); // Need to convert to string to display a default value.
+  sprintf(bufferStr, date_str, prueba2);
 
-  WiFiManagerParameter custom_hidden2("Prueba1valor", "Will be hidden2", convertedValue2, 15);
+  Serial.println(bufferStr);
 
+  WiFiManagerParameter custom_field(bufferStr);
+
+  sprintf(convertedValue2, "%d", prueba2); // Need to convert to string to display a default value.
+
+  WiFiManagerParameter custom_hidden("Prueba1valor", "Will be hidden", convertedValue2, 15);
 
   // Add parameters
 
@@ -2009,8 +2006,8 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_outin_type);
   wifiManager.addParameter(&custom_endhtml);
 
-  wifiManager.addParameter(&custom_hidden2);
-  wifiManager.addParameter(&custom_field2);
+  wifiManager.addParameter(&custom_hidden);
+  wifiManager.addParameter(&custom_field);
 
   wifiManager.setSaveParamsCallback(saveParamCallback);
 
@@ -2024,12 +2021,11 @@ void Start_Captive_Portal()
   // wifiManager.resetSettings(); // reset previous configurations
   ConfigPortalSave = false;
 
-    Serial.print("convertedValue2: ");
-    Serial.println(convertedValue2);
+  Serial.print("convertedValue2: ");
+  Serial.println(convertedValue2);
 
-    Serial.print("Tempoconvertedvalue2: ");
-    Serial.println(Tempoconvertedvalue2);
-
+  Serial.print("Tempoconvertedvalue2: ");
+  Serial.println(Tempoconvertedvalue2);
 
   bool res = wifiManager.startConfigPortal(wifiAP.c_str());
   if (!res)
@@ -2042,29 +2038,28 @@ void Start_Captive_Portal()
     Serial.println(F("Captive portal operative"));
   }
 
-    Serial.print("prueba21: ");
-    Serial.println(prueba2);
+  Serial.print("prueba21: ");
+  Serial.println(prueba2);
 
-    Serial.print("prueba13: ");
-    Serial.println(custom_hidden2.getValue());
+  Serial.print("prueba13: ");
+  Serial.println(custom_hidden.getValue());
 
   int tempyear = 0;
-  tempyear = atoi(custom_hidden2.getValue());
-     Serial.print("tempyear: ");
-    Serial.println(tempyear);
+  tempyear = atoi(custom_hidden.getValue());
+  Serial.print("tempyear: ");
+  Serial.println(tempyear);
 
-  strncpy(prueba1, custom_hidden2.getValue(), sizeof(prueba1));
+  strncpy(prueba1, custom_hidden.getValue(), sizeof(prueba1));
   prueba1[sizeof(prueba1) - 1] = '\0';
-  Serial.println(F("Prueba1 write_eeprom = true"));
+  //  Serial.println(F("Prueba1 write_eeprom = true"));
   Serial.print("prueba12: ");
-    Serial.println(prueba1);
+  Serial.println(prueba1);
 
-    Serial.print("convertedValue21: ");
-    Serial.println(convertedValue2);
+  Serial.print("convertedValue21: ");
+  Serial.println(convertedValue2);
 
-      Serial.print("Tempoconvertedvalue21: ");
-     Serial.println(Tempoconvertedvalue2);
-
+  Serial.print("Tempoconvertedvalue21: ");
+  Serial.println(Tempoconvertedvalue2);
 
   // Save parameters to EEPROM only if any of them changed
 
@@ -2135,11 +2130,11 @@ void Start_Captive_Portal()
       eepromConfig.ConfigValues[sizeof(eepromConfig.ConfigValues) - 1] = '\0';
       Serial.println(F("CustomVal write_eeprom = true"));
     }
-      Write_EEPROM();
-      Serial.println(F("write_eeprom = true Final"));
-      //  ESP.restart();              // REVISAR!!!!!!!!!!!!!
+    Write_EEPROM();
+    Serial.println(F("write_eeprom = true Final"));
+    //  ESP.restart();              // REVISAR!!!!!!!!!!!!!
   }
-  ESP.restart();              // REVISAR!!!!!!!!!!!!!
+  ESP.restart(); // REVISAR!!!!!!!!!!!!!
 }
 
 String getParam(String name)
@@ -2170,11 +2165,10 @@ void saveParamCallback()
   Serial.print(F("CustomValtotal: "));
   Serial.println(CustomValtotal);
   strncpy(wifi_passwpa2, getParam("p").c_str(), sizeof(wifi_passwpa2)); // REVISAR!!!!!!!!!!!
-                                                                        //  Serial.println("Se presiono SAVE!!!!!!!!!!!!!!!!!!!!!!!!!!");
-  
-//  strncpy(Tempoconvertedvalue2, convertedValue2, sizeof(Tempoconvertedvalue2));
-//      Tempoconvertedvalue2[sizeof(Tempoconvertedvalue2) - 1] = '\0';
-  
+
+  strncpy(Tempoconvertedvalue2, convertedValue2, sizeof(Tempoconvertedvalue2));
+  Tempoconvertedvalue2[sizeof(Tempoconvertedvalue2) - 1] = '\0';
+
   ConfigPortalSave = true;
 }
 
@@ -2375,10 +2369,10 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   // Publication Time
 
   tempcustom = uint16_t(jsonBuffer["warning"]);
-//  Serial.print("tempcustom= ");
-//  Serial.println(tempcustom);
+  //  Serial.print("tempcustom= ");
+  //  Serial.println(tempcustom);
 
-//#if !Rosver
+  // #if !Rosver
   if (tempcustom != 0)
   {
     eepromConfig.PublicTime = (uint16_t)jsonBuffer["warning"];
@@ -2386,7 +2380,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     Serial.println((uint16_t)jsonBuffer["warning"]);
     write_eeprom = true;
   }
-//#endif
+  // #endif
 
   // Latitude
 
@@ -2400,7 +2394,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     write_eeprom = true;
   }
 
-   // Longitude
+  // Longitude
 
   longitudef = atof(jsonBuffer["temperature_offset"]);
   if (longitudef != 0)
@@ -2428,7 +2422,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
 #endif
     CustomValtotal2 = ((int)(eepromConfig.ConfigValues[7]) - 48);
 
-  // CustomSenHYT
+    // CustomSenHYT
 
 #if !Rosver
 
@@ -2501,7 +2495,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
 
   // print info
   Serial.println(F("MQTT update - message processed"));
-//  Print_Config();
+  //  Print_Config();
 
   // if update flag has been enabled, update to latest bin
   // It has to be the last option, to allow to save EEPROM if required
@@ -2528,15 +2522,15 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   }
 
   // If reboot, just do it, without cleaning the EEPROM
-//  if ((jsonBuffer["reboot"]) && (jsonBuffer["reboot"] == "ON"))
-//    ESP.restart();
+  //  if ((jsonBuffer["reboot"]) && (jsonBuffer["reboot"] == "ON"))
+  //    ESP.restart();
 }
 
 void Firmware_Update()
 {
 
-// ESP32 Firmware Update
-// CAMBIAR .bin AL MAIN no en un branch!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // ESP32 Firmware Update
+  // CAMBIAR .bin AL MAIN no en un branch!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if !ESP8266
 
@@ -2551,20 +2545,20 @@ void Firmware_Update()
   Serial.println(F("ACTUALIZACION EN CURSO"));
 
 #if Tdisplaydisp
-    // Update display
-    tft.fillScreen(TFT_ORANGE);
-    tft.setTextColor(TFT_BLACK, TFT_ORANGE);
-    tft.setTextSize(1);
-    tft.setFreeFont(FF90);
-    tft.setTextDatum(MC_DATUM);
-    tft.drawString("ACTUALIZACION EN CURSO", tft.width() / 2, tft.height() / 2);
+  // Update display
+  tft.fillScreen(TFT_ORANGE);
+  tft.setTextColor(TFT_BLACK, TFT_ORANGE);
+  tft.setTextSize(1);
+  tft.setFreeFont(FF90);
+  tft.setTextDatum(MC_DATUM);
+  tft.drawString("ACTUALIZACION EN CURSO", tft.width() / 2, tft.height() / 2);
 #elif (OLED66 == true || OLED96 == true)
-    pageStart();
-    u8g2.setFont(u8g2_font_5x8_tf);
-    u8g2.setCursor(0, (dh / 2 - 4));
-    u8g2.print("Actualizacion");
-    delay(1000);
-    pageEnd();
+  pageStart();
+  u8g2.setFont(u8g2_font_5x8_tf);
+  u8g2.setCursor(0, (dh / 2 - 4));
+  u8g2.print("Actualizacion");
+  delay(1000);
+  pageEnd();
 #endif
 
 #if Tdisplaydisp
@@ -2584,8 +2578,8 @@ void Firmware_Update()
     Serial.printf("HTTP_UPDATE_FAILED Error (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
 
 #if Tdisplaydisp
-      tft.fillScreen(TFT_ORANGE);
-      tft.drawString("ACTUALIZACION FALLIDA", tft.width() / 2, tft.height() / 2);
+    tft.fillScreen(TFT_ORANGE);
+    tft.drawString("ACTUALIZACION FALLIDA", tft.width() / 2, tft.height() / 2);
 #elif (OLED66 == true || OLED96 == true)
     pageStart();
     u8g2.setFont(u8g2_font_5x8_tf);
@@ -2604,8 +2598,8 @@ void Firmware_Update()
     Serial.println(F("HTTP_FIRMWARE_UPDATE_OK"));
 
 #if Tdisplaydisp
-      tft.fillScreen(TFT_ORANGE);
-      tft.drawString("ACTUALIZACION COMPLETA", tft.width() / 2, tft.height() / 2);
+    tft.fillScreen(TFT_ORANGE);
+    tft.drawString("ACTUALIZACION COMPLETA", tft.width() / 2, tft.height() / 2);
 #elif (OLED66 == true || OLED96 == true)
     pageStart();
     u8g2.setFont(u8g2_font_5x8_tf);
@@ -2617,7 +2611,7 @@ void Firmware_Update()
     break;
   }
 
-// ESP8266 Firmware Update
+  // ESP8266 Firmware Update
 
 #else
 
@@ -2836,7 +2830,7 @@ if (PMSsen == true)
 #if !TTGO_TQ
     Serial1.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
 #else
-    Serial2.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
+  Serial2.begin(PMS::BAUD_RATE, SERIAL_8N1, PMS_TX, PMS_RX);
 #endif
 
 #else
@@ -3123,7 +3117,7 @@ void Setup_CO2sensor()
     Serial.println(hpa);
 
     Serial.println("S8 Disabling ABC period");
-    sensor_S8 ->set_ABC_period(0);
+    sensor_S8->set_ABC_period(0);
     delay(100);
     sensorS8.abc_period = sensor_S8->get_ABC_period();
 
@@ -3135,7 +3129,7 @@ void Setup_CO2sensor()
     }
     else
       Serial.println("ABC (automatic calibration) is disabled");
-      
+
     Serial.println("Setup done!");
   }
 }
@@ -3470,7 +3464,7 @@ void Print_Config()
 #elif Wifi
 #if SaveSDyRTC
   Serial.println("SDyRTC enabled: save data and date on SD Card");
-#endif  
+#endif
   Serial.print(F("Publication Time: "));
   Serial.println(eepromConfig.PublicTime);
   //  Serial.print(F("MQTT server: "));

@@ -548,43 +548,22 @@ File dataFile;
 
 RTC_DS1307 rtc;
 
-/*
-  char convertedValue[20];
+char bufferStr2[700];
 
-  int day = 0;
-  char * daysOfWeek[] = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+char prueba1[15];
+int prueba2 = 2;
 
-  const char *day_select_str = R"(
-  <br/><label for='day'>Custom Field Label</label>
-  <select name="dayOfWeek" id="day" onchange="document.getElementById('key_custom').value = this.value">
-    <option value="0">Monday</option>
-    <option value="1">Tuesday</option>
-    <option value="2">Wednesday</option>
-    <option value="3">Thursday</option>
-    <option value="4">Friday</option>
-    <option value="5">Saturday</option>
-    <option value="6">Sunday</option>
-  </select>
-  <script>
-    document.getElementById('day').value = "%d";
-    document.querySelector("[for='key_custom']").hidden = true;
-    document.getElementById('key_custom').hidden = true;
-  </script>
-  )";
+char Tempoconvertedvalue2[20];
 
-*/
-//  char bufferStr[700];
-  char bufferStr2[450];
+char convertedValue2[20];
 
-   char prueba1[15];
-   char prueba2[15];
-
-   int day2 = 0;
+char *yearsel[] = {"2020", "2021", "2022", "2023", "2024", "2025", "2026"};
 
 const char *date_str = R"(
   <p>Actual date:</p>
   <p id="current_date"></p>
-  <p id="numfloat"></p>
+  <p id="current_year"></p>
+  <p id="prueba2"></p>
   <script>
     function addZero(i) {
     if (i < 10) {i = "0" + i}
@@ -598,12 +577,13 @@ const char *date_str = R"(
     minutes = addZero(date.getMinutes());
     seconds = addZero(date.getSeconds());
     prueba1 = year + ", " + month + ", " + day + ", " + hour + ", " + minutes + ", " + seconds;
+    prueba2 = year;
     document.getElementById("current_date").innerHTML = prueba1;
-    prueba1 = "prueba 1 prueba 1";
+    document.getElementById("current_year").innerHTML = prueba2;
+    document.getElementById('prueba2').value = "%d";
   </script>
   )";
 #endif
-
 #if ESP8285
 #define LEDPIN 13
 #else
@@ -1853,13 +1833,10 @@ void Start_Captive_Portal()
 
     // The sprintf is so we can input the value of the current selected day
   // If you dont need to do that, then just pass the const char* straight in.
-//  sprintf(bufferStr, day_select_str, day);
 
-//  Serial.println(bufferStr);
-  
-  sprintf(bufferStr2, date_str, prueba1);
+  sprintf(bufferStr2, date_str, prueba2);
 
-    Serial.println(bufferStr2);
+  Serial.println(bufferStr2);
 
 
 #if WPA2
@@ -1994,15 +1971,11 @@ void Start_Captive_Portal()
     new (&custom_outin_type) WiFiManagerParameter(custom_outin_str);
   }
 
-//  WiFiManagerParameter custom_field(bufferStr);
-
-//  sprintf(convertedValue, "%d", day); // Need to convert to string to display a default value.
-
-//  WiFiManagerParameter custom_hidden("key_custom", "Will be hidden", convertedValue, 2);
-
   WiFiManagerParameter custom_field2(bufferStr2);
 
-  WiFiManagerParameter custom_hidden2("Prueba1valor", "Will be hidden", prueba1, 15);
+    sprintf(convertedValue2, "%d", prueba2); // Need to convert to string to display a default value.
+
+  WiFiManagerParameter custom_hidden2("Prueba1valor", "Will be hidden2", convertedValue2, 15);
 
 
   // Add parameters
@@ -2036,8 +2009,6 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_outin_type);
   wifiManager.addParameter(&custom_endhtml);
 
-//  wifiManager.addParameter(&custom_hidden);
-//  wifiManager.addParameter(&custom_field);
   wifiManager.addParameter(&custom_hidden2);
   wifiManager.addParameter(&custom_field2);
 
@@ -2052,16 +2023,13 @@ void Start_Captive_Portal()
   // and goes into a blocking loop awaiting configuration
   // wifiManager.resetSettings(); // reset previous configurations
   ConfigPortalSave = false;
-    Serial.print("prueba1: ");
-    Serial.println(prueba1);
 
-    Serial.print("prueba2: ");
-    Serial.println(prueba2);
+    Serial.print("convertedValue2: ");
+    Serial.println(convertedValue2);
 
+    Serial.print("Tempoconvertedvalue2: ");
+    Serial.println(Tempoconvertedvalue2);
 
-//   day = atoi(custom_hidden.getValue());
-//  Serial.print("Selected Day1: ");
-//  Serial.println(daysOfWeek[day]);
 
   bool res = wifiManager.startConfigPortal(wifiAP.c_str());
   if (!res)
@@ -2074,25 +2042,29 @@ void Start_Captive_Portal()
     Serial.println(F("Captive portal operative"));
   }
 
-    Serial.print("prueba11: ");
-    Serial.println(prueba1);
-
     Serial.print("prueba21: ");
     Serial.println(prueba2);
 
     Serial.print("prueba13: ");
     Serial.println(custom_hidden2.getValue());
 
+  int tempyear = 0;
+  tempyear = atoi(custom_hidden2.getValue());
+     Serial.print("tempyear: ");
+    Serial.println(tempyear);
 
-strncpy(prueba1, custom_hidden2.getValue(), sizeof(prueba1));
-prueba1[sizeof(prueba1) - 1] = '\0';
-Serial.println(F("Prueba1 write_eeprom = true"));
-Serial.print("prueba12: ");
+  strncpy(prueba1, custom_hidden2.getValue(), sizeof(prueba1));
+  prueba1[sizeof(prueba1) - 1] = '\0';
+  Serial.println(F("Prueba1 write_eeprom = true"));
+  Serial.print("prueba12: ");
     Serial.println(prueba1);
 
-// day = atoi(custom_hidden.getValue());
-//  Serial.print("Selected Day2: ");
-//  Serial.println(daysOfWeek[day]);
+    Serial.print("convertedValue21: ");
+    Serial.println(convertedValue2);
+
+      Serial.print("Tempoconvertedvalue21: ");
+     Serial.println(Tempoconvertedvalue2);
+
 
   // Save parameters to EEPROM only if any of them changed
 
@@ -2199,6 +2171,10 @@ void saveParamCallback()
   Serial.println(CustomValtotal);
   strncpy(wifi_passwpa2, getParam("p").c_str(), sizeof(wifi_passwpa2)); // REVISAR!!!!!!!!!!!
                                                                         //  Serial.println("Se presiono SAVE!!!!!!!!!!!!!!!!!!!!!!!!!!");
+  
+//  strncpy(Tempoconvertedvalue2, convertedValue2, sizeof(Tempoconvertedvalue2));
+//      Tempoconvertedvalue2[sizeof(Tempoconvertedvalue2) - 1] = '\0';
+  
   ConfigPortalSave = true;
 }
 

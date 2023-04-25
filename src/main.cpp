@@ -10,10 +10,10 @@
 // OK: SDy RTC version independiente o unido a BT y Wifi
 // OK: Mqtt para recepcion de ordenes desde el portal
 // OK: Version solo para proyecto U Rosario: PMS7003 y deteccion del SHT31 asi define interior o exterior. Sin opciones menu en Portal Cautivo. SD definir como lee y RTC
-// Conexion TX del PMS7003 y la SD en la version Rosver, pin3 conflicto al programar
+// OK: Conexion TX del PMS7003 y la SD en la version Rosver, pin3 conflicto al programar
 // Firmware update CAMBIAR A MAIN no en branch
-
-//
+// OK: Probar version SD y Wifi al tiempo para Rosver
+// OK: Grabar en la SD nombre y estados de Reset e Inicio
 // MODIFICACIONES EXTERNAS:
 // Modificado libreria WifiManager para compatibilidad
 // Modificado PubSubClient.cpp : para quitar warning
@@ -23,14 +23,14 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi true       // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 false      // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver true     // Set to true URosario version
-#define Bluetooth false // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
-#define SDyRTC false    // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
-#define SaveSDyRTC true // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
-#define ESP8285 false   // Set to true in case you use a ESP8285 switch
-#define CO2sensor false // Set to true for CO2 sensors: SCD30 and SenseAir S8
+#define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
+#define WPA2 true       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define Rosver true      // Set to true URosario version
+#define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
+#define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
+#define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
+#define ESP8285 false    // Set to true in case you use a ESP8285 switch
+#define CO2sensor false  // Set to true for CO2 sensors: SCD30 and SenseAir S8
 
 #define SiteAltitude 2600 // IMPORTANT for CO2 measurement: Put the site altitude of the measurement, it affects directly the value
                           // 2600 meters above sea level: Bogota, Colombia
@@ -67,6 +67,7 @@ bool OLED66 = false;        // Set to true if you use a OLED Diplay 0.66 inch 64
 bool OLED96 = false;        // Set to true if you use a OLED Diplay 0.96 inch 128x64
 bool ExtAnt = false;        // External antenna
 bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring outside environment, false if is outdoors
+bool SDflag = false;
 
 uint8_t CustomValue = 0;
 uint16_t CustomValtotal = 0;
@@ -91,8 +92,6 @@ struct MyConfigStruct
   uint16_t BluetoothTime = 2; // Bluetooth Time
 #endif
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
-// #elif SDyRTC
-//   uint16_t SDyRTCTime = 10; // SDyRTC Time
 #elif Wifi
   uint16_t PublicTime = 1;     // Publication Time
                                //  uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
@@ -109,11 +108,10 @@ struct MyConfigStruct
   char aireciudadano_device_name[30] = "AireCiudadano_DBB_01"; // Nombre de la estacion
 #endif
 #endif
-#if WPA2
+#if (WPA2 || Rosver)
   char wifi_user[24];     // WiFi user to be used on WPA Enterprise. Default to null (not used)
   char wifi_password[24]; // WiFi password to be used on WPA Enterprise. Default to null (not used)
 #endif
-  bool SDver; // SD version escogida desde el portal cautivo
 } eepromConfig;
 
 char wifi_passwpa2[24];
@@ -341,18 +339,16 @@ PMS::DATA data;
 // #define PMS_TX 2 // PMS TX pin  --- Bien pero conectado al Onboard Led del ESP8266
 // #define PMS_TX 16 // PMS TX pin --- No hace nada, no lee
 // #define PMS_TX 14 // PMS TX pin --- Bien pero SPI de SD card usa ese pin
-#if !(SaveSDyRTC || SDyRTC)
-#define PMS_TX 14 // PMS TX pin   --- D5 conectado al LED SCK
+#if !(SaveSDyRTC || SDyRTC || Rosver)
+#define PMS_TX 14 // PMS TX pin
 #define PMS_RX 16 // PMS RX pin
 #else
-#define PMS_TX 0  // PMS TX pin   --- D5 conectado al
+#define PMS_TX 0  // PMS TX pin
 #define PMS_RX 16 // PMS RX pin
 #endif
-
 #else
 #define PMS_TX 3 // PMS TX pin
 #define PMS_RX 2 // PMS RX pin
-
 #endif
 
 SoftwareSerial pmsSerial(PMS_TX, PMS_RX); // SoftwareSerial(rxPin, txPin)
@@ -431,8 +427,6 @@ DataProvider provider(lib, DataType::T_RH_CO2_ALT);
 #endif
 
 const int WIFI_CONNECT_TIMEOUT = 10000; // 10 seconds
-// const int WIFI_CONNECT_TIMEOUT = 1000; // 1 seconds !!! TEST SEN5X
-// const int captiveportaltime = 90;
 WiFiServer wifi_server(80);
 WiFiClient wifi_client;
 bool PortalFlag = false;
@@ -526,7 +520,7 @@ bool updating = false;
 bool InCaptivePortal = false;
 bool Calibrating = false;
 
-#if (SDyRTC || SaveSDyRTC)
+#if (SDyRTC || SaveSDyRTC || Rosver)
 
 #include <SPI.h>
 #include <SD.h>
@@ -537,7 +531,7 @@ const int chipSelect = 10;
 uint16_t SDyRTCtime = 60; // Valor de Sample Time de SD y RTC
 uint16_t SDreset = 0;     // Valor en el que se resetea el ESP para verificar que la SD este conectada
 
-#if SDyRTC
+#if (SDyRTC || Rosver)
 #define ValSDreset 180
 #elif SaveSDyRTC
 #define ValSDreset 720
@@ -547,22 +541,11 @@ File dataFile;
 
 RTC_DS1307 rtc;
 
-////////////////////////
+String Valdate_time_id;
 
-char bufferStr[800];
-
-char prueba1[15];
-int prueba2 = 2;
-
-char Tempoconvertedvalue2[16];
-
-char convertedValue2[16];
-
-const char *date_str = R"(
-  <p>Actual date:</p>
-  <p id="current_date"></p>
-  <p id="current_year"></p>
-  <p id="prueba2"></p>
+const char *customHtml = R"(
+  <label for="date_time_id">Browser's Date & Hour for RTC clock:</label><br/>
+  <input type="text" id="date_time_id" name="date_time_id" value="" readonly><br/>
   <script>
     function addZero(i) {
     if (i < 10) {i = "0" + i}
@@ -575,13 +558,11 @@ const char *date_str = R"(
     hour = addZero(date.getHours());
     minutes = addZero(date.getMinutes());
     seconds = addZero(date.getSeconds());
-    prueba1 = year + ", " + month + ", " + day + ", " + hour + ", " + minutes + ", " + seconds;
-    prueba2 = year;
-    document.getElementById("current_date").innerHTML = prueba1;
-    document.getElementById("current_year").innerHTML = prueba2;
-    document.getElementById('prueba2').value = "%d";
-  </script>
-  )";
+    prueba1 = year + month + day + hour + minutes + seconds;
+    document.getElementById("date_time_id").value = prueba1;
+  </script>   
+     )";
+
 #endif
 #if ESP8285
 #define LEDPIN 13
@@ -610,7 +591,7 @@ void setup()
   }
   Serial.setDebugOutput(true);
 
-#if Wifi
+#if (Wifi || Rosver)
 
 #if !ESP8266
   Serial.println(F("CPU0 reset reason:"));
@@ -675,10 +656,10 @@ void setup()
   Serial.println(eepromConfig.aireciudadano_device_name);
   strcpy(aireciudadano_device_nameTemp, eepromConfig.aireciudadano_device_name);
 #endif
-#if !SDyRTC
-  // Read EEPROM config values
-  Read_EEPROM();
-#endif
+  // #if !(SDyRTC || Rosver)
+  // if (SDflag == false)
+  Read_EEPROM(); // Read EEPROM config values //MIRAR SDflag   ////////////////////TEST
+// #endif
 #if PreProgSensor
   strncpy(eepromConfig.aireciudadano_device_name, aireciudadano_device_nameTemp, sizeof(eepromConfig.aireciudadano_device_name));
   Serial.print(F("T2:"));
@@ -688,9 +669,7 @@ void setup()
   pinMode(LEDPIN, OUTPUT);
   digitalWrite(LEDPIN, HIGH);
 
-#if !SDyRTC
   aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
-#endif
 
   float Floatver = sw_version.toFloat();
   Swver = Floatver * 10;
@@ -700,10 +679,12 @@ void setup()
   // Get device id
   Get_AireCiudadano_DeviceId();
 
+#if SDyRTC
+  SDflag == true;
+#endif
+
 #if Bluetooth
   Bluetooth_loop_time = eepromConfig.BluetoothTime;
-// #elif SDyRTC
-//   SDyRTC_loop_time = eepromConfig.SDyRTCTime;
 #endif
 
 #if Tdisplaydisp
@@ -769,11 +750,13 @@ void setup()
 
 #endif
 
+#if Tdisplaydisp
   // Out for power on and off sensors
   pinMode(OUT_EN, OUTPUT);
   // On sensors
   digitalWrite(OUT_EN, HIGH); // step-up on
   delay(100);
+#endif
 
 #if Wifi
   // Set MQTT topics
@@ -806,20 +789,22 @@ void setup()
     Start_Captive_Portal();
     delay(100);
   }
-
-  // Attempt to connect to WiFi network:
-  Connect_WiFi();
-
-  // Attempt to connect to MQTT broker
-  if (!err_wifi)
+  if (SDflag == false)
   {
-    Init_MQTT();
+    // Attempt to connect to WiFi network:
+    Connect_WiFi();
+
+    // Attempt to connect to MQTT broker
+    if (!err_wifi)
+    {
+      Init_MQTT();
 
 #if ESP8285
-    digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
-    delay(750);                // wait for a 750 msecond
-    digitalWrite(LEDPIN, HIGH);
+      digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+      delay(750);                // wait for a 750 msecond
+      digitalWrite(LEDPIN, HIGH);
 #endif
+    }
   }
 #endif
 
@@ -838,85 +823,77 @@ void setup()
   MQTT_loop_start = millis();
 #endif
 
-#if (SDyRTC || SaveSDyRTC)
+#if (SDyRTC || SaveSDyRTC || Rosver)
 
-  SDreset = ValSDreset;
-
-  Serial.print(F("Initializing SD card: "));
-  // make sure that the default chip select pin is set to output, even if you don't use it:
-  pinMode(SS, OUTPUT);
-
-  // see if the card is present and can be initialized:
-  if (!SD.begin(chipSelect))
+  if (SDflag == true)
   {
-    Serial.println(F("Card failed, or not present"));
-    Serial.println(F("Review SD card or connections"));
-  }
-  else
-  {
-    Serial.println(F("OK, card initialized"));
+    SDreset = ValSDreset;
 
-    // Open up the file we're going to log to!
-    dataFile = SD.open("datalog.txt", FILE_WRITE);
-    if (!dataFile)
+    Serial.print(F("Initializing SD card: "));
+    // make sure that the default chip select pin is set to output, even if you don't use it:
+    pinMode(SS, OUTPUT);
+
+    // see if the card is present and can be initialized:
+    if (!SD.begin(chipSelect))
     {
-      Serial.println(F("error opening datalog.txt"));
-      Serial.println(F("Review the SD card"));
+      Serial.println(F("Card failed, or not present"));
+      Serial.println(F("Review SD card or connections"));
     }
     else
     {
-      digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
-      delay(500);                 // wait for a 500 msecond
-      digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
-      delay(500);                 // wait for a 500 msecond
-      digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
-      delay(500);                 // wait for a 500 msecond
-      digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
-      delay(500);                 // wait for a 500 msecond
+      Serial.println(F("OK, card initialized"));
+
+      // Open up the file we're going to log to!
+      // dataFile = SD.open("datalog.txt", FILE_WRITE);
+      dataFile = SD.open(aireciudadano_device_id + ".txt", FILE_WRITE);
+      if (!dataFile)
+      {
+        Serial.println(F("error opening aireciudadano_device_id.txt"));
+        Serial.println(F("Review the SD card"));
+      }
+      else
+      {
+        dataFile.println("");
+        dataFile.println(aireciudadano_device_id);
+        dataFile.println("Date_Hour_PM2.5_Hum(optional)_Temp(Optional)_RESET(Optional)");
+        dataFile.close();
+        // print to the serial port too:
+        Serial.println(F("OK, SD card file open"));
+        digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
+        delay(500);                 // wait for a 500 msecond
+        digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
+        delay(500);                 // wait for a 500 msecond
+        digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
+        delay(500);                 // wait for a 500 msecond
+        digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
+        delay(500);                 // wait for a 500 msecond
+      }
     }
-  }
 
-  Serial.print(F("Initializing RTC ds1307: "));
+    Serial.print(F("Initializing RTC ds1307: "));
 
-  if (!rtc.begin())
-  {
-    Serial.println(F("Couldn't find RTC"));
-    Serial.flush();
-  }
-  else
-  {
-    Serial.println(F("OK, ds1307 init"));
-    digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
-    delay(200);                 // wait for a 500 msecond
-    digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
-    delay(200);                 // wait for a 500 msecond
-    digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
-    delay(200);                 // wait for a 500 msecond
-    digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
-  }
-
-  if (!rtc.isrunning())
-  {
-    Serial.println(F("RTC is NOT running, let's set the time!"));
-    // When time needs to be set on a new device, or after a power loss, the
-    // following line sets the RTC to the date & time this sketch was compiled
-    rtc.adjust(DateTime(__DATE__, __TIME__));
-    // This line sets the RTC with an explicit date & time, for example to set
-    // January 21, 2014 at 3am you would call:
-    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
-  }
-  else
-  {
-    if (analogRead(A0) > 200)
+    if (!rtc.begin())
     {
-      rtc.adjust(DateTime(__DATE__, __TIME__));
-      Serial.println(F("RTC set at compilation time!"));
+      Serial.println(F("Couldn't find RTC"));
+      Serial.flush();
     }
+    else
+    {
+      Serial.println(F("OK, ds1307 init"));
+      digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
+      delay(200);                 // wait for a 500 msecond
+      digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
+      delay(200);                 // wait for a 500 msecond
+      digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
+      delay(200);                 // wait for a 500 msecond
+      digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
+    }
+
+    if (!rtc.isrunning())
+      Serial.println(F("RTC is NOT running"));
     else
       Serial.println(F("ds1307 is running, no changes"));
-    //  rtc.adjust(DateTime(2022, 8, 20, 15, 18, 0));
   }
-
 #endif
 
   // Get device id
@@ -1128,49 +1105,53 @@ void loop()
     PM25_samples = 0.0;
     Con_loop_times = 0;
   }
-#elif SDyRTC
 
-  // SDyRTC loop
+#elif (Wifi || SDyRTC || Rosver)
 
-  if (Con_loop_times >= SDyRTCtime)
+  if (SDflag == true)
   {
-    float PM25f;
+    // SDyRTC loop
 
-    PM25f = PM25_accumulated / PM25_samples;
-    pm25int = round(PM25f);
-    Serial.print(F("PM2.5: "));
-    Serial.println(pm25int);
-    ReadHyT();
-    Write_SD();
-    PM25_accumulated = 0.0;
-    PM25_samples = 0.0;
-    Con_loop_times = 0;
-  }
-
-#else
-  // MQTT loop
-  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
-  //  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
-  //  if ((millis() - MQTT_loop_start) >= (1 * 60000))
-  {
-
-    // New timestamp for the loop start time
-    MQTT_loop_start = millis();
-
-    // Message the MQTT broker in the cloud app to send the measured values
-    if ((!err_wifi) && (PM25_samples > 0))
+    if (Con_loop_times >= SDyRTCtime)
     {
-      Send_Message_Cloud_App_MQTT();
+      float PM25f;
+
+      PM25f = PM25_accumulated / PM25_samples;
+      pm25int = round(PM25f);
+      Serial.print(F("PM2.5: "));
+      Serial.println(pm25int);
+      ReadHyT();
+      Write_SD();
+      PM25_accumulated = 0.0;
+      PM25_samples = 0.0;
+      Con_loop_times = 0;
     }
+  }
+  else
+  {
+    // MQTT loop
+    if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 60000))
+    //  if ((millis() - MQTT_loop_start) >= (eepromConfig.PublicTime * 6000))
+    //  if ((millis() - MQTT_loop_start) >= (1 * 60000))
+    {
+      // New timestamp for the loop start time
+      MQTT_loop_start = millis();
+
+      // Message the MQTT broker in the cloud app to send the measured values
+      if ((!err_wifi) && (PM25_samples > 0))
+      {
+        Send_Message_Cloud_App_MQTT();
+      }
 
 #if SaveSDyRTC
-    Write_SD();
+      Write_SD();
 #endif
 
-    // Reset samples after sending them to the MQTT server
-    PM25_accumulated = 0.0;
-    PM25_accumulated_ori = 0.0;
-    PM25_samples = 0.0;
+      // Reset samples after sending them to the MQTT server
+      PM25_accumulated = 0.0;
+      PM25_accumulated_ori = 0.0;
+      PM25_samples = 0.0;
+    }
   }
 #endif
 
@@ -1190,49 +1171,55 @@ void loop()
 
 #if Wifi
 
-    if (WiFi.status() != WL_CONNECTED)
+    if (SDflag == false)
     {
-      Serial.println(F("--- err_wifi"));
-      err_wifi = true;
-      WiFi.reconnect();
-    }
-    else
-    {
-      err_wifi = false;
-    }
 
-    // Reconnect MQTT if needed
-    if ((!MQTT_client.connected()) && (!err_wifi))
-    {
-      Serial.println(F("--- err_mqtt"));
-      err_MQTT = true;
-      FlagDATAicon = false;
-    }
+      if (WiFi.status() != WL_CONNECTED)
+      {
+        Serial.println(F("--- err_wifi"));
+        err_wifi = true;
+        WiFi.reconnect();
+      }
+      else
+      {
+        err_wifi = false;
+      }
 
-    // Reconnect MQTT if needed
-    if ((err_MQTT) && (!err_wifi))
-    {
-      Serial.println(F("--- MQTT reconnect"));
-      // Attempt to connect to MQTT broker
-      MQTT_Reconnect();
-      Init_MQTT();
+      // Reconnect MQTT if needed
+      if ((!MQTT_client.connected()) && (!err_wifi))
+      {
+        Serial.println(F("--- err_mqtt"));
+        err_MQTT = true;
+        FlagDATAicon = false;
+      }
+
+      // Reconnect MQTT if needed
+      if ((err_MQTT) && (!err_wifi))
+      {
+        Serial.println(F("--- MQTT reconnect"));
+        // Attempt to connect to MQTT broker
+        MQTT_Reconnect();
+        Init_MQTT();
+      }
     }
 #endif
   }
 
 #if Wifi
 
-  // From here, all other tasks performed outside of measurements, MQTT and error loops
-
-  // if not there are not connectivity errors, receive MQTT messages
-  if ((!err_MQTT) && (!err_wifi))
+  if (SDflag == false)
   {
-    MQTT_client.loop();
+    // From here, all other tasks performed outside of measurements, MQTT and error loops
+
+    // if not there are not connectivity errors, receive MQTT messages
+    if ((!err_MQTT) && (!err_wifi))
+    {
+      MQTT_client.loop();
+    }
+
+    // Process wifi server requests
+    Check_WiFi_Server();
   }
-
-  // Process wifi server requests
-  Check_WiFi_Server();
-
 #endif
 
 // Process Bluetooth events
@@ -1251,8 +1238,6 @@ void loop()
   }
 #endif
 #endif
-
-  // Serial.println(F("--- END LOOP"));
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1773,8 +1758,12 @@ void Start_Captive_Portal()
 { // Run a captive portal to configure WiFi and MQTT
   InCaptivePortal = true;
   String wifiAP;
-  const int captiveportaltime = 60;
-  //  const int captiveportaltime = 15;
+  int captiveportaltime = 0;
+
+  if (SDflag == false)
+    captiveportaltime = 60;
+  else
+    captiveportaltime = 30; // captiveportaltime = 15;
 
   wifiAP = aireciudadano_device_id;
   Serial.println(wifiAP);
@@ -1822,10 +1811,6 @@ void Start_Captive_Portal()
   wifiManager.setDebugOutput(true);
   wifiManager.disconnect();
 
-  // #if ESP8266
-  //   wifiManager.setMinimumSignalQuality(50);
-  // #endif
-
   WiFi.mode(WIFI_AP); // explicitly set mode, esp defaults to STA+AP
 
   // Captive portal parameters
@@ -1833,7 +1818,6 @@ void Start_Captive_Portal()
 #if WPA2
   WiFiManagerParameter custom_wifi_html("<p>Set WPA2 Enterprise</p>"); // only custom html
   WiFiManagerParameter custom_wifi_user("User", "WPA2 Enterprise identity", eepromConfig.wifi_user, 24);
-  //  WiFiManagerParameter custom_wifi_password("Password", "WPA2 Enterprise Password", eepromConfig.wifi_password, 24);
   WiFiManagerParameter custom_wpa2_pass;
 #if !Rosver
   WiFiManagerParameter custom_wifi_html2("<p></p>"); // only custom html
@@ -1852,11 +1836,6 @@ void Start_Captive_Portal()
   char Ptime[5];
   itoa(eepromConfig.PublicTime, Ptime, 10);
   WiFiManagerParameter custom_public_time("Ptime", "Set Publication Time in minutes:", Ptime, 4);
-  //  WiFiManagerParameter custom_mqtt_html("<p></p>"); // only custom html
-  //  WiFiManagerParameter custom_mqtt_server("Server", "MQTT server:", eepromConfig.MQTT_server, 32);
-  //  char port[6];
-  // itoa(eepromConfig.MQTT_port, port, 10);
-  //  WiFiManagerParameter custom_mqtt_port("Port", "MQTT port:", port, 6);
   WiFiManagerParameter custom_sensor_html("<p></p>"); // only custom html
 #endif
   WiFiManagerParameter custom_sensor_latitude("Latitude", "Latitude (5-4 dec digits are enough)", eepromConfig.sensor_lat, 10);
@@ -1866,8 +1845,10 @@ void Start_Captive_Portal()
   WiFiManagerParameter custom_sensorHYT_type;
   WiFiManagerParameter custom_display_type;
 #endif
-  //  WiFiManagerParameter custom_board_type;
   WiFiManagerParameter custom_outin_type;
+  WiFiManagerParameter custom_endhtmlup("<hr><p></p>"); // only custom html
+  WiFiManagerParameter custom_sd_type;
+  WiFiManagerParameter date_time;
   WiFiManagerParameter custom_endhtml("<p></p>"); // only custom html
 
 #if !Rosver
@@ -1962,18 +1943,19 @@ void Start_Captive_Portal()
     new (&custom_outin_type) WiFiManagerParameter(custom_outin_str);
   }
 
-  // The sprintf is so we can input the value of the current selected day
-  // If you dont need to do that, then just pass the const char* straight in.
+  // SD option
+  if (eepromConfig.ConfigValues[4] == '0')
+  {
+    const char *custom_sd_str = "<label for='customSD'>SD version:</label><br/><input type='radio' name='customSD' value='0' checked> No SD & RTC<br><input type='radio' name='customSD' value='1'> SD & RTC connected";
+    new (&custom_sd_type) WiFiManagerParameter(custom_sd_str);
+  }
+  else if (eepromConfig.ConfigValues[4] == '1')
+  {
+    const char *custom_sd_str = "<label for='customSD'>SD version:</label><br/><input type='radio' name='customSD' value='0'> No SD & RTC<br><input type='radio' name='customSD' value='1' checked> SD & RTC connected";
+    new (&custom_sd_type) WiFiManagerParameter(custom_sd_str);
+  }
 
-  sprintf(bufferStr, date_str, prueba2);
-
-  Serial.println(bufferStr);
-
-  WiFiManagerParameter custom_field(bufferStr);
-
-  sprintf(convertedValue2, "%d", prueba2); // Need to convert to string to display a default value.
-
-  WiFiManagerParameter custom_hidden("Prueba1valor", "Will be hidden", convertedValue2, 15);
+  new (&date_time) WiFiManagerParameter(customHtml);
 
   // Add parameters
 
@@ -1982,7 +1964,6 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_wifi_html);
 #endif
   wifiManager.addParameter(&custom_wifi_user);
-  //  wifiManager.addParameter(&custom_wifi_password);
   wifiManager.addParameter(&custom_wpa2_pass);
   wifiManager.addParameter(&custom_wifi_html2);
 #endif
@@ -1990,9 +1971,6 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_id_name);
 #if !Rosver
   wifiManager.addParameter(&custom_public_time);
-  //  wifiManager.addParameter(&custom_mqtt_html);
-  //  wifiManager.addParameter(&custom_mqtt_server);
-  //  wifiManager.addParameter(&custom_mqtt_port);
   wifiManager.addParameter(&custom_sensor_html);
 #endif
   wifiManager.addParameter(&custom_sensor_latitude);
@@ -2001,13 +1979,12 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_sensorPM_type);
   wifiManager.addParameter(&custom_sensorHYT_type);
   wifiManager.addParameter(&custom_display_type);
-  //  wifiManager.addParameter(&custom_board_type);
 #endif
   wifiManager.addParameter(&custom_outin_type);
+  wifiManager.addParameter(&custom_endhtmlup);
+  wifiManager.addParameter(&custom_sd_type);
   wifiManager.addParameter(&custom_endhtml);
-
-  wifiManager.addParameter(&custom_hidden);
-  wifiManager.addParameter(&custom_field);
+  wifiManager.addParameter(&date_time);
 
   wifiManager.setSaveParamsCallback(saveParamCallback);
 
@@ -2021,12 +1998,6 @@ void Start_Captive_Portal()
   // wifiManager.resetSettings(); // reset previous configurations
   ConfigPortalSave = false;
 
-  Serial.print("convertedValue2: ");
-  Serial.println(convertedValue2);
-
-  Serial.print("Tempoconvertedvalue2: ");
-  Serial.println(Tempoconvertedvalue2);
-
   bool res = wifiManager.startConfigPortal(wifiAP.c_str());
   if (!res)
   {
@@ -2037,29 +2008,6 @@ void Start_Captive_Portal()
     // if you get here you have connected to the WiFi
     Serial.println(F("Captive portal operative"));
   }
-
-  Serial.print("prueba21: ");
-  Serial.println(prueba2);
-
-  Serial.print("prueba13: ");
-  Serial.println(custom_hidden.getValue());
-
-  int tempyear = 0;
-  tempyear = atoi(custom_hidden.getValue());
-  Serial.print("tempyear: ");
-  Serial.println(tempyear);
-
-  strncpy(prueba1, custom_hidden.getValue(), sizeof(prueba1));
-  prueba1[sizeof(prueba1) - 1] = '\0';
-  //  Serial.println(F("Prueba1 write_eeprom = true"));
-  Serial.print("prueba12: ");
-  Serial.println(prueba1);
-
-  Serial.print("convertedValue21: ");
-  Serial.println(convertedValue2);
-
-  Serial.print("Tempoconvertedvalue21: ");
-  Serial.println(Tempoconvertedvalue2);
 
   // Save parameters to EEPROM only if any of them changed
 
@@ -2150,6 +2098,17 @@ String getParam(String name)
   return value;
 }
 
+String getParamstring(String name)
+{
+  // read parameter from server, for customhmtl input
+  String value = "";
+  if (wifiManager.server->hasArg(name))
+  {
+    value = wifiManager.server->arg(name);
+  }
+  return value;
+}
+
 void saveParamCallback()
 {
   Serial.println(F("[CALLBACK] saveParamCallback fired"));
@@ -2159,17 +2118,75 @@ void saveParamCallback()
   CustomValtotal = CustomValtotal + (CustomValue * 10);
   Serial.println("Value customDisplay = " + getParam("customDisplay"));
   CustomValtotal = CustomValtotal + (CustomValue * 100);
-  Serial.println("Value customBoard = NA");
+  Serial.println("Value customSD = " + getParam("customSD"));
+  CustomValtotal = CustomValtotal + (CustomValue * 1000);
   Serial.println("Value customOutIn = " + getParam("customOutIn"));
   CustomValtotal = CustomValtotal + (CustomValue * 10000);
   Serial.print(F("CustomValtotal: "));
   Serial.println(CustomValtotal);
   strncpy(wifi_passwpa2, getParam("p").c_str(), sizeof(wifi_passwpa2)); // REVISAR!!!!!!!!!!!
 
-  strncpy(Tempoconvertedvalue2, convertedValue2, sizeof(Tempoconvertedvalue2));
-  Tempoconvertedvalue2[sizeof(Tempoconvertedvalue2) - 1] = '\0';
+  if (getParam("customSD") == "1")
+  {
+    Serial.println("SD & RTC selected");
+    Valdate_time_id = getParamstring("date_time_id");
+    Serial.println("PARAM customfieldid = " + Valdate_time_id);
+    RTCadjustTime();
+  }
+  else
+    Serial.println("No SD & RTC");
 
   ConfigPortalSave = true;
+}
+
+void RTCadjustTime()
+{
+  String Valdate_year = Valdate_time_id.substring(0, 4);
+  String Valdate_month = Valdate_time_id.substring(4, 6);
+  String Valdate_day = Valdate_time_id.substring(6, 8);
+  String Valdate_hour = Valdate_time_id.substring(8, 10);
+  String Valdate_min = Valdate_time_id.substring(10, 12);
+  String Valdate_sec = Valdate_time_id.substring(12, 14);
+
+  uint16_t year = Valdate_year.toInt();
+  uint8_t month = Valdate_month.toInt();
+  uint8_t day = Valdate_day.toInt();
+  uint8_t hour = Valdate_hour.toInt();
+  uint8_t min = Valdate_min.toInt();
+  uint8_t sec = Valdate_sec.toInt();
+
+  Serial.print("year = ");
+  Serial.print(year);
+  Serial.print(", day = ");
+  Serial.print(day);
+  Serial.print(", min = ");
+  Serial.print(min);
+  Serial.print(", sec = ");
+  Serial.println(sec);
+
+  Serial.print(F("Initializing RTC ds1307: "));
+
+  if (!rtc.begin())
+  {
+    Serial.println(F("Couldn't find RTC"));
+    Serial.flush();
+  }
+  else
+  {
+    Serial.println(F("OK, ds1307 init"));
+    Serial.print(F("RTC let's set the time!: "));
+    Serial.println(Valdate_time_id);
+
+    rtc.adjust(DateTime(year, month, day, hour, min, sec));
+
+    digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
+    delay(200);                 // wait for a 500 msecond
+    digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
+    delay(200);                 // wait for a 500 msecond
+    digitalWrite(LEDPIN, LOW);  // turn the LED on (HIGH is the voltage level)
+    delay(200);                 // wait for a 500 msecond
+    digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
+  }
 }
 
 void Init_MQTT()
@@ -2766,7 +2783,7 @@ void Setup_Sensor()
 
   {
 #endif
-#if (Bluetooth || SDyRTC)
+#if (Bluetooth || SDyRTC || Rosver)
     if (SPS30sen == false)
     {
 #endif
@@ -2811,7 +2828,7 @@ void Setup_Sensor()
         else
           Serial.println(F("SEN5X measurement OK"));
       }
-#if (Bluetooth || SDyRTC)
+#if (Bluetooth || SDyRTC || Rosver)
     }
 #else
 }
@@ -3449,28 +3466,25 @@ void Print_Config()
   Serial.println(F("#######################################"));
   Serial.print(F("Device id: "));
   Serial.println(aireciudadano_device_id);
-#if !SDyRTC
   Serial.print(F("AireCiudadano custom name: "));
   Serial.println(eepromConfig.aireciudadano_device_name);
-#endif
   Serial.print(F("SW version: "));
   Serial.println(sw_version);
 #if Bluetooth
   Serial.print(F("Bluetooth Time: "));
   Serial.println(eepromConfig.BluetoothTime);
-#elif SDyRTC
-  Serial.print(F("SDyRTC Time: "));
-  Serial.println(SDyRTCtime);
+#elif (SDyRTC || Rosver)
+  if (SDflag == true)
+  {
+    Serial.print(F("SDyRTC Time: "));
+    Serial.println(SDyRTCtime);
+  }
 #elif Wifi
 #if SaveSDyRTC
   Serial.println("SDyRTC enabled: save data and date on SD Card");
 #endif
   Serial.print(F("Publication Time: "));
   Serial.println(eepromConfig.PublicTime);
-  //  Serial.print(F("MQTT server: "));
-  //  Serial.println(eepromConfig.MQTT_server);
-  //  Serial.print(F("MQTT Port: "));
-  //  Serial.println(eepromConfig.MQTT_port);
   Serial.print(F("Sensor latitude: "));
   Serial.println(eepromConfig.sensor_lat);
   Serial.print(F("Sensor longitude: "));
@@ -3867,22 +3881,16 @@ void Get_AireCiudadano_DeviceId()
   if (String(aireciudadano_device_id).isEmpty())
     aireciudadano_device_id = String("AireCiudadano_") + aireciudadano_device_id_endframe;
   else
-  {
-#if !SDyRTC
     aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + "_" + aireciudadano_device_id_endframe;
-    // aireciudadano_device_id = String(eepromConfig.aireciudadano_device_name) + aireciudadano_device_id_endframe;
-#endif
-  }
   Serial.println(aireciudadano_device_id);
 }
-
-#if Wifi
 
 void Aireciudadano_Characteristics()
 {
 #if !Rosver
   Serial.print(F("eepromConfig.ConfigValues: "));
   Serial.println(eepromConfig.ConfigValues);
+
   Serial.print(F("eepromConfig.ConfigValues[3]: "));
   Serial.println(eepromConfig.ConfigValues[3]);
   if (eepromConfig.ConfigValues[3] == '0')
@@ -3967,6 +3975,19 @@ void Aireciudadano_Characteristics()
     Serial.println(F("PMS sensor with stadistical adjust"));
   }
 
+  Serial.print(F("eepromConfig.ConfigValues[4]: "));
+  Serial.println(eepromConfig.ConfigValues[4]);
+  if (eepromConfig.ConfigValues[4] == '0')
+  {
+    SDflag = false;
+    Serial.println(F("No SD & RTC"));
+  }
+  else
+  {
+    SDflag = true;
+    Serial.println(F("SD & RTC connected"));
+  }
+
 #else
   Serial.print(F("eepromConfig.ConfigValues: "));
   Serial.println(eepromConfig.ConfigValues);
@@ -3995,6 +4016,19 @@ void Aireciudadano_Characteristics()
   else
     Serial.println("No SHT31 sensor");
 
+  Serial.print(F("eepromConfig.ConfigValues[4]: "));
+  Serial.println(eepromConfig.ConfigValues[4]);
+  if (eepromConfig.ConfigValues[4] == '0')
+  {
+    SDflag = false;
+    Serial.println(F("No SD & RTC"));
+  }
+  else
+  {
+    SDflag = true;
+    Serial.println(F("SD & RTC connected"));
+  }
+
 #endif
 
   // SPS30sen = 1
@@ -4022,7 +4056,8 @@ void Aireciudadano_Characteristics()
     IDn = IDn + 16;
   if (AM2320sen)
     IDn = IDn + 32;
-
+  if (SDflag)
+    IDn = IDn + 64;
   if (TDisplay)
     IDn = IDn + 256;
   if (OLED66)
@@ -4043,10 +4078,6 @@ void Aireciudadano_Characteristics()
   Serial.print(F("IDn: "));
   Serial.println(IDn);
 }
-
-#endif
-
-#if !SDyRTC
 
 void Read_EEPROM()
 {
@@ -4156,8 +4187,6 @@ void Wipe_EEPROM()
 
 #endif
 }
-
-#endif
 
 #if Tdisplaydisp
 
@@ -4746,7 +4775,7 @@ void Write_Bluetooth()
 }
 #endif
 
-#if (SDyRTC || SaveSDyRTC)
+#if (SDyRTC || SaveSDyRTC || Rosver)
 void Write_SD()
 { // Write date - time and measurements to SD card
 
@@ -4758,13 +4787,13 @@ void Write_SD()
   // make a string for assembling the data to log:
 
   dataString = now.toString(buf1);
-  dataString += "_PM25:";
+  dataString += "_";
   dataString += pm25int;
   if (SHT31sen == true || AM2320sen == true)
   {
-    dataString += "_H:";
+    dataString += "_";
     dataString += humi;
-    dataString += "_T:";
+    dataString += "_";
     dataString += temp;
   }
 
@@ -4773,13 +4802,10 @@ void Write_SD()
   SDreset = SDreset - 1;
 
   if (SDreset == 0)
-  {
-    Serial.print(F("SD reset 180 cycles"));
-    SDreset = ValSDreset;
-    ESP.restart();
-  }
+    dataString += "RESET";
 
-  dataFile = SD.open("datalog.txt", FILE_WRITE);
+  // dataFile = SD.open("datalog.txt", FILE_WRITE);
+  dataFile = SD.open(aireciudadano_device_id + ".txt", FILE_WRITE);
 
   // if the file is available, write to it:
   if (dataFile)
@@ -4794,6 +4820,13 @@ void Write_SD()
   else
   {
     Serial.println("SD write: error opening file");
+  }
+
+  if (SDreset == 0)
+  {
+    Serial.print(F("SD reset 180 cycles"));
+    SDreset = ValSDreset;
+    ESP.restart();
   }
 }
 #endif

@@ -47,6 +47,7 @@ void NotAvailableSPS30();
 void printSerialNumber();
 void printModuleVersions();
 void ReadHyT();
+void RTCadjustTime();
 
 void displayBatteryLevel(int colour);
 void displayWifi(int colour_1, int colour_2, boolean active);

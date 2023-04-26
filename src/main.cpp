@@ -1198,7 +1198,9 @@ void loop()
       {
         Serial.println(F("--- MQTT reconnect"));
         // Attempt to connect to MQTT broker
+#if !ESP8266
         MQTT_Reconnect();
+#endif
         Init_MQTT();
       }
     }

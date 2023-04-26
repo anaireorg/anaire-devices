@@ -2549,7 +2549,6 @@ void Firmware_Update()
 {
 
   // ESP32 Firmware Update
-  // CAMBIAR .bin AL MAIN no en un branch!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if !ESP8266
 

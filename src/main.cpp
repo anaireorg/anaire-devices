@@ -2581,13 +2581,13 @@ void Firmware_Update()
 #endif
 
 #if Tdisplaydisp
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WITD.bin");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/WITD.bin");
 #elif OLED96display
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WI96.bin");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/WI96.bin");
 #elif OLED66display
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WI66.bin");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/WI66.bin");
 #else
-  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/WISP.bin");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/WISP.bin");
 #endif
 
   switch (ret)
@@ -2672,15 +2672,15 @@ void Firmware_Update()
 
 #if WPA2
 #if Rosver
-  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/ESP8266WISP_WPA2Rosver.bin");
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/ESP8266WISP_WPA2Rosver.bin");
 #else
-  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/ESP8266WISP_WPA2.bin");
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/ESP8266WISP_WPA2.bin");
 #endif
 #else
 #if Rosver
-  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.91_4abril2023/bin/ESP8266WISP_Rosver.bin");
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/ESP8266WISP_Rosver.bin");
 #else
-  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/AireCiudadano1.9_31mar2023_Rosver/bin/ESP8266WISP.bin");
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/ESP8266WISP.bin");
 #endif
 #endif
 

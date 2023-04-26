@@ -24,16 +24,16 @@
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 true       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver true      // Set to true URosario version
+#define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define Rosver false     // Set to true URosario version
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true in case you use a ESP8285 switch
 #define CO2sensor false  // Set to true for CO2 sensors: SCD30 and SenseAir S8
 
-#define SiteAltitude 2600 // IMPORTANT for CO2 measurement: Put the site altitude of the measurement, it affects directly the value
-                          // 2600 meters above sea level: Bogota, Colombia
+#define SiteAltitude 0   // IMPORTANT for CO2 measurement: Put the site altitude of the measurement, it affects directly the value
+//#define SiteAltitude 2600   // 2600 meters above sea level: Bogota, Colombia
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
@@ -77,7 +77,7 @@ String chipIdHEX;
 uint32_t chipId = 0;
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "1.91";
+String sw_version = "1.94";
 String aireciudadano_device_id;
 uint8_t Swver;
 

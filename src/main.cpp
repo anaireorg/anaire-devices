@@ -94,8 +94,8 @@ struct MyConfigStruct
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #elif Wifi
   uint16_t PublicTime = 1;     // Publication Time
-  uint16_t FilledEEPROM = 80;  // Filled EEPROM for compatibility with version 1.7
-  char FilledEEPROM2[30] = "........................";  // // Filled EEPROM for compatibility with version 1.7
+                               //  uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
+                               //  char MQTT_server[30] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
 #if !PreProgSensor
   char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
   char sensor_lon[10] = "0.0"; // Sensor longitude GPS

@@ -14,6 +14,7 @@
 // Firmware update CAMBIAR A MAIN no en branch
 // OK: Probar version SD y Wifi al tiempo para Rosver
 // OK: Grabar en la SD nombre y estados de Reset e Inicio
+// OK: Revisar Firmware Updte para ESP32 q no funciona
 // MODIFICACIONES EXTERNAS:
 // Modificado libreria WifiManager para compatibilidad
 // Modificado PubSubClient.cpp : para quitar warning
@@ -25,7 +26,7 @@
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
 #define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver false     // Set to true URosario version
+#define Rosver false      // Set to true URosario version
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
@@ -37,7 +38,7 @@
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
-#define OLED66display false
+#define OLED66display true
 #define OLED96display false
 
 // Boards diferentes
@@ -65,7 +66,7 @@ bool S8sen = false;         // Sensor CO2 SenseAir S8
 bool TDisplay = false;      // Set to true if Board TTGO T-Display is used
 bool OLED66 = false;        // Set to true if you use a OLED Diplay 0.66 inch 64x48
 bool OLED96 = false;        // Set to true if you use a OLED Diplay 0.96 inch 128x64
-bool ExtAnt = false;        // External antenna
+//bool ExtAnt = false;        // External antenna
 bool AmbInOutdoors = false; // Set to true if your sensor is indoors measuring outside environment, false if is outdoors
 bool SDflag = false;
 
@@ -83,7 +84,6 @@ uint8_t Swver;
 
 // Init to default values; if they have been chaged they will be readed later, on initialization
 struct MyConfigStruct
-// struct __attribute__((packed)) MyConfigStruct
 {
 #if Bluetooth
 #if !CO2sensor
@@ -94,8 +94,8 @@ struct MyConfigStruct
   char aireciudadano_device_name[30]; // Device name; default to aireciudadano_device_id
 #elif Wifi
   uint16_t PublicTime = 1;     // Publication Time
-                               //  uint16_t MQTT_port = 80;                           // MQTT port; Default Port on 80
-                               //  char MQTT_server[30] = "sensor.aireciudadano.com"; // MQTT server url or public IP address.
+  uint16_t FilledEEPROM = 80;  // Filled EEPROM for compatibility with version 1.7
+  char FilledEEPROM2[30] = "........................";  // // Filled EEPROM for compatibility with version 1.7
 #if !PreProgSensor
   char sensor_lat[10] = "0.0"; // Sensor latitude  GPS
   char sensor_lon[10] = "0.0"; // Sensor longitude GPS
@@ -520,7 +520,10 @@ bool updating = false;
 bool InCaptivePortal = false;
 bool Calibrating = false;
 
-#if (SDyRTC || SaveSDyRTC || Rosver)
+// uint16_t SDyRTCtime = 15;       // Valor de Sample Time de SD y RTC
+uint16_t SDyRTCtime = 60; // Valor de Sample Time de SD y RTC
+
+#if (Wifi || SDyRTC || SaveSDyRTC || Rosver)
 #if !WPA2
 
 #include <SPI.h>
@@ -528,11 +531,9 @@ bool Calibrating = false;
 #include "RTClib.h"
 
 const int chipSelect = 10;
-// uint16_t SDyRTCtime = 15;       // Valor de Sample Time de SD y RTC
-uint16_t SDyRTCtime = 60; // Valor de Sample Time de SD y RTC
 uint16_t SDreset = 0;     // Valor en el que se resetea el ESP para verificar que la SD este conectada
 
-#if (SDyRTC || Rosver)
+#if (Wifi || SDyRTC || Rosver)
 #define ValSDreset 180
 #elif SaveSDyRTC
 #define ValSDreset 720
@@ -669,7 +670,11 @@ void setup()
 #endif
 
   pinMode(LEDPIN, OUTPUT);
+#if !ESP8266
+  digitalWrite(LEDPIN, LOW);
+#else
   digitalWrite(LEDPIN, HIGH);
+#endif
 
   aireciudadano_device_id = eepromConfig.aireciudadano_device_name;
 
@@ -983,7 +988,11 @@ void loop()
     if (FlagLED == true)
       FlagLED = false;
     else
-      digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
+#if !ESP8266
+      digitalWrite(LEDPIN, LOW);
+#else
+      digitalWrite(LEDPIN, HIGH);
+#endif
 
     if (NoSensor == false)
     {
@@ -1546,8 +1555,7 @@ void Print_WiFi_Status()
   //  WL_CONNECTION_LOST: assigned when the connection is lost;
   //  WL_DISCONNECTED: assigned when disconnected from a network;
 
-  Serial.println(F("wifi_status: "));
-  Serial.println(F(""));
+  Serial.print(F("wifi_status: "));
 #if (OLED66 == true || OLED96 == true)
   pageStart();
   u8g2.setFont(u8g2_font_5x7_tf);
@@ -1556,8 +1564,7 @@ void Print_WiFi_Status()
   switch (WiFi.status())
   {
   case WL_CONNECTED:
-    Serial.println(F("WIFI CONECTADA !!!!!!!!!!!!!!!!!!!!"));
-    Serial.println(F("WIFI CONECTADA !!!!!!!!!!!!!!!!!!!!"));
+    Serial.println(F(" WIFI CONNECTED!!!"));
 #if (OLED66 == true || OLED96 == true)
     u8g2.print("OK WIFI :)");
 #endif
@@ -1858,6 +1865,7 @@ void Start_Captive_Portal()
   WiFiManagerParameter custom_sd_type;
   WiFiManagerParameter date_time;
   WiFiManagerParameter custom_endhtml("<p></p>"); // only custom html
+  WiFiManagerParameter custom_endhtmlup2("<hr>"); // only custom html
 
 #if !Rosver
   // Sensor PM menu
@@ -1929,13 +1937,11 @@ void Start_Captive_Portal()
     new (&custom_display_type) WiFiManagerParameter(custom_display_str);
   }
 
-#else
+#endif
 
 #if WPA2
   const char *custom_wpa2_pw = "<label for='p'>Password</label><input id='p' name='p' maxlength='64' type='password' placeholder='{p}'><input type='checkbox' onclick='f()'> Show Password";
   new (&custom_wpa2_pass) WiFiManagerParameter(custom_wpa2_pw); // REVISAR!!!!!!!!!!!
-#endif
-
 #endif
 
   // Sensor Location menu
@@ -1974,7 +1980,7 @@ void Start_Captive_Portal()
 
 #if WPA2
 #if !Rosver
-  wifiManager.addParameter(&custom_wifi_html);
+//  wifiManager.addParameter(&custom_wifi_html);
 #endif
   wifiManager.addParameter(&custom_wifi_user);
   wifiManager.addParameter(&custom_wpa2_pass);
@@ -1994,14 +2000,15 @@ void Start_Captive_Portal()
   wifiManager.addParameter(&custom_display_type);
 #endif
   wifiManager.addParameter(&custom_outin_type);
-  wifiManager.addParameter(&custom_endhtmlup);
-
 #if Rosver
 #if !WPA2
+  wifiManager.addParameter(&custom_endhtmlup);
   wifiManager.addParameter(&custom_sd_type);
   wifiManager.addParameter(&custom_endhtml);
   wifiManager.addParameter(&date_time);
 #endif
+#else
+  wifiManager.addParameter(&custom_endhtml);
 #endif
 
   wifiManager.setSaveParamsCallback(saveParamCallback);
@@ -2249,11 +2256,19 @@ void Init_MQTT()
     MQTT_client.subscribe(MQTT_receive_topic.c_str());
     Serial.print(F("MQTT connected - Receive topic: "));
     Serial.println(MQTT_receive_topic);
-    digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+#if !ESP8266
+    digitalWrite(LEDPIN, HIGH);
     delay(1000);
-    digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
+    digitalWrite(LEDPIN, LOW);
     delay(1000);
-    digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+    digitalWrite(LEDPIN, HIGH);
+#else
+    digitalWrite(LEDPIN, LOW);
+    delay(1000);
+    digitalWrite(LEDPIN, HIGH);
+    delay(1000);
+    digitalWrite(LEDPIN, LOW);
+#endif
   }
 }
 
@@ -2275,11 +2290,19 @@ void MQTT_Reconnect()
       MQTT_client.subscribe(MQTT_receive_topic.c_str());
       Serial.print(F("MQTT connected - Receive topic: "));
       Serial.println(MQTT_receive_topic);
-      digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+#if !ESP8266
+      digitalWrite(LEDPIN, HIGH);
       delay(1000);
-      digitalWrite(LEDPIN, HIGH); // turn the LED off by making the voltage LOW
+      digitalWrite(LEDPIN, LOW);
       delay(1000);
-      digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+      digitalWrite(LEDPIN, HIGH);
+#else
+      digitalWrite(LEDPIN, LOW);
+      delay(1000);
+      digitalWrite(LEDPIN, HIGH);
+      delay(1000);
+      digitalWrite(LEDPIN, LOW);
+#endif
     }
     else
     {
@@ -2375,7 +2398,11 @@ void Send_Message_Cloud_App_MQTT()
 
   MQTT_client.publish(MQTT_send_topic.c_str(), MQTT_message);
 
-  digitalWrite(LEDPIN, LOW); // turn the LED off by making the voltage LOW
+#if !ESP8266
+  digitalWrite(LEDPIN, HIGH);
+#else
+  digitalWrite(LEDPIN, LOW);
+#endif
   FlagLED = true;
 }
 
@@ -2599,6 +2626,14 @@ void Firmware_Update()
   pageEnd();
 #endif
 
+    httpUpdate.setLedPin(LEDPIN, HIGH);
+
+    httpUpdate.onStart(update_started);
+    httpUpdate.onEnd(update_finished);
+    httpUpdate.onProgress(update_progress);
+    httpUpdate.onError(update_error);
+
+#if !WPA2
 #if Tdisplaydisp
   Serial.println("Firmware WITD");
   t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/WITD.bin");
@@ -2611,6 +2646,21 @@ void Firmware_Update()
 #else
   Serial.println("Firmware WISP");
   t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/WISP.bin");
+#endif
+#else
+#if Tdisplaydisp
+  Serial.println("Firmware WITD WPA2");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/WITDWPA2.bin");
+#elif OLED96display
+  Serial.println("Firmware WI96 WPA2");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/WI96WPA2.bin");
+#elif OLED66display
+  Serial.println("Firmware WI66 WPA2");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/WI66WPA2.bin");
+#else
+  Serial.println("Firmware WISP WPA2");
+  t_httpUpdate_return ret = httpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/WISPWPA2.bin");
+#endif
 #endif
 
   switch (ret)
@@ -2662,6 +2712,8 @@ void Firmware_Update()
   int freeheap = ESP.getFreeHeap();
 
   Serial.println(F("### FIRMWARE UPGRADE ###"));
+
+  ESPhttpUpdate.setLedPin(LEDPIN, LOW);
 
   // Add optional callback notifiers
   ESPhttpUpdate.onStart(update_started);
@@ -2729,8 +2781,6 @@ void Firmware_Update()
 #endif
 }
 
-#if ESP8266
-
 void update_started()
 {
   Serial.println(F("CALLBACK:  HTTP update process started"));
@@ -2754,8 +2804,6 @@ void update_error(int err)
   Serial.printf("CALLBACK:  HTTP update fatal error code %d\n", err);
   updating = false;
 }
-
-#endif
 
 #endif
 
@@ -3918,6 +3966,7 @@ void Get_AireCiudadano_DeviceId()
 
 void Aireciudadano_Characteristics()
 {
+#if !Bluetooth
 #if !Rosver
   Serial.print(F("eepromConfig.ConfigValues: "));
   Serial.println(eepromConfig.ConfigValues);
@@ -4019,6 +4068,12 @@ void Aireciudadano_Characteristics()
     Serial.println(F("SD & RTC connected"));
   }
 
+#if !WPA2
+  Serial.println(F("No WPA2"));
+#else
+  Serial.println(F("WPA2 security"));
+#endif
+
 #else
   Serial.print(F("eepromConfig.ConfigValues: "));
   Serial.println(eepromConfig.ConfigValues);
@@ -4060,6 +4115,13 @@ void Aireciudadano_Characteristics()
     Serial.println(F("SD & RTC connected"));
   }
 
+#if !WPA2
+  Serial.println(F("No WPA2"));
+#else
+  Serial.println(F("WPA2 security"));
+#endif
+
+
 #endif
 
   // SPS30sen = 1
@@ -4068,12 +4130,17 @@ void Aireciudadano_Characteristics()
   // AdjPMS = 8
   // SHT31sen = 16
   // AM2320sen =32
+  // SDflag = 64
+  //        = 128
   // TDisplay = 256
   // OLED66 = 512
   // OLED96 = 1024
-  // ExtAnt (External Antenna)= 2048
+  //        = 2048
   // AmbInOutdoors (Indoors) = 4096
-  // Brownout trick (true) = 8192
+  // WPA2 = 8192
+  // ESP8266 = 16384
+  // Rosver = 32768
+  // Swver * 65536
 
   if (SPS30sen)
     IDn = IDn + 1;
@@ -4095,19 +4162,21 @@ void Aireciudadano_Characteristics()
     IDn = IDn + 512;
   if (OLED96)
     IDn = IDn + 1024;
-  if (ExtAnt)
-    IDn = IDn + 2048;
   if (AmbInOutdoors)
     IDn = IDn + 4096;
-#if BrownoutOFF
-  IDn = IDn + 8192;
+#if WPA2
+    IDn = IDn + 8192; 
 #endif
 #if ESP8266
   IDn = IDn + 16384;
 #endif
+#if Rosver
+  IDn = IDn + 32768;
+#endif
   IDn = IDn + (Swver * 65536);
   Serial.print(F("IDn: "));
   Serial.println(IDn);
+#endif
 }
 
 void Read_EEPROM()
@@ -4785,16 +4854,16 @@ void Write_Bluetooth()
 { // Write measurements to Bluetooth
 
 #if !CO2sensor
-  provider.writeValueToCurrentSample(pm25int, Unit::PM2P5);
-  provider.writeValueToCurrentSample(temp, Unit::T);
-  provider.writeValueToCurrentSample(humi, Unit::RH);
+  provider.writeValueToCurrentSample(pm25int, SignalType::PM2P5_MICRO_GRAMM_PER_CUBIC_METER);
+  provider.writeValueToCurrentSample(temp, SignalType::TEMPERATURE_DEGREES_CELSIUS);
+  provider.writeValueToCurrentSample(humi, SignalType::RELATIVE_HUMIDITY_PERCENTAGE);
   provider.commitSample();
   Serial.print("Bluetooth frame: PM2.5(ug/m3):");
 
 #else
-  provider.writeValueToCurrentSample(pm25int, Unit::CO2);
-  provider.writeValueToCurrentSample(temp, Unit::T);
-  provider.writeValueToCurrentSample(humi, Unit::RH);
+  provider.writeValueToCurrentSample(pm25int, SignalType::CO2_PARTS_PER_MILLION);
+  provider.writeValueToCurrentSample(temp, SignalType::TEMPERATURE_DEGREES_CELSIUS);
+  provider.writeValueToCurrentSample(humi, SignalType::RELATIVE_HUMIDITY_PERCENTAGE);
   provider.commitSample();
   Serial.print("Bluetooth frame: CO2(ppm):");
 #endif
@@ -4806,7 +4875,7 @@ void Write_Bluetooth()
 }
 #endif
 
-#if (SDyRTC || SaveSDyRTC || Rosver)
+#if (Wifi || SDyRTC || SaveSDyRTC || Rosver)
 #if !WPA2
 void Write_SD()
 { // Write date - time and measurements to SD card

@@ -6,15 +6,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Pendientes:
-// OK: Revisar actualizacion por orden a una direccion web repositorio y cada caso especifico: sin pantalla, OLED96, OLED66, wifi, bluetooth, etc
-// OK: SDy RTC version independiente o unido a BT y Wifi
-// OK: Mqtt para recepcion de ordenes desde el portal
-// OK: Version solo para proyecto U Rosario: PMS7003 y deteccion del SHT31 asi define interior o exterior. Sin opciones menu en Portal Cautivo. SD definir como lee y RTC
-// OK: Conexion TX del PMS7003 y la SD en la version Rosver, pin3 conflicto al programar
-// Firmware update CAMBIAR A MAIN no en branch
-// OK: Probar version SD y Wifi al tiempo para Rosver
-// OK: Grabar en la SD nombre y estados de Reset e Inicio
-// OK: Revisar Firmware Updte para ESP32 q no funciona
+// Revisar todas las versiones y pruebas para pasar a v2.0
 // MODIFICACIONES EXTERNAS:
 // Modificado libreria WifiManager para compatibilidad
 // Modificado PubSubClient.cpp : para quitar warning
@@ -26,7 +18,7 @@
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
 #define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver false      // Set to true URosario version
+#define Rosver false     // Set to true URosario version
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
@@ -38,7 +30,7 @@
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
 #define Tdisplaydisp false
-#define OLED66display true
+#define OLED66display false
 #define OLED96display false
 
 // Boards diferentes
@@ -534,9 +526,11 @@ const int chipSelect = 10;
 uint16_t SDreset = 0;     // Valor en el que se resetea el ESP para verificar que la SD este conectada
 
 #if (Wifi || SDyRTC || Rosver)
-#define ValSDreset 180
-#elif SaveSDyRTC
+#if SaveSDyRTC
 #define ValSDreset 720
+#else
+#define ValSDreset 180
+#endif
 #endif
 
 File dataFile;
@@ -832,9 +826,10 @@ void setup()
 
 #if (SDyRTC || SaveSDyRTC || Rosver)
 #if !WPA2
-
+#if !SaveSDyRTC
   if (SDflag == true)
   {
+#endif
     SDreset = ValSDreset;
 
     Serial.print(F("Initializing SD card: "));
@@ -901,7 +896,9 @@ void setup()
       Serial.println(F("RTC is NOT running"));
     else
       Serial.println(F("ds1307 is running, no changes"));
+#if !SaveSDyRTC
   }
+#endif
 #endif
 #endif
 
@@ -4156,6 +4153,9 @@ void Aireciudadano_Characteristics()
     IDn = IDn + 32;
   if (SDflag)
     IDn = IDn + 64;
+#if SaveSDyRTC
+    IDn = IDn + 64;
+#endif
   if (TDisplay)
     IDn = IDn + 256;
   if (OLED66)
@@ -4925,8 +4925,8 @@ void Write_SD()
 
   if (SDreset == 0)
   {
-    Serial.print(F("SD reset 180 cycles"));
-    SDreset = ValSDreset;
+    Serial.print(F("SD reset cycles: "));
+    Serial.println(ValSDreset);
     ESP.restart();
   }
 }

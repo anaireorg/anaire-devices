@@ -1,4 +1,4 @@
-# Medidor AireCiudadano: sensores de PM2.5, humedad y temperatura. Opcional VOC y NOx
+# Medidor AireCiudadano: sensor de PM2.5, opcional: humedad y temperatura, VOCs y NOx
 
 ![Logo](https://github.com/danielbernalb/aireciudadano/blob/main/img/Logo_aireciudadano2.jpg)
 
@@ -6,74 +6,136 @@ Página web: https://aireciudadano.com/
 
 Página de la plataforma de medidores: https://sensor.aireciudadano.com/
 
-// Pendientes:
-//          OK: Nombre de la estacion con modelo de sensor, board  y etiqueta propia si es posible
+Guía de construcción medidor AireCiudadano versión fácil
+========================================================
 
-//          OK: Programacion de modelo de sensor por portal cautivo
+En esta guía construiremos una versión sencilla de un medidor de Material Particulado AireCiudadano con materiales que se consiguen fácilmente en el mercado. Se usarán los 3 sensores de Material Particulado compatibles en AireCiudadano: Sensirion SPS30, Sensirion SEN5X y Plantower PMS7003.
 
-//          OK: BT funcionando en este codigo y sin WIFI y encendiendo sensor con pin enable
+![](https://aireciudadano.com/wp-content/uploads/IMG_20230126_154103-1024x576.jpg)
 
-//          OK: TTGO T Display funcionando
+**1\. Materiales:**
+-------------------
 
-//          OK: Agregar comparacion de valores de PM25 para emoticons y colores
+El medidor tiene las mismas partes, lo que varía es el modelo de sensor de Material Particulado.
 
-//          OK: OLED funcionando
+![](https://aireciudadano.com/wp-content/uploads/IMG_20230126_153505-001-1024x577.jpg)
 
-//          OK: AireCiudadano Splash Screen
+### **1\. Board Wemos D1 o ESPduino 32.**
 
-//          OK: Valor de RSSI para modo wifi
+[Board muy popular y económica](https://www.google.com/search?q=wemos+d1+board), se consigue en cualquier país, en Latam por Mercadolibre o tiendas de electrónica.
 
-//          OK: Añadir coordenadas GPS
+### **2\. Sensor, opciones:**
 
-//          OK: Añadir VOCs y NOx para SEN5X
+#### **2.1. Sensirion SPS30**
 
-//          OK: Revisar presicion envio de float, si cortarla o dejarlo al usuario
+<img src="https://aireciudadano.com/wp-content/uploads/IMG_20230126_153505-002-1024x766.jpg"  width="35%" height="35%">
 
-//          OK: Variable Sensor de exteriores o interiores, ExternalSensor via mqtt InOut inout
+[El SPS30](https://sensirion.com/products/catalog/SPS30/) es el que más usamos en AireCiudadano por su calidad aunque es el más costoso del mercado. Tiene certificación de calidad MCERTS.
 
-//          OK: Tiempo de muestreo
+Link compra [Mouser](https://co.mouser.com/ProductDetail/Sensirion/SPS30?qs=lc2O%252BfHJPVbEPY0RBeZmPA%3D%3D), [Digikey](https://www.digikey.com/es/products/detail/sensirion-ag/SPS30/9598990).
 
-//          OK: Revisar diferencia entre Sensor characteristics y Numero ID de la configuracion del sensor
+**A favor:** excelente desempeño (rapidez, repetibilidad y estabilidad), tamaño.
 
-//          OK: Revisar Update por Portal Cautivo
+**En contra:** el más costoso, importación desde USA.
 
-//          OK: Guardar configuracion de sensores, board, display y demás en el Portal Cautivo
+#### 2.**2\. Sensirion SEN5X**
 
-//          OK: Revisar como saber si una board tiene Brownout, si por config values
+<img src="https://aireciudadano.com/wp-content/uploads/IMG_20230126_153332-001-1024x768.jpg"  width="35%" height="35%">
 
-//          OK: Revision de Teclas para dormir en el Splash Screen!!!!!!!!!!!!!!!!!
+Una opción más económica que el SPS30 y también de buena calidad. Hay 3 modelos: [SEN55](https://sensirion.com/products/catalog/SEN55/), [SEN54](https://sensirion.com/products/catalog/SEN54/) y [SEN50](https://sensirion.com/products/catalog/SEN50/).
 
-//          OK: Revisión de Teclas para despertar, ojala fuera mas de 1 segundo por posibles ruidos de tecla
+Link compra [Mouser](https://co.mouser.com/ProductDetail/Sensirion/SEN55-SDN-T?qs=MyNHzdoqoQLyWUzejWkZfg%3D%3D), [Digikey](https://www.digikey.com/es/products/detail/sensirion-ag/SEN55-SDN-T/16342756).
 
-//          OK seguir revisando: Revisar la funcion de la APP de sample time a ver como se maneja desde el micro, investigar eso bien
+**A favor:** buen desempeño, buena marca y precio intermedio.
 
-//          OK: Version de firmware incluida en el valor IDn que se envia por la trama mqtt
+**En contra:** tamaño grande, importación desde USA.
 
-//
-// Version ESP8266:
+**2.3. Plantower PMS7003.**
 
-//          Revisar porque muchas veces no carga bien el portal cautivo, queda en blanco la pagina. Parece ser si hay mas de 20 router por mostrar paila:
+<img src="https://aireciudadano.com/wp-content/uploads/IMG_20230126_153852-001-1024x768.jpg"  width="35%" height="35%">
 
-//          Aqui revisar: https://github.com/tzapu/WiFiManager/blob/master/WiFiManager.cpp
-//
-// Cambio en el archivo WifiEspClient.cpp:
+[El PMS7003](https://www.espruino.com/datasheets/PMS7003.pdf) es el más barato y popular, tiene un aceptable desempeño.
 
-// size_t WiFiEspClient::print(const FlashStringHelper ifsh)
+**A favor:** desempeño aceptable, bajo costo, se consigue en Colombia, China, USA y en muchos países.
 
-//{
+**En contra:** desempeño inferior VS Sensirion, conexión más difícil. Lento, fiabilidad media, regular repetitividad.
 
-//	return printFSH(ifsh, false);
+### **3\. Cable jumper macho macho de 10cm.**
 
-//}
+[Cable muy popular y fácil de consegui](https://www.google.com/search?q=cable+jumper+macho+macho)r en Latinoamérica: Mercadolibre o tiendas de electrónica.
 
-//
+**2\. Conexiones para cada sensor:**
+------------------------------------
 
-// MODIFICACIONES EXTERNAS:
+### **Sensirion SPS30**
 
-// Modificado WifiManager.cpp para que cuando ingrese al Config del portal cautivo pase a 180 segundos y no 10:
+![](https://aireciudadano.com/wp-content/uploads/Con4_1.jpg)
 
-// configPortalTimeout = 300000;   // New Config Portal Timeout
+### **Sensirion S**EN5X
 
-//  DEBUG_WM(DEBUG_VERBOSE,F("New Config Portal Timeout: 300 seconds"));
+![](https://aireciudadano.com/wp-content/uploads/Con3_1.jpg)
 
-// Modificado template.h en texto: Configure WiFi por Configure WiFi and Sensor & Show Password
+### **Plantower PMS7003**
+
+![](https://aireciudadano.com/wp-content/uploads/Con5_1.jpg)
+
+Video explicativo paso a paso:
+
+[![](https://aireciudadano.com/wp-content/uploads/VideoCP.jpg)](https://www.youtube.com/watch?v=Jkhu_hSVWPI "Video ensamblaje")
+
+
+**3\. Programar el Firmware (código en la board)**
+--------------------------------------------------
+
+La opción más sencilla y práctica es el instalador web AireCiudadano:
+
+[https://aireciudadano.com/programador-de-medidores-aireciudadano/](https://aireciudadano.com/programador-de-medidores-aireciudadano/)
+
+Selecciona el uso que le quieres dar a de tu medidor y versión sin pantalla:
+
+1\. Si lo que necesitas es hacer mediciones fijas, ósea desde el mismo lugar, transmitiendo a tu wifi escoge las opciones “Fijo – Wifi” dependiendo de si tienes pantalla o no.
+
+![](https://aireciudadano.com/wp-content/uploads/Sin-titulo-3.jpg)
+
+2\. Si lo que necesitas es hacer mediciones móviles usando batería escoge las opciones “Móvil – Bluetooth”:
+
+<img src="https://aireciudadano.com/wp-content/uploads/2022/06/IMG_20220609_122753-975x1024.jpg"  width="50%" height="50%">
+
+En este video se explica detalladamente cómo programar el firmware, hasta el minuto 3:30 aplica para versión móvil y fija, después sólo a la versión fija:
+
+[![](https://aireciudadano.com/wp-content/uploads/VideoIns.jpg)](https://youtu.be/IA3pZgo-LZg "Video instalación")
+
+
+**4\. Modos de uso del medidor: Wifi y Bluetooth.**
+---------------------------------------------------
+
+### **4.1. Modo fijo Wifi:**
+
+Puedes conectar tu medidor AireCiudadano a una red Wifi y dejarlo en modo fijo – estático (en el mismo lugar todo el tiempo). Así reportaras a la red fija AireCiudadano y podrás ver los datos monitoreados en la página web:
+
+[https://sensor.aireciudadano.com/](https://sensor.aireciudadano.com/)
+![](https://aireciudadano.com/wp-content/uploads/MapaAC-1024x463.jpg)
+
+
+Para la configuración del medidor en Modo fijo sigue el siguiente video:
+
+[![](https://aireciudadano.com/wp-content/uploads/VideoWifi.jpg)](https://youtu.be/-J3zXF87OIE "Video configuraciíon Wifi")
+
+### **4.2. Modo móvil Bluetooh:**
+
+Debes colocar una batería externa de teléfono móvil para realizar mediciones móviles. Simplemente al encender el medidor comienza a grabar los datos según el tiempo programado que le tengas: 2, 10, 60, 120, 300, 600, 3600 o 10800 segundos (10 segundos por defecto).
+
+Baja la App **Sensirion MyAmbience** para conectarte al medidor AireCiudadano y monitorear, dibujar, guardar y exportar tus datos:
+
+*   [Download for Android](https://play.google.com/store/apps/details?id=com.sensirion.myam)
+
+*   [Download for iOS](https://apps.apple.com/ch/app/sensirion-myambience-co2/id1529131572)
+
+<img src="https://aireciudadano.com/wp-content/uploads/photo_2023-01-27_22-07-30-511x1024.jpg"  width="30%" height="30%">
+
+En este pdf del fabricante página 5, encontrarás una buena explicación del funcionamiento de la App:
+
+[https://sensirion.com/media/documents/F8D0AE28/617BC2FB/Sensirion\_Humidity\_Sensors\_SHT4x\_Smart-Gadget\_User-Guide.pdf](https://sensirion.com/media/documents/F8D0AE28/617BC2FB/Sensirion_Humidity_Sensors_SHT4x_Smart-Gadget_User-Guide.pdf)
+
+Cualquier duda que tengas puedes contactarnos por correo electrónico ([info@aireciudadano.com](mailto:info@aireciudadano.com)) o a nuestras redes sociales [@aireciudadano](https://twitter.com/AireCiudadano)[  
+](https://sensirion.com/media/documents/F8D0AE28/617BC2FB/Sensirion_Humidity_Sensors_SHT4x_Smart-Gadget_User-Guide.pdf)

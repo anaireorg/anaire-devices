@@ -4903,7 +4903,7 @@ void Write_SD()
   SDreset = SDreset - 1;
 
   if (SDreset == 0)
-    dataString += "RESET";
+    dataString += "_RESET";
 
   // dataFile = SD.open("datalog.txt", FILE_WRITE);
   dataFile = SD.open(aireciudadano_device_id + ".txt", FILE_WRITE);

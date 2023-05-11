@@ -14,5 +14,6 @@
         "type_traits": "cpp",
         "utility": "cpp"
     },
-    "idf.portWin": "COM56"
+    "idf.portWin": "COM56",
+    "workbench.colorTheme": "Visual Studio 2017 Light - C++"
 }

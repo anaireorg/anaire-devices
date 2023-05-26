@@ -7,6 +7,7 @@ void Print_Config();
 void Button_Init();
 void Connect_WiFi();
 void Init_MQTT();
+void Test_Sensor();
 void Setup_Sensor();
 void Setup_CO2sensor();
 void Update_Display();

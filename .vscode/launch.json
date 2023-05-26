@@ -13,7 +13,7 @@
             "request": "launch",
             "name": "PIO Debug",
             "executable": "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/build/esp32/firmware.elf",
-            "projectEnvName": "esp32",
+            "projectEnvName": "esp8266",
             "toolchainBinDir": "C:/Users/DBB/.platformio/packages/toolchain-xtensa-esp32/bin",
             "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": {
@@ -26,7 +26,7 @@
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
             "executable": "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/build/esp32/firmware.elf",
-            "projectEnvName": "esp32",
+            "projectEnvName": "esp8266",
             "toolchainBinDir": "C:/Users/DBB/.platformio/packages/toolchain-xtensa-esp32/bin",
             "internalConsoleOptions": "openOnSessionStart"
         },
@@ -35,7 +35,7 @@
             "request": "launch",
             "name": "PIO Debug (without uploading)",
             "executable": "c:/Users/DBB/Documents/PlatformIO/aireciudadano/.pio/build/esp32/firmware.elf",
-            "projectEnvName": "esp32",
+            "projectEnvName": "esp8266",
             "toolchainBinDir": "C:/Users/DBB/.platformio/packages/toolchain-xtensa-esp32/bin",
             "internalConsoleOptions": "openOnSessionStart",
             "loadMode": "manual"

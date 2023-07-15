@@ -17,7 +17,7 @@
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 true        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
 #define Rosver true      // Set to true URosario version
 #define Rosver2 true     // Level 2 Urosario version
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
@@ -2132,7 +2132,7 @@ void Start_Captive_Portal()
     Serial.println(F("Lon write_eeprom = true"));
     longitudef = atof(eepromConfig.sensor_lon); // Cambiar de string a float
 
-    CustomValTotalString[9] = {0};
+//    CustomValTotalString[9] = {0};
     sprintf(CustomValTotalString, "%8d", CustomValtotal);
     if (CustomValTotalString[0] == ' ')
       CustomValTotalString[0] = '0';
@@ -2594,7 +2594,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   else
     CustomValtotal2 = CustomValtotal2 + ((int)eepromConfig.ConfigValues[3] - 48) * 10000;
 
-  CustomValTotalString[9] = {0};
+//  CustomValTotalString[9] = {0};
   sprintf(CustomValTotalString, "%8d", CustomValtotal2);
   if (CustomValTotalString[0] == ' ')
     CustomValTotalString[0] = '0';

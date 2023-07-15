@@ -17,7 +17,7 @@
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
 #define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
-#define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
+#define WPA2 true        // Set to true to WPA2 enterprise networks (IEEE 802.1X)
 #define Rosver true      // Set to true URosario version
 #define Rosver2 true     // Level 2 Urosario version
 #define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
@@ -25,9 +25,9 @@
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true for SHT4x sensor
 #define CO2sensor false  // Set to true in case you use a ESP8285 switch
-#define SHT4x false      // Set to true for CO2 sensors: SCD30 and SenseAir S8
+#define SHT4x true       // Set to true for CO2 sensors: SCD30 and SenseAir S8
 
-#define SiteAltitude 0 // IMPORTANT for CO2 measurement: Put the site altitude of the measurement, it affects directly the value
+#define SiteAltitude 0   // IMPORTANT for CO2 measurement: Put the site altitude of the measurement, it affects directly the value
 // #define SiteAltitude 2600   // 2600 meters above sea level: Bogota, Colombia
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
@@ -69,7 +69,12 @@ uint16_t CustomValtotal = 0;
 char CustomValTotalString[9] = "00000000";
 uint32_t IDn = 0;
 String chipIdHEX;
+
+#if Rosver
+uint64_t chipId;
+#else
 uint32_t chipId = 0;
+#endif
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
 String sw_version = "2.0";
@@ -268,6 +273,8 @@ int vref = 1100;
 #define Sensor_SDA_pin 21 // Define the SDA pin used
 #define Sensor_SCL_pin 22 // Define the SCL pin used
 
+#if !Rosver
+
 #include <sps30.h>
 SPS30 sps30;
 #define SP30_COMMS Wire
@@ -294,6 +301,8 @@ float ambientHumidity;
 float ambientTemperature;
 float vocIndex;
 float noxIndex;
+
+#endif
 
 #include "PMS.h"
 
@@ -372,10 +381,14 @@ bool SHT31flag = false;
 byte failh = 0;
 #endif
 
+#if !Rosver
+
 #include "Adafruit_Sensor.h"
 #include "Adafruit_AM2320.h"
 Adafruit_AM2320 am2320 = Adafruit_AM2320();
 bool AM2320flag = false;
+
+#endif
 
 #if CO2sensor
 bool CO2measure = false;
@@ -608,15 +621,21 @@ void setup()
   print_reset_reason(rtc_get_reset_reason(0));
 #else
   uint16_t Resetvar = 0;
+#if !Rosver2
   Serial.print(F("CPU reset reason: "));
+#endif
   rst_info *rinfo = ESP.getResetInfoPtr();
+#if !Rosver2
   Serial.println(rinfo->reason);
+#endif
   Resetvar = rinfo->reason;
   ResetFlag = true;
   if (Resetvar == 1 || Resetvar == 2 || Resetvar == 3 || Resetvar == 4)
   {
     ResetFlag = false;
+#if !Rosver2
     Serial.print(F("Resetvar: false"));
+#endif
   }
   else
   {
@@ -625,8 +644,10 @@ void setup()
     delay(1900);
 #endif
   }
+#if !Rosver2  
   Serial.print(F("Resetvar: "));
   Serial.println(Resetvar);
+#endif
 #endif
 
 #endif
@@ -1654,7 +1675,8 @@ void Print_WiFi_Status()
 
 void Check_WiFi_Server()                       // Server access by http when you put the ip address in a web browser !!!!!!!!!!!!!!!!!!!!!!!!!!!
 {                                              // Wifi server
-  WiFiClient client = wifi_server.available(); // listen for incoming clients
+//  WiFiClient client = wifi_server.available(); // listen for incoming clients
+  WiFiClient client = wifi_server.accept(); // listen for incoming clients
   if (client)
   {                                  // if you get a client,
     Serial.println(F("new client")); // print a message out the serial port
@@ -1796,7 +1818,8 @@ void Start_Captive_Portal()
   String wifiAP;
   int captiveportaltime = 0;
 
-  Serial.println(F("Start_Captive_Portal"));
+  Serial.println(F("Start Captive Portal"));
+  Serial.println(F("Timeout to login: 60 seconds -> timeout in portal: 300 seconds"));
 
   if (SDflag == false)
     captiveportaltime = 60;
@@ -2383,6 +2406,7 @@ void Send_Message_Cloud_App_MQTT()
 
   if (SEN5Xsen == true)
   {
+#if !Rosver
     uint8_t voc;
     uint8_t nox;
 
@@ -2408,19 +2432,30 @@ void Send_Message_Cloud_App_MQTT()
       nox = 0;
     else
       nox = round(noxIndex);
-
+#if !Rosver
     sprintf(MQTT_message, "{id: %s, PM25: %d, VOC: %d, NOx: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
     // sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"VOC\": %d, \"NOx\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
+#else
+    sprintf(MQTT_message, "{id: %s, PM25: %d, VOC: %d, NOx: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %llu}", aireciudadano_device_id.c_str(), pm25int, voc, nox, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
+#endif
+#endif
   }
   else
   {
     if (AdjPMS == true)
-      sprintf(MQTT_message, "{id: %s, PM25: %d, PM25raw: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
-    // sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"PM25raw\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
-
+#if !Rosver
+    sprintf(MQTT_message, "{id: %s, PM25: %d, PM25raw: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
+    //sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"PM25raw\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
+#else
+    sprintf(MQTT_message, "{id: %s, PM25: %d, PM25raw: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %llu}", aireciudadano_device_id.c_str(), pm25int, pm25intori, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
+#endif
     else
-      sprintf(MQTT_message, "{id: %s, PM25: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
+#if !Rosver
+    sprintf(MQTT_message, "{id: %s, PM25: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
     // sprintf(MQTT_message, "{\"id\": \"%s\", \"PM25\": %d, \"humidity\": %d, \"temperature\": %d, \"RSSI\": %d, \"latitude\": %f, \"longitude\": %f, \"inout\": %d, \"configval\": %d, \"datavar1\": %d}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId); // for Telegraf
+#else
+    sprintf(MQTT_message, "{id: %s, PM25: %d, humidity: %d, temperature: %d, RSSI: %d, latitude: %f, longitude: %f, inout: %d, configval: %d, datavar1: %llu}", aireciudadano_device_id.c_str(), pm25int, humi, temp, RSSI, latitudef, longitudef, inout, IDn, chipId);
+#endif
   }
   Serial.print(MQTT_message);
   Serial.println();
@@ -2787,16 +2822,26 @@ void Firmware_Update()
 
 #if WPA2
 #if Rosver
+#if SHT4x
   Serial.println("Firmware ESP8266WISP_WPA2Rosver");
   t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/ESP8266WISP_WPA2Rosver.bin");
+#else
+  Serial.println("Firmware ESP8266WISP_WPA2Rosver_SHT31");
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/ESP8266WISP_WPA2Rosver_SHT31.bin");
+#endif
 #else
   Serial.println("Firmware ESP8266WISP_WPA2");
   t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/ESP8266WISP_WPA2.bin");
 #endif
 #else
 #if Rosver
+#if SHT4x
   Serial.println("Firmware ESP8266WISP_Rosver");
   t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/ESP8266WISP_Rosver.bin");
+#else
+  Serial.println("Firmware ESP8266WISP_Rosver_SHT31");
+  t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/ESP8266WISP_Rosver_SHT31.bin");
+#endif
 #else
   Serial.println("Firmware ESP8266WISP");
   t_httpUpdate_return ret = ESPhttpUpdate.update(UpdateClient, "https://raw.githubusercontent.com/danielbernalb/AireCiudadano/main/bin/ESP8266WISP.bin");
@@ -3684,7 +3729,8 @@ void Print_Config()
 #if Bluetooth
   Serial.print(F("Bluetooth Time: "));
   Serial.println(eepromConfig.BluetoothTime);
-#elif (SDyRTC || Rosver)
+#endif
+#if (SDyRTC || Rosver)
 #if !WPA2
   if (SDflag == true)
   {
@@ -3692,7 +3738,8 @@ void Print_Config()
     Serial.println(SDyRTCtime);
   }
 #endif
-#elif Wifi
+#endif
+#if Wifi
 #if SaveSDyRTC
   Serial.println("SDyRTC enabled: save data and date on SD Card");
 #endif
@@ -3711,6 +3758,11 @@ void Print_Config()
   Serial.println(eepromConfig.wifi_user);
   Serial.print(F("WiFi identity's password for WPA enterprise: "));
   Serial.println(eepromConfig.wifi_password);
+#else
+  Serial.print(F("SSID: "));
+  Serial.println(WiFi.SSID());
+  Serial.print(F("WiFi password: "));
+  Serial.println(wifiManager.getWiFiPass());
 #endif
 #endif
   Serial.println(F("#######################################"));
@@ -4058,7 +4110,6 @@ void FlashBluetoothTime()
 
 void Get_AireCiudadano_DeviceId()
 { // Get TTGO T-Display info and fill up aireciudadano_device_id with last 6 digits (in HEX) of WiFi mac address or Custom_Name + 6 digits
-  //  uint32_t chipId = 0;
   char aireciudadano_device_id_endframe[10];
 
 #if !ESP8266
@@ -4077,7 +4128,26 @@ void Get_AireCiudadano_DeviceId()
 
 #else
 
+#if Rosver
+  String macAddress = WiFi.macAddress(); // Get the MAC address as a string
+  uint64_t decimalNumber = 0;
+  int shiftBits = 40; // Start from the leftmost byte
+
+  for (int i = 0; i < 6; i++) {
+    String hexComponent = macAddress.substring(i * 3, i * 3 + 2);
+    uint64_t decimalComponent = strtol(hexComponent.c_str(), NULL, 16);
+    decimalNumber |= (decimalComponent << shiftBits);
+    shiftBits -= 8;
+  }
+//  Serial.print("MAC Address (Hex): ");
+//  Serial.println(macAddress);
+//  Serial.print("Decimal Number: ");
+//  Serial.println(decimalNumber);
+  chipId = decimalNumber;
+#else
   chipId = ESP.getChipId();
+#endif
+
   chipIdHEX = String(ESP.getChipId(), HEX);
   strncpy(aireciudadano_device_id_endframe, chipIdHEX.c_str(), sizeof(aireciudadano_device_id_endframe));
 #if Wifi

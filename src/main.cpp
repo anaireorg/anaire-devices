@@ -77,7 +77,7 @@ uint32_t chipId = 0;
 #endif
 
 // device id, automatically filled by concatenating the last three fields of the wifi mac address, removing the ":" in betweeen, in HEX format. Example: ChipId (HEX) = 85e646, ChipId (DEC) = 8775238, macaddress = E0:98:06:85:E6:46
-String sw_version = "2.0";
+String sw_version = "2.1";
 String aireciudadano_device_id;
 uint8_t Swver;
 
@@ -2132,7 +2132,7 @@ void Start_Captive_Portal()
     Serial.println(F("Lon write_eeprom = true"));
     longitudef = atof(eepromConfig.sensor_lon); // Cambiar de string a float
 
-//    CustomValTotalString[9] = {0};
+    CustomValTotalString[8] = {0};
     sprintf(CustomValTotalString, "%8d", CustomValtotal);
     if (CustomValTotalString[0] == ' ')
       CustomValTotalString[0] = '0';
@@ -2156,21 +2156,24 @@ void Start_Captive_Portal()
     Serial.print(F("CustomValTotalString: "));
     Serial.println(CustomValTotalString);
 
+#if !Rosver
     if (CustomValtotal == 0)
     {
       Serial.println(F("No configuration sensor values ​​chosen, no changes will be stored"));
     }
     else
     {
+#endif
       strncpy(eepromConfig.ConfigValues, CustomValTotalString, sizeof(eepromConfig.ConfigValues));
       eepromConfig.ConfigValues[sizeof(eepromConfig.ConfigValues) - 1] = '\0';
       Serial.println(F("CustomVal write_eeprom = true"));
+#if !Rosver
     }
+#endif
     Write_EEPROM();
     Serial.println(F("write_eeprom = true Final"));
-    //  ESP.restart();              // REVISAR!!!!!!!!!!!!!
   }
-  ESP.restart(); // REVISAR!!!!!!!!!!!!!
+  ESP.restart();
 }
 
 String getParam(String name)
@@ -2594,7 +2597,7 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   else
     CustomValtotal2 = CustomValtotal2 + ((int)eepromConfig.ConfigValues[3] - 48) * 10000;
 
-//  CustomValTotalString[9] = {0};
+  CustomValTotalString[8] = {0};
   sprintf(CustomValTotalString, "%8d", CustomValtotal2);
   if (CustomValTotalString[0] == ' ')
     CustomValTotalString[0] = '0';
@@ -2618,20 +2621,23 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
   Serial.print(F("CustomValTotalString: "));
   Serial.println(CustomValTotalString);
 
+#if !Rosver
   if (CustomValtotal2 == 0)
   {
     Serial.println(F("No configuration sensor values ​​chosen, no changes will be stored"));
   }
   else
   {
+#endif
     strncpy(eepromConfig.ConfigValues, CustomValTotalString, sizeof(eepromConfig.ConfigValues));
     eepromConfig.ConfigValues[sizeof(eepromConfig.ConfigValues) - 1] = '\0';
     write_eeprom = true;
     Serial.println(F("CustomVal write_eeprom = true"));
     Serial.print(F("Configuration Values: "));
     Serial.println(eepromConfig.ConfigValues);
+#if !Rosver
   }
-
+#endif
   Aireciudadano_Characteristics();
 
   // print info

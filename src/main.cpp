@@ -3765,9 +3765,9 @@ void Print_Config()
   Serial.print(F("WiFi identity's password for WPA enterprise: "));
   Serial.println(eepromConfig.wifi_password);
 #else
-  Serial.print(F("SSID: "));
+  Serial.print(F("Wifi SSID: "));
   Serial.println(WiFi.SSID());
-  Serial.print(F("WiFi password: "));
+  Serial.print(F("Wifi password: "));
   Serial.println(wifiManager.getWiFiPass());
 #endif
 #endif

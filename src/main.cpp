@@ -1675,7 +1675,6 @@ void Print_WiFi_Status()
 
 void Check_WiFi_Server()                       // Server access by http when you put the ip address in a web browser !!!!!!!!!!!!!!!!!!!!!!!!!!!
 {                                              // Wifi server
-//  WiFiClient client = wifi_server.available(); // listen for incoming clients
   WiFiClient client = wifi_server.accept(); // listen for incoming clients
   if (client)
   {                                  // if you get a client,
@@ -4145,10 +4144,6 @@ void Get_AireCiudadano_DeviceId()
     decimalNumber |= (decimalComponent << shiftBits);
     shiftBits -= 8;
   }
-//  Serial.print("MAC Address (Hex): ");
-//  Serial.println(macAddress);
-//  Serial.print("Decimal Number: ");
-//  Serial.println(decimalNumber);
   chipId = decimalNumber;
 #else
   chipId = ESP.getChipId();
@@ -4159,6 +4154,17 @@ void Get_AireCiudadano_DeviceId()
 #if Wifi
 #if !Rosver
   Aireciudadano_Characteristics();
+#else
+  if (eepromConfig.ConfigValues[4] == '0')
+  {
+    SDflag = false;
+    Serial.println(F("Mode: Wifi"));
+  }
+  else
+  {
+    SDflag = true;
+    Serial.println(F("Mode: SD & RTC"));
+  }
 #endif
 #endif
   Serial.print(F("ESP8266 Chip ID = "));
@@ -5142,6 +5148,10 @@ void Write_SD()
     // print to the serial port too:
     Serial.print(F("SD write: "));
     Serial.println(dataString);
+    // LED Routine
+    digitalWrite(LEDPIN, LOW);
+    FlagLED = true;
+
   }
   // if the file isn't open, pop up an error:
   else

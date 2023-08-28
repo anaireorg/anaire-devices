@@ -722,7 +722,7 @@ void setup()
   Get_AireCiudadano_DeviceId();
 
 #if SDyRTC
-  SDflag == true;
+  SDflag = true;
 #endif
 
 #if Bluetooth

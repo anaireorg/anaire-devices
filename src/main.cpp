@@ -16,12 +16,12 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi true       // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
+#define Wifi false       // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
 #define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver true      // Set to true URosario version
+#define Rosver false     // Set to true URosario version
 #define Rosver2 false    // Level 2 Urosario version
-#define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
-#define SDyRTC true      // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
+#define Bluetooth true   // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
+#define SDyRTC false      // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true for SHT4x sensor
 #define CO2sensor false  // Set to true in case you use a ESP8285 switch
@@ -31,7 +31,7 @@
 // #define SiteAltitude 2600   // 2600 meters above sea level: Bogota, Colombia
 
 // Escoger modelo de pantalla (pasar de false a true) o si no hay escoger ninguna (todas false):
-#define Tdisplaydisp false
+#define Tdisplaydisp true
 #define OLED66display false
 #define OLED96display false
 
@@ -817,7 +817,8 @@ void setup()
 
 // Initialize the GadgetBle Library for Bluetooth
 #elif Bluetooth
-  provider.begin();
+//  provider.begin(Bluetooth_loop_time);
+  provider.begin(Bluetooth_loop_time);
   Serial.print("Sensirion Provider Lib initialized with deviceId = ");
   Serial.println(provider.getDeviceIdString());
 
@@ -5093,13 +5094,15 @@ void Write_Bluetooth()
   provider.writeValueToCurrentSample(pm25int, SignalType::PM2P5_MICRO_GRAMM_PER_CUBIC_METER);
   provider.writeValueToCurrentSample(temp, SignalType::TEMPERATURE_DEGREES_CELSIUS);
   provider.writeValueToCurrentSample(humi, SignalType::RELATIVE_HUMIDITY_PERCENTAGE);
-  provider.commitSample();
+//  provider.commitSample(Bluetooth_loop_time);
+  provider.commitSample(Bluetooth_loop_time);
   Serial.print("Bluetooth frame: PM2.5(ug/m3):");
 
 #else
   provider.writeValueToCurrentSample(pm25int, SignalType::CO2_PARTS_PER_MILLION);
   provider.writeValueToCurrentSample(temp, SignalType::TEMPERATURE_DEGREES_CELSIUS);
   provider.writeValueToCurrentSample(humi, SignalType::RELATIVE_HUMIDITY_PERCENTAGE);
+//  provider.commitSample(Bluetooth_loop_time);
   provider.commitSample();
   Serial.print("Bluetooth frame: CO2(ppm):");
 #endif

@@ -16,11 +16,11 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi true        // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
+#define Wifi false       // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
 #define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
 #define Rosver false     // Set to true URosario version
 #define Rosver2 false    // Level 2 Urosario version
-#define Bluetooth false  // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
+#define Bluetooth true   // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true in case you use a ESP8285 switch
@@ -3818,11 +3818,11 @@ void Button_Init()
 #if Wifi
     tft.drawString("ID " + aireciudadano_device_id, 8, 5);         //!!!Arreglar por nuevo tamaño String
 #elif Bluetooth
-  tft.drawString("ID app:  " + provider.getDeviceIdString(), 8, 5);         //!!!Arreglar por nuevo tamaño String
+  tft.drawString("ID MyAm 00:" + provider.getDeviceIdString(), 8, 5);         //!!!Arreglar por nuevo tamaño String 
 #endif
     tft.drawString("SW ver: " + sw_version, 8, 22);
 #if Bluetooth
-    tft.drawString("Sample int: " + String(Bluetooth_loop_time), 8, 39);
+    tft.drawString("Sam int: " + String(Bluetooth_loop_time), 8, 39);
     tft.drawString("Bluetooth ver", 8, 56);
 #elif SDyRTC
     tft.drawString("SDyRTC ver", 8, 39);

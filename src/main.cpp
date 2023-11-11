@@ -1818,7 +1818,7 @@ void Start_Captive_Portal()
   String wifiAP;
   int captiveportaltime = 0;
 
-  Serial.println(F("Start Captive Portal"));
+  Serial.println(F("Start Captive Portal"));ok todo por SD
   Serial.println(F("Timeout to login: 60 seconds -> timeout in portal: 300 seconds"));
 
   if (SDflag == false)
@@ -2508,140 +2508,6 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     return;
   }
 
-  // Update name
-  if (jsonBuffer["name"] != "")
-  {
-    strncpy(eepromConfig.aireciudadano_device_name, jsonBuffer["name"].as<const char *>(), sizeof(eepromConfig.aireciudadano_device_name));
-    eepromConfig.aireciudadano_device_name[sizeof(eepromConfig.aireciudadano_device_name) - 1] = '\0';
-    Serial.print(F("AireCiudadano custom name (json buffer): "));
-    Serial.println(eepromConfig.aireciudadano_device_name);
-    write_eeprom = true;
-  }
-
-  // Publication Time
-
-  tempcustom = uint16_t(jsonBuffer["warning"]);
-
-  if (tempcustom != 0)
-  {
-    eepromConfig.PublicTime = (uint16_t)jsonBuffer["warning"];
-    Serial.print(F("PublicTime write_eeprom = true, value: "));
-    Serial.println((uint16_t)jsonBuffer["warning"]);
-    write_eeprom = true;
-  }
-
-  // Latitude
-
-  latitudef = atof(jsonBuffer["caution"]);
-  if (latitudef != 0)
-  {
-    strncpy(eepromConfig.sensor_lat, jsonBuffer["caution"], sizeof(eepromConfig.sensor_lat));
-    eepromConfig.sensor_lat[sizeof(eepromConfig.sensor_lat) - 1] = '\0';
-    Serial.print(F("Lat write_eeprom = true, value: "));
-    Serial.println(eepromConfig.sensor_lat);
-    write_eeprom = true;
-  }
-
-  // Longitude
-
-  longitudef = atof(jsonBuffer["temperature_offset"]);
-  if (longitudef != 0)
-  {
-    strncpy(eepromConfig.sensor_lon, jsonBuffer["temperature_offset"], sizeof(eepromConfig.sensor_lon));
-    eepromConfig.sensor_lon[sizeof(eepromConfig.sensor_lon) - 1] = '\0';
-    Serial.print(F("Lon write_eeprom = true, value: "));
-    Serial.println(eepromConfig.sensor_lon);
-    write_eeprom = true;
-  }
-
-  // CustomSenPM
-
-#if !Rosver
-
-  tempcustom = ((uint16_t)jsonBuffer["altitude_compensation"]);
-  if (tempcustom != 0)
-  {
-    tempcustom = tempcustom - 1;
-    Serial.print("Value customSenPM = ");
-    Serial.println(tempcustom);
-    CustomValtotal2 = tempcustom;
-  }
-  else
-#endif
-    CustomValtotal2 = ((int)(eepromConfig.ConfigValues[7]) - 48);
-
-    // CustomSenHYT
-
-#if !Rosver
-
-  tempcustom = ((uint16_t)jsonBuffer["FRC_value"]);
-
-  if (tempcustom != 0)
-  {
-    tempcustom = tempcustom - 1;
-    Serial.print("Value customSenHYT = ");
-    Serial.println(tempcustom);
-    CustomValtotal2 = CustomValtotal2 + (tempcustom * 10);
-  }
-  else
-#endif
-    CustomValtotal2 = CustomValtotal2 + ((int)eepromConfig.ConfigValues[6] - 48) * 10;
-
-  // CustomOutIn
-
-  tempcustom = ((uint16_t)jsonBuffer["MQTT_port"]);
-
-  if (tempcustom != 0)
-  {
-    tempcustom = tempcustom - 1;
-    Serial.print("Value customSenOutIn = ");
-    Serial.println(tempcustom);
-    CustomValtotal2 = CustomValtotal2 + (tempcustom * 10000);
-  }
-  else
-    CustomValtotal2 = CustomValtotal2 + ((int)eepromConfig.ConfigValues[3] - 48) * 10000;
-
-  CustomValTotalString[8] = {0};
-  sprintf(CustomValTotalString, "%8d", CustomValtotal2);
-  if (CustomValTotalString[0] == ' ')
-    CustomValTotalString[0] = '0';
-  if (CustomValTotalString[1] == ' ')
-    CustomValTotalString[1] = '0';
-  if (CustomValTotalString[2] == ' ')
-    CustomValTotalString[2] = '0';
-  if (CustomValTotalString[3] == ' ')
-    CustomValTotalString[3] = '0';
-  if (CustomValTotalString[4] == ' ')
-    CustomValTotalString[4] = '0';
-  if (CustomValTotalString[5] == ' ')
-    CustomValTotalString[5] = '0';
-  if (CustomValTotalString[6] == ' ')
-    CustomValTotalString[6] = '0';
-  if (CustomValTotalString[7] == ' ')
-    CustomValTotalString[7] = '0';
-  if (CustomValTotalString[8] == ' ')
-    CustomValTotalString[8] = '0';
-
-  Serial.print(F("CustomValTotalString: "));
-  Serial.println(CustomValTotalString);
-
-#if !Rosver
-  if (CustomValtotal2 == 0)
-  {
-    Serial.println(F("No configuration sensor values ​​chosen, no changes will be stored"));
-  }
-  else
-  {
-#endif
-    strncpy(eepromConfig.ConfigValues, CustomValTotalString, sizeof(eepromConfig.ConfigValues));
-    eepromConfig.ConfigValues[sizeof(eepromConfig.ConfigValues) - 1] = '\0';
-    write_eeprom = true;
-    Serial.println(F("CustomVal write_eeprom = true"));
-    Serial.print(F("Configuration Values: "));
-    Serial.println(eepromConfig.ConfigValues);
-#if !Rosver
-  }
-#endif
   Aireciudadano_Characteristics();
 
   // print info
@@ -2655,13 +2521,6 @@ void Receive_Message_Cloud_App_MQTT(char *topic, byte *payload, unsigned int len
     // Update firmware to latest bin
     Serial.println(F("Update firmware to latest bin"));
     Firmware_Update();
-  }
-
-  // If factory reset has been enabled, just do it
-  if ((jsonBuffer["factory_reset"]) && (jsonBuffer["factory_reset"] == "ON"))
-  {
-    Wipe_EEPROM(); // Wipe EEPROM
-    ESP.restart();
   }
 
   // save the new values if the flag was set

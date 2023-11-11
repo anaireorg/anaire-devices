@@ -16,11 +16,11 @@
 
 ////////////////////////////////
 // Modo de comunicaciones del sensor:
-#define Wifi false       // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
+#define Wifi true       // Set to true in case Wifi if desired, Bluetooth off and SDyRTCsave optional
 #define WPA2 false       // Set to true to WPA2 enterprise networks (IEEE 802.1X)
-#define Rosver false     // Set to true URosario version
+#define Rosver true     // Set to true URosario version
 #define Rosver2 false    // Level 2 Urosario version
-#define Bluetooth true   // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
+#define Bluetooth false   // Set to true in case Bluetooth if desired, Wifi off and SDyRTCsave optional
 #define SDyRTC false     // Set to true in case SD card and RTC (Real Time clock) if desired, Wifi and Bluetooth off
 #define SaveSDyRTC false // Set to true in case SD card and RTC (Real Time clock) if desired to save data in Wifi or Bluetooth mode
 #define ESP8285 false    // Set to true in case you use a ESP8285 switch
